@@ -1,0 +1,47 @@
+logger:
+  level: 2
+  dest: "test" 
+
+netbox:
+  apiToken: "netbox-token"
+  port: 666
+  hostname: netbox.example.com
+
+source:
+  - name: testolvm
+    type: ovirt
+    httpScheme: http
+    hostname: testolvm.example.com
+    username: admin@internal
+    password: adminpass
+    permittedSubnets: 
+      - 172.16.0.0/12
+      - 192.168.0.0/16
+      - fd00::/8
+    validateCert: true
+    tag: testing
+    tagColor: ff0000
+    
+  - name: prodolvm
+    type: ovirt
+    hostname: ovirt.example.com
+    username: admin
+    port: 80
+    password: adminpass
+    permittedSubnets: 
+      - 172.16.0.0/12
+    clusterSiteRelations:
+      - Cluster_NYC = New York
+      - Cluster_FFM.* = Frankfurt
+      - Datacenter_BERLIN/* = Berlin
+    hostSiteRelations:
+      - .* = Berlin
+    clusterTenantRelations:
+      - .*Stark = Stark Industries
+      - .* = Default
+    hostTenantRelations:
+      - .*Health = Health Department
+      - .* = Default
+    vmTenantRelations:
+      - .*Health = Health Department
+      - .* = Default

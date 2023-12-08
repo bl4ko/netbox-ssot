@@ -1,0 +1,38 @@
+logger:
+  level: 2
+  dest: "test" 
+
+netbox:
+  apiToken: "netbox-token"
+  port: 666
+  hostname: netbox.example.com
+
+source:
+  - name: testolvm
+    type: ovirt
+    hostname: testolvm.example.com
+    username: admin@internal
+    password: adminpass
+    permittedSubnets: 
+      - 172.16.0.0/12
+      - 192.168.0.0/16
+      - fd00::/8
+    validateCert: true
+    hostSiteRelations:
+      - .* = Default
+    hostTenantRelations:
+      - .* = Default
+    vmTenantRelations:
+      - .* = Default
+    
+  - name: testolvm
+    type: ovirt
+    hostname: ovirt.example.com
+    username: admin
+    password: adminpass
+    permittedSubnets: 
+      - 172.16.0.0/12
+    hostSiteRelations:
+      - .* = Default
+    hostTenantRelations:
+      - This should not work
