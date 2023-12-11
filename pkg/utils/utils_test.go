@@ -211,8 +211,7 @@ func TestJsonDiffMapComplex(t *testing.T) {
 			{ID: 3},
 			{ID: 4},
 		},
-		"tenant":       nil,
-		"tenant_group": nil,
+		"tenant": nil,
 	}
 
 	diff, err := JsonDiffMapExceptId(newObj, existingObj)
@@ -222,5 +221,38 @@ func TestJsonDiffMapComplex(t *testing.T) {
 	}
 	if !reflect.DeepEqual(diff, expectedDiff) {
 		t.Errorf("JsonDiffMapExceptId() = %v, want %v", diff, expectedDiff)
+	}
+}
+
+func TestSlugify(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "Simple string",
+			input:    "Test",
+			expected: "test",
+		},
+		{
+			name:     "String with spaces",
+			input:    "Test String",
+			expected: "test-string",
+		},
+		{
+			name:     "String with trailing spaces",
+			input:    "    Te st    ",
+			expected: "te-st",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			slug := Slugify(tt.input)
+			if slug != tt.expected {
+				t.Errorf("Slugify() = %v, want %v", slug, tt.expected)
+			}
+		})
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"slices"
 	"strings"
 )
 
@@ -113,7 +114,9 @@ func JsonDiffMapExceptId(newObj, existingObj interface{}) (map[string]interface{
 
 		default:
 			if !newObjectField.IsValid() {
-				diff[jsonTag] = nil
+				if existingObjectField.IsValid() {
+					diff[jsonTag] = nil
+				}
 				continue
 			}
 			if newObjectField.Interface() != existingObjectField.Interface() {
@@ -129,11 +132,12 @@ func addDiffSliceToMap(newSlice reflect.Value, existingSlice reflect.Value, json
 
 	// If first slice is nil, that means that we reset the value
 	if !newSlice.IsValid() {
-		diffMap[jsonTag] = nil
+		if existingSlice.IsValid() {
+			diffMap[jsonTag] = nil // reset the value
+		}
 		return
 	}
 
-	// We keep only the ids of the first object
 	idObjects := make([]IDObject, 0, newSlice.Len())
 	var id int
 	for j := 0; j < newSlice.Len(); j++ {
@@ -145,7 +149,27 @@ func addDiffSliceToMap(newSlice reflect.Value, existingSlice reflect.Value, json
 			idObjects = append(idObjects, IDObject{ID: id})
 		}
 	}
-	diffMap[jsonTag] = idObjects
+	// We always store the IDs in ascending order, because netbox api
+	// returns them in ascending order
+	slices.SortFunc(idObjects, func(i IDObject, j IDObject) int {
+		return i.ID - j.ID
+	})
+
+	if newSlice.Len() != existingSlice.Len() {
+		diffMap[jsonTag] = idObjects
+	} else {
+		for j := 0; j < existingSlice.Len(); j++ {
+			if existingSlice.Index(j).Kind() == reflect.Ptr {
+				id = existingSlice.Index(j).Elem().FieldByName("ID").Interface().(int)
+			} else {
+				id = existingSlice.Index(j).FieldByName("ID").Interface().(int)
+			}
+			if id != idObjects[j].ID {
+				diffMap[jsonTag] = idObjects
+				return
+			}
+		}
+	}
 }
 
 // Returns json form for patching the difference e.g. { "id": 1 }
@@ -213,4 +237,14 @@ func MatchStringToValue(input string, patterns map[string]string) (string, error
 		}
 	}
 	return "", nil // Return an empty string or an error if no match is found
+}
+
+// Converts string name to its slugified version.
+// e.g. "My Name" -> "my-name"
+// e.g. "   Test  " -> "test"
+func Slugify(name string) string {
+	name = strings.TrimSpace(name)
+	name = strings.ToLower(name)
+	name = strings.ReplaceAll(name, " ", "-")
+	return name
 }
