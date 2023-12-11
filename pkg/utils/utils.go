@@ -42,78 +42,136 @@ import (
 // 		}
 // 	}
 
-// 	return len(fields) > 0, fields
-// }
+//		return len(fields) > 0, fields
+//	}
+//
+// Struct used for patching objects, when attributes are structs, or slices
+// we only need object with an id for patching.
+type IDObject struct {
+	ID int `json:"id"`
+}
 
 // JsonDiffMapExceptID checks if any field except ID field, from two objects, are different.
 // It returns a map of fields (represented by their JSON tag names) that are different with their values from newObj.
 func JsonDiffMapExceptId(newObj, existingObj interface{}) (map[string]interface{}, error) {
 	diff := make(map[string]interface{})
 
-	val1 := reflect.ValueOf(newObj)
-	val2 := reflect.ValueOf(existingObj)
+	newObject := reflect.ValueOf(newObj)
+	existingObject := reflect.ValueOf(existingObj)
+
+	// Ensure that both objects are of the same kind (e.g. struct)
+	if newObject.Kind() != existingObject.Kind() {
+		return nil, fmt.Errorf("arguments are not of the same type")
+	}
 
 	// Check if the values are pointers and get the element they point to
-	if val1.Kind() == reflect.Ptr {
-		val1 = val1.Elem()
-	}
-	if val2.Kind() == reflect.Ptr {
-		val2 = val2.Elem()
+	if newObject.Kind() == reflect.Ptr {
+		newObject = newObject.Elem()
+		existingObject = existingObject.Elem()
 	}
 
 	// Ensure that we are dealing with structs
-	if val1.Kind() != reflect.Struct || val2.Kind() != reflect.Struct {
+	if newObject.Kind() != reflect.Struct {
 		return nil, fmt.Errorf("arguments are not structs")
 	}
 
-	for i := 0; i < val1.NumField(); i++ {
-		field := val1.Type().Field(i)
-		fieldName := field.Name
-		jsonTag := field.Tag.Get("json")
+	for i := 0; i < newObject.NumField(); i++ {
+		fieldName := newObject.Type().Field(i).Name
+		jsonTag := newObject.Type().Field(i).Tag.Get("json")
 
+		// We skip the ID field, because newly created objects, won't have this field, which is netbox specific
 		if fieldName == "ID" {
 			continue
 		}
 
-		// Handle fields without a json tag or with "-" as json tag
+		// Get json tag, so we can get the json field name
 		if jsonTag == "" || jsonTag == "-" {
 			jsonTag = fieldName
 		} else {
-			// Extract the name part before the comma, if any
 			jsonTag = strings.Split(jsonTag, ",")[0]
 		}
 
-		// If Obj's Attribute is a slice we comapre id's in that slice
-		if val1.Field(i).Kind() == reflect.Slice {
-			if val1.Field(i).Len() != val2.Field(i).Len() {
-				diff[jsonTag] = val1.Field(i).Interface()
-			} else {
-				firstIdSet := map[int]bool{}
-				secondIdSet := map[int]bool{}
-				for j := 0; j < val1.Field(i).Len(); j++ {
-					// Elements can be pointers, so we need to get the element they point to
-					firstElem := val1.Field(i).Index(j)
-					secondElem := val2.Field(i).Index(j)
-					if firstElem.Kind() == reflect.Ptr {
-						firstElem = firstElem.Elem()
-					}
-					if secondElem.Kind() == reflect.Ptr {
-						secondElem = secondElem.Elem()
-					}
-					firstIdSet[firstElem.FieldByName("ID").Interface().(int)] = true
-					secondIdSet[secondElem.FieldByName("ID").Interface().(int)] = true
-				}
-				if !reflect.DeepEqual(firstIdSet, secondIdSet) {
-					diff[jsonTag] = val1.Field(i).Interface()
-				}
+		// Ensure that both fields are of the same kind
+		if newObject.Field(i).Kind() != existingObject.Field(i).Kind() {
+			return nil, fmt.Errorf("field %s is not of the same type in both objects", jsonTag)
+		}
+
+		// Check if elements are pointers, in that case get the elements they are pointing to
+		newObjectField := newObject.Field(i)
+		existingObjectField := existingObject.Field(i)
+		if newObjectField.Kind() == reflect.Ptr {
+			newObjectField = newObjectField.Elem()
+			existingObjectField = existingObjectField.Elem()
+		}
+
+		switch newObjectField.Kind() {
+		case reflect.Slice:
+			addDiffSliceToMap(newObjectField, existingObjectField, jsonTag, diff)
+
+		case reflect.Struct:
+			addDiffStructToMap(newObjectField, existingObjectField, jsonTag, diff)
+
+		default:
+			if !newObjectField.IsValid() {
+				diff[jsonTag] = nil
+				continue
 			}
-			// Else we compare the values of the fields
-		} else if val1.Field(i).Interface() != val2.Field(i).Interface() {
-			diff[jsonTag] = val1.Field(i).Interface()
+			if newObjectField.Interface() != existingObjectField.Interface() {
+				diff[jsonTag] = newObjectField.Interface()
+			}
 		}
 	}
 
 	return diff, nil
+}
+
+func addDiffSliceToMap(newSlice reflect.Value, existingSlice reflect.Value, jsonTag string, diffMap map[string]interface{}) {
+
+	// If first slice is nil, that means that we reset the value
+	if !newSlice.IsValid() {
+		diffMap[jsonTag] = nil
+		return
+	}
+
+	// We keep only the ids of the first object
+	idObjects := make([]IDObject, 0, newSlice.Len())
+	var id int
+	for j := 0; j < newSlice.Len(); j++ {
+		if newSlice.Index(j).Kind() == reflect.Ptr {
+			id = newSlice.Index(j).Elem().FieldByName("ID").Interface().(int)
+			idObjects = append(idObjects, IDObject{ID: id})
+		} else {
+			id = newSlice.Index(j).FieldByName("ID").Interface().(int)
+			idObjects = append(idObjects, IDObject{ID: id})
+		}
+	}
+	diffMap[jsonTag] = idObjects
+}
+
+// Returns json form for patching the difference e.g. { "id": 1 }
+func addDiffStructToMap(newObj reflect.Value, existingObj reflect.Value, jsonTag string, diffMap map[string]interface{}) {
+
+	// If first struct is nil, that means that we reset the attribute to nil
+	if !newObj.IsValid() {
+		diffMap[jsonTag] = nil
+		return
+	}
+
+	// We use ids for comparison between structs, because for patching objects, all we need is id of attribute
+	idField := newObj.FieldByName("ID")
+
+	if !idField.IsValid() {
+		// Both objects doesn't have ID field, compare them directly
+		if newObj.Interface() != existingObj.Interface() {
+			diffMap[jsonTag] = newObj.Interface()
+		}
+	} else {
+		// Objects have ID field, compare their ids
+		if newObj.FieldByName("ID").Interface() != existingObj.FieldByName("ID").Interface() {
+			id := newObj.FieldByName("ID").Interface().(int)
+			diffMap[jsonTag] = IDObject{ID: id}
+		}
+	}
 }
 
 // Validates array of regex relations

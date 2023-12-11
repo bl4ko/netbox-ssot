@@ -4,7 +4,9 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/dcim"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/extras"
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/tenancy"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/virtualization"
 )
 
@@ -81,23 +83,23 @@ func TestJsonDiffMapExceptId(t *testing.T) {
 				},
 			},
 			expected: map[string]interface{}{
-				"tags": []*extras.Tag{
-					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-					{ID: 2, Name: "Test2", Slug: "test2", Color: "000000", Description: "Test tag 2"},
-					{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+				"tags": []IDObject{
+					{ID: 1},
+					{ID: 2},
+					{ID: 3},
 				},
 			},
 			expectError: false,
 		},
 		{
-			name: "Different Tags in ClusterGroup",
+			name: "Different tags in ClusterGroup",
 			newObj: &virtualization.ClusterGroup{
 				Name:        "New Group",
 				Slug:        "new-group",
 				Description: "New group",
 				Tags: []*extras.Tag{
 					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-					{ID: 4, Name: "TestX", Slug: "test2", Color: "000000", Description: "Test tag 2"},
+					{ID: 2, Name: "Test2", Slug: "test2", Color: "000000", Description: "Test tag 2"},
 					{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
 				},
 			},
@@ -108,14 +110,13 @@ func TestJsonDiffMapExceptId(t *testing.T) {
 				Tags: []*extras.Tag{
 					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
 					{ID: 2, Name: "Test2", Slug: "test2", Color: "000000", Description: "Test tag 2"},
-					{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
 				},
 			},
 			expected: map[string]interface{}{
-				"tags": []*extras.Tag{
-					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-					{ID: 4, Name: "TestX", Slug: "test2", Color: "000000", Description: "Test tag 2"},
-					{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+				"tags": []IDObject{
+					{ID: 1},
+					{ID: 2},
+					{ID: 3},
 				},
 			},
 			expectError: false,
@@ -133,5 +134,93 @@ func TestJsonDiffMapExceptId(t *testing.T) {
 				t.Errorf("JsonDiffMapExceptId() = %v, want %v", diff, tt.expected)
 			}
 		})
+	}
+}
+
+// TestJsonDiffMapComplex is a more complex test case
+// Where nested attributes are changed and set to nil
+func TestJsonDiffMapComplex(t *testing.T) {
+	newObj := &virtualization.Cluster{
+		Name:        "Hosting",
+		Description: "New Description",
+		Type: &virtualization.ClusterType{
+			ID:   2,
+			Name: "oVirt",
+			Slug: "ovirt",
+		},
+		Group: &virtualization.ClusterGroup{
+			ID:   4,
+			Name: "New Cluster Group",
+			Slug: "new-cluster-group",
+		},
+		Status: &dcim.Status{
+			Value: "active",
+			Label: "Active",
+		},
+		Tags: []*extras.Tag{
+			{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+			{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+			{ID: 4, Name: "TestX", Slug: "test2", Color: "000000", Description: "Test tag 2"},
+		},
+	}
+	existingObj := &virtualization.Cluster{
+		ID:   7,
+		Name: "Hosting",
+		Type: &virtualization.ClusterType{
+			ID:   2,
+			Name: "oVirt",
+			Slug: "ovirt",
+		},
+		Group: &virtualization.ClusterGroup{
+			ID:   3,
+			Name: "Hosting",
+			Slug: "hosting",
+		},
+		Status: &dcim.Status{
+			Value: "active",
+			Label: "Active",
+		},
+		Tenant: &tenancy.Tenant{
+			ID:   1,
+			Name: "Default",
+			Slug: "default",
+		},
+		Site: &dcim.Site{
+			ID:   2,
+			Name: "New York",
+			Slug: "new-york",
+		},
+		Description: "Hosting cluster",
+		Tags: []*extras.Tag{
+			{
+				ID:    2,
+				Name:  "Netbox-synced",
+				Slug:  "netbox-synced",
+				Color: "9e9e9e",
+			},
+		},
+	}
+	expectedDiff := map[string]interface{}{
+		"description": "New Description",
+		"group": IDObject{
+			ID: 4,
+		},
+		"site": nil,
+		"tags": []IDObject{
+			{ID: 1},
+			{ID: 3},
+			{ID: 4},
+		},
+		"tenant":       nil,
+		"tenant_group": nil,
+	}
+
+	diff, err := JsonDiffMapExceptId(newObj, existingObj)
+	if err != nil {
+		t.Errorf("JsonDiffMapExceptId() error = %v", err)
+		return
+	}
+	if !reflect.DeepEqual(diff, expectedDiff) {
+		t.Errorf("JsonDiffMapExceptId() = %v, want %v", diff, expectedDiff)
 	}
 }
