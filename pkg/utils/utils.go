@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -8,44 +9,75 @@ import (
 	"strings"
 )
 
-// // Function that checks if any field from two objects are different
-// // If so it returns true and a slice of fields that are different
-// func ObjDiff(obj1, obj2 interface{}) (bool, []string) {
+// This function takes an object pointer, and returns a json body,
+// that can be used to create that object in netbox API.
+// This is essential because default marshal of the object
+// isn't compatible with netbox API when attributes have nested
+// objects.
+func NetboxMarshal(obj interface{}) ([]byte, error) {
+	v := reflect.ValueOf(obj)
+	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
+		return nil, fmt.Errorf("object must be a pointer to a struct")
+	}
+	v = v.Elem()
 
-// 	var fields []string
+	netboxJson := make(map[string]interface{})
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		fieldType := v.Type().Field(i)
+		fieldName := fieldType.Name
 
-// 	val1 := reflect.ValueOf(obj1).Elem()
-// 	val2 := reflect.ValueOf(obj2).Elem()
+		if fieldName == "ID" {
+			continue
+		}
 
-// 	for i := 0; i < val1.NumField(); i++ {
-// 		if val1.Field(i).Interface() != val2.Field(i).Interface() {
-// 			fields = append(fields, val1.Type().Field(i).Name)
-// 		}
-// 	}
+		// If field is a pointer, we need to get the element it points to
+		if field.Kind() == reflect.Ptr {
+			field = field.Elem()
+		}
 
-// 	return len(fields) > 0, fields
-// }
+		// If it is a nil pointer, we need to set it to nil in json
+		if !field.IsValid() {
+			netboxJson[fieldName] = nil
+			continue
+		}
 
-// // Function that checks if any field except ID field, from two objects are different
-// // If so it returns true and a slice of fields that are different
-// func ObjDiffExceptID(obj1, obj2 interface{}) (bool, []string) {
+		fmt.Println(field.Kind())
+		switch field.Kind() {
+		case reflect.Slice:
+			if field.Len() == 0 {
+				continue
+			}
+			sliceItems := make([]interface{}, 0)
+			for j := 0; j < field.Len(); j++ {
+				item := field.Index(j)
+				if item.Kind() == reflect.Struct {
+					id := item.FieldByName("ID")
+					if id.IsValid() && id.Int() != 0 {
+						sliceItems = append(sliceItems, id.Int())
+					} else {
+						sliceItems = append(sliceItems, item.Interface())
+					}
+				} else {
+					sliceItems = append(sliceItems, item.Interface())
+				}
+			}
+			netboxJson[fieldName] = sliceItems
+		case reflect.Struct:
+			id := field.FieldByName("ID")
+			if id.IsValid() {
+				netboxJson[fieldName] = id.Int()
+			} else {
+				netboxJson[fieldName] = field.Interface()
+			}
+		default:
+			netboxJson[fieldName] = field.Interface()
+		}
+	}
 
-// 	var fields []string
+	return json.Marshal(netboxJson)
+}
 
-// 	val1 := reflect.ValueOf(obj1).Elem()
-// 	val2 := reflect.ValueOf(obj2).Elem()
-
-// 	for i := 0; i < val1.NumField(); i++ {
-// 		if val1.Field(i).Interface() != val2.Field(i).Interface() {
-// 			if val1.Type().Field(i).Name != "ID" {
-// 				fields = append(fields, val1.Type().Field(i).Name)
-// 			}
-// 		}
-// 	}
-
-//		return len(fields) > 0, fields
-//	}
-//
 // Struct used for patching objects, when attributes are structs, or slices
 // we only need object with an id for patching.
 type IDObject struct {
@@ -138,35 +170,61 @@ func addDiffSliceToMap(newSlice reflect.Value, existingSlice reflect.Value, json
 		return
 	}
 
-	idObjects := make([]IDObject, 0, newSlice.Len())
-	var id int
-	for j := 0; j < newSlice.Len(); j++ {
-		if newSlice.Index(j).Kind() == reflect.Ptr {
-			id = newSlice.Index(j).Elem().FieldByName("ID").Interface().(int)
-			idObjects = append(idObjects, IDObject{ID: id})
-		} else {
-			id = newSlice.Index(j).FieldByName("ID").Interface().(int)
-			idObjects = append(idObjects, IDObject{ID: id})
+	// There are going to be 2 kinds of comparison.
+	// One where slice will contain objects, in that case we
+	// will compare ids of the objects, else we will compare
+	// the values of the slice
+	switch newSlice.Index(0).Kind() {
+	case reflect.String:
+		strSet := make(map[string]bool)
+		for j := 0; j < newSlice.Len(); j++ {
+			strSet[newSlice.Index(j).Interface().(string)] = true
 		}
-	}
-	// We always store the IDs in ascending order, because netbox api
-	// returns them in ascending order
-	slices.SortFunc(idObjects, func(i IDObject, j IDObject) int {
-		return i.ID - j.ID
-	})
-
-	if newSlice.Len() != existingSlice.Len() {
-		diffMap[jsonTag] = idObjects
-	} else {
-		for j := 0; j < existingSlice.Len(); j++ {
-			if existingSlice.Index(j).Kind() == reflect.Ptr {
-				id = existingSlice.Index(j).Elem().FieldByName("ID").Interface().(int)
-			} else {
-				id = existingSlice.Index(j).FieldByName("ID").Interface().(int)
+		if len(strSet) != existingSlice.Len() {
+			diffMap[jsonTag] = newSlice.Interface()
+		} else {
+			for j := 0; j < existingSlice.Len(); j++ {
+				if !strSet[existingSlice.Index(j).Interface().(string)] {
+					diffMap[jsonTag] = newSlice.Interface()
+					return
+				}
 			}
-			if id != idObjects[j].ID {
-				diffMap[jsonTag] = idObjects
-				return
+		}
+
+	default:
+		idObjects := make([]IDObject, 0, newSlice.Len())
+		var id int
+		for j := 0; j < newSlice.Len(); j++ {
+			if newSlice.Index(j).IsNil() {
+				continue
+			}
+			if newSlice.Index(j).Kind() == reflect.Ptr {
+				id = newSlice.Index(j).Elem().FieldByName("ID").Interface().(int)
+				idObjects = append(idObjects, IDObject{ID: id})
+			} else {
+				id = newSlice.Index(j).FieldByName("ID").Interface().(int)
+				idObjects = append(idObjects, IDObject{ID: id})
+			}
+		}
+		// We always store the IDs in ascending order, because netbox api
+		// returns them in ascending order
+		slices.SortFunc(idObjects, func(i IDObject, j IDObject) int {
+			return i.ID - j.ID
+		})
+
+		if len(idObjects) != existingSlice.Len() {
+			diffMap[jsonTag] = idObjects
+		} else {
+			for j := 0; j < existingSlice.Len(); j++ {
+				if existingSlice.Index(j).Kind() == reflect.Ptr {
+					id = existingSlice.Index(j).Elem().FieldByName("ID").Interface().(int)
+				} else {
+					id = existingSlice.Index(j).FieldByName("ID").Interface().(int)
+				}
+				if id != idObjects[j].ID {
+					diffMap[jsonTag] = idObjects
+					return
+				}
 			}
 		}
 	}

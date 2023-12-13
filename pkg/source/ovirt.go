@@ -2,7 +2,6 @@ package source
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/dcim"
@@ -16,11 +15,12 @@ import (
 // OVirtSource represents an oVirt source
 type OVirtSource struct {
 	CommonConfig
-	Disks                  *ovirtsdk4.DiskSlice
-	DataCenters            *ovirtsdk4.DataCenterSlice
-	Clusters               *ovirtsdk4.ClusterSlice
-	Hosts                  *ovirtsdk4.HostSlice
-	Vms                    *ovirtsdk4.VmSlice
+	Disks       map[string]*ovirtsdk4.Disk
+	DataCenters map[string]*ovirtsdk4.DataCenter
+	Clusters    map[string]*ovirtsdk4.Cluster
+	Hosts       map[string]*ovirtsdk4.Host
+	Vms         map[string]*ovirtsdk4.Vm
+
 	HostSiteRelations      map[string]string
 	ClusterSiteRelations   map[string]string
 	ClusterTenantRelations map[string]string
@@ -57,52 +57,118 @@ func (o *OVirtSource) Init() error {
 	}
 	defer conn.Close()
 
+	err = o.InitDisks(conn)
+	if err != nil {
+		return fmt.Errorf("failed to initialize oVirt disks: %v", err)
+	}
+
+	err = o.InitDataCenters(conn)
+	if err != nil {
+		return fmt.Errorf("failed to initialize oVirt data centers: %v", err)
+	}
+
+	err = o.InitClusters(conn)
+	if err != nil {
+		return fmt.Errorf("failed to initialize oVirt clusters: %v", err)
+	}
+
+	err = o.InitHosts(conn)
+	if err != nil {
+		return fmt.Errorf("failed to initialize oVirt hosts: %v", err)
+	}
+
+	err = o.InitVms(conn)
+	if err != nil {
+		return fmt.Errorf("failed to initialize oVirt vms: %v", err)
+	}
+	return nil
+}
+
+func (o *OVirtSource) InitDisks(conn *ovirtsdk4.Connection) error {
 	// Get the disks
 	disksResponse, err := conn.SystemService().DisksService().List().Send()
 	if err != nil {
 		return fmt.Errorf("failed to get oVirt disks: %v", err)
 	}
+	o.Disks = make(map[string]*ovirtsdk4.Disk)
 	if disks, ok := disksResponse.Disks(); ok {
-		o.Disks = disks
-		o.Logger.Debug("Successfully initalized oVirt disks: ", disks)
+		for _, disk := range disks.Slice() {
+			o.Disks[disk.MustId()] = disk
+		}
+		o.Logger.Debug("Successfully initalized oVirt disks: ", o.Disks)
+	} else {
+		o.Logger.Warning("Error initialising oVirt disks")
 	}
+	return nil
+}
 
-	// Get the DataCenters
+func (o *OVirtSource) InitDataCenters(conn *ovirtsdk4.Connection) error {
 	dataCentersResponse, err := conn.SystemService().DataCentersService().List().Send()
 	if err != nil {
 		return fmt.Errorf("failed to get oVirt data centers: %v", err)
 	}
+	o.DataCenters = make(map[string]*ovirtsdk4.DataCenter)
 	if dataCenters, ok := dataCentersResponse.DataCenters(); ok {
-		o.DataCenters = dataCenters
+		for _, dataCenter := range dataCenters.Slice() {
+			o.DataCenters[dataCenter.MustId()] = dataCenter
+		}
 		o.Logger.Debug("Successfully initalized oVirt data centers: ", o.DataCenters)
+	} else {
+		o.Logger.Warning("Error initialising oVirt data centers")
 	}
+	return nil
+}
 
-	// Get the clusters
+// Function that queries ovirt api for clustrers and stores them locally
+func (o *OVirtSource) InitClusters(conn *ovirtsdk4.Connection) error {
 	clustersResponse, err := conn.SystemService().ClustersService().List().Send()
 	if err != nil {
 		return fmt.Errorf("failed to get oVirt clusters: %v", err)
 	}
+	o.Clusters = make(map[string]*ovirtsdk4.Cluster)
 	if clusters, ok := clustersResponse.Clusters(); ok {
-		// Extract extra data for each cluster
 		for _, cluster := range clusters.Slice() {
-			datacenter, err := conn.FollowLink(cluster.MustDataCenter())
-			if err != nil {
-				return fmt.Errorf("failed to get datacenter for cluster %s: %v", cluster.MustName(), err)
-			}
-			cluster.SetDataCenter(datacenter.(*ovirtsdk4.DataCenter))
+			o.Clusters[cluster.MustId()] = cluster
 		}
-		o.Clusters = clusters
 		o.Logger.Debug("Successfully initalized oVirt clusters: ", o.Clusters)
+	} else {
+		o.Logger.Warning("Error initialising oVirt clusters")
 	}
+	return nil
+}
 
-	//Get the hosts
+// Function that queries ovirt api for hosts and stores them locally
+func (o *OVirtSource) InitHosts(conn *ovirtsdk4.Connection) error {
 	hostsResponse, err := conn.SystemService().HostsService().List().Send()
 	if err != nil {
 		return fmt.Errorf("failed to get oVirt hosts: %+v", err)
 	}
+	o.Hosts = make(map[string]*ovirtsdk4.Host)
 	if hosts, ok := hostsResponse.Hosts(); ok {
-		o.Hosts = hosts
+		for _, host := range hosts.Slice() {
+			o.Hosts[host.MustId()] = host
+		}
 		o.Logger.Debug("Successfully initalized oVirt hosts: ", hosts)
+	} else {
+		o.Logger.Warning("Error initialising oVirt hosts")
+	}
+	return nil
+}
+
+// Function that quries the ovirt api for vms and stores them locally
+func (o *OVirtSource) InitVms(conn *ovirtsdk4.Connection) error {
+	vmsResponse, err := conn.SystemService().VmsService().List().Send()
+	if err != nil {
+		return fmt.Errorf("failed to get oVirt vms: %+v", err)
+	}
+	o.Vms = make(map[string]*ovirtsdk4.Vm)
+	if vms, ok := vmsResponse.Vms(); ok {
+		for _, vm := range vms.Slice() {
+			o.Vms[vm.MustId()] = vm
+		}
+		o.Logger.Debug("Successfully initalized oVirt vms: ", vms)
+	} else {
+		o.Logger.Warning("Error initialising oVirt vms")
 	}
 	return nil
 }
@@ -117,13 +183,20 @@ func (o *OVirtSource) Sync(nbi *inventory.NetBoxInventory) error {
 	if err != nil {
 		return err
 	}
+	err = o.SyncHosts(nbi)
+	if err != nil {
+		return err
+	}
+
+	// TODO
+	// err = o.SyncVms(nbi)
 
 	return nil
 }
 
 func (o *OVirtSource) SyncDatacenters(nbi *inventory.NetBoxInventory) error {
 	// First sync oVirt DataCenters as NetBoxClusterGroups
-	for _, datacenter := range o.DataCenters.Slice() {
+	for _, datacenter := range o.DataCenters {
 		name, exists := datacenter.Name()
 		if !exists {
 			return fmt.Errorf("failed to get name for oVirt datacenter %s", name)
@@ -134,7 +207,7 @@ func (o *OVirtSource) SyncDatacenters(nbi *inventory.NetBoxInventory) error {
 		}
 		nbClusterGroup := &virtualization.ClusterGroup{
 			Name:        name,
-			Slug:        strings.ToLower(name),
+			Slug:        utils.Slugify(name),
 			Description: description,
 		}
 		err := nbi.AddClusterGroup(nbClusterGroup, o.SourceTag)
@@ -155,7 +228,7 @@ func (o *OVirtSource) SyncClusters(nbi *inventory.NetBoxInventory) error {
 		return fmt.Errorf("failed to add oVirt cluster type: %v", err)
 	}
 	// Then sync oVirt Clusters as NetBoxClusters
-	for _, cluster := range o.Clusters.Slice() {
+	for _, cluster := range o.Clusters {
 		clusterName, exists := cluster.Name()
 		if !exists {
 			return fmt.Errorf("failed to get name for oVirt cluster %s", clusterName)
@@ -165,6 +238,11 @@ func (o *OVirtSource) SyncClusters(nbi *inventory.NetBoxInventory) error {
 			o.Logger.Warning("description for oVirt cluster ", clusterName, " is empty.")
 		}
 		var clusterGroup *virtualization.ClusterGroup
+		if _, ok := o.DataCenters[cluster.MustDataCenter().MustId()]; ok {
+
+		} else {
+			o.Logger.Warning("failed to get datacenter for oVirt cluster %s", clusterName)
+		}
 		if dataCenter, ok := cluster.DataCenter(); ok {
 			if dataCenterName, ok := dataCenter.Name(); ok {
 				clusterGroup = nbi.ClusterGroupsIndexByName[dataCenterName]
@@ -212,4 +290,80 @@ func (o *OVirtSource) SyncClusters(nbi *inventory.NetBoxInventory) error {
 		}
 	}
 	return nil
+}
+
+// Host in oVirt is a represented as device in netbox with a
+// custom role Server
+func (o *OVirtSource) SyncHosts(nbi *inventory.NetBoxInventory) error {
+	serverDeviceRole := nbi.DeviceRolesIndexByName["Server"]
+	for hostId, host := range o.Hosts {
+		hostCluster := nbi.ClustersIndexByName[o.Clusters[host.MustCluster().MustId()].MustName()]
+		fmt.Printf("%s: %s\n", hostId, host.MustName())
+		fmt.Printf("host cluster: %v\n", hostCluster)
+	}
+	fmt.Println(serverDeviceRole)
+	fmt.Println(o.Hosts)
+	return nil
+	// clusterType, err := nbi.AddClusterType(clusterType, o.SourceTag)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to add oVirt cluster type: %v", err)
+	// }
+	// // Then sync oVirt Clusters as NetBoxClusters
+	// for _, cluster := range o.Clusters.Slice() {
+	// 	clusterName, exists := cluster.Name()
+	// 	if !exists {
+	// 		return fmt.Errorf("failed to get name for oVirt cluster %s", clusterName)
+	// 	}
+	// 	description, exists := cluster.Description()
+	// 	if !exists {
+	// 		o.Logger.Warning("description for oVirt cluster ", clusterName, " is empty.")
+	// 	}
+	// 	var clusterGroup *virtualization.ClusterGroup
+	// 	if dataCenter, ok := cluster.DataCenter(); ok {
+	// 		if dataCenterName, ok := dataCenter.Name(); ok {
+	// 			clusterGroup = nbi.ClusterGroupsIndexByName[dataCenterName]
+	// 		}
+	// 	}
+	// 	var clusterSite *dcim.Site
+	// 	if o.ClusterSiteRelations != nil {
+	// 		match, err := utils.MatchStringToValue(clusterName, o.ClusterSiteRelations)
+	// 		if err != nil {
+	// 			return fmt.Errorf("failed to match oVirt cluster %s to a NetBox site: %v", clusterName, err)
+	// 		}
+	// 		if match != "" {
+	// 			if _, ok := nbi.SitesIndexByName[match]; !ok {
+	// 				return fmt.Errorf("failed to match oVirt cluster %s to a NetBox site: %v. Site with this name doesn't exist!", clusterName, match)
+	// 			}
+	// 			clusterSite = nbi.SitesIndexByName[match]
+	// 		}
+	// 	}
+	// 	var clusterTenant *tenancy.Tenant
+	// 	if o.ClusterTenantRelations != nil {
+	// 		match, err := utils.MatchStringToValue(clusterName, o.ClusterTenantRelations)
+	// 		if err != nil {
+	// 			return fmt.Errorf("failed to match oVirt cluster %s to a NetBox tenant: %v", clusterName, err)
+	// 		}
+	// 		if match != "" {
+	// 			if _, ok := nbi.TenantsIndexByName[match]; !ok {
+	// 				return fmt.Errorf("failed to match oVirt cluster %s to a NetBox tenant: %v. Tenant with this name doesn't exist!", clusterName, match)
+	// 			}
+	// 			clusterTenant = nbi.TenantsIndexByName[match]
+	// 		}
+	// 	}
+
+	// 	nbCluster := &virtualization.Cluster{
+	// 		Name:        clusterName,
+	// 		Type:        clusterType,
+	// 		Status:      &dcim.Active,
+	// 		Group:       clusterGroup,
+	// 		Description: description,
+	// 		Site:        clusterSite,
+	// 		Tenant:      clusterTenant,
+	// 	}
+	// 	err := nbi.AddCluster(nbCluster, o.SourceTag)
+	// 	if err != nil {
+	// 		return fmt.Errorf("failed to add oVirt cluster %s as NetBox cluster: %v", clusterName, err)
+	// 	}
+	// }
+	// return nil
 }

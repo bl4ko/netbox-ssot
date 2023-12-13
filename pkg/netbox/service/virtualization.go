@@ -270,6 +270,8 @@ func (api *NetboxAPI) CreateCluster(cluster *virtualization.Cluster) (*virtualiz
 		return nil, err
 	}
 
+	api.Logger.Debug("Cluster JSON: ", string(clusterJson))
+
 	response, err := api.doRequest(MethodPost, "/api/virtualization/clusters/", bytes.NewBuffer(clusterJson))
 	if err != nil {
 		return nil, err

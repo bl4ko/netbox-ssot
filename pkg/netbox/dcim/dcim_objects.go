@@ -96,18 +96,6 @@ type Location struct {
 	Tags []*extras.Tag
 }
 
-type DeviceColor string
-
-const (
-	DeviceColorRed    DeviceColor = "Amber"
-	DeviceColorOrange DeviceColor = "Orange"
-	DeviceColorYellow DeviceColor = "Dark Orange"
-	DeviceColorGreen  DeviceColor = "Brown"
-	DeviceColorBlue   DeviceColor = "blue"
-	DeviceColorPurple DeviceColor = "purple"
-	DeviceColorBlack  DeviceColor = "black"
-)
-
 type DeviceType struct {
 	// ID is the unique numeric ID of the device type.
 	ID int `json:"id,omitempty"`
@@ -135,8 +123,9 @@ type DeviceRole struct {
 	// URL-friendly unique shorthand. This field is required.
 	Slug string `json:"slug,omitempty"`
 	// Color of the device role. This field is required.
-	Color *DeviceColor `json:"color,omitempty"`
-
+	Color string `json:"color,omitempty"`
+	// VMRole is whether this device role is used to represent virtual machines.
+	VMRole bool `json:"vm_role,omitempty"`
 	// Device role description.
 	Description string `json:"description,omitempty"`
 	// Tags
@@ -161,6 +150,9 @@ type Device struct {
 	Description string `json:"description,omitempty"`
 	// Tags is a list of tags for the device.
 	Tags []*extras.Tag `json:"tags,omitempty"`
+
+	// CustomFields is a dictionary of custom fields defined for the device type. map[customFieldName]: valueStr
+	CustomFields map[string]string `json:"custom_fields,omitempty"`
 }
 
 type InterfaceType string

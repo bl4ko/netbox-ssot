@@ -1,6 +1,8 @@
 package virtualization
 
 import (
+	"encoding/json"
+
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/dcim"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/extras"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/tenancy"
@@ -53,6 +55,18 @@ type Cluster struct {
 	Description string `json:"description,omitempty"`
 	// Tags is a list of tags for the cluster.
 	Tags []*extras.Tag `json:"tags,omitempty"`
+}
+
+// Custom marshal because we shouldn't pass the status as object but as string
+func (c *Cluster) MarshalJSON() ([]byte, error) {
+	type Alias Cluster
+	return json.Marshal(&struct {
+		Status string `json:"status,omitempty"`
+		*Alias
+	}{
+		Status: c.Status.Value,
+		Alias:  (*Alias)(c),
+	})
 }
 
 // VM represents a virtual machine

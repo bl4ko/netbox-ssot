@@ -9,6 +9,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/pkg/parser"
 	"github.com/bl4ko/netbox-ssot/pkg/source"
+	"github.com/bl4ko/netbox-ssot/pkg/utils"
 )
 
 func main() {
@@ -44,10 +45,11 @@ func main() {
 	for _, sourceConfig := range config.Sources {
 		logger.Info("Processing source ", sourceConfig.Name)
 
+		logger.Debug("Setting up default tag for source ", sourceConfig.Name)
 		// First we create default tag for the source
 		sourceTag, err := netboxInventory.AddTag(&extras.Tag{
 			Name:        sourceConfig.Tag,
-			Slug:        "Source-" + sourceConfig.Name,
+			Slug:        utils.Slugify("source-" + sourceConfig.Name),
 			Color:       sourceConfig.TagColor,
 			Description: fmt.Sprintf("Automatically created tag by netbox-ssot for source %s", sourceConfig.Name),
 		})

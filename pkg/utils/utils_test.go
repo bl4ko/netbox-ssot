@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"bytes"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -224,6 +226,46 @@ func TestJsonDiffMapComplex(t *testing.T) {
 	}
 }
 
+func TestJsonDiffMapComplex2(t *testing.T) {
+	newObj := &extras.CustomField{
+		ID:            0,
+		Name:          "New Custom field",
+		Label:         "New-custom-field",
+		Type:          extras.CustomFieldTypeText,
+		ContentTypes:  []string{"dcim.device, virtualization.cluster"},
+		SearchWeight:  1000,
+		FilterLogic:   extras.FilterLogicLoose,
+		UIVisibility:  extras.UIVisibilityReadWrite,
+		DisplayWeight: 100,
+	}
+	existingObj := &extras.CustomField{
+		ID:            1,
+		Name:          "New Custom field",
+		Label:         "New-custom-field",
+		Type:          extras.CustomFieldTypeText,
+		ContentTypes:  []string{"dcim.device"},
+		Description:   "New custom field",
+		SearchWeight:  1000,
+		FilterLogic:   extras.FilterLogicLoose,
+		UIVisibility:  extras.UIVisibilityReadWrite,
+		DisplayWeight: 10,
+	}
+	expectedDiff := map[string]interface{}{
+		"content_types": []string{"dcim.device, virtualization.cluster"},
+		"description":   "",
+		"weight":        100,
+	}
+
+	diff, err := JsonDiffMapExceptId(newObj, existingObj)
+	if err != nil {
+		t.Errorf("JsonDiffMapExceptId() error = %v", err)
+		return
+	}
+	if !reflect.DeepEqual(diff, expectedDiff) {
+		t.Errorf("JsonDiffMapExceptId() = %v, want %v", diff, expectedDiff)
+	}
+}
+
 func TestSlugify(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -255,4 +297,72 @@ func TestSlugify(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestNetboxMarshal(t *testing.T) {
+	newObj := &virtualization.Cluster{
+		Status:      &dcim.Active,
+		Name:        "Test",
+		Description: "Test Description",
+		Type: &virtualization.ClusterType{
+			ID:   2,
+			Name: "oVirt",
+			Slug: "ovirt",
+			Tags: []*extras.Tag{
+				{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+				{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+			},
+		},
+		Group: &virtualization.ClusterGroup{
+			ID:          4,
+			Name:        "New Cluster Group",
+			Description: "New cluster group",
+			Slug:        "new-cluster-group",
+			Tags: []*extras.Tag{
+				{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+				{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+			},
+		},
+		Site: &dcim.Site{
+			ID:   2,
+			Name: "New York",
+			Slug: "new-york",
+			Status: dcim.Status{
+				Value: "active",
+				Label: "Active",
+			},
+			Tags: []*extras.Tag{
+				{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+				{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+			},
+		},
+		Tenant: &tenancy.Tenant{
+			ID:   1,
+			Name: "Default",
+			Slug: "default",
+			Tags: []*extras.Tag{
+				{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+				{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+				{ID: 4, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+			},
+		},
+		Tags: []*extras.Tag{
+			{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+			{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+			{ID: 4, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+		},
+	}
+	stringRepresentation := "{\"name\":\"Test\",\"description\":\"Test Description\",\"type\":{\"id\":2},\"group\":{\"id\":4},\"status\":\"active\",\"site\":{\"id\":2},\"tenant\":{\"id\":1},\"tags\":[{\"id\":2},{\"id\":3},{\"id\":4}]}"
+	expectedJson := bytes.NewBufferString(stringRepresentation)
+
+	jsonRes, err := NetboxMarshal(newObj)
+	stringRes := string(jsonRes)
+	fmt.Println(stringRes)
+	if err != nil {
+		t.Errorf("NetboxMarshal() error = %v", err)
+	}
+	if !reflect.DeepEqual(jsonRes, expectedJson) {
+		t.Errorf("NetboxMarshal() = %v, want %v", jsonRes, expectedJson)
+	}
+
 }
