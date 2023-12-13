@@ -34,6 +34,10 @@ type NetBoxInventory struct {
 	ClusterTypesIndexByName map[string]*virtualization.ClusterType
 	// ClustersIndexByName is a map of all clusters in the inventory, indexed by name
 	ClustersIndexByName map[string]*virtualization.Cluster
+	// Device Roles
+	DeviceRolesIndexByName map[string]*dcim.DeviceRole
+	// CustomFieldsIndexByName
+	CustomFieldsIndexByName map[string]*extras.CustomField
 
 	// Orphan manager is a map of { "devices: [device_id1, device_id2, ...], "cluster_groups": [cluster_group_id1, cluster_group_id2, ..."}, to store which objects have been created by netbox-ssot and can be deleted because they are not available in the source anymore
 	OrphanManager map[string][]int
@@ -74,6 +78,24 @@ func (netboxInventory *NetBoxInventory) Init() error {
 		return err
 	}
 	err = netboxInventory.InitDevices()
+	if err != nil {
+		return err
+	}
+	err = netboxInventory.InitDeviceRoles()
+	if err != nil {
+		return err
+	}
+	// init server device role which is required for separation of device object into servers
+	err = netboxInventory.InitServerDeviceRole()
+	if err != nil {
+		return err
+	}
+	// init custom fields. Custom fields can be used for devices to add physical cores and memory to each device representing server.
+	err = netboxInventory.InitCustomFields()
+	if err != nil {
+		return err
+	}
+	err = netboxInventory.InitServerCustomFields()
 	if err != nil {
 		return err
 	}

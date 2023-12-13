@@ -3,6 +3,7 @@ package inventory
 import (
 	"slices"
 
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/dcim"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/extras"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/virtualization"
 	"github.com/bl4ko/netbox-ssot/pkg/utils"
@@ -39,6 +40,33 @@ func (ni *NetBoxInventory) AddTag(newTag *extras.Tag) (*extras.Tag, error) {
 			return existingTag, nil
 		}
 	}
+}
+
+// Adding new custom-field to inventory
+func (ni *NetBoxInventory) AddCustomField(newCf *extras.CustomField) error {
+	if _, ok := ni.CustomFieldsIndexByName[newCf.Name]; ok {
+		ni.Logger.Debug("Custom field ", newCf.Name, " already exists in NetBox...")
+		existingCf := ni.CustomFieldsIndexByName[newCf.Name]
+		diffMap, err := utils.JsonDiffMapExceptId(newCf, existingCf)
+		if err != nil {
+			return err
+		}
+		if len(diffMap) > 0 {
+			patchedCf, err := ni.NetboxApi.PatchCustomField(diffMap, existingCf.ID)
+			if err != nil {
+				return err
+			}
+			ni.CustomFieldsIndexByName[newCf.Name] = patchedCf
+		}
+	} else {
+		ni.Logger.Debug("Custom field ", newCf.Name, " does not exist in NetBox. Creating it...")
+		newCf, err := ni.NetboxApi.CreateCustomField(newCf)
+		if err != nil {
+			return err
+		}
+		ni.CustomFieldsIndexByName[newCf.Name] = newCf
+	}
+	return nil
 }
 
 // Add Cluster to NetBoxInventory
@@ -126,6 +154,34 @@ func (ni *NetBoxInventory) AddCluster(newCluster *virtualization.Cluster, source
 			return err
 		}
 		ni.ClustersIndexByName[newCluster.Name] = newCluster
+	}
+	return nil
+}
+
+func (ni *NetBoxInventory) AddDeviceRole(newDeviceRole *dcim.DeviceRole, sourceTag *extras.Tag) error {
+	if _, ok := ni.DeviceRolesIndexByName[newDeviceRole.Name]; ok {
+		newDeviceRole.Tags = []*extras.Tag{sourceTag, ni.SsotTag}
+		diffMap, err := utils.JsonDiffMapExceptId(newDeviceRole, ni.DeviceRolesIndexByName[newDeviceRole.Name])
+		if err != nil {
+			return err
+		}
+		if len(diffMap) > 0 {
+			ni.Logger.Debug("Device role ", newDeviceRole.Name, " already exists in NetBox but is out of date. Patching it...")
+			patchedDeviceRole, err := ni.NetboxApi.PatchDeviceRole(diffMap, ni.DeviceRolesIndexByName[newDeviceRole.Name].ID)
+			if err != nil {
+				return err
+			}
+			ni.DeviceRolesIndexByName[newDeviceRole.Name] = patchedDeviceRole
+		} else {
+			ni.Logger.Debug("Device role ", newDeviceRole.Name, " already exists in NetBox and is up to date...")
+		}
+	} else {
+		ni.Logger.Debug("Device role ", newDeviceRole.Name, " does not exist in NetBox. Creating it...")
+		newDeviceRole, err := ni.NetboxApi.CreateDeviceRole(newDeviceRole)
+		if err != nil {
+			return err
+		}
+		ni.DeviceRolesIndexByName[newDeviceRole.Name] = newDeviceRole
 	}
 	return nil
 }

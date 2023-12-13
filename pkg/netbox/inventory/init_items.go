@@ -78,6 +78,81 @@ func (netboxInventory *NetBoxInventory) InitDevices() error {
 	return nil
 }
 
+// Collects all deviceRoles from NetBox API and store them in the
+// NetBoxInventory
+func (netboxInventory *NetBoxInventory) InitDeviceRoles() error {
+	nbDeviceRoles, err := netboxInventory.NetboxApi.GetAllDeviceRoles()
+	if err != nil {
+		return err
+	}
+	// We also create an index of device roles by name for easier access
+	netboxInventory.DeviceRolesIndexByName = make(map[string]*dcim.DeviceRole)
+	for _, deviceRole := range nbDeviceRoles {
+		netboxInventory.DeviceRolesIndexByName[deviceRole.Name] = deviceRole
+	}
+
+	netboxInventory.Logger.Debug("Successfully collected device roles from NetBox: ", netboxInventory.DeviceRolesIndexByName)
+	return nil
+}
+
+// Ensures that attribute ServerDeviceRole is proper initialized
+func (netboxInventory *NetBoxInventory) InitServerDeviceRole() error {
+	err := netboxInventory.AddDeviceRole(&dcim.DeviceRole{Name: "Server", Slug: "server", Color: "00add8", VMRole: true}, nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (netboxInventory *NetBoxInventory) InitCustomFields() error {
+	customFields, err := netboxInventory.NetboxApi.GetAllCustomFields()
+	if err != nil {
+		return err
+	}
+	netboxInventory.CustomFieldsIndexByName = make(map[string]*extras.CustomField)
+	for _, customField := range customFields {
+		netboxInventory.CustomFieldsIndexByName[customField.Name] = customField
+	}
+	netboxInventory.Logger.Debug("Successfully collected custom fields from NetBox: ", netboxInventory.CustomFieldsIndexByName)
+	return nil
+}
+
+// This function initialises all custom fields required for servers
+// Currently these are two:
+// - host_cpu_cores
+// - host_memory
+func (netboxInventory *NetBoxInventory) InitServerCustomFields() error {
+	err := netboxInventory.AddCustomField(&extras.CustomField{
+		Name:          "host_cpu_cores",
+		Label:         "Host CPU cores",
+		Type:          extras.CustomFieldTypeText,
+		FilterLogic:   extras.FilterLogicLoose,
+		UIVisibility:  extras.UIVisibilityReadWrite,
+		DisplayWeight: 100,
+		Description:   "Number of CPU cores on the host",
+		SearchWeight:  1000,
+		ContentTypes:  []string{"dcim.device"},
+	})
+	if err != nil {
+		return err
+	}
+	err = netboxInventory.AddCustomField(&extras.CustomField{
+		Name:          "host_memory",
+		Label:         "Host memory",
+		Type:          extras.CustomFieldTypeText,
+		FilterLogic:   extras.FilterLogicLoose,
+		UIVisibility:  extras.UIVisibilityReadWrite,
+		DisplayWeight: 100,
+		Description:   "Amount of memory on the host",
+		SearchWeight:  1000,
+		ContentTypes:  []string{"dcim.device"},
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Collects all nbClusters from NetBox API and stores them in the NetBoxInventory
 func (netboxInventory *NetBoxInventory) InitClusterGroups() error {
 	nbClusters, err := netboxInventory.NetboxApi.GetAllClusterGroups()

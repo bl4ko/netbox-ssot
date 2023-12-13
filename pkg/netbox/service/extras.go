@@ -163,3 +163,99 @@ func (api *NetboxAPI) PatchTag(diffMap map[string]interface{}, tagId int) (*extr
 	api.Logger.Debug("Patched tag: ", tagResponse)
 	return &tagResponse, nil
 }
+
+type CustomFieldResponse struct {
+	Count    int                  `json:"count,omitempty"`
+	Next     int                  `json:"next,omitempty"`
+	Previous int                  `json:"previous,omitempty"`
+	Results  []extras.CustomField `json:"results,omitempty"`
+}
+
+// GET /api/extras/custom-fields/
+func (api *NetboxAPI) GetAllCustomFields() ([]*extras.CustomField, error) {
+	api.Logger.Debug("Getting all custom fields from NetBox")
+
+	response, err := api.doRequest(MethodGet, "/api/extras/custom-fields/", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d. Error %s", response.StatusCode, response.Body)
+	}
+
+	var customFieldResponse CustomFieldResponse
+	err = json.Unmarshal(response.Body, &customFieldResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	customFields := make([]*extras.CustomField, len(customFieldResponse.Results))
+	for i := range customFieldResponse.Results {
+		customFields[i] = &customFieldResponse.Results[i]
+	}
+	api.Logger.Debug("Custom fields: ", customFieldResponse.Results)
+
+	return customFields, nil
+}
+
+// PATCH /api/extras/custom-fields/{custom_field_id}/ -d '{...}'
+func (api *NetboxAPI) PatchCustomField(diffMap map[string]interface{}, customFieldId int) (*extras.CustomField, error) {
+	api.Logger.Debug("Patching custom field[", fmt.Sprintf("%d", customFieldId), "] in netbox with data: ", diffMap)
+
+	// Remove ID of the custom field from the request body
+	requestBody, err := json.Marshal(diffMap)
+	if err != nil {
+		return nil, err
+	}
+
+	requestBodyBuffer := bytes.NewBuffer(requestBody)
+	response, err := api.doRequest(MethodPatch, fmt.Sprintf("/api/extras/custom-fields/%d/", customFieldId), requestBodyBuffer)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
+	}
+
+	var customFieldResponse extras.CustomField
+	err = json.Unmarshal(response.Body, &customFieldResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	api.Logger.Debug("Patched custom field: ", customFieldResponse)
+	return &customFieldResponse, nil
+}
+
+// CREATE /api/extras/custom-fields/ -d '{...}'
+func (api *NetboxAPI) CreateCustomField(customField *extras.CustomField) (*extras.CustomField, error) {
+	api.Logger.Debug("Creating custom field in NetBox: ", customField)
+
+	requestBody, err := json.Marshal(customField)
+	if err != nil {
+		return nil, err
+	}
+
+	requestBodyBuffer := bytes.NewBuffer(requestBody)
+
+	response, err := api.doRequest(MethodPost, "/api/extras/custom-fields/", requestBodyBuffer)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
+	}
+
+	var customFieldResponse extras.CustomField
+	err = json.Unmarshal(response.Body, &customFieldResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	api.Logger.Debug("Custom field: ", customFieldResponse)
+
+	return &customFieldResponse, nil
+}
