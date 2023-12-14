@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/dcim"
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/common"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/extras"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/tenancy"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/virtualization"
@@ -24,13 +24,13 @@ func TestJsonDiffMapExceptId(t *testing.T) {
 	}{
 		{
 			name: "No difference in Tag",
-			newObj: &extras.Tag{
+			newObj: &common.Tag{
 				Name:        "Test",
 				Slug:        "test",
 				Color:       "000000",
 				Description: "Test tag",
 			},
-			existingObj: &extras.Tag{
+			existingObj: &common.Tag{
 				ID:          1,
 				Name:        "Test",
 				Slug:        "test",
@@ -42,13 +42,13 @@ func TestJsonDiffMapExceptId(t *testing.T) {
 		},
 		{
 			name: "Different fields in Tag",
-			newObj: &extras.Tag{
+			newObj: &common.Tag{
 				Name:        "Test Changed",
 				Slug:        "test-changed",
 				Color:       "000000",
 				Description: "Changed tag",
 			},
-			existingObj: &extras.Tag{
+			existingObj: &common.Tag{
 				ID:          1,
 				Name:        "Test",
 				Slug:        "test",
@@ -65,22 +65,26 @@ func TestJsonDiffMapExceptId(t *testing.T) {
 		{
 			name: "Different number of Tags in ClusterGroup",
 			newObj: &virtualization.ClusterGroup{
-				Name:        "New Group",
-				Slug:        "new-group",
-				Description: "New group",
-				Tags: []*extras.Tag{
-					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-					{ID: 2, Name: "Test2", Slug: "test2", Color: "000000", Description: "Test tag 2"},
-					{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+				Name: "New Group",
+				Slug: "new-group",
+				NetboxObject: common.NetboxObject{
+					Tags: []*common.Tag{
+						{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+						{ID: 2, Name: "Test2", Slug: "test2", Color: "000000", Description: "Test tag 2"},
+						{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+					},
+					Description: "New group",
 				},
 			},
 			existingObj: &virtualization.ClusterGroup{
-				Name:        "New Group",
-				Slug:        "new-group",
-				Description: "New group",
-				Tags: []*extras.Tag{
-					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-					{ID: 2, Name: "Test2", Slug: "test2", Color: "000000", Description: "Test tag 2"},
+				Name: "New Group",
+				Slug: "new-group",
+				NetboxObject: common.NetboxObject{
+					Tags: []*common.Tag{
+						{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+						{ID: 2, Name: "Test2", Slug: "test2", Color: "000000", Description: "Test tag 2"},
+					},
+					Description: "New group",
 				},
 			},
 			expected: map[string]interface{}{
@@ -95,22 +99,26 @@ func TestJsonDiffMapExceptId(t *testing.T) {
 		{
 			name: "Different tags in ClusterGroup",
 			newObj: &virtualization.ClusterGroup{
-				Name:        "New Group",
-				Slug:        "new-group",
-				Description: "New group",
-				Tags: []*extras.Tag{
-					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-					{ID: 2, Name: "Test2", Slug: "test2", Color: "000000", Description: "Test tag 2"},
-					{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+				Name: "New Group",
+				Slug: "new-group",
+				NetboxObject: common.NetboxObject{
+					Description: "New group",
+					Tags: []*common.Tag{
+						{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+						{ID: 2, Name: "Test2", Slug: "test2", Color: "000000", Description: "Test tag 2"},
+						{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+					},
 				},
 			},
 			existingObj: &virtualization.ClusterGroup{
-				Name:        "New Group",
-				Slug:        "new-group",
-				Description: "New group",
-				Tags: []*extras.Tag{
-					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-					{ID: 2, Name: "Test2", Slug: "test2", Color: "000000", Description: "Test tag 2"},
+				Name: "New Group",
+				Slug: "new-group",
+				NetboxObject: common.NetboxObject{
+					Description: "New group",
+					Tags: []*common.Tag{
+						{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+						{ID: 2, Name: "Test2", Slug: "test2", Color: "000000", Description: "Test tag 2"},
+					},
 				},
 			},
 			expected: map[string]interface{}{
@@ -142,63 +150,61 @@ func TestJsonDiffMapExceptId(t *testing.T) {
 // Where nested attributes are changed and set to nil
 func TestJsonDiffMapComplex(t *testing.T) {
 	newObj := &virtualization.Cluster{
-		Name:        "Hosting",
-		Description: "New Description",
+		Name: "Hosting",
 		Type: &virtualization.ClusterType{
-			ID:   2,
-			Name: "oVirt",
-			Slug: "ovirt",
+			NetboxObject: common.NetboxObject{ID: 2},
+			Name:         "oVirt",
+			Slug:         "ovirt",
 		},
 		Group: &virtualization.ClusterGroup{
-			ID:   4,
-			Name: "New Cluster Group",
-			Slug: "new-cluster-group",
+			NetboxObject: common.NetboxObject{ID: 4},
+			Name:         "New Cluster Group",
+			Slug:         "new-cluster-group",
 		},
-		Status: &dcim.Status{
-			Value: "active",
-			Label: "Active",
-		},
-		Tags: []*extras.Tag{
-			{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-			{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
-			{ID: 4, Name: "TestX", Slug: "test2", Color: "000000", Description: "Test tag 2"},
+		Status: virtualization.ClusterStatusActive,
+		NetboxObject: common.NetboxObject{
+			Description: "New Description",
+			Tags: []*common.Tag{
+				{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+				{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+				{ID: 4, Name: "TestX", Slug: "test2", Color: "000000", Description: "Test tag 2"},
+			},
 		},
 	}
 	existingObj := &virtualization.Cluster{
-		ID:   7,
+		NetboxObject: common.NetboxObject{
+			ID:          7,
+			Description: "Hosting cluster",
+			Tags: []*common.Tag{
+				{
+					ID:    2,
+					Name:  "Netbox-synced",
+					Slug:  "netbox-synced",
+					Color: "9e9e9e",
+				},
+			},
+		},
 		Name: "Hosting",
 		Type: &virtualization.ClusterType{
-			ID:   2,
-			Name: "oVirt",
-			Slug: "ovirt",
+			NetboxObject: common.NetboxObject{ID: 2},
+			Name:         "oVirt",
+			Slug:         "ovirt",
 		},
 		Group: &virtualization.ClusterGroup{
-			ID:   3,
-			Name: "Hosting",
-			Slug: "hosting",
+			NetboxObject: common.NetboxObject{ID: 3},
+			Name:         "Hosting",
+			Slug:         "hosting",
 		},
-		Status: &dcim.Status{
-			Value: "active",
-			Label: "Active",
-		},
+		Status: virtualization.ClusterStatusActive,
 		Tenant: &tenancy.Tenant{
-			ID:   1,
-			Name: "Default",
-			Slug: "default",
+			NetboxObject: common.NetboxObject{ID: 1},
+			Name:         "Default",
+			Slug:         "default",
 		},
-		Site: &dcim.Site{
-			ID:   2,
-			Name: "New York",
-			Slug: "new-york",
-		},
-		Description: "Hosting cluster",
-		Tags: []*extras.Tag{
-			{
-				ID:    2,
-				Name:  "Netbox-synced",
-				Slug:  "netbox-synced",
-				Color: "9e9e9e",
-			},
+		Site: &common.Site{
+			NetboxObject: common.NetboxObject{ID: 2},
+			Name:         "New York",
+			Slug:         "new-york",
 		},
 	}
 	expectedDiff := map[string]interface{}{
@@ -300,55 +306,62 @@ func TestSlugify(t *testing.T) {
 
 func TestNetboxMarshal(t *testing.T) {
 	newObj := &virtualization.Cluster{
-		Status:      &dcim.Active,
-		Name:        "Test",
-		Description: "Test Description",
-		Type: &virtualization.ClusterType{
-			ID:   2,
-			Name: "oVirt",
-			Slug: "ovirt",
-			Tags: []*extras.Tag{
-				{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-				{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
-			},
-		},
-		Group: &virtualization.ClusterGroup{
-			ID:          4,
-			Name:        "New Cluster Group",
-			Description: "New cluster group",
-			Slug:        "new-cluster-group",
-			Tags: []*extras.Tag{
-				{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-				{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
-			},
-		},
-		Site: &dcim.Site{
-			ID:   2,
-			Name: "New York",
-			Slug: "new-york",
-			Status: dcim.Status{
-				Value: "active",
-				Label: "Active",
-			},
-			Tags: []*extras.Tag{
-				{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-				{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
-			},
-		},
-		Tenant: &tenancy.Tenant{
-			ID:   1,
-			Name: "Default",
-			Slug: "default",
-			Tags: []*extras.Tag{
+		NetboxObject: common.NetboxObject{
+			Description: "Test Description",
+			Tags: []*common.Tag{
 				{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
 				{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
 				{ID: 4, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
 			},
 		},
-		Tags: []*extras.Tag{
-			{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-			{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
-			{ID: 4, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+		Status: virtualization.ClusterStatusActive,
+		Name:   "Test",
+		Type: &virtualization.ClusterType{
+			NetboxObject: common.NetboxObject{
+				ID: 2,
+				Tags: []*common.Tag{
+					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+					{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+				},
+			},
+			Name: "oVirt",
+			Slug: "ovirt",
+		},
+		Group: &virtualization.ClusterGroup{
+			NetboxObject: common.NetboxObject{
+				ID: 4,
+				Tags: []*common.Tag{
+					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+					{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+				},
+				Description: "New cluster group",
+			},
+			Name: "New Cluster Group",
+			Slug: "new-cluster-group",
+		},
+		Site: &common.Site{
+			NetboxObject: common.NetboxObject{
+				ID: 2,
+				Tags: []*common.Tag{
+					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+					{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+				},
+			},
+			Name:   "New York",
+			Slug:   "new-york",
+			Status: common.StatusActive,
+		},
+		Tenant: &tenancy.Tenant{
+			NetboxObject: common.NetboxObject{
+				ID: 1,
+				Tags: []*common.Tag{
+					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+					{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+					{ID: 4, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+				},
+			},
+			Name: "Default",
+			Slug: "default",
 		},
 	}
 	expectedResStr := "{\"description\":\"Test Description\",\"group\":4,\"name\":\"Test\",\"site\":2,\"status\":\"active\",\"tags\":[1,3,4],\"tenant\":1,\"tenant_group\":null,\"type\":2}"
@@ -360,7 +373,7 @@ func TestNetboxMarshal(t *testing.T) {
 		t.Errorf("NetboxMarshal() error = %v", err)
 	}
 	if expectedResStr != stringRes {
-		t.Errorf("NetboxMarshal() = %v, want %v", jsonRes, expectedResStr)
+		t.Errorf("NetboxMarshal() = %v, want %v", stringRes, expectedResStr)
 	}
 
 }

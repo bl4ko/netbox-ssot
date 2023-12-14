@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/bl4ko/netbox-ssot/pkg/logger"
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/common"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/dcim"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/extras"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/service"
@@ -21,11 +22,11 @@ type NetBoxInventory struct {
 	// NetboxApi is the NetBox API object, for communicating with the NetBox API
 	NetboxApi *service.NetboxAPI
 	// Tags is a list of all tags in the netbox inventory
-	Tags []*extras.Tag
+	Tags []*common.Tag
 	// Tenants index is a map of all tenants in the inventory, indexed by name
 	TenantsIndexByName map[string]*tenancy.Tenant
 	// Sites is a list of all sites in the inventory
-	SitesIndexByName map[string]*dcim.Site
+	SitesIndexByName map[string]*common.Site
 	// Devices is a list of all devices in the inventory
 	DevicesIndexByName map[string]*dcim.Device
 	// ClusterGroups is a list of all cluster groups in the inventory
@@ -42,7 +43,7 @@ type NetBoxInventory struct {
 	// Orphan manager is a map of { "devices: [device_id1, device_id2, ...], "cluster_groups": [cluster_group_id1, cluster_group_id2, ..."}, to store which objects have been created by netbox-ssot and can be deleted because they are not available in the source anymore
 	OrphanManager map[string][]int
 	// Tag used by netbox-ssot to mark devices that are managed by it
-	SsotTag *extras.Tag
+	SsotTag *common.Tag
 }
 
 // Func string representation

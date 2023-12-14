@@ -47,7 +47,7 @@ func (api *NetboxAPI) GetAllClusterTypes() ([]*virtualization.ClusterType, error
 
 // PATCH /api/virtualization/cluster-types/{id}/ -d '{"name": "new_name", ...}'
 func (api *NetboxAPI) PatchClusterType(diffMap map[string]interface{}, clusterTypeId int) (*virtualization.ClusterType, error) {
-	api.Logger.Debug("Patching cluster group in NetBox, with data: ", diffMap)
+	api.Logger.Debug("Patching cluster type in NetBox, with data: ", diffMap)
 
 	patchBodyJson, err := json.Marshal(diffMap)
 	if err != nil {
@@ -69,7 +69,7 @@ func (api *NetboxAPI) PatchClusterType(diffMap map[string]interface{}, clusterTy
 		return nil, err
 	}
 
-	api.Logger.Debug("Patched cluster group: ", patchedClusterType, " with patchData: ", diffMap)
+	api.Logger.Debug("Successfully patched ClusterType: ", patchedClusterType.Name, " with patchData: ", diffMap)
 
 	return &patchedClusterType, nil
 
@@ -169,7 +169,7 @@ func (api *NetboxAPI) CreateClusterGroup(clusterGroup *virtualization.ClusterGro
 
 // PATCH /api/virtualization/cluster-groups/{id}/ -d '{"name": "new_name", ...}'
 func (api *NetboxAPI) PatchClusterGroup(diffMap map[string]interface{}, clusterGroupId int) (*virtualization.ClusterGroup, error) {
-	api.Logger.Debug("Patching cluster group in NetBox")
+	api.Logger.Debug("Patching cluster group in NetBox, with data: ", diffMap)
 
 	clusterGroupJson, err := json.Marshal(diffMap)
 	if err != nil {
@@ -191,7 +191,7 @@ func (api *NetboxAPI) PatchClusterGroup(diffMap map[string]interface{}, clusterG
 		return nil, err
 	}
 
-	api.Logger.Debug("Patched cluster group: ", patchedClusterGroup)
+	api.Logger.Debug("Successfully patched ClusterGroup: ", patchedClusterGroup.Name, " with patchData: ", diffMap)
 
 	return &patchedClusterGroup, nil
 }

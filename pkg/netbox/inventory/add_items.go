@@ -3,6 +3,7 @@ package inventory
 import (
 	"slices"
 
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/common"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/dcim"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/extras"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/virtualization"
@@ -10,8 +11,8 @@ import (
 )
 
 // Function for adding a new tag to NetBoxInventory
-func (ni *NetBoxInventory) AddTag(newTag *extras.Tag) (*extras.Tag, error) {
-	existingTagIndex := slices.IndexFunc(ni.Tags, func(t *extras.Tag) bool {
+func (ni *NetBoxInventory) AddTag(newTag *common.Tag) (*common.Tag, error) {
+	existingTagIndex := slices.IndexFunc(ni.Tags, func(t *common.Tag) bool {
 		return t.Name == newTag.Name
 	})
 	if existingTagIndex == -1 {
@@ -70,9 +71,9 @@ func (ni *NetBoxInventory) AddCustomField(newCf *extras.CustomField) error {
 }
 
 // Add Cluster to NetBoxInventory
-func (ni *NetBoxInventory) AddClusterGroup(newCg *virtualization.ClusterGroup, newTags []*extras.Tag) error {
+func (ni *NetBoxInventory) AddClusterGroup(newCg *virtualization.ClusterGroup, newTags []*common.Tag) error {
 	if _, ok := ni.ClusterGroupsIndexByName[newCg.Name]; ok {
-		newCg.Tags = append([]*extras.Tag{ni.SsotTag}, newTags...)
+		newCg.Tags = append([]*common.Tag{ni.SsotTag}, newTags...)
 		diffMap, err := utils.JsonDiffMapExceptId(newCg, ni.ClusterGroupsIndexByName[newCg.Name])
 		if err != nil {
 			return err
@@ -99,9 +100,9 @@ func (ni *NetBoxInventory) AddClusterGroup(newCg *virtualization.ClusterGroup, n
 }
 
 // Add ClusterType to NetBoxInventory
-func (ni *NetBoxInventory) AddClusterType(newClusterType *virtualization.ClusterType, newTags []*extras.Tag) (*virtualization.ClusterType, error) {
+func (ni *NetBoxInventory) AddClusterType(newClusterType *virtualization.ClusterType, newTags []*common.Tag) (*virtualization.ClusterType, error) {
 	if _, ok := ni.ClusterTypesIndexByName[newClusterType.Name]; ok {
-		newClusterType.Tags = append([]*extras.Tag{ni.SsotTag}, newTags...)
+		newClusterType.Tags = append([]*common.Tag{ni.SsotTag}, newTags...)
 		diffMap, err := utils.JsonDiffMapExceptId(newClusterType, ni.ClusterTypesIndexByName[newClusterType.Name])
 		if err != nil {
 			return nil, err
@@ -130,9 +131,9 @@ func (ni *NetBoxInventory) AddClusterType(newClusterType *virtualization.Cluster
 	}
 }
 
-func (ni *NetBoxInventory) AddCluster(newCluster *virtualization.Cluster, newTags []*extras.Tag) error {
+func (ni *NetBoxInventory) AddCluster(newCluster *virtualization.Cluster, newTags []*common.Tag) error {
 	if _, ok := ni.ClustersIndexByName[newCluster.Name]; ok {
-		newCluster.Tags = append([]*extras.Tag{ni.SsotTag}, newTags...)
+		newCluster.Tags = append([]*common.Tag{ni.SsotTag}, newTags...)
 		diffMap, err := utils.JsonDiffMapExceptId(newCluster, ni.ClustersIndexByName[newCluster.Name])
 		if err != nil {
 			return err
@@ -158,9 +159,9 @@ func (ni *NetBoxInventory) AddCluster(newCluster *virtualization.Cluster, newTag
 	return nil
 }
 
-func (ni *NetBoxInventory) AddDeviceRole(newDeviceRole *dcim.DeviceRole, newTags []*extras.Tag) error {
+func (ni *NetBoxInventory) AddDeviceRole(newDeviceRole *dcim.DeviceRole, newTags []*common.Tag) error {
 	if _, ok := ni.DeviceRolesIndexByName[newDeviceRole.Name]; ok {
-		newDeviceRole.Tags = append([]*extras.Tag{ni.SsotTag}, newTags...)
+		newDeviceRole.Tags = append([]*common.Tag{ni.SsotTag}, newTags...)
 		diffMap, err := utils.JsonDiffMapExceptId(newDeviceRole, ni.DeviceRolesIndexByName[newDeviceRole.Name])
 		if err != nil {
 			return err

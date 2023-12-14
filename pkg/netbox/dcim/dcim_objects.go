@@ -1,114 +1,41 @@
 package dcim
 
 import (
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/extras"
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/common"
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/virtualization"
 )
-
-// Netbox's predetermined statuses, that we choose for some of
-// our objects
-type Status struct {
-	Value string `json:"value,omitempty"`
-	Label string `json:"label,omitempty"`
-}
-
-var (
-	Active = Status{
-		Value: "active",
-		Label: "Active",
-	}
-	Offline = Status{
-		Value: "offline",
-		Label: "Offline",
-	}
-)
-
-type Manafacturer struct {
-	// ID is the unique numeric ID of the manufacturer.
-	ID int `json:"id,omitempty"`
-	// Name of the manufacturer (e.g. Cisco). This field is required.
-	Name string `json:"name,omitempty"`
-	// URL-friendly unique shorthand. This field is required.
-	Slug string `json:"slug,omitempty"`
-
-	// Description of the manufacturer.
-	Description string `json:"description,omitempty"`
-	// Tags is a list of tags for the manufacturer.
-	Tags []*extras.Tag `json:"tags,omitempty"`
-}
-
-type Platform struct {
-	// Netbox's ID of the platform.
-	ID int `json:"id,omitempty"`
-	// Name of the platform. This field is required.
-	Name string `json:"name,omitempty"`
-	// URL-friendly unique shorthand. This field is required.
-	Slug string `json:"slug,omitempty"`
-	// Manufacturer is the manufacturer of the platform.
-	Manafacturer *Manafacturer `json:"manufacturer,omitempty"`
-	// Description is a description of the platform.
-	Description string `json:"description,omitempty"`
-	// Tags is a list of tags for the platform.
-	Tags []*extras.Tag `json:"tags,omitempty"`
-}
 
 type Region struct {
-	// Netbox's ID of the region.
-	ID int `json:"id,omitempty"`
+	common.NetboxObject
 	// Name is the name of the region. This field is required.
 	Name string `json:"name,omitempty"`
 	// Slug is a URL-friendly unique shorthand. This field is required.
 	Slug string `json:"slug,omitempty"`
 }
 
-// Site ares used for functional groupings.
-// A site usually represents a building within a region.
-type Site struct {
-	ID int `json:"id,omitempty"`
-	// Full name for the site. This field is required.
-	Name string `json:"name,omitempty"`
-	// URL-friendly unique shorthand. This field is required.
-	Slug string `json:"slug,omitempty"`
-	// Site status. This field is required.
-	Status Status `json:"status,omitempty"`
-
-	// Site description.
-	Description string `json:"description,omitempty"`
-	// Tags
-	Tags []*extras.Tag `json:"tags,omitempty"`
-}
-
 // Location represents a physical location, such as a floor or room in a building.
 type Location struct {
-	// Netbox's ID of the location.
-	ID int `json:"id,omitempty"`
+	common.NetboxObject
 	// Site is the site to which the location belongs. This field is required.
-	Site *Site
+	Site *common.Site
 	// Name is the name of the location. This field is required.
 	Name string
 	// URL-friendly unique shorthand. This field is required.
 	Slug string
 	// Status is the status of the location. This field is required.
-	Status *Status
-
-	// Location description.
-	Description string
-	// Tags
-	Tags []*extras.Tag
+	Status *common.SiteStatus
 }
 
+// DeviceType represents the physical and operational characteristics of a device.
+// For example, a device type may represent a Cisco C2960 switch running IOS 15.2.
 type DeviceType struct {
-	// ID is the unique numeric ID of the device type.
-	ID int `json:"id,omitempty"`
+	common.NetboxObject
 	// Manufacturer is the manufacturer of the device type. This field is required.
-	Manafacturer *Manafacturer `json:"manufacturer,omitempty"`
+	Manafacturer *common.Manafacturer `json:"manufacturer,omitempty"`
 	// Model is the model of the device type. This field is required.
 	Model string `json:"model,omitempty"`
 	// Slug is a URL-friendly unique shorthand. This field is required.
 	Slug string `json:"slug,omitempty"`
-	// Description is a description of the device type.
-	Description string `json:"description,omitempty"`
-	// Tags is a list of tags for the device type.
-	Tags []*extras.Tag `json:"tags,omitempty"`
 	// UHeight is the height of the device type in rack units. This field is required.
 	UHeight float32 `json:"u_height,omitempty"`
 }
@@ -116,8 +43,7 @@ type DeviceType struct {
 // DeviceRole represents the functional role of a device.
 // For example, a device may play the role of a router, a switch, a firewall, etc.
 type DeviceRole struct {
-	// ID is the unique numeric ID of the device role.
-	ID int `json:"id,omitempty"`
+	common.NetboxObject
 	// Name is the name of the device role. This field is required.
 	Name string `json:"name,omitempty"`
 	// URL-friendly unique shorthand. This field is required.
@@ -126,30 +52,86 @@ type DeviceRole struct {
 	Color string `json:"color,omitempty"`
 	// VMRole is whether this device role is used to represent virtual machines.
 	VMRole bool `json:"vm_role,omitempty"`
-	// Device role description.
-	Description string `json:"description,omitempty"`
-	// Tags
-	Tags []*extras.Tag `json:"tags,omitempty"`
 }
+
+// https://github.com/netbox-community/netbox/blob/b93735861d3bde0354c855a8bbd2a2311e8eb920/netbox/dcim/choices.py#L182
+// Predefined airflow types from netbox
+type DeviceAirFlowType struct {
+	common.Choice
+}
+
+var (
+	FrontToRear = DeviceAirFlowType{common.Choice{Value: "front-to-rear", Label: "Front to rear"}}
+	RearToFront = DeviceAirFlowType{common.Choice{Value: "rear-to-front", Label: "Rear to front"}}
+	LeftToRight = DeviceAirFlowType{common.Choice{Value: "left-to-right", Label: "Left to right"}}
+	RightToLeft = DeviceAirFlowType{common.Choice{Value: "right-to-left", Label: "Right to left"}}
+	SideToRear  = DeviceAirFlowType{common.Choice{Value: "side-to-rear", Label: "Side to rear"}}
+	Passive     = DeviceAirFlowType{common.Choice{Value: "passive", Label: "Passive"}}
+	Mixed       = DeviceAirFlowType{common.Choice{Value: "mixed", Label: "Mixed"}}
+)
 
 // Device can be any piece of physical hardware, such as a server, router, or switch.
 type Device struct {
-	// Netbox's ID of the device.
-	ID int `json:"id,omitempty"`
+	common.NetboxObject
+
+	// Device
 	// Name is the name of the device.
 	Name string `json:"name,omitempty"`
 	// DeviceRole is the functional role of the device. This field is required.
 	DeviceRole *DeviceRole `json:"role,omitempty"`
 
+	// Hardware
 	// DeviceType is the type of device. This field is required.
 	DeviceType *DeviceType `json:"device_type,omitempty"`
-	// Site is the site to which the device belongs. This field is required.
-	Site *Site `json:"site,omitempty"`
+	// Airflow is the airflow pattern of the device.
+	Airflow DeviceAirFlowType `json:"airflow,omitempty"`
+	// Status is the status of the device.
+	SerialNumber string `json:"serial,omitempty"`
+	// AssetTag is an unique tag for identifying the device.
+	AssetTag string `json:"asset_tag,omitempty"`
 
-	// Description is a description of the device.
-	Description string `json:"description,omitempty"`
-	// Tags is a list of tags for the device.
-	Tags []*extras.Tag `json:"tags,omitempty"`
+	// Location
+	// Site is the site to which the device belongs. This field is required.
+	Site *common.Site `json:"site,omitempty"`
+	// Location is the location of the device.
+	Location *Location `json:"location,omitempty"`
+
+	// Management
+	// Status of the device (e.g. active, offline, planned, etc.). This field is required.
+	Status *common.SiteStatus `json:"status,omitempty"`
+	// Platform of the device (e.g. Cisco IOS, Dell OS9, etc.).
+	Platform *common.Platform `json:"platform,omitempty"`
+
+	// Primary IPv4
+
+	// Primary IPv6
+	// Out-of-band IP
+
+	// Virtualization
+	// Cluster is the cluster to which the device belongs. (e.g. VMWare server belonging to a specific cluster).
+	Cluster *virtualization.Cluster `json:"cluster,omitempty"`
+
+	// Tenancy
+
+	// Tenant group
+
+	// Tenant
+
+	// Virtual Chassis
+
+	// Virtual chassis
+
+	// Position
+
+	// Position
+
+	// The position in the virtual chassis this device is identified by
+
+	// Priority
+
+	// Priority
+
+	// The priority of the device in the virtual chassis
 
 	// CustomFields is a dictionary of custom fields defined for the device type. map[customFieldName]: valueStr
 	CustomFields map[string]string `json:"custom_fields,omitempty"`
@@ -174,8 +156,7 @@ const (
 
 // Interface represents a physical data interface within a device.
 type Interface struct {
-	// Netbox's ID of the interface.
-	ID int `json:"id,omitempty"`
+	common.NetboxObject
 	// Device is the device to which the interface belongs. This field is required.
 	Device *Device `json:"device,omitempty"`
 	// Name is the name of the interface. This field is required.
@@ -190,9 +171,4 @@ type Interface struct {
 	BridgedInterface *Interface `json:"bridge,omitempty"`
 	// LAG is the LAG to which the interface belongs, if any.
 	LAG *Interface `json:"lag,omitempty"`
-
-	// Tags is a list of tags for the interface.
-	Tags []*extras.Tag `json:"tags,omitempty"`
-	// Description is a description of the interface.
-	Description string `json:"description,omitempty"`
 }

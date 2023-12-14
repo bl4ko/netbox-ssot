@@ -6,19 +6,20 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/common"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/dcim"
 	"github.com/bl4ko/netbox-ssot/pkg/utils"
 )
 
 type SiteResponse struct {
-	Count    int         `json:"count"`
-	Next     int         `json:"next"`
-	Previous int         `json:"previous"`
-	Results  []dcim.Site `json:"results"`
+	Count    int           `json:"count"`
+	Next     int           `json:"next"`
+	Previous int           `json:"previous"`
+	Results  []common.Site `json:"results"`
 }
 
 // GET /api/dcim/sites/
-func (api *NetboxAPI) GetAllSites() ([]*dcim.Site, error) {
+func (api *NetboxAPI) GetAllSites() ([]*common.Site, error) {
 	api.Logger.Debug("Getting all sites from NetBox")
 
 	response, err := api.doRequest(MethodGet, "/api/dcim/sites/", nil)
@@ -36,7 +37,7 @@ func (api *NetboxAPI) GetAllSites() ([]*dcim.Site, error) {
 		return nil, err
 	}
 
-	sites := make([]*dcim.Site, len(siteResponse.Results))
+	sites := make([]*common.Site, len(siteResponse.Results))
 	for i := range siteResponse.Results {
 		sites[i] = &siteResponse.Results[i]
 	}

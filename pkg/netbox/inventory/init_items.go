@@ -1,6 +1,7 @@
 package inventory
 
 import (
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/common"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/dcim"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/extras"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/tenancy"
@@ -23,7 +24,7 @@ func (netboxInventory *NetBoxInventory) InitTags() error {
 	}
 	if ssotTag == nil {
 		netboxInventory.Logger.Info("Tag netbox-ssot not found in NetBox. Creating it now...")
-		newTag := extras.Tag{Name: "netbox-ssot", Slug: "netbox-ssot", Description: "Tag used by netbox-ssot to mark devices that are managed by it", Color: "00add8"}
+		newTag := common.Tag{Name: "netbox-ssot", Slug: "netbox-ssot", Description: "Tag used by netbox-ssot to mark devices that are managed by it", Color: "00add8"}
 		ssotTag, err = netboxInventory.NetboxApi.CreateTag(&newTag)
 		if err != nil {
 			return err
@@ -55,7 +56,7 @@ func (netboxInventory *NetBoxInventory) InitSites() error {
 		return err
 	}
 	// We also create an index of sites by name for easier access
-	netboxInventory.SitesIndexByName = make(map[string]*dcim.Site)
+	netboxInventory.SitesIndexByName = make(map[string]*common.Site)
 	for _, site := range nbSites {
 		netboxInventory.SitesIndexByName[site.Name] = site
 	}

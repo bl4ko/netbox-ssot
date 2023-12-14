@@ -8,49 +8,57 @@ import (
 	"strings"
 )
 
-// This function takes an object pointer, and returns a json body,
-// that can be used to create that object in netbox API.
-// This is essential because default marshal of the object
-// isn't compatible with netbox API when attributes have nested
-// objects.
-func NetboxJsonMarshal(obj interface{}) ([]byte, error) {
+// Function that converts an object to a map[string]interface{}
+// which can be used to create a json body for netbox API, especially
+// for POST requests.
+func ObjToJsonMap(obj interface{}) (map[string]interface{}, error) {
 	v := reflect.ValueOf(obj)
-	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
-		return nil, fmt.Errorf("object must be a pointer to a struct")
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
 	}
-	v = v.Elem()
 
-	netboxJson := make(map[string]interface{})
+	netboxJsonMap := make(map[string]interface{})
 	for i := 0; i < v.NumField(); i++ {
-		field := v.Field(i)
+		fieldValue := v.Field(i)
 		fieldType := v.Type().Field(i)
-		fieldName := fieldType.Name
 		jsonTag := fieldType.Tag.Get("json")
 		jsonTag = strings.Split(jsonTag, ",")[0]
 
-		if fieldName == "ID" {
+		if fieldType.Name == "ID" {
+			continue
+		}
+
+		// Special case when object inherits from NetboxObject
+		if fieldType.Name == "NetboxObject" {
+			diffMap, err := ObjToJsonMap(fieldValue.Interface())
+			if err != nil {
+				return nil, fmt.Errorf("error procesing ObjToJsonMap when procerssing NetboxObject %s", err)
+			}
+			for k, v := range diffMap {
+				netboxJsonMap[k] = v
+			}
 			continue
 		}
 
 		// If field is a pointer, we need to get the element it points to
-		if field.Kind() == reflect.Ptr {
-			field = field.Elem()
+		if fieldValue.Kind() == reflect.Ptr {
+			fieldValue = fieldValue.Elem()
 		}
 
 		// If it is a nil pointer, we need to set it to nil in json
-		if !field.IsValid() {
-			netboxJson[jsonTag] = nil
+		if !fieldValue.IsValid() {
+			netboxJsonMap[jsonTag] = nil
 			continue
 		}
 
-		switch field.Kind() {
+		switch fieldValue.Kind() {
 		case reflect.Slice:
-			if field.Len() == 0 {
+			if fieldValue.Len() == 0 {
 				continue
 			}
 			sliceItems := make([]interface{}, 0)
-			for j := 0; j < field.Len(); j++ {
-				attribute := field.Index(j)
+			for j := 0; j < fieldValue.Len(); j++ {
+				attribute := fieldValue.Index(j)
 				if attribute.Kind() == reflect.Ptr {
 					attribute = attribute.Elem()
 				}
@@ -65,25 +73,37 @@ func NetboxJsonMarshal(obj interface{}) ([]byte, error) {
 					sliceItems = append(sliceItems, attribute.Interface())
 				}
 			}
-			netboxJson[jsonTag] = sliceItems
+			netboxJsonMap[jsonTag] = sliceItems
 		case reflect.Struct:
-			id := field.FieldByName("ID")
+			id := fieldValue.FieldByName("ID")
 			if id.IsValid() {
-				netboxJson[jsonTag] = id.Int()
+				netboxJsonMap[jsonTag] = id.Int()
 			} else {
-				if fieldName == "Status" {
-					status := field.FieldByName("Value")
-					netboxJson[jsonTag] = status.String()
+				if fieldType.Name == "Status" {
+					status := fieldValue.FieldByName("Value")
+					netboxJsonMap[jsonTag] = status.String()
 				} else {
-					netboxJson[jsonTag] = field.Interface()
+					netboxJsonMap[jsonTag] = fieldValue.Interface()
 				}
 			}
 		default:
-			netboxJson[jsonTag] = field.Interface()
+			netboxJsonMap[jsonTag] = fieldValue.Interface()
 		}
 	}
+	return netboxJsonMap, nil
+}
 
-	return json.Marshal(netboxJson)
+// This function takes an object pointer, and returns a json body,
+// that can be used to create that object in netbox API.
+// This is essential because default marshal of the object
+// isn't compatible with netbox API when attributes have nested
+// objects.
+func NetboxJsonMarshal(obj interface{}) ([]byte, error) {
+	objMap, err := ObjToJsonMap(obj)
+	if err != nil {
+		return nil, fmt.Errorf("error converting object to json map: %s", err)
+	}
+	return json.Marshal(objMap)
 }
 
 // Struct used for patching objects, when attributes are structs, or slices
@@ -120,8 +140,19 @@ func JsonDiffMapExceptId(newObj, existingObj interface{}) (map[string]interface{
 		fieldName := newObject.Type().Field(i).Name
 		jsonTag := newObject.Type().Field(i).Tag.Get("json")
 
-		// We skip the ID field, because newly created objects, won't have this field, which is netbox specific
 		if fieldName == "ID" {
+			continue
+		}
+
+		// Custom logic for all objects that inherit from NetboxObject
+		if fieldName == "NetboxObject" {
+			netboxObjectDiffMap, err := JsonDiffMapExceptId(newObject.Field(i).Interface(), existingObject.Field(i).Interface())
+			if err != nil {
+				return nil, fmt.Errorf("error procesing JsonDiffMapExceptId when procerssing NetboxObject %s", err)
+			}
+			for k, v := range netboxObjectDiffMap {
+				diff[k] = v
+			}
 			continue
 		}
 
@@ -290,6 +321,8 @@ func ConvertStringsToRegexPairs(input []string) map[string]string {
 	return output
 }
 
+// Matches input string to a regex from input map, and returns the value
+// If there is no match, it returns an empty string
 func MatchStringToValue(input string, patterns map[string]string) (string, error) {
 	for regex, value := range patterns {
 		matched, err := regexp.MatchString(regex, input)

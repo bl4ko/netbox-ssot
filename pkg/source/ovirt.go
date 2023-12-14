@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/dcim"
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/common"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/tenancy"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/virtualization"
@@ -139,7 +139,7 @@ func (o *OVirtSource) InitClusters(conn *ovirtsdk4.Connection) error {
 
 // Function that queries ovirt api for hosts and stores them locally
 func (o *OVirtSource) InitHosts(conn *ovirtsdk4.Connection) error {
-	hostsResponse, err := conn.SystemService().HostsService().List().Send()
+	hostsResponse, err := conn.SystemService().HostsService().List().Follow("nics").Send()
 	if err != nil {
 		return fmt.Errorf("failed to get oVirt hosts: %+v", err)
 	}
@@ -157,7 +157,7 @@ func (o *OVirtSource) InitHosts(conn *ovirtsdk4.Connection) error {
 
 // Function that quries the ovirt api for vms and stores them locally
 func (o *OVirtSource) InitVms(conn *ovirtsdk4.Connection) error {
-	vmsResponse, err := conn.SystemService().VmsService().List().Send()
+	vmsResponse, err := conn.SystemService().VmsService().List().Follow("nics,diskattachments,reporteddevices").Send()
 	if err != nil {
 		return fmt.Errorf("failed to get oVirt vms: %+v", err)
 	}
@@ -206,9 +206,9 @@ func (o *OVirtSource) SyncDatacenters(nbi *inventory.NetBoxInventory) error {
 			o.Logger.Warning("description for oVirt datacenter ", name, " is empty.")
 		}
 		nbClusterGroup := &virtualization.ClusterGroup{
-			Name:        name,
-			Slug:        utils.Slugify(name),
-			Description: description,
+			NetboxObject: common.NetboxObject{Description: description},
+			Name:         name,
+			Slug:         utils.Slugify(name),
 		}
 		err := nbi.AddClusterGroup(nbClusterGroup, o.SourceTags)
 		if err != nil {
@@ -248,7 +248,7 @@ func (o *OVirtSource) SyncClusters(nbi *inventory.NetBoxInventory) error {
 				clusterGroup = nbi.ClusterGroupsIndexByName[dataCenterName]
 			}
 		}
-		var clusterSite *dcim.Site
+		var clusterSite *common.Site
 		if o.ClusterSiteRelations != nil {
 			match, err := utils.MatchStringToValue(clusterName, o.ClusterSiteRelations)
 			if err != nil {
@@ -276,13 +276,13 @@ func (o *OVirtSource) SyncClusters(nbi *inventory.NetBoxInventory) error {
 		}
 
 		nbCluster := &virtualization.Cluster{
-			Name:        clusterName,
-			Type:        clusterType,
-			Status:      &dcim.Active,
-			Group:       clusterGroup,
-			Description: description,
-			Site:        clusterSite,
-			Tenant:      clusterTenant,
+			NetboxObject: common.NetboxObject{Description: description},
+			Name:         clusterName,
+			Type:         clusterType,
+			Status:       virtualization.ClusterStatusActive,
+			Group:        clusterGroup,
+			Site:         clusterSite,
+			Tenant:       clusterTenant,
 		}
 		err := nbi.AddCluster(nbCluster, o.SourceTags)
 		if err != nil {
@@ -295,75 +295,30 @@ func (o *OVirtSource) SyncClusters(nbi *inventory.NetBoxInventory) error {
 // Host in oVirt is a represented as device in netbox with a
 // custom role Server
 func (o *OVirtSource) SyncHosts(nbi *inventory.NetBoxInventory) error {
-	serverDeviceRole := nbi.DeviceRolesIndexByName["Server"]
-	for hostId, host := range o.Hosts {
-		hostCluster := nbi.ClustersIndexByName[o.Clusters[host.MustCluster().MustId()].MustName()]
-		fmt.Printf("%s: %s\n", hostId, host.MustName())
-		fmt.Printf("host cluster: %v\n", hostCluster)
-	}
-	fmt.Println(serverDeviceRole)
-	fmt.Println(o.Hosts)
-	return nil
-	// clusterType, err := nbi.AddClusterType(clusterType, o.SourceTag)
-	// if err != nil {
-	// 	return fmt.Errorf("failed to add oVirt cluster type: %v", err)
-	// }
-	// // Then sync oVirt Clusters as NetBoxClusters
-	// for _, cluster := range o.Clusters.Slice() {
-	// 	clusterName, exists := cluster.Name()
-	// 	if !exists {
-	// 		return fmt.Errorf("failed to get name for oVirt cluster %s", clusterName)
-	// 	}
-	// 	description, exists := cluster.Description()
-	// 	if !exists {
-	// 		o.Logger.Warning("description for oVirt cluster ", clusterName, " is empty.")
-	// 	}
-	// 	var clusterGroup *virtualization.ClusterGroup
-	// 	if dataCenter, ok := cluster.DataCenter(); ok {
-	// 		if dataCenterName, ok := dataCenter.Name(); ok {
-	// 			clusterGroup = nbi.ClusterGroupsIndexByName[dataCenterName]
-	// 		}
-	// 	}
-	// 	var clusterSite *dcim.Site
-	// 	if o.ClusterSiteRelations != nil {
-	// 		match, err := utils.MatchStringToValue(clusterName, o.ClusterSiteRelations)
+	// for hostId, host := range o.Hosts {
+	// 	hostCluster := nbi.ClustersIndexByName[o.Clusters[host.MustCluster().MustId()].MustName()]
+
+	// 	var hostSite *common.Site
+	// 	if o.HostSiteRelations != nil {
+	// 		match, err := utils.MatchStringToValue(host.MustName(), o.HostSiteRelations)
 	// 		if err != nil {
-	// 			return fmt.Errorf("failed to match oVirt cluster %s to a NetBox site: %v", clusterName, err)
+	// 			return fmt.Errorf("failed to match oVirt host %s to a NetBox site: %v", host.MustName(), err)
 	// 		}
 	// 		if match != "" {
 	// 			if _, ok := nbi.SitesIndexByName[match]; !ok {
-	// 				return fmt.Errorf("failed to match oVirt cluster %s to a NetBox site: %v. Site with this name doesn't exist!", clusterName, match)
+	// 				return fmt.Errorf("failed to match oVirt host %s to a NetBox site: %v. Site with this name doesn't exist", host.MustName(), match)
 	// 			}
-	// 			clusterSite = nbi.SitesIndexByName[match]
+	// 			hostSite = nbi.SitesIndexByName[match]
 	// 		}
 	// 	}
-	// 	var clusterTenant *tenancy.Tenant
-	// 	if o.ClusterTenantRelations != nil {
-	// 		match, err := utils.MatchStringToValue(clusterName, o.ClusterTenantRelations)
-	// 		if err != nil {
-	// 			return fmt.Errorf("failed to match oVirt cluster %s to a NetBox tenant: %v", clusterName, err)
-	// 		}
-	// 		if match != "" {
-	// 			if _, ok := nbi.TenantsIndexByName[match]; !ok {
-	// 				return fmt.Errorf("failed to match oVirt cluster %s to a NetBox tenant: %v. Tenant with this name doesn't exist!", clusterName, match)
-	// 			}
-	// 			clusterTenant = nbi.TenantsIndexByName[match]
-	// 		}
-	// 	}
+	// 	nbHost := &dcim.Device{
+	// 		Name: 			host.MustName(),
+	// 		DeviceRole: 	nbi.DeviceRolesIndexByName["Server"],
+	// 		// DeviceType: , # TODO
+	// 		Cluster: 		hostCluster,
 
-	// 	nbCluster := &virtualization.Cluster{
-	// 		Name:        clusterName,
-	// 		Type:        clusterType,
-	// 		Status:      &dcim.Active,
-	// 		Group:       clusterGroup,
-	// 		Description: description,
-	// 		Site:        clusterSite,
-	// 		Tenant:      clusterTenant,
-	// 	}
-	// 	err := nbi.AddCluster(nbCluster, o.SourceTag)
-	// 	if err != nil {
-	// 		return fmt.Errorf("failed to add oVirt cluster %s as NetBox cluster: %v", clusterName, err)
 	// 	}
 	// }
-	// return nil
+
+	return nil
 }
