@@ -1,7 +1,8 @@
 package parser
 
+// Default mappings of sources to colors (for tags)
 var DefaultSourceToTagColorMap = map[SourceType]string{
-	Ovirt:  "ff0000",
+	Ovirt:  "07426b",
 	Vmware: "0000ff",
 }
 

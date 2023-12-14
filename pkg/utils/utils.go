@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
-	"slices"
 	"strings"
 )
 
@@ -201,7 +200,8 @@ func addDiffSliceToMap(newSlice reflect.Value, existingSlice reflect.Value, json
 		}
 
 	default:
-		idObjects := make([]IDObject, 0, newSlice.Len())
+		idObjectsSet := make(map[int]bool, newSlice.Len())
+		idObjectsArr := make([]IDObject, 0, newSlice.Len())
 		var id int
 		for j := 0; j < newSlice.Len(); j++ {
 			if newSlice.Index(j).IsNil() {
@@ -209,20 +209,17 @@ func addDiffSliceToMap(newSlice reflect.Value, existingSlice reflect.Value, json
 			}
 			if newSlice.Index(j).Kind() == reflect.Ptr {
 				id = newSlice.Index(j).Elem().FieldByName("ID").Interface().(int)
-				idObjects = append(idObjects, IDObject{ID: id})
+				idObjectsSet[id] = true
+				idObjectsArr = append(idObjectsArr, IDObject{ID: id})
 			} else {
 				id = newSlice.Index(j).FieldByName("ID").Interface().(int)
-				idObjects = append(idObjects, IDObject{ID: id})
+				idObjectsSet[id] = true
+				idObjectsArr = append(idObjectsArr, IDObject{ID: id})
 			}
 		}
-		// We always store the IDs in ascending order, because netbox api
-		// returns them in ascending order
-		slices.SortFunc(idObjects, func(i IDObject, j IDObject) int {
-			return i.ID - j.ID
-		})
 
-		if len(idObjects) != existingSlice.Len() {
-			diffMap[jsonTag] = idObjects
+		if len(idObjectsSet) != existingSlice.Len() {
+			diffMap[jsonTag] = idObjectsArr
 		} else {
 			for j := 0; j < existingSlice.Len(); j++ {
 				if existingSlice.Index(j).Kind() == reflect.Ptr {
@@ -230,8 +227,8 @@ func addDiffSliceToMap(newSlice reflect.Value, existingSlice reflect.Value, json
 				} else {
 					id = existingSlice.Index(j).FieldByName("ID").Interface().(int)
 				}
-				if id != idObjects[j].ID {
-					diffMap[jsonTag] = idObjects
+				if _, ok := idObjectsSet[id]; !ok {
+					diffMap[jsonTag] = idObjectsArr
 					return
 				}
 			}
