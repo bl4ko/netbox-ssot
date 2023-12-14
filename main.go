@@ -5,11 +5,9 @@ import (
 	"time"
 
 	"github.com/bl4ko/netbox-ssot/pkg/logger"
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/extras"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/pkg/parser"
 	"github.com/bl4ko/netbox-ssot/pkg/source"
-	"github.com/bl4ko/netbox-ssot/pkg/utils"
 )
 
 func main() {
@@ -45,25 +43,14 @@ func main() {
 	for _, sourceConfig := range config.Sources {
 		logger.Info("Processing source ", sourceConfig.Name)
 
-		logger.Debug("Setting up default tag for source ", sourceConfig.Name)
-		// First we create default tag for the source
-		sourceTag, err := netboxInventory.AddTag(&extras.Tag{
-			Name:        sourceConfig.Tag,
-			Slug:        utils.Slugify("source-" + sourceConfig.Name),
-			Color:       sourceConfig.TagColor,
-			Description: fmt.Sprintf("Automatically created tag by netbox-ssot for source %s", sourceConfig.Name),
-		})
-		if err != nil {
-			logger.Error(err)
-			return
-		}
-
 		// Source initialization
-		source, err := source.NewSource(&sourceConfig, logger, sourceTag)
+		logger.Debug("Creating new source...")
+		source, err := source.NewSource(&sourceConfig, logger, netboxInventory)
 		if err != nil {
 			logger.Error(err)
 			return
 		}
+		logger.Debug("Source initialized: ", source)
 		err = source.Init()
 		if err != nil {
 			logger.Error(err)
@@ -71,6 +58,7 @@ func main() {
 		}
 
 		// Source synchronization
+		logger.Debug("Syncing source...")
 		err = source.Sync(netboxInventory)
 		if err != nil {
 			logger.Error(err)

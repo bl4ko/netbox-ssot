@@ -210,7 +210,7 @@ func (o *OVirtSource) SyncDatacenters(nbi *inventory.NetBoxInventory) error {
 			Slug:        utils.Slugify(name),
 			Description: description,
 		}
-		err := nbi.AddClusterGroup(nbClusterGroup, o.SourceTag)
+		err := nbi.AddClusterGroup(nbClusterGroup, o.SourceTags)
 		if err != nil {
 			return fmt.Errorf("failed to add oVirt data center %s as NetBox cluster group: %v", name, err)
 		}
@@ -223,7 +223,7 @@ func (o *OVirtSource) SyncClusters(nbi *inventory.NetBoxInventory) error {
 		Name: "oVirt",
 		Slug: "ovirt",
 	}
-	clusterType, err := nbi.AddClusterType(clusterType, o.SourceTag)
+	clusterType, err := nbi.AddClusterType(clusterType, o.SourceTags)
 	if err != nil {
 		return fmt.Errorf("failed to add oVirt cluster type: %v", err)
 	}
@@ -241,7 +241,7 @@ func (o *OVirtSource) SyncClusters(nbi *inventory.NetBoxInventory) error {
 		if _, ok := o.DataCenters[cluster.MustDataCenter().MustId()]; ok {
 
 		} else {
-			o.Logger.Warning("failed to get datacenter for oVirt cluster %s", clusterName)
+			o.Logger.Warning("failed to get datacenter for oVirt cluster ", clusterName)
 		}
 		if dataCenter, ok := cluster.DataCenter(); ok {
 			if dataCenterName, ok := dataCenter.Name(); ok {
@@ -256,7 +256,7 @@ func (o *OVirtSource) SyncClusters(nbi *inventory.NetBoxInventory) error {
 			}
 			if match != "" {
 				if _, ok := nbi.SitesIndexByName[match]; !ok {
-					return fmt.Errorf("failed to match oVirt cluster %s to a NetBox site: %v. Site with this name doesn't exist!", clusterName, match)
+					return fmt.Errorf("failed to match oVirt cluster %s to a NetBox site: %v. Site with this name doesn't exist", clusterName, match)
 				}
 				clusterSite = nbi.SitesIndexByName[match]
 			}
@@ -269,7 +269,7 @@ func (o *OVirtSource) SyncClusters(nbi *inventory.NetBoxInventory) error {
 			}
 			if match != "" {
 				if _, ok := nbi.TenantsIndexByName[match]; !ok {
-					return fmt.Errorf("failed to match oVirt cluster %s to a NetBox tenant: %v. Tenant with this name doesn't exist!", clusterName, match)
+					return fmt.Errorf("failed to match oVirt cluster %s to a NetBox tenant: %v. Tenant with this name doesn't exist", clusterName, match)
 				}
 				clusterTenant = nbi.TenantsIndexByName[match]
 			}
@@ -284,7 +284,7 @@ func (o *OVirtSource) SyncClusters(nbi *inventory.NetBoxInventory) error {
 			Site:        clusterSite,
 			Tenant:      clusterTenant,
 		}
-		err := nbi.AddCluster(nbCluster, o.SourceTag)
+		err := nbi.AddCluster(nbCluster, o.SourceTags)
 		if err != nil {
 			return fmt.Errorf("failed to add oVirt cluster %s as NetBox cluster: %v", clusterName, err)
 		}

@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"bytes"
 	"fmt"
 	"reflect"
 	"testing"
@@ -352,17 +351,16 @@ func TestNetboxMarshal(t *testing.T) {
 			{ID: 4, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
 		},
 	}
-	stringRepresentation := "{\"name\":\"Test\",\"description\":\"Test Description\",\"type\":{\"id\":2},\"group\":{\"id\":4},\"status\":\"active\",\"site\":{\"id\":2},\"tenant\":{\"id\":1},\"tags\":[{\"id\":2},{\"id\":3},{\"id\":4}]}"
-	expectedJson := bytes.NewBufferString(stringRepresentation)
+	expectedResStr := "{\"description\":\"Test Description\",\"group\":4,\"name\":\"Test\",\"site\":2,\"status\":\"active\",\"tags\":[1,3,4],\"tenant\":1,\"tenant_group\":null,\"type\":2}"
 
-	jsonRes, err := NetboxMarshal(newObj)
+	jsonRes, err := NetboxJsonMarshal(newObj)
 	stringRes := string(jsonRes)
 	fmt.Println(stringRes)
 	if err != nil {
 		t.Errorf("NetboxMarshal() error = %v", err)
 	}
-	if !reflect.DeepEqual(jsonRes, expectedJson) {
-		t.Errorf("NetboxMarshal() = %v, want %v", jsonRes, expectedJson)
+	if expectedResStr != stringRes {
+		t.Errorf("NetboxMarshal() = %v, want %v", jsonRes, expectedResStr)
 	}
 
 }

@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/extras"
+	"github.com/bl4ko/netbox-ssot/pkg/utils"
 )
 
 type TagResponse struct {
@@ -77,7 +78,7 @@ func (api *NetboxAPI) GetTagByName(name string) (*extras.Tag, error) {
 func (api *NetboxAPI) CreateTag(tag *extras.Tag) (*extras.Tag, error) {
 	api.Logger.Debug("Creating tag in NetBox: ", tag)
 
-	requestBody, err := json.Marshal(tag)
+	requestBody, err := utils.NetboxJsonMarshal(tag)
 	if err != nil {
 		return nil, err
 	}

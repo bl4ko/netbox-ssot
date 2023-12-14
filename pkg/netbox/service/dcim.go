@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/dcim"
+	"github.com/bl4ko/netbox-ssot/pkg/utils"
 )
 
 type SiteResponse struct {
@@ -119,7 +120,7 @@ func (api *NetboxAPI) GetAllDeviceRoles() ([]*dcim.DeviceRole, error) {
 func (api *NetboxAPI) CreateDeviceRole(deviceRole *dcim.DeviceRole) (*dcim.DeviceRole, error) {
 	api.Logger.Debug("Creating device role in NetBox")
 
-	requestBody, err := json.Marshal(deviceRole)
+	requestBody, err := utils.NetboxJsonMarshal(deviceRole)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +149,7 @@ func (api *NetboxAPI) CreateDeviceRole(deviceRole *dcim.DeviceRole) (*dcim.Devic
 
 // PATCH /api/dcim/device-roles/{id}/
 func (api *NetboxAPI) PatchDeviceRole(diffMap map[string]interface{}, id int) (*dcim.DeviceRole, error) {
-	api.Logger.Debug("Patching device role in NetBox")
+	api.Logger.Debug("Patching device role ", id, " with data: ", diffMap, " in NetBox")
 
 	requestBody, err := json.Marshal(diffMap)
 	if err != nil {

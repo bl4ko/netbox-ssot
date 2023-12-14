@@ -14,7 +14,7 @@ import (
 // This is essential because default marshal of the object
 // isn't compatible with netbox API when attributes have nested
 // objects.
-func NetboxMarshal(obj interface{}) ([]byte, error) {
+func NetboxJsonMarshal(obj interface{}) ([]byte, error) {
 	v := reflect.ValueOf(obj)
 	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
 		return nil, fmt.Errorf("object must be a pointer to a struct")
@@ -26,6 +26,8 @@ func NetboxMarshal(obj interface{}) ([]byte, error) {
 		field := v.Field(i)
 		fieldType := v.Type().Field(i)
 		fieldName := fieldType.Name
+		jsonTag := fieldType.Tag.Get("json")
+		jsonTag = strings.Split(jsonTag, ",")[0]
 
 		if fieldName == "ID" {
 			continue
@@ -38,11 +40,10 @@ func NetboxMarshal(obj interface{}) ([]byte, error) {
 
 		// If it is a nil pointer, we need to set it to nil in json
 		if !field.IsValid() {
-			netboxJson[fieldName] = nil
+			netboxJson[jsonTag] = nil
 			continue
 		}
 
-		fmt.Println(field.Kind())
 		switch field.Kind() {
 		case reflect.Slice:
 			if field.Len() == 0 {
@@ -50,28 +51,36 @@ func NetboxMarshal(obj interface{}) ([]byte, error) {
 			}
 			sliceItems := make([]interface{}, 0)
 			for j := 0; j < field.Len(); j++ {
-				item := field.Index(j)
-				if item.Kind() == reflect.Struct {
-					id := item.FieldByName("ID")
+				attribute := field.Index(j)
+				if attribute.Kind() == reflect.Ptr {
+					attribute = attribute.Elem()
+				}
+				if attribute.Kind() == reflect.Struct {
+					id := attribute.FieldByName("ID")
 					if id.IsValid() && id.Int() != 0 {
 						sliceItems = append(sliceItems, id.Int())
 					} else {
-						sliceItems = append(sliceItems, item.Interface())
+						sliceItems = append(sliceItems, attribute.Interface())
 					}
 				} else {
-					sliceItems = append(sliceItems, item.Interface())
+					sliceItems = append(sliceItems, attribute.Interface())
 				}
 			}
-			netboxJson[fieldName] = sliceItems
+			netboxJson[jsonTag] = sliceItems
 		case reflect.Struct:
 			id := field.FieldByName("ID")
 			if id.IsValid() {
-				netboxJson[fieldName] = id.Int()
+				netboxJson[jsonTag] = id.Int()
 			} else {
-				netboxJson[fieldName] = field.Interface()
+				if fieldName == "Status" {
+					status := field.FieldByName("Value")
+					netboxJson[jsonTag] = status.String()
+				} else {
+					netboxJson[jsonTag] = field.Interface()
+				}
 			}
 		default:
-			netboxJson[fieldName] = field.Interface()
+			netboxJson[jsonTag] = field.Interface()
 		}
 	}
 

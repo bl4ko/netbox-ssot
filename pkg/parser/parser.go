@@ -179,10 +179,7 @@ func validateSourceConfig(config *Config) error {
 			externalSource.Tag = fmt.Sprintf("Source: %s", externalSource.Name)
 		}
 		if externalSource.TagColor == "" {
-			source2color := map[SourceType]string{
-				Ovirt: "07426b",
-			}
-			externalSource.TagColor = source2color[externalSource.Type]
+			externalSource.TagColor = DefaultSourceToTagColorMap[externalSource.Type]
 		}
 		switch externalSource.Type {
 		case Ovirt:

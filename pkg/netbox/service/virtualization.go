@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/virtualization"
+	"github.com/bl4ko/netbox-ssot/pkg/utils"
 )
 
 type ClusterTypeResponse struct {
@@ -46,7 +47,7 @@ func (api *NetboxAPI) GetAllClusterTypes() ([]*virtualization.ClusterType, error
 
 // PATCH /api/virtualization/cluster-types/{id}/ -d '{"name": "new_name", ...}'
 func (api *NetboxAPI) PatchClusterType(diffMap map[string]interface{}, clusterTypeId int) (*virtualization.ClusterType, error) {
-	api.Logger.Debug("Patching cluster group in NetBox")
+	api.Logger.Debug("Patching cluster group in NetBox, with data: ", diffMap)
 
 	patchBodyJson, err := json.Marshal(diffMap)
 	if err != nil {
@@ -78,7 +79,7 @@ func (api *NetboxAPI) PatchClusterType(diffMap map[string]interface{}, clusterTy
 func (api *NetboxAPI) CreateClusterType(clusterType *virtualization.ClusterType) (*virtualization.ClusterType, error) {
 	api.Logger.Debug("Creating cluster type in NetBox")
 
-	requestBody, err := json.Marshal(clusterType)
+	requestBody, err := utils.NetboxJsonMarshal(clusterType)
 	if err != nil {
 		return nil, err
 	}
@@ -233,7 +234,7 @@ func (api *NetboxAPI) GetAllClusters() ([]*virtualization.Cluster, error) {
 
 // PATCH /api/virtualization/clusters/{id}/ -d '{"name": "new_name", ...}'
 func (api *NetboxAPI) PatchCluster(diffMap map[string]interface{}, clusterId int) (*virtualization.Cluster, error) {
-	api.Logger.Debug("Patching cluster in NetBox")
+	api.Logger.Debug("Patching cluster in NetBox, with data: ", diffMap)
 
 	clusterJson, err := json.Marshal(diffMap)
 	fmt.Println(string(clusterJson))
@@ -265,7 +266,7 @@ func (api *NetboxAPI) PatchCluster(diffMap map[string]interface{}, clusterId int
 func (api *NetboxAPI) CreateCluster(cluster *virtualization.Cluster) (*virtualization.Cluster, error) {
 	api.Logger.Debug("Creating cluster in NetBox")
 
-	clusterJson, err := json.Marshal(cluster)
+	clusterJson, err := utils.NetboxJsonMarshal(cluster)
 	if err != nil {
 		return nil, err
 	}
