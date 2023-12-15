@@ -2,6 +2,7 @@ package dcim
 
 import (
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/common"
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/tenancy"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/virtualization"
 )
 
@@ -70,6 +71,20 @@ var (
 	Mixed       = DeviceAirFlowType{common.Choice{Value: "mixed", Label: "Mixed"}}
 )
 
+type DeviceStatus struct {
+	common.Choice
+}
+
+var (
+	DeviceStatusOffline         = DeviceStatus{common.Choice{Value: "offline", Label: "Offline"}}
+	DeviceStatusActive          = DeviceStatus{common.Choice{Value: "active", Label: "Active"}}
+	DeviceStatusPlanned         = DeviceStatus{common.Choice{Value: "planned", Label: "Planned"}}
+	DeviceStatusStaged          = DeviceStatus{common.Choice{Value: "staged", Label: "Staged"}}
+	DeviceStatusFailed          = DeviceStatus{common.Choice{Value: "failed", Label: "Failed"}}
+	DeviceStatusInventory       = DeviceStatus{common.Choice{Value: "inventory", Label: "Inventory"}}
+	DeviceStatusDecommissioning = DeviceStatus{common.Choice{Value: "decommissioning", Label: "Decommissioning"}}
+)
+
 // Device can be any piece of physical hardware, such as a server, router, or switch.
 type Device struct {
 	common.NetboxObject
@@ -84,7 +99,7 @@ type Device struct {
 	// DeviceType is the type of device. This field is required.
 	DeviceType *DeviceType `json:"device_type,omitempty"`
 	// Airflow is the airflow pattern of the device.
-	Airflow DeviceAirFlowType `json:"airflow,omitempty"`
+	Airflow *DeviceAirFlowType `json:"airflow,omitempty"`
 	// Status is the status of the device.
 	SerialNumber string `json:"serial,omitempty"`
 	// AssetTag is an unique tag for identifying the device.
@@ -98,7 +113,7 @@ type Device struct {
 
 	// Management
 	// Status of the device (e.g. active, offline, planned, etc.). This field is required.
-	Status *common.SiteStatus `json:"status,omitempty"`
+	Status *DeviceStatus `json:"status,omitempty"`
 	// Platform of the device (e.g. Cisco IOS, Dell OS9, etc.).
 	Platform *common.Platform `json:"platform,omitempty"`
 
@@ -112,26 +127,18 @@ type Device struct {
 	Cluster *virtualization.Cluster `json:"cluster,omitempty"`
 
 	// Tenancy
-
 	// Tenant group
-
-	// Tenant
+	Tenant *tenancy.Tenant `json:"tenant,omitempty"`
 
 	// Virtual Chassis
 
-	// Virtual chassis
-
-	// Position
-
-	// Position
-
 	// The position in the virtual chassis this device is identified by
-
-	// Priority
-
-	// Priority
+	// Position
 
 	// The priority of the device in the virtual chassis
+	// Priority
+	// Additional comments.
+	Comments string `json:"comments,omitempty"`
 
 	// CustomFields is a dictionary of custom fields defined for the device type. map[customFieldName]: valueStr
 	CustomFields map[string]string `json:"custom_fields,omitempty"`

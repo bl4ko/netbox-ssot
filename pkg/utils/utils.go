@@ -6,12 +6,26 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/common"
 )
+
+// Helper function to determine if a given reflect.Value contains an embedded common.Choice
+func isChoiceEmbedded(v reflect.Value) bool {
+	vType := v.Type()
+	return vType.Field(0).Type == reflect.TypeOf(common.Choice{})
+	// for i := 0; i < v.NumField(); i++ {
+	// 	if vType.Field(i).Type == reflect.TypeOf(common.Choice{}) {
+	// 		return true
+	// 	}
+	// }
+	// return false
+}
 
 // Function that converts an object to a map[string]interface{}
 // which can be used to create a json body for netbox API, especially
 // for POST requests.
-func ObjToJsonMap(obj interface{}) (map[string]interface{}, error) {
+func StructToNetboxJsonMap(obj interface{}) (map[string]interface{}, error) {
 	v := reflect.ValueOf(obj)
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()
@@ -30,7 +44,7 @@ func ObjToJsonMap(obj interface{}) (map[string]interface{}, error) {
 
 		// Special case when object inherits from NetboxObject
 		if fieldType.Name == "NetboxObject" {
-			diffMap, err := ObjToJsonMap(fieldValue.Interface())
+			diffMap, err := StructToNetboxJsonMap(fieldValue.Interface())
 			if err != nil {
 				return nil, fmt.Errorf("error procesing ObjToJsonMap when procerssing NetboxObject %s", err)
 			}
@@ -45,9 +59,8 @@ func ObjToJsonMap(obj interface{}) (map[string]interface{}, error) {
 			fieldValue = fieldValue.Elem()
 		}
 
-		// If it is a nil pointer, we need to set it to nil in json
-		if !fieldValue.IsValid() {
-			netboxJsonMap[jsonTag] = nil
+		// If a field is empty we skip it
+		if !fieldValue.IsValid() || fieldValue.IsZero() {
 			continue
 		}
 
@@ -75,13 +88,15 @@ func ObjToJsonMap(obj interface{}) (map[string]interface{}, error) {
 			}
 			netboxJsonMap[jsonTag] = sliceItems
 		case reflect.Struct:
-			id := fieldValue.FieldByName("ID")
-			if id.IsValid() {
-				netboxJsonMap[jsonTag] = id.Int()
+			if isChoiceEmbedded(fieldValue) {
+				choiceValue := fieldValue.FieldByName("Value")
+				if choiceValue.IsValid() {
+					netboxJsonMap[jsonTag] = choiceValue.Interface()
+				}
 			} else {
-				if fieldType.Name == "Status" {
-					status := fieldValue.FieldByName("Value")
-					netboxJsonMap[jsonTag] = status.String()
+				id := fieldValue.FieldByName("ID")
+				if id.IsValid() {
+					netboxJsonMap[jsonTag] = id.Int()
 				} else {
 					netboxJsonMap[jsonTag] = fieldValue.Interface()
 				}
@@ -99,7 +114,7 @@ func ObjToJsonMap(obj interface{}) (map[string]interface{}, error) {
 // isn't compatible with netbox API when attributes have nested
 // objects.
 func NetboxJsonMarshal(obj interface{}) ([]byte, error) {
-	objMap, err := ObjToJsonMap(obj)
+	objMap, err := StructToNetboxJsonMap(obj)
 	if err != nil {
 		return nil, fmt.Errorf("error converting object to json map: %s", err)
 	}

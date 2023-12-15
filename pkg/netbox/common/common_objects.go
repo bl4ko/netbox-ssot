@@ -5,7 +5,9 @@
 
 package common
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Tag struct {
 	ID          int    `json:"id,omitempty"`
@@ -20,13 +22,14 @@ func (t Tag) String() string {
 }
 
 // Choice represents a choice in a Netbox's choice field.
+// This struct is used as an embedded struct in other structs that represent Choice fields.
 type Choice struct {
 	Value string `json:"value,omitempty"`
 	Label string `json:"label,omitempty"`
 }
 
 // Struct representing attributes that are common to all objects in NetBox.
-// We can use this struct as an embedded struct in other structs that represent
+// We can this struct as an embedded struct in other structs that represent
 // NetBox objects.
 type NetboxObject struct {
 	// Netbox's ID of the object.

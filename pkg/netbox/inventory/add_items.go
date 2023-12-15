@@ -46,18 +46,20 @@ func (ni *NetBoxInventory) AddTag(newTag *common.Tag) (*common.Tag, error) {
 // Adding new custom-field to inventory
 func (ni *NetBoxInventory) AddCustomField(newCf *extras.CustomField) error {
 	if _, ok := ni.CustomFieldsIndexByName[newCf.Name]; ok {
-		ni.Logger.Debug("Custom field ", newCf.Name, " already exists in NetBox...")
 		existingCf := ni.CustomFieldsIndexByName[newCf.Name]
 		diffMap, err := utils.JsonDiffMapExceptId(newCf, existingCf)
 		if err != nil {
 			return err
 		}
 		if len(diffMap) > 0 {
+			ni.Logger.Debug("Custom field ", newCf.Name, " already exists in NetBox but is out of date. Patching it... ")
 			patchedCf, err := ni.NetboxApi.PatchCustomField(diffMap, existingCf.ID)
 			if err != nil {
 				return err
 			}
 			ni.CustomFieldsIndexByName[newCf.Name] = patchedCf
+		} else {
+			ni.Logger.Debug("Custom field ", newCf.Name, " already exists in NetBox and is up to date...")
 		}
 	} else {
 		ni.Logger.Debug("Custom field ", newCf.Name, " does not exist in NetBox. Creating it...")

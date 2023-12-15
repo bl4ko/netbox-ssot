@@ -1,8 +1,6 @@
 package virtualization
 
 import (
-	"encoding/json"
-
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/common"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/tenancy"
 )
@@ -50,18 +48,6 @@ type Cluster struct {
 	TenantGroup *tenancy.TenantGroup `json:"tenant_group,omitempty"`
 	// Tenant is the tenant to which this cluster belongs.
 	Tenant *tenancy.Tenant `json:"tenant,omitempty"`
-}
-
-// Custom marshal because we shouldn't pass the status as object but as string
-func (c *Cluster) MarshalJSON() ([]byte, error) {
-	type Alias Cluster
-	return json.Marshal(&struct {
-		Status string `json:"status,omitempty"`
-		*Alias
-	}{
-		Status: c.Status.Value,
-		Alias:  (*Alias)(c),
-	})
 }
 
 type VMStatus struct {

@@ -1,11 +1,13 @@
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"testing"
 
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/common"
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/dcim"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/extras"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/tenancy"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/virtualization"
@@ -364,16 +366,91 @@ func TestNetboxMarshal(t *testing.T) {
 			Slug: "default",
 		},
 	}
-	expectedResStr := "{\"description\":\"Test Description\",\"group\":4,\"name\":\"Test\",\"site\":2,\"status\":\"active\",\"tags\":[1,3,4],\"tenant\":1,\"tenant_group\":null,\"type\":2}"
-
-	jsonRes, err := NetboxJsonMarshal(newObj)
-	stringRes := string(jsonRes)
-	fmt.Println(stringRes)
+	expectedJsonMap := map[string]interface{}{
+		"description": "Test Description",
+		"tags":        []int{1, 3, 4},
+		"name":        "Test",
+		"type":        2,
+		"status":      "active",
+		"site":        2,
+		"group":       4,
+		"tenant":      1,
+	}
+	expectedJson, _ := json.Marshal(expectedJsonMap)
+	responseJson, err := NetboxJsonMarshal(newObj)
 	if err != nil {
 		t.Errorf("NetboxMarshal() error = %v", err)
 	}
-	if expectedResStr != stringRes {
-		t.Errorf("NetboxMarshal() = %v, want %v", stringRes, expectedResStr)
+	if !reflect.DeepEqual(responseJson, expectedJson) {
+		t.Errorf("NetboxMarshal() = %s\nwant %s", string(responseJson), string(expectedJson))
+	}
+}
+
+func TestNetboxJsonMarshalWithChoiceAttr(t *testing.T) {
+	device := &dcim.Device{
+		NetboxObject: common.NetboxObject{
+			Description: "Test Description",
+			Tags: []*common.Tag{
+				{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+				{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+				{ID: 4, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+			},
+		},
+		Name: "Test device",
+		DeviceRole: &dcim.DeviceRole{
+			NetboxObject: common.NetboxObject{
+				ID: 1,
+				Tags: []*common.Tag{
+					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+				},
+				Description: "Test device role",
+			},
+			Name:  "Test device role",
+			Slug:  "test-device-role",
+			Color: "000000",
+		},
+		DeviceType: &dcim.DeviceType{
+			NetboxObject: common.NetboxObject{
+				ID: 1,
+				Tags: []*common.Tag{
+					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+				},
+				Description: "Test device type",
+			},
+		},
+		Airflow: &dcim.FrontToRear,
+		Status:  &dcim.DeviceStatusActive,
+		Site: &common.Site{
+			NetboxObject: common.NetboxObject{
+				ID:          1,
+				Description: "Test site",
+				Tags: []*common.Tag{
+					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+				},
+			},
+			Name:   "Test site",
+			Slug:   "test-site",
+			Status: common.StatusActive,
+		},
 	}
 
+	expectedMap := map[string]interface{}{
+		"description": "Test Description",
+		"tags":        []int{1, 3, 4},
+		"name":        "Test device",
+		"role":        1,
+		"device_type": 1,
+		"airflow":     "front-to-rear",
+		"status":      "active",
+		"site":        1,
+	}
+	expectedJson, _ := json.Marshal(expectedMap)
+	responseJson, err := NetboxJsonMarshal(device)
+	fmt.Println(string(responseJson))
+	if err != nil {
+		t.Errorf("NetboxMarshal() error = %v", err)
+	}
+	if !reflect.DeepEqual(expectedJson, responseJson) {
+		t.Errorf("NetboxMarshal() = %s\nwant %s", string(responseJson), string(expectedJson))
+	}
 }

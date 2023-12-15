@@ -1,67 +1,41 @@
 package extras
 
 import (
-	"encoding/json"
 	"fmt"
+
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/common"
 )
 
 // CustomFieldTypes are predefined netbox's types for CustomFields
 type CustomFieldType struct {
-	Value string `json:"value,omitempty"`
-	Label string `json:"label,omitempty"`
+	common.Choice
 }
 
-// It is one of the following:
+// Predefined netbox's types for CustomFields
+// https://github.com/netbox-community/netbox/blob/35be4f05ef376e28d9af4d7245ba10cc286bb62a/netbox/extras/choices.py#L10
 var (
-	CustomFieldTypeText = CustomFieldType{
-		Value: "text",
-		Label: "Text",
-	}
-	CustomFieldTypeLongText = CustomFieldType{
-		Value: "longtext",
-		Label: "Text (long)",
-	}
-	CustomFieldTypeInteger = CustomFieldType{
-		Value: "integer",
-		Label: "Integer",
-	}
-	CustomFieldTypeDecimal = CustomFieldType{
-		Value: "decimal",
-		Label: "Decimal",
-	}
-	CustomFieldTypeBoolean = CustomFieldType{
-		Value: "boolean",
-		Label: "Boolean (true/false)",
-	}
-	CustomFieldTypeDate = CustomFieldType{
-		Value: "date",
-		Label: "Date",
-	}
-	// https://github.com/netbox-community/netbox/blob/35be4f05ef376e28d9af4d7245ba10cc286bb62a/netbox/extras/choices.py#L10
+	CustomFieldTypeText     = CustomFieldType{common.Choice{Value: "text", Label: "Text"}}
+	CustomFieldTypeLongText = CustomFieldType{common.Choice{Value: "longtext", Label: "Text (long)"}}
+	CustomFieldTypeInteger  = CustomFieldType{common.Choice{Value: "integer", Label: "Integer"}}
+	CustomFieldTypeDecimal  = CustomFieldType{common.Choice{Value: "decimal", Label: "Decimal"}}
+	CustomFieldTypeBoolean  = CustomFieldType{common.Choice{Value: "boolean", Label: "Boolean (true/false)"}}
+	CustomFieldTypeDate     = CustomFieldType{common.Choice{Value: "date", Label: "Date"}}
 )
 
 type FilterLogic struct {
-	Value string `json:"value,omitempty"`
-	Label string `json:"label,omitempty"`
+	common.Choice
 }
 
 var (
-	FilterLogicLoose = FilterLogic{
-		Value: "loose",
-		Label: "Loose",
-	}
+	FilterLogicLoose = FilterLogic{common.Choice{Value: "loose", Label: "Loose"}}
 )
 
 type UIVisibility struct {
-	Value string `json:"value,omitempty"`
-	Label string `json:"label,omitempty"`
+	common.Choice
 }
 
 var (
-	UIVisibilityReadWrite = UIVisibility{
-		Value: "read-write",
-		Label: "Read/write",
-	}
+	UIVisibilityReadWrite = UIVisibility{common.Choice{Value: "read-write", Label: "Read/write"}}
 )
 
 type CustomField struct {
@@ -89,19 +63,4 @@ type CustomField struct {
 
 func (cf CustomField) String() string {
 	return fmt.Sprintf("CustomField{ID: %d, Name: %s, Label: %s, ...}", cf.ID, cf.Name, cf.Label)
-}
-
-// We need custom amrshaling for custom field, because netbox has custom logic for
-// CustomField type, it shouldn' be passed as a a object, but as a object value
-func (cf *CustomField) MarshalJSON() ([]byte, error) {
-	type Alias CustomField
-	return json.Marshal(&struct {
-		Type         string `json:"type"`
-		UIVisibility string `json:"ui_visibility"`
-		*Alias
-	}{
-		Type:         cf.Type.Value,
-		UIVisibility: cf.UIVisibility.Value,
-		Alias:        (*Alias)(cf),
-	})
 }

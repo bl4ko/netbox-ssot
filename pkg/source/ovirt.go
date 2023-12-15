@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/common"
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/dcim"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/tenancy"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/virtualization"
@@ -265,7 +266,7 @@ func (o *OVirtSource) SyncClusters(nbi *inventory.NetBoxInventory) error {
 		if o.ClusterTenantRelations != nil {
 			match, err := utils.MatchStringToValue(clusterName, o.ClusterTenantRelations)
 			if err != nil {
-				return fmt.Errorf("failed to match oVirt cluster %s to a NetBox tenant: %v", clusterName, err)
+				return fmt.Errorf("error occured when matching oVirt cluster %s to a NetBox tenant: %v", clusterName, err)
 			}
 			if match != "" {
 				if _, ok := nbi.TenantsIndexByName[match]; !ok {
@@ -295,30 +296,75 @@ func (o *OVirtSource) SyncClusters(nbi *inventory.NetBoxInventory) error {
 // Host in oVirt is a represented as device in netbox with a
 // custom role Server
 func (o *OVirtSource) SyncHosts(nbi *inventory.NetBoxInventory) error {
-	// for hostId, host := range o.Hosts {
-	// 	hostCluster := nbi.ClustersIndexByName[o.Clusters[host.MustCluster().MustId()].MustName()]
+	for hostId, host := range o.Hosts {
+		fmt.Println(hostId)
+		hostCluster := nbi.ClustersIndexByName[o.Clusters[host.MustCluster().MustId()].MustName()]
 
-	// 	var hostSite *common.Site
-	// 	if o.HostSiteRelations != nil {
-	// 		match, err := utils.MatchStringToValue(host.MustName(), o.HostSiteRelations)
-	// 		if err != nil {
-	// 			return fmt.Errorf("failed to match oVirt host %s to a NetBox site: %v", host.MustName(), err)
-	// 		}
-	// 		if match != "" {
-	// 			if _, ok := nbi.SitesIndexByName[match]; !ok {
-	// 				return fmt.Errorf("failed to match oVirt host %s to a NetBox site: %v. Site with this name doesn't exist", host.MustName(), match)
-	// 			}
-	// 			hostSite = nbi.SitesIndexByName[match]
-	// 		}
-	// 	}
-	// 	nbHost := &dcim.Device{
-	// 		Name: 			host.MustName(),
-	// 		DeviceRole: 	nbi.DeviceRolesIndexByName["Server"],
-	// 		// DeviceType: , # TODO
-	// 		Cluster: 		hostCluster,
+		var hostSite *common.Site
+		if o.HostSiteRelations != nil {
+			match, err := utils.MatchStringToValue(host.MustName(), o.HostSiteRelations)
+			if err != nil {
+				return fmt.Errorf("error occured when matching oVirt host %s to a NetBox site: %v", host.MustName(), err)
+			}
+			if match != "" {
+				if _, ok := nbi.SitesIndexByName[match]; !ok {
+					return fmt.Errorf("failed to match oVirt host %s to a NetBox site: %v. Site with this name doesn't exist", host.MustName(), match)
+				}
+				hostSite = nbi.SitesIndexByName[match]
+			}
+		}
+		var hostTenant *tenancy.Tenant
+		if o.HostTenantRelations != nil {
+			match, err := utils.MatchStringToValue(host.MustName(), o.HostTenantRelations)
+			if err != nil {
+				return fmt.Errorf("error occured when matching oVirt host %s to a NetBox tenant: %v", host.MustName(), err)
+			}
+			if match != "" {
+				if _, ok := nbi.TenantsIndexByName[match]; !ok {
+					return fmt.Errorf("failed to match oVirt host %s to a NetBox tenant: %v. Tenant with this name doesn't exist", host.MustName(), match)
+				}
+				hostTenant = nbi.TenantsIndexByName[match]
+			}
+		}
 
-	// 	}
-	// }
+		var serialNumber string
+		var assetTagString string
+		hwInfo, exists := host.HardwareInformation()
+		if exists {
+			serialNumber, exists = hwInfo.Uuid()
+			if !exists {
+				o.Logger.Warning("Serial number for oVirt host ", host.MustName(), " is empty.")
+			}
+			assetTagString, exists = hwInfo.SerialNumber()
+			if !exists {
+				o.Logger.Warning("Asset tag for oVirt host ", host.MustName(), " is empty.")
+			}
+			manufacturer, exists := hwInfo.Manufacturer()
+			if !exists {
+				manufacturer = "Generic Vendor"
+			}
+			model, exists := hwInfo.ProductName()
+			if !exists {
+				model = "Generic Model"
+			}
+		}
+
+		status, exists := host.Status()
+		if exists {
+
+		}
+
+		nbHost := &dcim.Device{
+			NetboxObject: common.NetboxObject{Description: host.MustDescription(), Tags: o.SourceTags},
+			Name:         host.MustName(),
+			DeviceRole:   nbi.DeviceRolesIndexByName["Server"],
+			Site:         hostSite,
+			Tenant:       hostTenant,
+			Cluster:      hostCluster,
+			Comments:     host.MustComment(),
+		}
+		fmt.Println(nbHost)
+	}
 
 	return nil
 }
