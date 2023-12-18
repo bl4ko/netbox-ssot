@@ -13,8 +13,8 @@ import (
 
 type TagResponse struct {
 	Count    int          `json:"count,omitempty"`
-	Next     int          `json:"next,omitempty"`
-	Previous int          `json:"previous,omitempty"`
+	Next     *string      `json:"next,omitempty"`
+	Previous *string      `json:"previous,omitempty"`
 	Results  []common.Tag `json:"results,omitempty"`
 }
 
@@ -168,16 +168,16 @@ func (api *NetboxAPI) PatchTag(diffMap map[string]interface{}, tagId int) (*comm
 
 type CustomFieldResponse struct {
 	Count    int                  `json:"count,omitempty"`
-	Next     int                  `json:"next,omitempty"`
-	Previous int                  `json:"previous,omitempty"`
+	Next     *string              `json:"next,omitempty"`
+	Previous *string              `json:"previous,omitempty"`
 	Results  []extras.CustomField `json:"results,omitempty"`
 }
 
-// GET /api/extras/custom-fields/
+// GET /api/extras/custom-fields/?limit=0
 func (api *NetboxAPI) GetAllCustomFields() ([]*extras.CustomField, error) {
 	api.Logger.Debug("Getting all custom fields from NetBox")
 
-	response, err := api.doRequest(MethodGet, "/api/extras/custom-fields/", nil)
+	response, err := api.doRequest(MethodGet, "/api/extras/custom-fields/?limit=0", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -221,14 +221,14 @@ func (api *NetboxAPI) PatchCustomField(diffMap map[string]interface{}, customFie
 		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
 	}
 
-	var customFieldResponse extras.CustomField
-	err = json.Unmarshal(response.Body, &customFieldResponse)
+	var customFieldResponse *extras.CustomField
+	err = json.Unmarshal(response.Body, customFieldResponse)
 	if err != nil {
 		return nil, err
 	}
 
 	api.Logger.Debug("Patched custom field: ", customFieldResponse)
-	return &customFieldResponse, nil
+	return customFieldResponse, nil
 }
 
 // CREATE /api/extras/custom-fields/ -d '{...}'
@@ -251,13 +251,13 @@ func (api *NetboxAPI) CreateCustomField(customField *extras.CustomField) (*extra
 		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
 	}
 
-	var customFieldResponse extras.CustomField
-	err = json.Unmarshal(response.Body, &customFieldResponse)
+	var customFieldResponse *extras.CustomField
+	err = json.Unmarshal(response.Body, customFieldResponse)
 	if err != nil {
 		return nil, err
 	}
 
 	api.Logger.Debug("Custom field: ", customFieldResponse)
 
-	return &customFieldResponse, nil
+	return customFieldResponse, nil
 }

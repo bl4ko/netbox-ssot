@@ -45,13 +45,13 @@ type SiteStatus struct {
 }
 
 var (
-	StatusActive          = SiteStatus{Choice{Value: "active", Label: "Active"}}
-	StatusOffline         = SiteStatus{Choice{Value: "offline", Label: "Offline"}}
-	StatusPlanned         = SiteStatus{Choice{Value: "planned", Label: "Planned"}}
-	StatusStaged          = SiteStatus{Choice{Value: "staged", Label: "Staged"}}
-	StatusFailed          = SiteStatus{Choice{Value: "failed", Label: "Failed"}}
-	StatusInventory       = SiteStatus{Choice{Value: "inventory", Label: "Inventory"}}
-	StatusDecommissioning = SiteStatus{Choice{Value: "decommissioning", Label: "Decommissioning"}}
+	SiteStatusActive         = SiteStatus{Choice{Value: "active", Label: "Active"}}
+	SiteStatusOffline        = SiteStatus{Choice{Value: "offline", Label: "Offline"}}
+	SiteStatusPlanned        = SiteStatus{Choice{Value: "planned", Label: "Planned"}}
+	SiteStatusStaged         = SiteStatus{Choice{Value: "staged", Label: "Staged"}}
+	SiteStatusFailed         = SiteStatus{Choice{Value: "failed", Label: "Failed"}}
+	SiteStatusInventory      = SiteStatus{Choice{Value: "inventory", Label: "Inventory"}}
+	SiteStatucDecommisioning = SiteStatus{Choice{Value: "decommissioning", Label: "Decommissioning"}}
 )
 
 // Site ares used for functional groupings.
@@ -63,9 +63,44 @@ type Site struct {
 	// URL-friendly unique shorthand. This field is required.
 	Slug string `json:"slug,omitempty"`
 	// Site status. This field is required.
-	Status SiteStatus `json:"status,omitempty"`
+	Status *SiteStatus `json:"status,omitempty"`
 }
 
+// Manufacturer represents a hardware manufacturer (e.g. Cisco, HP, ...).
+type Manufacturer struct {
+	NetboxObject
+	// Name of the manufacturer (e.g. Cisco). This field is required.
+	Name string `json:"name,omitempty"`
+	// URL-friendly unique shorthand. This field is required.
+	Slug string `json:"slug,omitempty"`
+}
+
+var ManufacturerMap = map[string]string{
+	"^AMD$":               "AMD",
+	".*Broadcom.*":        "Broadcom",
+	".*Cisco.*":           "Cisco",
+	".*Dell.*":            "Dell",
+	"FTS Corp":            "Fujitsu",
+	".*Fujitsu.*":         "Fujitsu",
+	".*HiSilicon.*":       "HiSilicon",
+	"^HP$":                "HPE",
+	"^HPE$":               "HPE",
+	".*Huawei.*":          "Huawei",
+	".*Hynix.*":           "Hynix",
+	".*Inspur.*":          "Inspur",
+	".*Intel.*":           "Intel",
+	"LEN":                 "Lenovo",
+	".*Lenovo.*":          "Lenovo",
+	".*Micron.*":          "Micron",
+	".*Nvidea.*":          "Nvidia",
+	".*Samsung.*":         "Samsung",
+	".*Supermicro.*":      "Supermicro",
+	".*Toshiba.*":         "Toshiba",
+	"^WD$":                "Western Digital",
+	".*Western Digital.*": "Western Digital",
+}
+
+// Platform represents an operating system or other software platform which may be running on a device.
 type Platform struct {
 	NetboxObject
 	// Name of the platform. This field is required.
@@ -73,13 +108,5 @@ type Platform struct {
 	// URL-friendly unique shorthand. This field is required.
 	Slug string `json:"slug,omitempty"`
 	// Manufacturer is the manufacturer of the platform.
-	Manafacturer *Manafacturer `json:"manufacturer,omitempty"`
-}
-
-type Manafacturer struct {
-	NetboxObject
-	// Name of the manufacturer (e.g. Cisco). This field is required.
-	Name string `json:"name,omitempty"`
-	// URL-friendly unique shorthand. This field is required.
-	Slug string `json:"slug,omitempty"`
+	Manafacturer *Manufacturer `json:"manufacturer,omitempty"`
 }

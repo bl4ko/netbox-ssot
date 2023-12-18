@@ -32,13 +32,11 @@ type Location struct {
 type DeviceType struct {
 	common.NetboxObject
 	// Manufacturer is the manufacturer of the device type. This field is required.
-	Manafacturer *common.Manafacturer `json:"manufacturer,omitempty"`
+	Manafacturer *common.Manufacturer `json:"manufacturer,omitempty"`
 	// Model is the model of the device type. This field is required.
 	Model string `json:"model,omitempty"`
 	// Slug is a URL-friendly unique shorthand. This field is required.
 	Slug string `json:"slug,omitempty"`
-	// UHeight is the height of the device type in rack units. This field is required.
-	UHeight float32 `json:"u_height,omitempty"`
 }
 
 // DeviceRole represents the functional role of a device.
@@ -148,13 +146,13 @@ type InterfaceType string
 
 const (
 	// VirtualInterfaces
-	Virtual InterfaceType = "Virtual"
-	Bridge  InterfaceType = "Bridge"
-	LAG     InterfaceType = "LAG"
+	VirtualInterfaceType InterfaceType = "Virtual"
+	BridgeInterfaceType  InterfaceType = "Bridge"
+	LAGInterfaceType     InterfaceType = "LAG"
 	// Ethernet (fixed)
-	BASEFX  InterfaceType = "100BASE-FX (10/100ME FIBER)"
-	BASELFX InterfaceType = "100BASE-LX (10/100ME FIBER)"
-	BASETX  InterfaceType = "100BASE-SX (10/100ME FIBER)"
+	BASEFXInterfaceType  InterfaceType = "100BASE-FX (10/100ME FIBER)"
+	BASELFXInterfaceType InterfaceType = "100BASE-LX (10/100ME FIBER)"
+	BASETXInterfaceType  InterfaceType = "100BASE-SX (10/100ME FIBER)"
 )
 
 // const speed2interfaceType = map[int]InterfaceType{

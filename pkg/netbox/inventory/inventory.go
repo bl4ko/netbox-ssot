@@ -23,21 +23,27 @@ type NetBoxInventory struct {
 	NetboxApi *service.NetboxAPI
 	// Tags is a list of all tags in the netbox inventory
 	Tags []*common.Tag
-	// Tenants index is a map of all tenants in the inventory, indexed by name
-	TenantsIndexByName map[string]*tenancy.Tenant
-	// Sites is a list of all sites in the inventory
+	// SitesIndexByName is a map of all sites in the Netbox's inventory, indexed by their name
 	SitesIndexByName map[string]*common.Site
-	// Devices is a list of all devices in the inventory
+	// ManufacturersIndexByName is a map of all manufacturers in the Netbox's inventory, indexed by their name
+	ManufacturersIndexByName map[string]*common.Manufacturer
+	// PlatformsIndexByName is a map of all platforms in the Netbox's inventory, indexed by their name
+	PlatformsIndexByName map[string]*common.Platform
+	// TenantsIndexByName is a map of all tenants in the Netbox's inventory, indexed by their name
+	TenantsIndexByName map[string]*tenancy.Tenant
+	// DeviceTypesIndexByModel is a map of all device types in the Netbox's inventory, indexed by their model
+	DeviceTypesIndexByModel map[string]*dcim.DeviceType
+	// DevicesIndexByName is a map of all devices in the Netbox's inventory, indexed by their name
 	DevicesIndexByName map[string]*dcim.Device
-	// ClusterGroups is a list of all cluster groups in the inventory
+	// ClusterGroupsIndexByName is a map of all cluster groups in the Netbox's inventory, indexed by their name
 	ClusterGroupsIndexByName map[string]*virtualization.ClusterGroup
-	// ClusterTypesIndexByName is a map of all cluster types in the inventory, indexed by name
+	// ClusterTypesIndexByName is a map of all cluster types in the Netbox's inventory, indexed by their name
 	ClusterTypesIndexByName map[string]*virtualization.ClusterType
-	// ClustersIndexByName is a map of all clusters in the inventory, indexed by name
+	// ClustersIndexByName is a map of all clusters in the Netbox's inventory, indexed by their name
 	ClustersIndexByName map[string]*virtualization.Cluster
-	// Device Roles
+	// Netbox's Device Roles is a map of all device roles in the inventory, indexed by name
 	DeviceRolesIndexByName map[string]*dcim.DeviceRole
-	// CustomFieldsIndexByName
+	// CustomFieldsIndexByName is a map of all custom fields in the inventory, indexed by name
 	CustomFieldsIndexByName map[string]*extras.CustomField
 
 	// Orphan manager is a map of { "devices: [device_id1, device_id2, ...], "cluster_groups": [cluster_group_id1, cluster_group_id2, ..."}, to store which objects have been created by netbox-ssot and can be deleted because they are not available in the source anymore
@@ -48,7 +54,7 @@ type NetBoxInventory struct {
 
 // Func string representation
 func (nbi NetBoxInventory) String() string {
-	return fmt.Sprintf("NetBoxInventory{Logger: %+v, NetboxConfig: %+v, DevicesIndex: %v}", nbi.Logger, nbi.NetboxConfig, nbi.DevicesIndexByName)
+	return fmt.Sprintf("NetBoxInventory{Logger: %+v, NetboxConfig: %+v...}", nbi.Logger, nbi.NetboxConfig)
 }
 
 // NewNetboxInventory creates a new NetBoxInventory object.
@@ -78,6 +84,14 @@ func (netboxInventory *NetBoxInventory) Init() error {
 	if err != nil {
 		return err
 	}
+	err = netboxInventory.InitManufacturers()
+	if err != nil {
+		return err
+	}
+	err = netboxInventory.InitPlatforms()
+	if err != nil {
+		return err
+	}
 	err = netboxInventory.InitDevices()
 	if err != nil {
 		return err
@@ -88,6 +102,10 @@ func (netboxInventory *NetBoxInventory) Init() error {
 	}
 	// init server device role which is required for separation of device object into servers
 	err = netboxInventory.InitServerDeviceRole()
+	if err != nil {
+		return err
+	}
+	err = netboxInventory.InitDeviceTypes()
 	if err != nil {
 		return err
 	}

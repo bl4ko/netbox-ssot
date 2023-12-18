@@ -12,16 +12,16 @@ import (
 
 type ClusterTypeResponse struct {
 	Count    int                          `json:"count"`
-	Next     int                          `json:"next"`
-	Previous int                          `json:"previous"`
+	Next     *string                      `json:"next"`
+	Previous *string                      `json:"previous"`
 	Results  []virtualization.ClusterType `json:"results"`
 }
 
-// GET /api/virtualization/cluster-types/{id}
+// GET /api/virtualization/cluster-types/?limit=0
 func (api *NetboxAPI) GetAllClusterTypes() ([]*virtualization.ClusterType, error) {
 	api.Logger.Debug("Getting all cluster types from NetBox")
 
-	response, err := api.doRequest(MethodGet, "/api/virtualization/cluster-types/", nil)
+	response, err := api.doRequest(MethodGet, "/api/virtualization/cluster-types/?limit=0", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -106,16 +106,16 @@ func (api *NetboxAPI) CreateClusterType(clusterType *virtualization.ClusterType)
 
 type ClusterGroupResponse struct {
 	Count    int                           `json:"count"`
-	Next     int                           `json:"next"`
-	Previous int                           `json:"previous"`
+	Next     *string                       `json:"next"`
+	Previous *string                       `json:"previous"`
 	Results  []virtualization.ClusterGroup `json:"results"`
 }
 
-// GET /api/virtualization/cluster-groups/
+// GET /api/virtualization/cluster-groups/?limit=0
 func (api *NetboxAPI) GetAllClusterGroups() ([]*virtualization.ClusterGroup, error) {
 	api.Logger.Debug("Getting all cluster groups from NetBox")
 
-	response, err := api.doRequest(MethodGet, "/api/virtualization/cluster-groups/", nil)
+	response, err := api.doRequest(MethodGet, "/api/virtualization/cluster-groups/?limit=0", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -198,16 +198,16 @@ func (api *NetboxAPI) PatchClusterGroup(diffMap map[string]interface{}, clusterG
 
 type ClustersResponse struct {
 	Count    int                      `json:"count"`
-	Next     int                      `json:"next"`
-	Previous int                      `json:"previous"`
+	Next     *string                  `json:"next"`
+	Previous *string                  `json:"previous"`
 	Results  []virtualization.Cluster `json:"results"`
 }
 
-// GET /api/vritualization/clusters
+// GET /api/vritualization/clusters/?limit=0
 func (api *NetboxAPI) GetAllClusters() ([]*virtualization.Cluster, error) {
 	api.Logger.Debug("Getting all clusters from NetBox")
 
-	response, err := api.doRequest(MethodGet, "/api/virtualization/clusters/", nil)
+	response, err := api.doRequest(MethodGet, "/api/virtualization/clusters/?limit=0", nil)
 	if err != nil {
 		return nil, err
 	}

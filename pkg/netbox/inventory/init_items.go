@@ -64,6 +64,36 @@ func (netboxInventory *NetBoxInventory) InitSites() error {
 	return nil
 }
 
+// Collects all manufacturesrs from NetBox API and store them in NetBoxInventory
+func (netboxInventory *NetBoxInventory) InitManufacturers() error {
+	nbManufacturers, err := netboxInventory.NetboxApi.GetAllManufacturers()
+	if err != nil {
+		return err
+	}
+	// We also create an index of manufacturers by name for easier access
+	netboxInventory.ManufacturersIndexByName = make(map[string]*common.Manufacturer)
+	for _, manufacturer := range nbManufacturers {
+		netboxInventory.ManufacturersIndexByName[manufacturer.Name] = manufacturer
+	}
+	netboxInventory.Logger.Debug("Successfully collected manufacturers from NetBox: ", netboxInventory.ManufacturersIndexByName)
+	return nil
+}
+
+// Collects all platforms from NetBox API and store them in the NetBoxInventory
+func (NetBoxInventory *NetBoxInventory) InitPlatforms() error {
+	nbPlatforms, err := NetBoxInventory.NetboxApi.GetAllPlatforms()
+	if err != nil {
+		return err
+	}
+	// We also create an index of platforms by name for easier access
+	NetBoxInventory.PlatformsIndexByName = make(map[string]*common.Platform)
+	for _, platform := range nbPlatforms {
+		NetBoxInventory.PlatformsIndexByName[platform.Name] = platform
+	}
+	NetBoxInventory.Logger.Debug("Successfully collected platforms from NetBox: ", NetBoxInventory.PlatformsIndexByName)
+	return nil
+}
+
 // Collect all devices from NetBox API and store them in the NetBoxInventory
 func (netboxInventory *NetBoxInventory) InitDevices() error {
 	nbDevices, err := netboxInventory.NetboxApi.GetAllDevices()
@@ -98,7 +128,7 @@ func (netboxInventory *NetBoxInventory) InitDeviceRoles() error {
 
 // Ensures that attribute ServerDeviceRole is proper initialized
 func (netboxInventory *NetBoxInventory) InitServerDeviceRole() error {
-	err := netboxInventory.AddDeviceRole(&dcim.DeviceRole{Name: "Server", Slug: "server", Color: "00add8", VMRole: true}, nil)
+	err := netboxInventory.AddDeviceRole(&dcim.DeviceRole{Name: "Server", Slug: "server", Color: "00add8", VMRole: true})
 	if err != nil {
 		return err
 	}
@@ -194,5 +224,18 @@ func (netboxInventory *NetBoxInventory) InitClusters() error {
 		netboxInventory.ClustersIndexByName[cluster.Name] = cluster
 	}
 	netboxInventory.Logger.Debug("Successfully collected clusters from NetBox: ", netboxInventory.ClustersIndexByName)
+	return nil
+}
+
+func (ni *NetBoxInventory) InitDeviceTypes() error {
+	nbDeviceTypes, err := ni.NetboxApi.GetAllDeviceTypes()
+	if err != nil {
+		return err
+	}
+	ni.DeviceTypesIndexByModel = make(map[string]*dcim.DeviceType)
+	for _, deviceType := range nbDeviceTypes {
+		ni.DeviceTypesIndexByModel[deviceType.Model] = deviceType
+	}
+	ni.Logger.Debug("Successfully collected device types from NetBox: ", ni.DeviceTypesIndexByModel)
 	return nil
 }

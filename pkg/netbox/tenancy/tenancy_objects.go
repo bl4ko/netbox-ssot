@@ -17,7 +17,6 @@ type Tenant struct {
 	Name string `json:"name,omitempty"`
 	// Slug is the slugified version of the tenant name. This field is read-only.
 	Slug string `json:"slug,omitempty"`
-
 	// Group is the tenant group to which this tenant belongs.
 	Group *TenantGroup `json:"group,omitempty"`
 }

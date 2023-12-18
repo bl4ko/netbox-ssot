@@ -22,6 +22,10 @@ func isChoiceEmbedded(v reflect.Value) bool {
 	// return false
 }
 
+func choiceValue(v reflect.Value) interface{} {
+	return v.Field(0).FieldByName("Value").Interface()
+}
+
 // Function that converts an object to a map[string]interface{}
 // which can be used to create a json body for netbox API, especially
 // for POST requests.
@@ -193,10 +197,13 @@ func JsonDiffMapExceptId(newObj, existingObj interface{}) (map[string]interface{
 
 		switch newObjectField.Kind() {
 		case reflect.Slice:
-			addDiffSliceToMap(newObjectField, existingObjectField, jsonTag, diff)
+			addSliceDiffToMap(newObjectField, existingObjectField, jsonTag, diff)
 
 		case reflect.Struct:
-			addDiffStructToMap(newObjectField, existingObjectField, jsonTag, diff)
+			addStructDiffToMap(newObjectField, existingObjectField, jsonTag, diff)
+
+		case reflect.Map:
+			addMapDiffToMap(newObjectField, existingObjectField, jsonTag, diff)
 
 		default:
 			if !newObjectField.IsValid() {
@@ -214,10 +221,10 @@ func JsonDiffMapExceptId(newObj, existingObj interface{}) (map[string]interface{
 	return diff, nil
 }
 
-func addDiffSliceToMap(newSlice reflect.Value, existingSlice reflect.Value, jsonTag string, diffMap map[string]interface{}) {
+func addSliceDiffToMap(newSlice reflect.Value, existingSlice reflect.Value, jsonTag string, diffMap map[string]interface{}) {
 
 	// If first slice is nil, that means that we reset the value
-	if !newSlice.IsValid() {
+	if !newSlice.IsValid() || newSlice.Len() == 0 {
 		if existingSlice.IsValid() {
 			diffMap[jsonTag] = nil // reset the value
 		}
@@ -283,7 +290,7 @@ func addDiffSliceToMap(newSlice reflect.Value, existingSlice reflect.Value, json
 }
 
 // Returns json form for patching the difference e.g. { "id": 1 }
-func addDiffStructToMap(newObj reflect.Value, existingObj reflect.Value, jsonTag string, diffMap map[string]interface{}) {
+func addStructDiffToMap(newObj reflect.Value, existingObj reflect.Value, jsonTag string, diffMap map[string]interface{}) {
 
 	// If first struct is nil, that means that we reset the attribute to nil
 	if !newObj.IsValid() {
@@ -294,10 +301,14 @@ func addDiffStructToMap(newObj reflect.Value, existingObj reflect.Value, jsonTag
 	// We use ids for comparison between structs, because for patching objects, all we need is id of attribute
 	idField := newObj.FieldByName("ID")
 
+	// If objects don't have ID field, compare them by their values
 	if !idField.IsValid() {
-		// Both objects doesn't have ID field, compare them directly
 		if newObj.Interface() != existingObj.Interface() {
-			diffMap[jsonTag] = newObj.Interface()
+			if isChoiceEmbedded(newObj) {
+				diffMap[jsonTag] = choiceValue(newObj)
+			} else {
+				diffMap[jsonTag] = newObj.Interface()
+			}
 		}
 	} else {
 		// Objects have ID field, compare their ids
@@ -305,6 +316,25 @@ func addDiffStructToMap(newObj reflect.Value, existingObj reflect.Value, jsonTag
 			id := newObj.FieldByName("ID").Interface().(int)
 			diffMap[jsonTag] = IDObject{ID: id}
 		}
+	}
+}
+
+func addMapDiffToMap(newMap reflect.Value, existingMap reflect.Value, jsonTag string, diffMap map[string]interface{}) {
+
+	// If first map is nil, that means that we reset the attribute to nil
+	if !newMap.IsValid() {
+		diffMap[jsonTag] = nil
+		return
+	}
+
+	// Maps don't have ids, but only string fields (e.g. custom_fields map of devices)
+	if newMap.Len() != existingMap.Len() {
+		diffMap[jsonTag] = newMap.Interface()
+		return
+	}
+
+	if !reflect.DeepEqual(newMap.Interface(), existingMap.Interface()) {
+		diffMap[jsonTag] = newMap.Interface()
 	}
 }
 
@@ -352,11 +382,17 @@ func MatchStringToValue(input string, patterns map[string]string) (string, error
 }
 
 // Converts string name to its slugified version.
+// Slugified version can only contain: lowercase letters, numbers,
+// underscores or hyphens.
 // e.g. "My Name" -> "my-name"
-// e.g. "   Test  " -> "test"
+// e.g. "  @Test@ " -> "test"
 func Slugify(name string) string {
 	name = strings.TrimSpace(name)
 	name = strings.ToLower(name)
-	name = strings.ReplaceAll(name, " ", "-")
+	name = strings.ReplaceAll(name, " ", "_")
+
+	// Remove characters except lowercase letters, numbers, underscores, hyphens
+	reg, _ := regexp.Compile("[^a-z0-9_-]+")
+	name = reg.ReplaceAllString(name, "")
 	return name
 }

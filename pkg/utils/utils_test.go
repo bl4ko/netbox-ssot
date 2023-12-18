@@ -273,6 +273,64 @@ func TestJsonDiffMapComplex2(t *testing.T) {
 	}
 }
 
+func TestJsonDiffMapWithChoiceAttr(t *testing.T) {
+	newObj := &dcim.Device{
+		Name: "Test device",
+		DeviceRole: &dcim.DeviceRole{
+			NetboxObject: common.NetboxObject{
+				ID: 1,
+			},
+			Name:  "Test device role",
+			Slug:  "test-device-role",
+			Color: "000000",
+		},
+		DeviceType: &dcim.DeviceType{
+			NetboxObject: common.NetboxObject{
+				ID: 1,
+			},
+			Model: "Test device model",
+			Slug:  "test-device-type",
+		},
+		Status: &dcim.DeviceStatusActive,
+	}
+
+	existingObj := &dcim.Device{
+		NetboxObject: common.NetboxObject{
+			ID:          1,
+			Description: "Test device",
+			Tags: []*common.Tag{
+				{ID: 2, Name: "Netbox-synced"},
+			},
+		},
+		Name: "Test device",
+		DeviceRole: &dcim.DeviceRole{
+			NetboxObject: common.NetboxObject{ID: 1},
+			Name:         "Test device role",
+			Slug:         "test-device-role",
+			Color:        "000000",
+		},
+		DeviceType: &dcim.DeviceType{
+			NetboxObject: common.NetboxObject{ID: 1},
+			Model:        "test-model",
+			Slug:         "test-device-type",
+		},
+		Status: &dcim.DeviceStatusOffline,
+	}
+	expectedDiffMap := map[string]interface{}{
+		"description": "",
+		"tags":        nil,
+		"status":      "active",
+	}
+
+	respDiffMap, err := JsonDiffMapExceptId(newObj, existingObj)
+	if err != nil {
+		t.Errorf("JsonDiffMapExceptId() error = %v", err)
+	}
+	if !reflect.DeepEqual(respDiffMap, expectedDiffMap) {
+		t.Errorf("JsonDiffMapExceptId() = %v, want %v", respDiffMap, expectedDiffMap)
+	}
+
+}
 func TestSlugify(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -287,12 +345,32 @@ func TestSlugify(t *testing.T) {
 		{
 			name:     "String with spaces",
 			input:    "Test String",
-			expected: "test-string",
+			expected: "test_string",
 		},
 		{
 			name:     "String with trailing spaces",
 			input:    "    Te st    ",
-			expected: "te-st",
+			expected: "te_st",
+		},
+		{
+			name:     "String with special characters",
+			input:    "Test@#String$%^",
+			expected: "teststring",
+		},
+		{
+			name:     "String with mixed case letters",
+			input:    "TeSt StRiNg",
+			expected: "test_string",
+		},
+		{
+			name:     "String with numbers",
+			input:    "Test123 String456",
+			expected: "test123_string456",
+		},
+		{
+			name:     "String with underscores",
+			input:    "Test_String",
+			expected: "test_string",
 		},
 	}
 
@@ -351,7 +429,7 @@ func TestNetboxMarshal(t *testing.T) {
 			},
 			Name:   "New York",
 			Slug:   "new-york",
-			Status: common.StatusActive,
+			Status: &common.SiteStatusActive,
 		},
 		Tenant: &tenancy.Tenant{
 			NetboxObject: common.NetboxObject{
@@ -430,7 +508,7 @@ func TestNetboxJsonMarshalWithChoiceAttr(t *testing.T) {
 			},
 			Name:   "Test site",
 			Slug:   "test-site",
-			Status: common.StatusActive,
+			Status: &common.SiteStatusActive,
 		},
 	}
 

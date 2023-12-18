@@ -74,8 +74,8 @@ func (ni *NetBoxInventory) AddCustomField(newCf *extras.CustomField) error {
 
 // Add Cluster to NetBoxInventory
 func (ni *NetBoxInventory) AddClusterGroup(newCg *virtualization.ClusterGroup, newTags []*common.Tag) error {
+	newCg.Tags = append(newCg.Tags, ni.SsotTag)
 	if _, ok := ni.ClusterGroupsIndexByName[newCg.Name]; ok {
-		newCg.Tags = append([]*common.Tag{ni.SsotTag}, newTags...)
 		diffMap, err := utils.JsonDiffMapExceptId(newCg, ni.ClusterGroupsIndexByName[newCg.Name])
 		if err != nil {
 			return err
@@ -102,9 +102,9 @@ func (ni *NetBoxInventory) AddClusterGroup(newCg *virtualization.ClusterGroup, n
 }
 
 // Add ClusterType to NetBoxInventory
-func (ni *NetBoxInventory) AddClusterType(newClusterType *virtualization.ClusterType, newTags []*common.Tag) (*virtualization.ClusterType, error) {
+func (ni *NetBoxInventory) AddClusterType(newClusterType *virtualization.ClusterType) (*virtualization.ClusterType, error) {
+	newClusterType.Tags = append(newClusterType.Tags, ni.SsotTag)
 	if _, ok := ni.ClusterTypesIndexByName[newClusterType.Name]; ok {
-		newClusterType.Tags = append([]*common.Tag{ni.SsotTag}, newTags...)
 		diffMap, err := utils.JsonDiffMapExceptId(newClusterType, ni.ClusterTypesIndexByName[newClusterType.Name])
 		if err != nil {
 			return nil, err
@@ -133,9 +133,9 @@ func (ni *NetBoxInventory) AddClusterType(newClusterType *virtualization.Cluster
 	}
 }
 
-func (ni *NetBoxInventory) AddCluster(newCluster *virtualization.Cluster, newTags []*common.Tag) error {
+func (ni *NetBoxInventory) AddCluster(newCluster *virtualization.Cluster) error {
+	newCluster.Tags = append(newCluster.Tags, ni.SsotTag)
 	if _, ok := ni.ClustersIndexByName[newCluster.Name]; ok {
-		newCluster.Tags = append([]*common.Tag{ni.SsotTag}, newTags...)
 		diffMap, err := utils.JsonDiffMapExceptId(newCluster, ni.ClustersIndexByName[newCluster.Name])
 		if err != nil {
 			return err
@@ -161,9 +161,9 @@ func (ni *NetBoxInventory) AddCluster(newCluster *virtualization.Cluster, newTag
 	return nil
 }
 
-func (ni *NetBoxInventory) AddDeviceRole(newDeviceRole *dcim.DeviceRole, newTags []*common.Tag) error {
+func (ni *NetBoxInventory) AddDeviceRole(newDeviceRole *dcim.DeviceRole) error {
+	newDeviceRole.Tags = append(newDeviceRole.Tags, ni.SsotTag)
 	if _, ok := ni.DeviceRolesIndexByName[newDeviceRole.Name]; ok {
-		newDeviceRole.Tags = append([]*common.Tag{ni.SsotTag}, newTags...)
 		diffMap, err := utils.JsonDiffMapExceptId(newDeviceRole, ni.DeviceRolesIndexByName[newDeviceRole.Name])
 		if err != nil {
 			return err
@@ -187,4 +187,116 @@ func (ni *NetBoxInventory) AddDeviceRole(newDeviceRole *dcim.DeviceRole, newTags
 		ni.DeviceRolesIndexByName[newDeviceRole.Name] = newDeviceRole
 	}
 	return nil
+}
+
+func (ni *NetBoxInventory) AddManufacturer(newManufacturer *common.Manufacturer) (*common.Manufacturer, error) {
+	newManufacturer.Tags = append(newManufacturer.Tags, ni.SsotTag)
+	if _, ok := ni.ManufacturersIndexByName[newManufacturer.Name]; ok {
+		diffMap, err := utils.JsonDiffMapExceptId(newManufacturer, ni.ManufacturersIndexByName[newManufacturer.Name])
+		if err != nil {
+			return nil, err
+		}
+		if len(diffMap) > 0 {
+			ni.Logger.Debug("Manufacturer ", newManufacturer.Name, " already exists in NetBox but is out of date. Patching it...")
+			patchedManufacturer, err := ni.NetboxApi.PatchManufacturer(diffMap, ni.ManufacturersIndexByName[newManufacturer.Name].ID)
+			if err != nil {
+				return nil, err
+			}
+			ni.ManufacturersIndexByName[newManufacturer.Name] = patchedManufacturer
+		} else {
+			ni.Logger.Debug("Manufacturer ", newManufacturer.Name, " already exists in NetBox and is up to date...")
+		}
+	} else {
+		ni.Logger.Debug("Manufacturer ", newManufacturer.Name, " does not exist in NetBox. Creating it...")
+		newManufacturer, err := ni.NetboxApi.CreateManufacturer(newManufacturer)
+		if err != nil {
+			return nil, err
+		}
+		ni.ManufacturersIndexByName[newManufacturer.Name] = newManufacturer
+	}
+	return ni.ManufacturersIndexByName[newManufacturer.Name], nil
+}
+
+func (ni *NetBoxInventory) AddDeviceType(newDeviceType *dcim.DeviceType) (*dcim.DeviceType, error) {
+	newDeviceType.Tags = append(newDeviceType.Tags, ni.SsotTag)
+	if _, ok := ni.DeviceTypesIndexByModel[newDeviceType.Model]; ok {
+		diffMap, err := utils.JsonDiffMapExceptId(newDeviceType, ni.DeviceTypesIndexByModel[newDeviceType.Model])
+		if err != nil {
+			return nil, err
+		}
+		if len(diffMap) > 0 {
+			ni.Logger.Debug("Device type ", newDeviceType.Model, " already exists in NetBox but is out of date. Patching it...")
+			patchedDeviceType, err := ni.NetboxApi.PatchDeviceType(diffMap, ni.DeviceTypesIndexByModel[newDeviceType.Model].ID)
+			if err != nil {
+				return nil, err
+			}
+			ni.DeviceTypesIndexByModel[newDeviceType.Model] = patchedDeviceType
+		} else {
+			ni.Logger.Debug("Device type ", newDeviceType.Model, " already exists in NetBox and is up to date...")
+		}
+	} else {
+		ni.Logger.Debug("Device type ", newDeviceType.Model, " does not exist in NetBox. Creating it...")
+		newDeviceType, err := ni.NetboxApi.CreateDeviceType(newDeviceType)
+		if err != nil {
+			return nil, err
+		}
+		ni.DeviceTypesIndexByModel[newDeviceType.Model] = newDeviceType
+	}
+	return ni.DeviceTypesIndexByModel[newDeviceType.Model], nil
+}
+
+func (ni *NetBoxInventory) AddPlatform(newPlatform *common.Platform) (*common.Platform, error) {
+	newPlatform.Tags = append(newPlatform.Tags, ni.SsotTag)
+	if _, ok := ni.PlatformsIndexByName[newPlatform.Name]; ok {
+		diffMap, err := utils.JsonDiffMapExceptId(newPlatform, ni.PlatformsIndexByName[newPlatform.Name])
+		if err != nil {
+			return nil, err
+		}
+		if len(diffMap) > 0 {
+			ni.Logger.Debug("Platform ", newPlatform.Name, " already exists in NetBox but is out of date. Patching it...")
+			patchedPlatform, err := ni.NetboxApi.PatchPlatform(diffMap, ni.PlatformsIndexByName[newPlatform.Name].ID)
+			if err != nil {
+				return nil, err
+			}
+			ni.PlatformsIndexByName[newPlatform.Name] = patchedPlatform
+		} else {
+			ni.Logger.Debug("Platform ", newPlatform.Name, " already exists in NetBox and is up to date...")
+		}
+	} else {
+		ni.Logger.Debug("Platform ", newPlatform.Name, " does not exist in NetBox. Creating it...")
+		newPlatform, err := ni.NetboxApi.CreatePlatform(newPlatform)
+		if err != nil {
+			return nil, err
+		}
+		ni.PlatformsIndexByName[newPlatform.Name] = newPlatform
+	}
+	return ni.PlatformsIndexByName[newPlatform.Name], nil
+}
+
+func (ni *NetBoxInventory) AddDevice(newDevice *dcim.Device) (*dcim.Device, error) {
+	newDevice.Tags = append(newDevice.Tags, ni.SsotTag)
+	if _, ok := ni.DevicesIndexByName[newDevice.Name]; ok {
+		diffMap, err := utils.JsonDiffMapExceptId(newDevice, ni.DevicesIndexByName[newDevice.Name])
+		if err != nil {
+			return nil, err
+		}
+		if len(diffMap) > 0 {
+			ni.Logger.Debug("Device ", newDevice.Name, " already exists in NetBox but is out of date. Patching it...")
+			patchedDevice, err := ni.NetboxApi.PatchDevice(diffMap, ni.DevicesIndexByName[newDevice.Name].ID)
+			if err != nil {
+				return nil, err
+			}
+			ni.DevicesIndexByName[newDevice.Name] = patchedDevice
+		} else {
+			ni.Logger.Debug("Device ", newDevice.Name, " already exists in NetBox and is up to date...")
+		}
+	} else {
+		ni.Logger.Debug("Device ", newDevice.Name, " does not exist in NetBox. Creating it...")
+		newDevice, err := ni.NetboxApi.CreateDevice(newDevice)
+		if err != nil {
+			return nil, err
+		}
+		ni.DevicesIndexByName[newDevice.Name] = newDevice
+	}
+	return ni.DevicesIndexByName[newDevice.Name], nil
 }

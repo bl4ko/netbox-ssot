@@ -10,16 +10,16 @@ import (
 
 type TenantResponse struct {
 	Count    int              `json:"count"`
-	Next     int              `json:"next"`
-	Previous int              `json:"previous"`
+	Next     *string          `json:"next"`
+	Previous *string          `json:"previous"`
 	Results  []tenancy.Tenant `json:"results"`
 }
 
-// GET /api/tenancy/tenants/
+// GET /api/tenancy/tenants/?limit=0
 func (api *NetboxAPI) GetAllTenants() ([]*tenancy.Tenant, error) {
 	api.Logger.Debug("Getting all tenants from NetBox")
 
-	response, err := api.doRequest(MethodGet, "/api/tenancy/tenants/", nil)
+	response, err := api.doRequest(MethodGet, "/api/tenancy/tenants/?limit=0", nil)
 	if err != nil {
 		return nil, err
 	}

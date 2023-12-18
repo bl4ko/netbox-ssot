@@ -221,10 +221,13 @@ func (o *OVirtSource) SyncDatacenters(nbi *inventory.NetBoxInventory) error {
 
 func (o *OVirtSource) SyncClusters(nbi *inventory.NetBoxInventory) error {
 	clusterType := &virtualization.ClusterType{
+		NetboxObject: common.NetboxObject{
+			Tags: o.SourceTags,
+		},
 		Name: "oVirt",
 		Slug: "ovirt",
 	}
-	clusterType, err := nbi.AddClusterType(clusterType, o.SourceTags)
+	clusterType, err := nbi.AddClusterType(clusterType)
 	if err != nil {
 		return fmt.Errorf("failed to add oVirt cluster type: %v", err)
 	}
@@ -277,15 +280,18 @@ func (o *OVirtSource) SyncClusters(nbi *inventory.NetBoxInventory) error {
 		}
 
 		nbCluster := &virtualization.Cluster{
-			NetboxObject: common.NetboxObject{Description: description},
-			Name:         clusterName,
-			Type:         clusterType,
-			Status:       virtualization.ClusterStatusActive,
-			Group:        clusterGroup,
-			Site:         clusterSite,
-			Tenant:       clusterTenant,
+			NetboxObject: common.NetboxObject{
+				Description: description,
+				Tags:        o.SourceTags,
+			},
+			Name:   clusterName,
+			Type:   clusterType,
+			Status: virtualization.ClusterStatusActive,
+			Group:  clusterGroup,
+			Site:   clusterSite,
+			Tenant: clusterTenant,
 		}
-		err := nbi.AddCluster(nbCluster, o.SourceTags)
+		err := nbi.AddCluster(nbCluster)
 		if err != nil {
 			return fmt.Errorf("failed to add oVirt cluster %s as NetBox cluster: %v", clusterName, err)
 		}
@@ -296,9 +302,14 @@ func (o *OVirtSource) SyncClusters(nbi *inventory.NetBoxInventory) error {
 // Host in oVirt is a represented as device in netbox with a
 // custom role Server
 func (o *OVirtSource) SyncHosts(nbi *inventory.NetBoxInventory) error {
-	for hostId, host := range o.Hosts {
-		fmt.Println(hostId)
+	for _, host := range o.Hosts {
 		hostCluster := nbi.ClustersIndexByName[o.Clusters[host.MustCluster().MustId()].MustName()]
+
+		var hostDescription string
+		description, exists := host.Description()
+		if exists {
+			hostDescription = description
+		}
 
 		var hostSite *common.Site
 		if o.HostSiteRelations != nil {
@@ -327,44 +338,151 @@ func (o *OVirtSource) SyncHosts(nbi *inventory.NetBoxInventory) error {
 			}
 		}
 
-		var serialNumber string
-		var assetTagString string
+		var hostSerialNumber, manufacturerName, hostAssetTag, hostModel string
+		var err error
 		hwInfo, exists := host.HardwareInformation()
 		if exists {
-			serialNumber, exists = hwInfo.Uuid()
+			hostAssetTag, exists = hwInfo.Uuid()
+			if !exists {
+				o.Logger.Warning("Uuid (asset tag) for oVirt host ", host.MustName(), " is empty.")
+			}
+			hostSerialNumber, exists = hwInfo.SerialNumber()
 			if !exists {
 				o.Logger.Warning("Serial number for oVirt host ", host.MustName(), " is empty.")
 			}
-			assetTagString, exists = hwInfo.SerialNumber()
-			if !exists {
-				o.Logger.Warning("Asset tag for oVirt host ", host.MustName(), " is empty.")
+			manufacturerName, _ = hwInfo.Manufacturer()
+			manufacturerName, err = utils.MatchStringToValue(manufacturerName, common.ManufacturerMap)
+			if err != nil {
+				return fmt.Errorf("error occured when matching oVirt host %s to a NetBox manufacturer: %v", host.MustName(), err)
 			}
-			manufacturer, exists := hwInfo.Manufacturer()
+
+			hostModel, exists = hwInfo.ProductName()
 			if !exists {
-				manufacturer = "Generic Vendor"
-			}
-			model, exists := hwInfo.ProductName()
-			if !exists {
-				model = "Generic Model"
+				hostModel = "Generic Model" // Model is also required for adding device type into netbox
 			}
 		}
 
-		status, exists := host.Status()
+		var hostManufacturer *common.Manufacturer
+		if manufacturerName == "" {
+			manufacturerName = "Generic Manufacturer"
+		}
+		hostManufacturer, err = nbi.AddManufacturer(&common.Manufacturer{
+			Name: manufacturerName,
+			Slug: utils.Slugify(manufacturerName),
+		})
+		if err != nil {
+			return fmt.Errorf("failed adding oVirt Manufacturer %v with error: %s", hostManufacturer, err)
+		}
+
+		var hostDeviceType *dcim.DeviceType
+		hostDeviceType, err = nbi.AddDeviceType(&dcim.DeviceType{
+			Manafacturer: hostManufacturer,
+			Model:        hostModel,
+			Slug:         utils.Slugify(hostModel),
+		})
+		if err != nil {
+			return fmt.Errorf("failed adding oVirt DeviceType %v with error: %s", hostDeviceType, err)
+		}
+
+		var hostStatus *dcim.DeviceStatus
+		ovirtStatus, exists := host.Status()
 		if exists {
-
+			switch ovirtStatus {
+			case ovirtsdk4.HOSTSTATUS_UP:
+				hostStatus = &dcim.DeviceStatusActive
+			default:
+				hostStatus = &dcim.DeviceStatusOffline
+			}
 		}
+
+		var hostPlatform *common.Platform
+		var platformName string
+		if os, exists := host.Os(); exists {
+			osType, exists := os.Type()
+			if !exists {
+				osType = "Generic OS"
+			}
+			osVersion, exists := os.Version()
+			var osVersionName string
+			if !exists {
+				osVersionName = "Generic Version"
+			} else {
+				osVersionName, exists = osVersion.FullVersion()
+				if !exists {
+					osVersionName = "Generic Version"
+				}
+			}
+			platformName = fmt.Sprintf("%s %s", osType, osVersionName)
+		}
+		hostPlatform, err = nbi.AddPlatform(&common.Platform{
+			Name: platformName,
+			Slug: utils.Slugify(platformName),
+		})
+		if err != nil {
+			return fmt.Errorf("failed adding oVirt Platform %v with error: %s", hostPlatform, err)
+		}
+
+		var hostComment string
+		if comment, exists := host.Comment(); exists {
+			hostComment = comment
+		}
+
+		var hostCpuCores string
+		if cpu, exists := host.Cpu(); exists {
+			hostCpuCores, exists = cpu.Name()
+			if !exists {
+				o.Logger.Warning("oVirt hostCpuCores of ", host.MustName(), " is empty.")
+			}
+		}
+
+		mem, _ := host.Memory()
+		mem /= (1024 * 1024 * 1024) // Value is in Bytes, we convert to GB
 
 		nbHost := &dcim.Device{
-			NetboxObject: common.NetboxObject{Description: host.MustDescription(), Tags: o.SourceTags},
+			NetboxObject: common.NetboxObject{Description: hostDescription, Tags: o.SourceTags},
 			Name:         host.MustName(),
+			Status:       hostStatus,
+			Platform:     hostPlatform,
 			DeviceRole:   nbi.DeviceRolesIndexByName["Server"],
 			Site:         hostSite,
 			Tenant:       hostTenant,
 			Cluster:      hostCluster,
-			Comments:     host.MustComment(),
+			Comments:     hostComment,
+			SerialNumber: hostSerialNumber,
+			AssetTag:     hostAssetTag,
+			DeviceType:   hostDeviceType,
+			CustomFields: map[string]string{
+				"host_cpu_cores": hostCpuCores,
+				"host_memory":    fmt.Sprintf("%d GB", mem),
+			},
 		}
-		fmt.Println(nbHost)
+		_, err = nbi.AddDevice(nbHost)
+		if err != nil {
+			return fmt.Errorf("failed to add oVirt host %s with error: %v", host.MustName(), err)
+		}
+
+		// We also need to sync nics separately, because nic is a separate object in netbox
+		syncHostNics(nbi, host, nbHost)
 	}
 
+	return nil
+}
+
+func syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ovirsdk4.Host, nbHost *dcim.Device) error {
+	nics, exists := ovirtHost.Nics()
+	id2nic := make(map[string]*dcim.Interface)
+	if exists {
+		for _, nic := range nics.Slice() {
+			newInterface := &dcim.Interface{
+				NetboxObject: common.NetboxObject{
+					Tags: nbi.SourceTags,
+				},
+				Name:   nic.MustName(),
+				Device: host,
+				InterfaceType: &dcim.InterfaceType{
+			},
+				fmt.Println(nic)
+		}
+	}
 	return nil
 }
