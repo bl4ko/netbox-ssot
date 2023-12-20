@@ -142,17 +142,106 @@ type Device struct {
 	CustomFields map[string]string `json:"custom_fields,omitempty"`
 }
 
-type InterfaceType string
+type InterfaceType struct {
+	common.Choice
+}
 
-const (
+// Predefined types: https://github.com/netbox-community/netbox/blob/ec245b968f50bdbafaadd5d6b885832d858fa167/netbox/dcim/choices.py#L800
+var (
 	// VirtualInterfaces
-	VirtualInterfaceType InterfaceType = "Virtual"
-	BridgeInterfaceType  InterfaceType = "Bridge"
-	LAGInterfaceType     InterfaceType = "LAG"
-	// Ethernet (fixed)
-	BASEFXInterfaceType  InterfaceType = "100BASE-FX (10/100ME FIBER)"
-	BASELFXInterfaceType InterfaceType = "100BASE-LX (10/100ME FIBER)"
-	BASETXInterfaceType  InterfaceType = "100BASE-SX (10/100ME FIBER)"
+	VirtualInterfaceType = InterfaceType{common.Choice{Value: "virtual", Label: "Virtual"}}
+	BridgeInterfaceType  = InterfaceType{common.Choice{Value: "bridge", Label: "Bridge"}}
+	LAGInterfaceType     = InterfaceType{common.Choice{Value: "lag", Label: "Link Aggregation Group (LAG)"}}
+
+	// Ethernet (Fixed)
+	BASEFXInterfaceType       = InterfaceType{common.Choice{Value: "100base-fx", Label: "100BASE-FX (10/100ME FIBER)"}}
+	BASELFXInterfaceType      = InterfaceType{common.Choice{Value: "100base-lfx", Label: "100BASE-LFX (10/100ME FIBER)"}}
+	BASETXInterfaceType       = InterfaceType{common.Choice{Value: "100base-tx", Label: "100BASE-TX (10/100ME)"}}
+	BASET1InterfaceType       = InterfaceType{common.Choice{Value: "100base-t1", Label: "100BASE-T1 (10/100ME Single Pair)"}}
+	GE1FixedInterfaceType     = InterfaceType{common.Choice{Value: "1000base-t", Label: "1000BASE-T (1GE)"}}
+	GE1GBICInterfaceType      = InterfaceType{common.Choice{Value: "1000base-x-gbic", Label: "GBIC (1GE)"}}
+	GE1SFPInterfaceType       = InterfaceType{common.Choice{Value: "1000base-x-sfp", Label: "SFP (1GE)"}}
+	GE2FixedInterfaceType     = InterfaceType{common.Choice{Value: "2.5gbase-t", Label: "2.5GBASE-T (2.5GE)"}}
+	GE5FixedInterfaceType     = InterfaceType{common.Choice{Value: "5gbase-t", Label: "5GBASE-T (5GE)"}}
+	GE10FixedInterfaceType    = InterfaceType{common.Choice{Value: "10gbase-t", Label: "10GBASE-T (10GE)"}}
+	GE10CX4InterfaceType      = InterfaceType{common.Choice{Value: "10gbase-cx4", Label: "10GBASE-CX4 (10GE)"}}
+	GE10SFPPInterfaceType     = InterfaceType{common.Choice{Value: "10gbase-x-sfpp", Label: "SFP+ (10GE)"}}
+	GE10XFPInterfaceType      = InterfaceType{common.Choice{Value: "10gbase-x-xfp", Label: "XFP (10GE)"}}
+	GE10XENPAKInterfaceType   = InterfaceType{common.Choice{Value: "10gbase-x-xenpak", Label: "XENPAK (10GE)"}}
+	GE10X2InterfaceType       = InterfaceType{common.Choice{Value: "10gbase-x-x2", Label: "X2 (10GE)"}}
+	GE25SFP28InterfaceType    = InterfaceType{common.Choice{Value: "25gbase-x-sfp28", Label: "SFP28 (25GE)"}}
+	GE50SFP56InterfaceType    = InterfaceType{common.Choice{Value: "50gbase-x-sfp56", Label: "SFP56 (50GE)"}}
+	GE40QSFPPlusInterfaceType = InterfaceType{common.Choice{Value: "40gbase-x-qsfpp", Label: "QSFP+ (40GE)"}}
+	GE50QSFP28InterfaceType   = InterfaceType{common.Choice{Value: "50gbase-x-sfp28", Label: "QSFP28 (50GE)"}}
+	GE100CFPInterfaceType     = InterfaceType{common.Choice{Value: "100gbase-x-cfp", Label: "CFP (100GE)"}}
+	GE100CFP2InterfaceType    = InterfaceType{common.Choice{Value: "100gbase-x-cfp2", Label: "CFP2 (100GE)"}}
+	GE100CFP4InterfaceType    = InterfaceType{common.Choice{Value: "100gbase-x-cfp4", Label: "CFP4 (100GE)"}}
+	GE100CXPInterfaceType     = InterfaceType{common.Choice{Value: "100gbase-x-cxp", Label: "CXP (100GE)"}}
+	GE100CPAKInterfaceType    = InterfaceType{common.Choice{Value: "100gbase-x-cpak", Label: "Cisco CPAK (100GE)"}}
+	GE100DSFPInterfaceType    = InterfaceType{common.Choice{Value: "100gbase-x-dsfp", Label: "DSFP (100GE)"}}
+	GE100SFPDDInterfaceType   = InterfaceType{common.Choice{Value: "100gbase-x-sfpdd", Label: "SFP-DD (100GE)"}}
+	GE100QSFP28InterfaceType  = InterfaceType{common.Choice{Value: "100gbase-x-qsfp28", Label: "QSFP28 (100GE)"}}
+	GE100QSFPDDInterfaceType  = InterfaceType{common.Choice{Value: "100gbase-x-qsfpdd", Label: "QSFP-DD (100GE)"}}
+	GE200CFP2InterfaceType    = InterfaceType{common.Choice{Value: "200gbase-x-cfp2", Label: "CFP2 (200GE)"}}
+	GE200QSFP56InterfaceType  = InterfaceType{common.Choice{Value: "200gbase-x-qsfp56", Label: "QSFP56 (200GE)"}}
+	GE200QSFPDDInterfaceType  = InterfaceType{common.Choice{Value: "200gbase-x-qsfpdd", Label: "QSFP-DD (200GE)"}}
+	GE400CFP2InterfaceType    = InterfaceType{common.Choice{Value: "400gbase-x-cfp2", Label: "CFP2 (400GE)"}}
+	GE400QSFP112InterfaceType = InterfaceType{common.Choice{Value: "400gbase-x-qsfp112", Label: "QSFP112 (400GE)"}}
+	GE400QSFPDDInterfaceType  = InterfaceType{common.Choice{Value: "400gbase-x-qsfpdd", Label: "QSFP-DD (400GE)"}}
+	GE400OSFPInterfaceType    = InterfaceType{common.Choice{Value: "400gbase-x-osfp", Label: "OSFP (400GE)"}}
+	GE400OSFPRHSInterfaceType = InterfaceType{common.Choice{Value: "400gbase-x-osfp-rhs", Label: "OSFP-RHS (400GE)"}}
+	GE400CDFPInterfaceType    = InterfaceType{common.Choice{Value: "400gbase-x-cdfp", Label: "CDFP (400GE)"}}
+	GE400CFP8InterfaceType    = InterfaceType{common.Choice{Value: "400gbase-x-cfp8", Label: "CPF8 (400GE)"}}
+	GE800QSFPDDInterfaceType  = InterfaceType{common.Choice{Value: "800gbase-x-qsfpdd", Label: "QSFP-DD (800GE)"}}
+	GE800OSFPInterfaceType    = InterfaceType{common.Choice{Value: "800gbase-x-osfp", Label: "OSFP (800GE)"}}
+
+	// Wireless
+	IEEE80211AInterfaceType  = InterfaceType{common.Choice{Value: "ieee802.11a", Label: "IEEE 802.11a"}}
+	IEEE80211GInterfaceType  = InterfaceType{common.Choice{Value: "ieee802.11g", Label: "IEEE 802.11b/g"}}
+	IEEE80211NInterfaceType  = InterfaceType{common.Choice{Value: "ieee802.11n", Label: "IEEE 802.11n"}}
+	IEEE80211ACInterfaceType = InterfaceType{common.Choice{Value: "ieee802.11ac", Label: "IEEE 802.11ac"}}
+	IEEE80211ADInterfaceType = InterfaceType{common.Choice{Value: "ieee802.11ad", Label: "IEEE 802.11ad"}}
+	IEEE80211AXInterfaceType = InterfaceType{common.Choice{Value: "ieee802.11ax", Label: "IEEE 802.11ax"}}
+
+	// PON
+	GPONInterfaceType     = InterfaceType{common.Choice{Value: "gpon", Label: "GPON (2.5 Gbps / 1.25 Gps)"}}
+	XGPONInterfaceType    = InterfaceType{common.Choice{Value: "xg-pon", Label: "XG-PON (10 Gbps / 2.5 Gbps)"}}
+	XGSPONInterfaceType   = InterfaceType{common.Choice{Value: "xgs-pon", Label: "XGS-PON (10 Gbps)"}}
+	NGPON2InterfaceType   = InterfaceType{common.Choice{Value: "ng-pon2", Label: "NG-PON2 (TWDM-PON) (4x10 Gbps)"}}
+	EPONInterfaceType     = InterfaceType{common.Choice{Value: "epon", Label: "EPON (1 Gbps)"}}
+	TenGEPONInterfaceType = InterfaceType{common.Choice{Value: "10g-epon", Label: "10G-EPON (10 Gbps)"}}
+
+	// Stacking
+
+	// Cellular
+	GSMInterfaceType  = InterfaceType{common.Choice{Value: "gsm", Label: "GSM"}}
+	CDMAInterfaceType = InterfaceType{common.Choice{Value: "cdma", Label: "CDMA"}}
+	LTEInterfaceType  = InterfaceType{common.Choice{Value: "lte", Label: "LTE"}}
+
+	// Other type
+	OtherInterfaceType = InterfaceType{common.Choice{Value: "other", Label: "Other"}}
+)
+
+// // Maps interface speed to interface type
+// InterfaceTypeMap := map[int]InterfaceType{
+// 	100: BASETXInterfaceType,
+// 	1000: BASET1InterfaceType,
+// }
+
+// Interface speed in kbps
+type InterfaceSpeed int64
+
+// Available interface speeds
+const (
+	MBPS10  InterfaceSpeed = 10000
+	MBPS100 InterfaceSpeed = 100000
+	GBPS1   InterfaceSpeed = 1000000
+	GBPS10  InterfaceSpeed = 10000000
+	GBPS25  InterfaceSpeed = 25000000
+	GBPS40  InterfaceSpeed = 40000000
+	GBPS100 InterfaceSpeed = 100000000
+	GBPS200 InterfaceSpeed = 200000000
+	GBPS400 InterfaceSpeed = 400000000
 )
 
 // const speed2interfaceType = map[int]InterfaceType{
@@ -166,9 +255,12 @@ type Interface struct {
 	Device *Device `json:"device,omitempty"`
 	// Name is the name of the interface. This field is required.
 	Name string `json:"name,omitempty"`
-	// InterfaceType is the type of interface. This field is required. Can only be one of the predetermined values.
-	InterfaceType *InterfaceType `json:"type,omitempty"`
-
+	// Status whether the interface is enabled or not.
+	Status bool `json:"enabled,omitempty"`
+	// Type is the type of interface. This field is required. Can only be one of the predetermined values.
+	Type *InterfaceType `json:"type,omitempty"`
+	// Interface speed in kbps
+	Speed InterfaceSpeed `json:"speed,omitempty"`
 	// Related Intefaces
 	// Parent is the parent interface, if any.
 	ParentInterface *Interface `json:"parent,omitempty"`
@@ -176,4 +268,8 @@ type Interface struct {
 	BridgedInterface *Interface `json:"bridge,omitempty"`
 	// LAG is the LAG to which the interface belongs, if any.
 	LAG *Interface `json:"lag,omitempty"`
+	// MTU is the maximum transmission unit (MTU) configured for the interface.
+	MTU int64 `json:"mtu,omitempty"`
+	// CustomFields that can be added to a device. We use source_id custom field to store the id of the interface in the source system.
+	CustomFields map[string]interface{} `json:"custom_fields,omitempty"`
 }

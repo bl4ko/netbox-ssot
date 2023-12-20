@@ -6,6 +6,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/common"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/dcim"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/extras"
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/ipam"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/virtualization"
 	"github.com/bl4ko/netbox-ssot/pkg/utils"
 )
@@ -275,18 +276,18 @@ func (ni *NetBoxInventory) AddPlatform(newPlatform *common.Platform) (*common.Pl
 
 func (ni *NetBoxInventory) AddDevice(newDevice *dcim.Device) (*dcim.Device, error) {
 	newDevice.Tags = append(newDevice.Tags, ni.SsotTag)
-	if _, ok := ni.DevicesIndexByName[newDevice.Name]; ok {
-		diffMap, err := utils.JsonDiffMapExceptId(newDevice, ni.DevicesIndexByName[newDevice.Name])
+	if _, ok := ni.DevicesIndexByUuid[newDevice.AssetTag]; ok {
+		diffMap, err := utils.JsonDiffMapExceptId(newDevice, ni.DevicesIndexByUuid[newDevice.AssetTag])
 		if err != nil {
 			return nil, err
 		}
 		if len(diffMap) > 0 {
 			ni.Logger.Debug("Device ", newDevice.Name, " already exists in NetBox but is out of date. Patching it...")
-			patchedDevice, err := ni.NetboxApi.PatchDevice(diffMap, ni.DevicesIndexByName[newDevice.Name].ID)
+			patchedDevice, err := ni.NetboxApi.PatchDevice(diffMap, ni.DevicesIndexByUuid[newDevice.AssetTag].ID)
 			if err != nil {
 				return nil, err
 			}
-			ni.DevicesIndexByName[newDevice.Name] = patchedDevice
+			ni.DevicesIndexByUuid[newDevice.AssetTag] = patchedDevice
 		} else {
 			ni.Logger.Debug("Device ", newDevice.Name, " already exists in NetBox and is up to date...")
 		}
@@ -296,7 +297,35 @@ func (ni *NetBoxInventory) AddDevice(newDevice *dcim.Device) (*dcim.Device, erro
 		if err != nil {
 			return nil, err
 		}
-		ni.DevicesIndexByName[newDevice.Name] = newDevice
+		ni.DevicesIndexByUuid[newDevice.AssetTag] = newDevice
 	}
-	return ni.DevicesIndexByName[newDevice.Name], nil
+	return ni.DevicesIndexByUuid[newDevice.AssetTag], nil
+}
+
+func (ni *NetBoxInventory) AddVlan(newVlan *ipam.Vlan) (*ipam.Vlan, error) {
+	newVlan.Tags = append(newVlan.Tags, ni.SsotTag)
+	if _, ok := ni.VlansIndexByName[newVlan.Name]; ok {
+		diffMap, err := utils.JsonDiffMapExceptId(newVlan, ni.VlansIndexByName[newVlan.Name])
+		if err != nil {
+			return nil, err
+		}
+		if len(diffMap) > 0 {
+			ni.Logger.Debug("Vlan ", newVlan.Name, " already exists in NetBox but is out of date. Patching it...")
+			patchedVlan, err := ni.NetboxApi.PatchVlan(diffMap, ni.VlansIndexByName[newVlan.Name].ID)
+			if err != nil {
+				return nil, err
+			}
+			ni.VlansIndexByName[newVlan.Name] = patchedVlan
+		} else {
+			ni.Logger.Debug("Vlan ", newVlan.Name, " already exists in NetBox and is up to date...")
+		}
+	} else {
+		ni.Logger.Debug("Vlan ", newVlan.Name, " does not exist in NetBox. Creating it...")
+		newVlan, err := ni.NetboxApi.CreateVlan(newVlan)
+		if err != nil {
+			return nil, err
+		}
+		ni.VlansIndexByName[newVlan.Name] = newVlan
+	}
+	return ni.VlansIndexByName[newVlan.Name], nil
 }

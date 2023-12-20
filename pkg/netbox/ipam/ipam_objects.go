@@ -43,9 +43,9 @@ type IPAddress struct {
 	// IPv4 or IPv6 address (with mask). This field is required.
 	Address string `json:"address,omitempty"`
 	// The status of this IP address.
-	Status IPAddressStatus `json:"status,omitempty"`
+	Status *IPAddressStatus `json:"status,omitempty"`
 	// Role of the IP address.
-	Role IPAddressRole `json:"role,omitempty"`
+	Role *IPAddressRole `json:"role,omitempty"`
 	// Hostanme or FQDN (not case-sensitive)
 	DNSName string `json:"dns_name,omitempty"`
 
@@ -53,15 +53,35 @@ type IPAddress struct {
 	Tenant *tenancy.Tenant `json:"tenant,omitempty"`
 
 	// AssignedInterface
-	AssignedObjectType AssignedObjectType `json:"assigned_interface,omitempty"`
+	AssignedObjectType *AssignedObjectType `json:"assigned_interface,omitempty"`
 	// ID of the assigned object (either a DeviceInterface or a VMInterface)
 	AssignedObjectID int `json:"assigned_object_id,omitempty"`
 	// AssignedObject can be either a DeviceInterface or a VMInterface
 	AssignedObject interface{} `json:"assigned_object,omitempty"`
 }
 
+type VlanStaus struct {
+	common.Choice
+}
+
+var (
+	VlanStatusActive     = VlanStaus{common.Choice{Value: "active", Label: "Active"}}
+	VlanStatusReserved   = VlanStaus{common.Choice{Value: "reserved", Label: "Reserved"}}
+	VlanStatusDeprecated = VlanStaus{common.Choice{Value: "deprecated", Label: "Deprecated"}}
+)
+
 type Vlan struct {
 	common.NetboxObject
+	// Name of the VLAN. This field is required.
+	Name string `json:"name,omitempty"`
+	// VID of the VLAN. This field is required.
+	Vid int `json:"vid,omitempty"`
+	// Status of the VLAN. This field is required. Default is "active".
+	Status *VlanStaus `json:"status,omitempty"`
+	// Tenant that this VLAN belongs to.
+	Tenant *tenancy.Tenant `json:"tenant,omitempty"`
+	// Comments about this Vlan.
+	Comments string `json:"comments,omitempty"`
 }
 
 type IpRange struct {

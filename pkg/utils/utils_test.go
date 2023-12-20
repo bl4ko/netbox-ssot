@@ -331,6 +331,75 @@ func TestJsonDiffMapWithChoiceAttr(t *testing.T) {
 	}
 
 }
+
+func TestJsonDiffMapWithMapAttr(t *testing.T) {
+	newObj := &dcim.Device{
+		Name: "Test device",
+		DeviceRole: &dcim.DeviceRole{
+			NetboxObject: common.NetboxObject{
+				ID: 1,
+			},
+			Name:  "Test device role",
+			Slug:  "test-device-role",
+			Color: "000000",
+		},
+		DeviceType: &dcim.DeviceType{
+			NetboxObject: common.NetboxObject{
+				ID: 1,
+			},
+			Model: "Test device model",
+			Slug:  "test-device-type",
+		},
+		Status: &dcim.DeviceStatusActive,
+		CustomFields: map[string]string{
+			"host_cpu_cores": "10 cpu cores",
+			"host_mem":       "10 GB",
+		},
+	}
+
+	existingObj := &dcim.Device{
+		NetboxObject: common.NetboxObject{
+			ID:          1,
+			Description: "Test device",
+			Tags: []*common.Tag{
+				{ID: 2, Name: "Netbox-synced"},
+			},
+		},
+		Name: "Test device",
+		DeviceRole: &dcim.DeviceRole{
+			NetboxObject: common.NetboxObject{ID: 1},
+			Name:         "Test device role",
+			Slug:         "test-device-role",
+			Color:        "000000",
+		},
+		DeviceType: &dcim.DeviceType{
+			NetboxObject: common.NetboxObject{ID: 1},
+			Model:        "test-model",
+			Slug:         "test-device-type",
+		},
+		Status: &dcim.DeviceStatusOffline,
+		CustomFields: map[string]string{
+			"host_cpu_cores":  "10 cpu cores",
+			"host_mem":        "10 GB",
+			"extra_from":      "before",
+			"don't remove me": "please",
+		},
+	}
+	expectedDiffMap := map[string]interface{}{
+		"description": "",
+		"tags":        nil,
+		"status":      "active",
+	}
+
+	respDiffMap, err := JsonDiffMapExceptId(newObj, existingObj)
+	if err != nil {
+		t.Errorf("JsonDiffMapExceptId() error = %v", err)
+	}
+	if !reflect.DeepEqual(respDiffMap, expectedDiffMap) {
+		t.Errorf("JsonDiffMapExceptId() = %v, want %v", respDiffMap, expectedDiffMap)
+	}
+
+}
 func TestSlugify(t *testing.T) {
 	tests := []struct {
 		name     string

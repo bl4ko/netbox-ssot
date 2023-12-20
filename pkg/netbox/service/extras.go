@@ -235,7 +235,7 @@ func (api *NetboxAPI) PatchCustomField(diffMap map[string]interface{}, customFie
 func (api *NetboxAPI) CreateCustomField(customField *extras.CustomField) (*extras.CustomField, error) {
 	api.Logger.Debug("Creating custom field in NetBox: ", customField)
 
-	requestBody, err := json.Marshal(customField)
+	requestBody, err := utils.NetboxJsonMarshal(customField)
 	if err != nil {
 		return nil, err
 	}

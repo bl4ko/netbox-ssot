@@ -7,6 +7,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/common"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/dcim"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/extras"
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/ipam"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/service"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/tenancy"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/virtualization"
@@ -33,8 +34,10 @@ type NetBoxInventory struct {
 	TenantsIndexByName map[string]*tenancy.Tenant
 	// DeviceTypesIndexByModel is a map of all device types in the Netbox's inventory, indexed by their model
 	DeviceTypesIndexByModel map[string]*dcim.DeviceType
-	// DevicesIndexByName is a map of all devices in the Netbox's inventory, indexed by their name
-	DevicesIndexByName map[string]*dcim.Device
+	// DevicesIndexByUuid is a map of all devices in the Netbox's inventory, indexed by uuid (unique identifier)
+	DevicesIndexByUuid map[string]*dcim.Device
+	// VlansIndexByName is a map of all vlans in the Netbox's inventory, indexed by their name
+	VlansIndexByName map[string]*ipam.Vlan
 	// ClusterGroupsIndexByName is a map of all cluster groups in the Netbox's inventory, indexed by their name
 	ClusterGroupsIndexByName map[string]*virtualization.ClusterGroup
 	// ClusterTypesIndexByName is a map of all cluster types in the Netbox's inventory, indexed by their name
@@ -45,6 +48,9 @@ type NetBoxInventory struct {
 	DeviceRolesIndexByName map[string]*dcim.DeviceRole
 	// CustomFieldsIndexByName is a map of all custom fields in the inventory, indexed by name
 	CustomFieldsIndexByName map[string]*extras.CustomField
+	// InterfacesIndexBySourceId is a map of all interfaces in the inventory, indexed by their id's from the source
+	// e.g. for ovirt each nic has a unique id
+	InterfacesIndexBySourceId map[string]*dcim.Interface
 
 	// Orphan manager is a map of { "devices: [device_id1, device_id2, ...], "cluster_groups": [cluster_group_id1, cluster_group_id2, ..."}, to store which objects have been created by netbox-ssot and can be deleted because they are not available in the source anymore
 	OrphanManager map[string][]int
@@ -96,6 +102,14 @@ func (netboxInventory *NetBoxInventory) Init() error {
 	if err != nil {
 		return err
 	}
+	err = netboxInventory.InitInterfaces()
+	if err != nil {
+		return err
+	}
+	err = netboxInventory.InitVlans()
+	if err != nil {
+		return err
+	}
 	err = netboxInventory.InitDeviceRoles()
 	if err != nil {
 		return err
@@ -114,7 +128,7 @@ func (netboxInventory *NetBoxInventory) Init() error {
 	if err != nil {
 		return err
 	}
-	err = netboxInventory.InitServerCustomFields()
+	err = netboxInventory.InitSsotCustomFields()
 	if err != nil {
 		return err
 	}

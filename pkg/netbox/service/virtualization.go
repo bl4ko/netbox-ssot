@@ -142,7 +142,7 @@ func (api *NetboxAPI) GetAllClusterGroups() ([]*virtualization.ClusterGroup, err
 func (api *NetboxAPI) CreateClusterGroup(clusterGroup *virtualization.ClusterGroup) (*virtualization.ClusterGroup, error) {
 	api.Logger.Debug("Creating cluster group in NetBox")
 
-	clusterGroupJson, err := json.Marshal(clusterGroup)
+	clusterGroupJson, err := utils.NetboxJsonMarshal(clusterGroup)
 	if err != nil {
 		return nil, err
 	}

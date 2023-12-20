@@ -298,6 +298,12 @@ func addStructDiffToMap(newObj reflect.Value, existingObj reflect.Value, jsonTag
 		return
 	}
 
+	// If Existing struct is nil, that means that we set the attribute to the value of new struct
+	if !existingObj.IsValid() {
+		diffMap[jsonTag] = newObj.Interface()
+		return
+	}
+
 	// We use ids for comparison between structs, because for patching objects, all we need is id of attribute
 	idField := newObj.FieldByName("ID")
 
@@ -327,15 +333,21 @@ func addMapDiffToMap(newMap reflect.Value, existingMap reflect.Value, jsonTag st
 		return
 	}
 
-	// Maps don't have ids, but only string fields (e.g. custom_fields map of devices)
-	if newMap.Len() != existingMap.Len() {
-		diffMap[jsonTag] = newMap.Interface()
-		return
+	// Go through all keys in new map, and check if they are in existing map
+	// If they are not, add them to diff map
+	mapsDiff := make(map[interface{}]interface{})
+	for _, key := range newMap.MapKeys() {
+		if !existingMap.MapIndex(key).IsValid() {
+			mapsDiff[key.Interface()] = newMap.MapIndex(key).Interface()
+		} else if newMap.MapIndex(key).Interface() != existingMap.MapIndex(key).Interface() {
+			mapsDiff[key.Interface()] = newMap.MapIndex(key).Interface()
+		}
 	}
 
-	if !reflect.DeepEqual(newMap.Interface(), existingMap.Interface()) {
-		diffMap[jsonTag] = newMap.Interface()
+	if len(mapsDiff) > 0 {
+		diffMap[jsonTag] = mapsDiff
 	}
+
 }
 
 // Validates array of regex relations

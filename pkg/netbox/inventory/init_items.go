@@ -4,6 +4,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/common"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/dcim"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/extras"
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/ipam"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/tenancy"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/virtualization"
 )
@@ -101,11 +102,11 @@ func (netboxInventory *NetBoxInventory) InitDevices() error {
 		return err
 	}
 	// We also create an index of devices by name for easier access
-	netboxInventory.DevicesIndexByName = make(map[string]*dcim.Device)
+	netboxInventory.DevicesIndexByUuid = make(map[string]*dcim.Device)
 	for _, device := range nbDevices {
-		netboxInventory.DevicesIndexByName[device.Name] = device
+		netboxInventory.DevicesIndexByUuid[device.AssetTag] = device
 	}
-	netboxInventory.Logger.Debug("Successfully collected devices from NetBox: ", netboxInventory.DevicesIndexByName)
+	netboxInventory.Logger.Debug("Successfully collected devices from NetBox: ", netboxInventory.DevicesIndexByUuid)
 	return nil
 }
 
@@ -148,11 +149,12 @@ func (netboxInventory *NetBoxInventory) InitCustomFields() error {
 	return nil
 }
 
-// This function initialises all custom fields required for servers
+// This function initialises all custom fields required for servers and other objects
 // Currently these are two:
 // - host_cpu_cores
 // - host_memory
-func (netboxInventory *NetBoxInventory) InitServerCustomFields() error {
+// - sourceId - this is used to store the ID of the source object in NetBox (interfaces)
+func (netboxInventory *NetBoxInventory) InitSsotCustomFields() error {
 	err := netboxInventory.AddCustomField(&extras.CustomField{
 		Name:          "host_cpu_cores",
 		Label:         "Host CPU cores",
@@ -181,6 +183,21 @@ func (netboxInventory *NetBoxInventory) InitServerCustomFields() error {
 	if err != nil {
 		return err
 	}
+	err = netboxInventory.AddCustomField(&extras.CustomField{
+		Name:          "source_id",
+		Label:         "Source ID",
+		Type:          extras.CustomFieldTypeText,
+		FilterLogic:   extras.FilterLogicLoose,
+		UIVisibility:  extras.UIVisibilityReadWrite,
+		DisplayWeight: 100,
+		Description:   "ID of the object on the source API",
+		SearchWeight:  1000,
+		ContentTypes:  []string{"dcim.interface"},
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -237,5 +254,34 @@ func (ni *NetBoxInventory) InitDeviceTypes() error {
 		ni.DeviceTypesIndexByModel[deviceType.Model] = deviceType
 	}
 	ni.Logger.Debug("Successfully collected device types from NetBox: ", ni.DeviceTypesIndexByModel)
+	return nil
+}
+
+func (ni *NetBoxInventory) InitInterfaces() error {
+	nbInterfaces, err := ni.NetboxApi.GetAllInterfaces()
+	if err != nil {
+		return err
+	}
+	ni.InterfacesIndexBySourceId = make(map[string]*dcim.Interface)
+	for _, intf := range nbInterfaces {
+		// For compatability if source_id is not set, we skip the interface
+		if intf.CustomFields["source_id"] != nil {
+			ni.InterfacesIndexBySourceId[intf.CustomFields["source_id"].(string)] = intf
+		}
+	}
+	ni.Logger.Debug("Successfully collected interfaces from NetBox: ", ni.InterfacesIndexBySourceId)
+	return nil
+}
+
+func (ni *NetBoxInventory) InitVlans() error {
+	nbVlans, err := ni.NetboxApi.GetAllVlans()
+	if err != nil {
+		return err
+	}
+	ni.VlansIndexByName = make(map[string]*ipam.Vlan)
+	for _, vlan := range nbVlans {
+		ni.VlansIndexByName[vlan.Name] = vlan
+	}
+	ni.Logger.Debug("Successfully collected vlans from NetBox: ", ni.VlansIndexByName)
 	return nil
 }

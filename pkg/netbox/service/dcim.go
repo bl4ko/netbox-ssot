@@ -523,3 +523,98 @@ func (api *NetboxAPI) CreateDeviceType(deviceType *dcim.DeviceType) (*dcim.Devic
 
 	return &deviceTypeResponse, nil
 }
+
+type InterfaceResponse struct {
+	Count    int              `json:"count"`
+	Next     *string          `json:"next"`
+	Previous *string          `json:"previous"`
+	Results  []dcim.Interface `json:"results"`
+}
+
+// GET /api/dcim/interfaces/?limit=0
+func (api *NetboxAPI) GetAllInterfaces() ([]*dcim.Interface, error) {
+	api.Logger.Debug("Getting all interfaces from NetBox")
+
+	response, err := api.doRequest(MethodGet, "/api/dcim/interfaces/?limit=0", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d. Error %s", response.StatusCode, response.Body)
+	}
+
+	var interfaceResponse InterfaceResponse
+	err = json.Unmarshal(response.Body, &interfaceResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	interfaces := make([]*dcim.Interface, len(interfaceResponse.Results))
+	for i := range interfaceResponse.Results {
+		interfaces[i] = &interfaceResponse.Results[i]
+	}
+	api.Logger.Debug("Successfully received interfaces: ", interfaceResponse.Results)
+
+	return interfaces, nil
+}
+
+// PATCH /api/dcim/interfaces/{id}/
+func (api *NetboxAPI) PatchInterface(diffMap map[string]interface{}, interfaceId int) (*dcim.Interface, error) {
+	api.Logger.Debug("Patching interface ", interfaceId, " with data: ", diffMap, " in NetBox")
+
+	requestBody, err := json.Marshal(diffMap)
+	if err != nil {
+		return nil, err
+	}
+
+	requestBodyBuffer := bytes.NewBuffer(requestBody)
+	response, err := api.doRequest(MethodPatch, fmt.Sprintf("/api/dcim/interfaces/%d/", interfaceId), requestBodyBuffer)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
+	}
+
+	var interfaceResponse dcim.Interface
+	err = json.Unmarshal(response.Body, &interfaceResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	api.Logger.Debug("Successfully patched interface: ", interfaceResponse)
+	return &interfaceResponse, nil
+}
+
+// POST /api/dcim/interfaces/
+func (api *NetboxAPI) CreateInterface(interf *dcim.Interface) (*dcim.Interface, error) {
+	api.Logger.Debug("Creating interface in NetBox with data: ", interf)
+
+	requestBody, err := utils.NetboxJsonMarshal(interf)
+	if err != nil {
+		return nil, err
+	}
+
+	requestBodyBuffer := bytes.NewBuffer(requestBody)
+
+	response, err := api.doRequest(MethodPost, "/api/dcim/interfaces/", requestBodyBuffer)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
+	}
+
+	var interfaceResponse dcim.Interface
+	err = json.Unmarshal(response.Body, &interfaceResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	api.Logger.Debug("Successfully created interface: ", interfaceResponse)
+
+	return &interfaceResponse, nil
+}
