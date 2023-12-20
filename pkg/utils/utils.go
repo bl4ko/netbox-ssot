@@ -298,29 +298,31 @@ func addStructDiffToMap(newObj reflect.Value, existingObj reflect.Value, jsonTag
 		return
 	}
 
-	// If Existing struct is nil, that means that we set the attribute to the value of new struct
-	if !existingObj.IsValid() {
-		diffMap[jsonTag] = newObj.Interface()
-		return
-	}
-
 	// We use ids for comparison between structs, because for patching objects, all we need is id of attribute
 	idField := newObj.FieldByName("ID")
 
 	// If objects don't have ID field, compare them by their values
 	if !idField.IsValid() {
-		if newObj.Interface() != existingObj.Interface() {
-			if isChoiceEmbedded(newObj) {
-				diffMap[jsonTag] = choiceValue(newObj)
-			} else {
-				diffMap[jsonTag] = newObj.Interface()
+		if !existingObj.IsValid() {
+			diffMap[jsonTag] = newObj.Interface()
+		} else {
+			if newObj.Interface() != existingObj.Interface() {
+				if isChoiceEmbedded(newObj) {
+					diffMap[jsonTag] = choiceValue(newObj)
+				} else {
+					diffMap[jsonTag] = newObj.Interface()
+				}
 			}
 		}
 	} else {
-		// Objects have ID field, compare their ids
-		if newObj.FieldByName("ID").Interface() != existingObj.FieldByName("ID").Interface() {
-			id := newObj.FieldByName("ID").Interface().(int)
-			diffMap[jsonTag] = IDObject{ID: id}
+		if !existingObj.IsValid() {
+			diffMap[jsonTag] = IDObject{ID: idField.Interface().(int)}
+		} else {
+			// Objects have ID field, compare their ids
+			if newObj.FieldByName("ID").Interface() != existingObj.FieldByName("ID").Interface() {
+				id := newObj.FieldByName("ID").Interface().(int)
+				diffMap[jsonTag] = IDObject{ID: id}
+			}
 		}
 	}
 }
