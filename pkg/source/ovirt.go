@@ -607,10 +607,12 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 				TaggedVlans: nicTaggedVlans,
 			}
 
-			_, err = nbi.AddInterface(newInterface)
+			newInterface, err = nbi.AddInterface(newInterface)
 			if err != nil {
 				return fmt.Errorf("failed to add oVirt interface %s with error: %v", nicName, err)
 			}
+
+			hostInterfaces[nicId] = newInterface
 		}
 
 		// Second loop to add relations between interfaces (e.g. [eno1, eno2] -> bond1)

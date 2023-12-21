@@ -84,6 +84,10 @@ type Vlan struct {
 	Comments string `json:"comments,omitempty"`
 }
 
+func (v Vlan) String() string {
+	return v.Name
+}
+
 type IpRange struct {
 	common.NetboxObject
 }

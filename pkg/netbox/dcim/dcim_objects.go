@@ -1,6 +1,8 @@
 package dcim
 
 import (
+	"fmt"
+
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/common"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/ipam"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/tenancy"
@@ -275,4 +277,8 @@ type Interface struct {
 	TaggedVlans []*ipam.Vlan `json:"tagged_vlans,omitempty"`
 	// CustomFields that can be added to a device. We use source_id custom field to store the id of the interface in the source system.
 	CustomFields map[string]string `json:"custom_fields,omitempty"`
+}
+
+func (i Interface) String() string {
+	return fmt.Sprintf("[%s]-%s", i.Device.Name, i.Name)
 }

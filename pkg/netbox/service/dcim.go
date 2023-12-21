@@ -561,7 +561,7 @@ func (api *NetboxAPI) GetAllInterfaces() ([]*dcim.Interface, error) {
 
 // PATCH /api/dcim/interfaces/{id}/
 func (api *NetboxAPI) PatchInterface(diffMap map[string]interface{}, interfaceId int) (*dcim.Interface, error) {
-	api.Logger.Debug("Patching interface ", interfaceId, " with data: ", diffMap, " in NetBox")
+	api.Logger.Debug("Patching interface with id ", interfaceId, " with data: ", diffMap, " in NetBox")
 
 	requestBody, err := json.Marshal(diffMap)
 	if err != nil {

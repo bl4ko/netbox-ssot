@@ -235,7 +235,8 @@ func addSliceDiffToMap(newSlice reflect.Value, existingSlice reflect.Value, json
 	// If first slice is nil, that means that we reset the value
 	if !newSlice.IsValid() || newSlice.Len() == 0 {
 		if existingSlice.IsValid() && existingSlice.Len() > 0 {
-			diffMap[jsonTag] = nil // reset the value
+			emptySlice := reflect.MakeSlice(newSlice.Type(), 0, 0)
+			diffMap[jsonTag] = emptySlice
 		}
 		return nil
 	}
@@ -262,35 +263,36 @@ func addSliceDiffToMap(newSlice reflect.Value, existingSlice reflect.Value, json
 		}
 
 	default:
-		idObjectsSet := make(map[int]bool, newSlice.Len())
-		idObjectsArr := make([]IDObject, 0, newSlice.Len())
+		newIdSet := make(map[int]bool, newSlice.Len())
 		var id int
 		for j := 0; j < newSlice.Len(); j++ {
+			element := newSlice.Index(j)
 			if newSlice.Index(j).IsNil() {
 				continue
 			}
-			if newSlice.Index(j).Kind() == reflect.Ptr {
-				id = newSlice.Index(j).Elem().FieldByName("ID").Interface().(int)
-				idObjectsSet[id] = true
-				idObjectsArr = append(idObjectsArr, IDObject{ID: id})
-			} else {
-				id = newSlice.Index(j).FieldByName("ID").Interface().(int)
-				idObjectsSet[id] = true
-				idObjectsArr = append(idObjectsArr, IDObject{ID: id})
+			if element.Kind() == reflect.Ptr {
+				element = element.Elem()
 			}
+			id := element.FieldByName("ID").Interface().(int)
+			newIdSet[id] = true
 		}
 
-		if len(idObjectsSet) != existingSlice.Len() {
-			diffMap[jsonTag] = idObjectsArr
+		newIdSlice := make([]int, 0, len(newIdSet))
+		for id := range newIdSet {
+			newIdSlice = append(newIdSlice, id)
+		}
+
+		if len(newIdSet) != existingSlice.Len() {
+			diffMap[jsonTag] = newIdSlice
 		} else {
 			for j := 0; j < existingSlice.Len(); j++ {
+				existingSliceEl := existingSlice.Index(j)
 				if existingSlice.Index(j).Kind() == reflect.Ptr {
-					id = existingSlice.Index(j).Elem().FieldByName("ID").Interface().(int)
-				} else {
-					id = existingSlice.Index(j).FieldByName("ID").Interface().(int)
+					existingSliceEl = existingSliceEl.Elem()
 				}
-				if _, ok := idObjectsSet[id]; !ok {
-					diffMap[jsonTag] = idObjectsArr
+				id = existingSliceEl.FieldByName("ID").Interface().(int)
+				if _, ok := newIdSet[id]; !ok {
+					diffMap[jsonTag] = newIdSlice
 					return nil
 				}
 			}
