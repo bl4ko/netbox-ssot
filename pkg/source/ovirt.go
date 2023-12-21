@@ -349,7 +349,8 @@ func (o *OVirtSource) SyncHosts(nbi *inventory.NetBoxInventory) error {
 		if exists {
 			hostAssetTag, exists = hwInfo.Uuid()
 			if !exists {
-				o.Logger.Warning("Uuid (asset tag) for oVirt host ", hostName, " is empty.")
+				o.Logger.Warning("Uuid (asset tag) for oVirt host ", hostName, " is empty. Can't identify it, so it will be skipped...")
+				continue
 			}
 			hostSerialNumber, exists = hwInfo.SerialNumber()
 			if !exists {
@@ -464,7 +465,7 @@ func (o *OVirtSource) SyncHosts(nbi *inventory.NetBoxInventory) error {
 				"host_memory":    fmt.Sprintf("%d GB", mem),
 			},
 		}
-		_, err = nbi.AddDevice(nbHost)
+		nbHost, err = nbi.AddDevice(nbHost)
 		if err != nil {
 			return fmt.Errorf("failed to add oVirt host %s with error: %v", host.MustName(), err)
 		}
@@ -481,6 +482,8 @@ func (o *OVirtSource) SyncHosts(nbi *inventory.NetBoxInventory) error {
 
 func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ovirtsdk4.Host, nbHost *dcim.Device) error {
 	nics, exists := ovirtHost.Nics()
+	master2slave := make(map[string][]string) // masterId: [slaveId1, slaveId2, ...]
+	parent2child := make(map[string][]string) // parentId: [childId, ... ]
 	if exists {
 		hostInterfaces := map[string]*dcim.Interface{}
 
@@ -496,20 +499,18 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 				o.Logger.Warning("name for oVirt nic with id ", nicId, " is empty.")
 			}
 			// var nicType *dcim.InterfaceType
-			nicSpeedKbps, exists := nic.Speed()
+			nicSpeedBips, exists := nic.Speed()
 			if !exists {
 				o.Logger.Warning("speed for oVirt nic with id ", nicId, " is empty.")
 			}
+			nicSpeedKbps := nicSpeedBips / 1000
 
 			nicMtu, exists := nic.Mtu()
 			if !exists {
 				o.Logger.Warning("mtu for oVirt nic with id ", nicId, " is empty.")
 			}
 
-			nicComment, exists := nic.Comment()
-			if !exists {
-				nicComment = ""
-			}
+			nicComment, _ := nic.Comment()
 
 			var nicEnabled bool
 			ovirtNicStatus, exists := nic.Status()
@@ -522,32 +523,39 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 				}
 			}
 
-			bridged, exists := nic.Bridged()
-			if exists {
-				if bridged {
-					// This interface is bridged
-					fmt.Printf("nic[%s] is bridged\n", nicName)
-				}
-			}
+			// bridged, exists := nic.Bridged()
+			// if exists {
+			// 	if bridged {
+			// 		// This interface is bridged
+			// 		fmt.Printf("nic[%s] is bridged\n", nicName)
+			// 	}
+			// }
 
 			// Determine nic type (virtual, physical, bond...)
 			var nicType *dcim.InterfaceType
 			nicBaseInterface, exists := nic.BaseInterface()
 			if exists {
-				// This interface is a bond
-				fmt.Printf("nic[%s] has base interface: %s\n", nicName, nicBaseInterface)
+				// This interface is a vlan bond. We treat is as a virtual interface
+				nicType = &dcim.VirtualInterfaceType
+				parent2child[nicBaseInterface] = append(parent2child[nicBaseInterface], nicId)
 			}
 
 			nicBonding, exists := nic.Bonding()
 			if exists {
-				// This interface is a
+				// Bond interface, we give it a type of LAG
+				nicType = &dcim.LAGInterfaceType
 				slaves, exists := nicBonding.Slaves()
 				if exists {
-					fmt.Printf("nic[%s] has slaves: ", nicName)
-					for i, slave := range slaves.Slice() {
-						fmt.Printf("slave[%d]: %s\n", i, slave.MustId())
+					for _, slave := range slaves.Slice() {
+						master2slave[nicId] = append(master2slave[nicId], slave.MustId())
 					}
 				}
+			}
+
+			if nicType == nil {
+				// This is a physical interface.
+				// TODO: depending on speed assign different nic type
+				nicType = &dcim.OtherInterfaceType
 			}
 
 			var nicVlan *ipam.Vlan
@@ -556,7 +564,6 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 			if exists {
 				vlanId, exists := vlan.Id()
 				if exists {
-					fmt.Printf("nic[%s] has vlan: %d\n", nicName, vlanId)
 					var vlanStatus *ipam.VlanStaus
 					if nicEnabled {
 						vlanStatus = &ipam.VlanStatusActive
@@ -578,23 +585,54 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 				}
 			}
 
+			var nicTaggedVlans []*ipam.Vlan
+			if nicVlan != nil {
+				nicTaggedVlans = []*ipam.Vlan{nicVlan}
+			}
+
 			newInterface := &dcim.Interface{
 				NetboxObject: common.NetboxObject{
+					Tags:        o.SourceTags,
 					Description: nicComment,
 				},
+				Device: nbHost,
 				Name:   nicName,
 				Speed:  dcim.InterfaceSpeed(nicSpeedKbps),
 				Status: nicEnabled,
 				MTU:    nicMtu,
 				Type:   nicType,
-				CustomFields: map[string]interface{}{
+				CustomFields: map[string]string{
 					"source_id": nicId,
 				},
+				TaggedVlans: nicTaggedVlans,
 			}
-			hostInterfaces[nicId] = newInterface
 
-			fmt.Printf("%s, %v\n", newInterface.Name, nicVlan)
+			_, err = nbi.AddInterface(newInterface)
+			if err != nil {
+				return fmt.Errorf("failed to add oVirt interface %s with error: %v", nicName, err)
+			}
+		}
+
+		// Second loop to add relations between interfaces (e.g. [eno1, eno2] -> bond1)
+		for master, slaves := range master2slave {
+			masterInterface := hostInterfaces[master]
+			for _, slave := range slaves {
+				slaveInterface := hostInterfaces[slave]
+				slaveInterface.LAG = masterInterface
+				nbi.AddInterface(slaveInterface)
+			}
+		}
+
+		// Third loop we connect children with parents (e.g. [bond1.605, bond1.604, bond1.603] -> bond1)
+		for parent, children := range parent2child {
+			parentInterface := hostInterfaces[parent]
+			for _, child := range children {
+				childInterface := hostInterfaces[child]
+				childInterface.ParentInterface = parentInterface
+				nbi.AddInterface(childInterface)
+			}
 		}
 	}
+
 	return nil
 }

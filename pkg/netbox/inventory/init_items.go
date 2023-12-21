@@ -262,14 +262,14 @@ func (ni *NetBoxInventory) InitInterfaces() error {
 	if err != nil {
 		return err
 	}
-	ni.InterfacesIndexBySourceId = make(map[string]*dcim.Interface)
+	ni.InterfacesIndexByDeviceAndName = make(map[int]map[string]*dcim.Interface)
 	for _, intf := range nbInterfaces {
-		// For compatability if source_id is not set, we skip the interface
-		if intf.CustomFields["source_id"] != nil {
-			ni.InterfacesIndexBySourceId[intf.CustomFields["source_id"].(string)] = intf
+		if ni.InterfacesIndexByDeviceAndName[intf.Device.ID] == nil {
+			ni.InterfacesIndexByDeviceAndName[intf.Device.ID] = make(map[string]*dcim.Interface)
 		}
+		ni.InterfacesIndexByDeviceAndName[intf.Device.ID][intf.Name] = intf
 	}
-	ni.Logger.Debug("Successfully collected interfaces from NetBox: ", ni.InterfacesIndexBySourceId)
+	ni.Logger.Debug("Successfully collected interfaces from NetBox: ", ni.InterfacesIndexByDeviceAndName)
 	return nil
 }
 

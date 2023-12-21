@@ -2,6 +2,7 @@ package dcim
 
 import (
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/common"
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/ipam"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/tenancy"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/virtualization"
 )
@@ -270,6 +271,8 @@ type Interface struct {
 	LAG *Interface `json:"lag,omitempty"`
 	// MTU is the maximum transmission unit (MTU) configured for the interface.
 	MTU int64 `json:"mtu,omitempty"`
+	// TaggedVlans is a list of all the VLANs to which the interface is tagged.
+	TaggedVlans []*ipam.Vlan `json:"tagged_vlans,omitempty"`
 	// CustomFields that can be added to a device. We use source_id custom field to store the id of the interface in the source system.
-	CustomFields map[string]interface{} `json:"custom_fields,omitempty"`
+	CustomFields map[string]string `json:"custom_fields,omitempty"`
 }

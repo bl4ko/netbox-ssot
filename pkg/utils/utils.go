@@ -197,13 +197,22 @@ func JsonDiffMapExceptId(newObj, existingObj interface{}) (map[string]interface{
 
 		switch newObjectField.Kind() {
 		case reflect.Slice:
-			addSliceDiffToMap(newObjectField, existingObjectField, jsonTag, diff)
+			err := addSliceDiffToMap(newObjectField, existingObjectField, jsonTag, diff)
+			if err != nil {
+				return nil, fmt.Errorf("error procesing JsonDiffMapExceptId when procerssing slice %s", err)
+			}
 
 		case reflect.Struct:
-			addStructDiffToMap(newObjectField, existingObjectField, jsonTag, diff)
+			err := addStructDiffToMap(newObjectField, existingObjectField, jsonTag, diff)
+			if err != nil {
+				return nil, fmt.Errorf("error procesing JsonDiffMapExceptId when procerssing struct %s", err)
+			}
 
 		case reflect.Map:
-			addMapDiffToMap(newObjectField, existingObjectField, jsonTag, diff)
+			err := addMapDiffToMap(newObjectField, existingObjectField, jsonTag, diff)
+			if err != nil {
+				return nil, fmt.Errorf("error procesing JsonDiffMapExceptId when procerssing map %s", err)
+			}
 
 		default:
 			if !newObjectField.IsValid() {
@@ -221,14 +230,14 @@ func JsonDiffMapExceptId(newObj, existingObj interface{}) (map[string]interface{
 	return diff, nil
 }
 
-func addSliceDiffToMap(newSlice reflect.Value, existingSlice reflect.Value, jsonTag string, diffMap map[string]interface{}) {
+func addSliceDiffToMap(newSlice reflect.Value, existingSlice reflect.Value, jsonTag string, diffMap map[string]interface{}) error {
 
 	// If first slice is nil, that means that we reset the value
 	if !newSlice.IsValid() || newSlice.Len() == 0 {
-		if existingSlice.IsValid() {
+		if existingSlice.IsValid() && existingSlice.Len() > 0 {
 			diffMap[jsonTag] = nil // reset the value
 		}
-		return
+		return nil
 	}
 
 	// There are going to be 2 kinds of comparison.
@@ -247,7 +256,7 @@ func addSliceDiffToMap(newSlice reflect.Value, existingSlice reflect.Value, json
 			for j := 0; j < existingSlice.Len(); j++ {
 				if !strSet[existingSlice.Index(j).Interface().(string)] {
 					diffMap[jsonTag] = newSlice.Interface()
-					return
+					return nil
 				}
 			}
 		}
@@ -282,20 +291,21 @@ func addSliceDiffToMap(newSlice reflect.Value, existingSlice reflect.Value, json
 				}
 				if _, ok := idObjectsSet[id]; !ok {
 					diffMap[jsonTag] = idObjectsArr
-					return
+					return nil
 				}
 			}
 		}
 	}
+	return nil
 }
 
 // Returns json form for patching the difference e.g. { "id": 1 }
-func addStructDiffToMap(newObj reflect.Value, existingObj reflect.Value, jsonTag string, diffMap map[string]interface{}) {
+func addStructDiffToMap(newObj reflect.Value, existingObj reflect.Value, jsonTag string, diffMap map[string]interface{}) error {
 
 	// If first struct is nil, that means that we reset the attribute to nil
 	if !newObj.IsValid() {
 		diffMap[jsonTag] = nil
-		return
+		return nil
 	}
 
 	// We use ids for comparison between structs, because for patching objects, all we need is id of attribute
@@ -325,31 +335,36 @@ func addStructDiffToMap(newObj reflect.Value, existingObj reflect.Value, jsonTag
 			}
 		}
 	}
+	return nil
 }
 
-func addMapDiffToMap(newMap reflect.Value, existingMap reflect.Value, jsonTag string, diffMap map[string]interface{}) {
+func addMapDiffToMap(newMap reflect.Value, existingMap reflect.Value, jsonTag string, diffMap map[string]interface{}) error {
 
 	// If first map is nil, that means that we reset the attribute to nil
 	if !newMap.IsValid() {
 		diffMap[jsonTag] = nil
-		return
+		return nil
 	}
 
 	// Go through all keys in new map, and check if they are in existing map
 	// If they are not, add them to diff map
-	mapsDiff := make(map[interface{}]interface{})
+	mapsDiff := make(map[string]interface{})
 	for _, key := range newMap.MapKeys() {
+		// Keys have to be strings
+		if key.Kind() != reflect.String {
+			return fmt.Errorf("map keys have to be strings. Not implemented for anything else yet")
+		}
 		if !existingMap.MapIndex(key).IsValid() {
-			mapsDiff[key.Interface()] = newMap.MapIndex(key).Interface()
+			mapsDiff[key.Interface().(string)] = newMap.MapIndex(key).Interface()
 		} else if newMap.MapIndex(key).Interface() != existingMap.MapIndex(key).Interface() {
-			mapsDiff[key.Interface()] = newMap.MapIndex(key).Interface()
+			mapsDiff[key.Interface().(string)] = newMap.MapIndex(key).Interface()
 		}
 	}
 
 	if len(mapsDiff) > 0 {
 		diffMap[jsonTag] = mapsDiff
 	}
-
+	return nil
 }
 
 // Validates array of regex relations

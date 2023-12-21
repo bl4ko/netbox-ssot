@@ -144,6 +144,11 @@ func TestJsonDiffMapExceptId(t *testing.T) {
 			if !reflect.DeepEqual(diff, tt.expected) {
 				t.Errorf("JsonDiffMapExceptId() = %v, want %v", diff, tt.expected)
 			}
+			// Also ensure that the diff is a valid JSON
+			_, err = json.Marshal(diff)
+			if err != nil {
+				t.Errorf("JsonDiffMapExceptId() error = %v", err)
+			}
 		})
 	}
 }
@@ -231,6 +236,11 @@ func TestJsonDiffMapComplex(t *testing.T) {
 	if !reflect.DeepEqual(diff, expectedDiff) {
 		t.Errorf("JsonDiffMapExceptId() = %v, want %v", diff, expectedDiff)
 	}
+	// Also ensure that the diff is a valid JSON
+	_, err = json.Marshal(diff)
+	if err != nil {
+		t.Errorf("JsonDiffMapExceptId() error = %v", err)
+	}
 }
 
 func TestJsonDiffMapComplex2(t *testing.T) {
@@ -270,6 +280,11 @@ func TestJsonDiffMapComplex2(t *testing.T) {
 	}
 	if !reflect.DeepEqual(diff, expectedDiff) {
 		t.Errorf("JsonDiffMapExceptId() = %v, want %v", diff, expectedDiff)
+	}
+	// Also ensure that the diff is a valid JSON
+	_, err = json.Marshal(diff)
+	if err != nil {
+		t.Errorf("JsonDiffMapExceptId() error = %v", err)
 	}
 }
 
@@ -328,6 +343,11 @@ func TestJsonDiffMapWithChoiceAttr(t *testing.T) {
 	}
 	if !reflect.DeepEqual(respDiffMap, expectedDiffMap) {
 		t.Errorf("JsonDiffMapExceptId() = %v, want %v", respDiffMap, expectedDiffMap)
+	}
+	// Also ensure that the diff is a valid JSON
+	_, err = json.Marshal(respDiffMap)
+	if err != nil {
+		t.Errorf("JsonDiffMapExceptId() error = %v", err)
 	}
 
 }
@@ -398,8 +418,81 @@ func TestJsonDiffMapWithMapAttr(t *testing.T) {
 	if !reflect.DeepEqual(respDiffMap, expectedDiffMap) {
 		t.Errorf("JsonDiffMapExceptId() = %v, want %v", respDiffMap, expectedDiffMap)
 	}
+	// Also ensure that the diff is a valid JSON
+	_, err = json.Marshal(respDiffMap)
+	if err != nil {
+		t.Errorf("JsonDiffMapExceptId() error = %v", err)
+	}
 
 }
+
+func TestJsonDiffMapWithMapAttr2(t *testing.T) {
+	newInterface := &dcim.Interface{
+		NetboxObject: common.NetboxObject{
+			Tags: []*common.Tag{
+				{
+					ID:          18,
+					Name:        "Source: olvm",
+					Slug:        "source-olvm",
+					Color:       "07426b",
+					Description: "Automatically created tag by netbox-ssot for source srcolvm",
+				},
+				{
+					ID:          21,
+					Name:        "ovirt",
+					Slug:        "type-ovirt",
+					Color:       "ff0000",
+					Description: "Automatically created tag by netbox-ssot for source type ovirt",
+				},
+			},
+		},
+		Name:   "enp4s0f4",
+		Status: true,
+		CustomFields: map[string]string{
+			"source_id": "abcdefghijkl",
+			"extra_one": "extra_one",
+		},
+	}
+	existingInterface := &dcim.Interface{
+		NetboxObject: common.NetboxObject{
+			Tags: []*common.Tag{
+				{
+					ID:          15,
+					Name:        "existingTag",
+					Slug:        "exiting-tag",
+					Color:       "07426b",
+					Description: "Automatically created tag by netbox-ssot for source srcolvm",
+				},
+			},
+		},
+		Name:   "enp4s0f4",
+		Status: true,
+	}
+
+	expectedDiffMap := map[string]interface{}{
+		"tags": []IDObject{
+			{ID: 18},
+			{ID: 21},
+		},
+		"custom_fields": map[string]interface{}{
+			"source_id": "abcdefghijkl",
+			"extra_one": "extra_one",
+		},
+	}
+	gotDiffMap, err := JsonDiffMapExceptId(newInterface, existingInterface)
+	if err != nil {
+		t.Errorf("JsonDiffMapExceptId() error = %v", err)
+	}
+	// try to marshal gotDiffMap
+	_, err = json.Marshal(gotDiffMap)
+	if err != nil {
+		t.Errorf("JsonDiffMapExceptId() error = %v", err)
+	}
+	if !reflect.DeepEqual(gotDiffMap, expectedDiffMap) {
+		t.Errorf("JsonDiffMapExceptId() = %v, want %v", gotDiffMap, expectedDiffMap)
+	}
+}
+
 func TestSlugify(t *testing.T) {
 	tests := []struct {
 		name     string

@@ -48,9 +48,9 @@ type NetBoxInventory struct {
 	DeviceRolesIndexByName map[string]*dcim.DeviceRole
 	// CustomFieldsIndexByName is a map of all custom fields in the inventory, indexed by name
 	CustomFieldsIndexByName map[string]*extras.CustomField
-	// InterfacesIndexBySourceId is a map of all interfaces in the inventory, indexed by their id's from the source
-	// e.g. for ovirt each nic has a unique id
-	InterfacesIndexBySourceId map[string]*dcim.Interface
+	// InterfacesIndexByDeviceAnName is a map of all interfaces in the inventory, indexed by their's
+	// device id and their name.
+	InterfacesIndexByDeviceAndName map[int]map[string]*dcim.Interface
 
 	// Orphan manager is a map of { "devices: [device_id1, device_id2, ...], "cluster_groups": [cluster_group_id1, cluster_group_id2, ..."}, to store which objects have been created by netbox-ssot and can be deleted because they are not available in the source anymore
 	OrphanManager map[string][]int

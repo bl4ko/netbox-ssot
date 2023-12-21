@@ -329,3 +329,31 @@ func (ni *NetBoxInventory) AddVlan(newVlan *ipam.Vlan) (*ipam.Vlan, error) {
 	}
 	return ni.VlansIndexByName[newVlan.Name], nil
 }
+
+func (ni *NetBoxInventory) AddInterface(newInterface *dcim.Interface) (*dcim.Interface, error) {
+	newInterface.Tags = append(newInterface.Tags, ni.SsotTag)
+	if _, ok := ni.InterfacesIndexByDeviceAndName[newInterface.Device.ID][newInterface.Name]; ok {
+		diffMap, err := utils.JsonDiffMapExceptId(newInterface, ni.InterfacesIndexByDeviceAndName[newInterface.Device.ID][newInterface.Name])
+		if err != nil {
+			return nil, err
+		}
+		if len(diffMap) > 0 {
+			ni.Logger.Debug("Interface ", newInterface.Name, " already exists in NetBox but is out of date. Patching it...")
+			patchedInterface, err := ni.NetboxApi.PatchInterface(diffMap, ni.InterfacesIndexByDeviceAndName[newInterface.Device.ID][newInterface.Name].ID)
+			if err != nil {
+				return nil, err
+			}
+			ni.InterfacesIndexByDeviceAndName[newInterface.Device.ID][newInterface.Name] = patchedInterface
+		} else {
+			ni.Logger.Debug("Interface ", newInterface.Name, " already exists in NetBox and is up to date...")
+		}
+	} else {
+		ni.Logger.Debug("Interface ", newInterface.Name, " does not exist in NetBox. Creating it...")
+		newInterface, err := ni.NetboxApi.CreateInterface(newInterface)
+		if err != nil {
+			return nil, err
+		}
+		ni.InterfacesIndexByDeviceAndName[newInterface.Device.ID][newInterface.Name] = newInterface
+	}
+	return ni.InterfacesIndexByDeviceAndName[newInterface.Device.ID][newInterface.Name], nil
+}
