@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/common"
@@ -50,7 +51,7 @@ func StructToNetboxJsonMap(obj interface{}) (map[string]interface{}, error) {
 		if fieldType.Name == "NetboxObject" {
 			diffMap, err := StructToNetboxJsonMap(fieldValue.Interface())
 			if err != nil {
-				return nil, fmt.Errorf("error procesing ObjToJsonMap when procerssing NetboxObject %s", err)
+				return nil, fmt.Errorf("error processing ObjToJsonMap when processing NetboxObject %s", err)
 			}
 			for k, v := range diffMap {
 				netboxJsonMap[k] = v
@@ -167,7 +168,7 @@ func JsonDiffMapExceptId(newObj, existingObj interface{}) (map[string]interface{
 		if fieldName == "NetboxObject" {
 			netboxObjectDiffMap, err := JsonDiffMapExceptId(newObject.Field(i).Interface(), existingObject.Field(i).Interface())
 			if err != nil {
-				return nil, fmt.Errorf("error procesing JsonDiffMapExceptId when procerssing NetboxObject %s", err)
+				return nil, fmt.Errorf("error processing JsonDiffMapExceptId when processing NetboxObject %s", err)
 			}
 			for k, v := range netboxObjectDiffMap {
 				diff[k] = v
@@ -197,21 +198,21 @@ func JsonDiffMapExceptId(newObj, existingObj interface{}) (map[string]interface{
 
 		switch newObjectField.Kind() {
 		case reflect.Slice:
-			err := addSliceDiffToMap(newObjectField, existingObjectField, jsonTag, diff)
+			err := addSliceDiff(newObjectField, existingObjectField, jsonTag, diff)
 			if err != nil {
-				return nil, fmt.Errorf("error procesing JsonDiffMapExceptId when procerssing slice %s", err)
+				return nil, fmt.Errorf("error processing JsonDiffMapExceptId when processing slice %s", err)
 			}
 
 		case reflect.Struct:
-			err := addStructDiffToMap(newObjectField, existingObjectField, jsonTag, diff)
+			err := addStructDiff(newObjectField, existingObjectField, jsonTag, diff)
 			if err != nil {
-				return nil, fmt.Errorf("error procesing JsonDiffMapExceptId when procerssing struct %s", err)
+				return nil, fmt.Errorf("error processing JsonDiffMapExceptId when processing struct %s", err)
 			}
 
 		case reflect.Map:
-			err := addMapDiffToMap(newObjectField, existingObjectField, jsonTag, diff)
+			err := addMapDiff(newObjectField, existingObjectField, jsonTag, diff)
 			if err != nil {
-				return nil, fmt.Errorf("error procesing JsonDiffMapExceptId when procerssing map %s", err)
+				return nil, fmt.Errorf("error processing JsonDiffMapExceptId when processing map %s", err)
 			}
 
 		default:
@@ -230,13 +231,17 @@ func JsonDiffMapExceptId(newObj, existingObj interface{}) (map[string]interface{
 	return diff, nil
 }
 
-func addSliceDiffToMap(newSlice reflect.Value, existingSlice reflect.Value, jsonTag string, diffMap map[string]interface{}) error {
+// Function that takes two objects (of type slice) and returns a map
+// that can be easily used with json.Marshal
+// To achieve this the map is of the following format:
+// map[jsonTag] = [id1, id2, id3] // If the slice contains objects with ID field
+// map[jsonTag] = [value1, value2, value3] // If the slice contains strings
+func addSliceDiff(newSlice reflect.Value, existingSlice reflect.Value, jsonTag string, diffMap map[string]interface{}) error {
 
 	// If first slice is nil, that means that we reset the value
 	if !newSlice.IsValid() || newSlice.Len() == 0 {
 		if existingSlice.IsValid() && existingSlice.Len() > 0 {
-			emptySlice := reflect.MakeSlice(newSlice.Type(), 0, 0)
-			diffMap[jsonTag] = emptySlice
+			diffMap[jsonTag] = []interface{}{}
 		}
 		return nil
 	}
@@ -281,6 +286,7 @@ func addSliceDiffToMap(newSlice reflect.Value, existingSlice reflect.Value, json
 		for id := range newIdSet {
 			newIdSlice = append(newIdSlice, id)
 		}
+		slices.Sort(newIdSlice)
 
 		if len(newIdSet) != existingSlice.Len() {
 			diffMap[jsonTag] = newIdSlice
@@ -302,7 +308,7 @@ func addSliceDiffToMap(newSlice reflect.Value, existingSlice reflect.Value, json
 }
 
 // Returns json form for patching the difference e.g. { "id": 1 }
-func addStructDiffToMap(newObj reflect.Value, existingObj reflect.Value, jsonTag string, diffMap map[string]interface{}) error {
+func addStructDiff(newObj reflect.Value, existingObj reflect.Value, jsonTag string, diffMap map[string]interface{}) error {
 
 	// If first struct is nil, that means that we reset the attribute to nil
 	if !newObj.IsValid() {
@@ -340,11 +346,10 @@ func addStructDiffToMap(newObj reflect.Value, existingObj reflect.Value, jsonTag
 	return nil
 }
 
-func addMapDiffToMap(newMap reflect.Value, existingMap reflect.Value, jsonTag string, diffMap map[string]interface{}) error {
+func addMapDiff(newMap reflect.Value, existingMap reflect.Value, jsonTag string, diffMap map[string]interface{}) error {
 
-	// If first map is nil, that means that we reset the attribute to nil
+	// If the new map is not set, we don't change anything
 	if !newMap.IsValid() {
-		diffMap[jsonTag] = nil
 		return nil
 	}
 
@@ -364,6 +369,11 @@ func addMapDiffToMap(newMap reflect.Value, existingMap reflect.Value, jsonTag st
 	}
 
 	if len(mapsDiff) > 0 {
+		for _, key := range existingMap.MapKeys() {
+			if !newMap.MapIndex(key).IsValid() {
+				mapsDiff[key.Interface().(string)] = existingMap.MapIndex(key).Interface()
+			}
+		}
 		diffMap[jsonTag] = mapsDiff
 	}
 	return nil

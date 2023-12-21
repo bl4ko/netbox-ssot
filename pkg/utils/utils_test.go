@@ -13,8 +13,122 @@ import (
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/virtualization"
 )
 
-// Assuming your structs and JsonDiffMapExceptId function are in the same package
-// If not, import the package where they are defined
+func TestJsonDiffMapExceptIdWithMapsAddition(t *testing.T) {
+	newObj := &dcim.Device{
+		CustomFields: map[string]string{
+			"host_cpu_cores": "10 cpu cores",
+			"host_mem":       "10 GB",
+			"host_id":        "123456789",
+		},
+	}
+	existingObj := &dcim.Device{
+		CustomFields: map[string]string{
+			"host_cpu_cores": "5 cpu cores",
+			"existing_tag1":  "existing_tag1",
+			"existing_tag2":  "existing_tag2",
+		},
+	}
+	expectedDiff := map[string]interface{}{
+		"custom_fields": map[string]interface{}{
+			"host_cpu_cores": "10 cpu cores",
+			"host_mem":       "10 GB",
+			"host_id":        "123456789",
+			"existing_tag1":  "existing_tag1",
+			"existing_tag2":  "existing_tag2",
+		},
+	}
+	receivedDiff, err := JsonDiffMapExceptId(newObj, existingObj)
+	if err != nil {
+		t.Errorf("JsonDiffMapExceptId() error = %v", err)
+	}
+	if !reflect.DeepEqual(receivedDiff, expectedDiff) {
+		t.Errorf("JsonDiffMapExceptId() = %v, want %v", receivedDiff, expectedDiff)
+	}
+	// We need to ensure that the diff is a valid JSON
+	_, err = json.Marshal(receivedDiff)
+	if err != nil {
+		t.Errorf("JsonDiffMapExceptId() error = %v", err)
+	}
+}
+
+func TestJsonDiffMapExceptIdWithMapsNoAddition(t *testing.T) {
+	newObj := &dcim.Device{
+		CustomFields: map[string]string{
+			"host_cpu_cores": "10 cpu cores",
+			"host_mem":       "10 GB",
+		},
+	}
+	existingObj := &dcim.Device{
+		CustomFields: map[string]string{
+			"host_cpu_cores": "10 cpu cores",
+			"host_mem":       "10 GB",
+			"existing_tag1":  "existing_tag1",
+			"existing_tag2":  "existing_tag2",
+		},
+	}
+	// We expect no difference, because all new fields are already present in the attribute
+	expectedDiff := map[string]interface{}{}
+	receivedDiff, err := JsonDiffMapExceptId(newObj, existingObj)
+	if err != nil {
+		t.Errorf("JsonDiffMapExceptId() error = %v", err)
+	}
+	if !reflect.DeepEqual(receivedDiff, expectedDiff) {
+		t.Errorf("JsonDiffMapExceptId() = %v, want %v", receivedDiff, expectedDiff)
+	}
+	// We need to ensure that the diff is a valid JSON
+	_, err = json.Marshal(receivedDiff)
+	if err != nil {
+		t.Errorf("JsonDiffMapExceptId() error = %v", err)
+	}
+}
+
+func TestJsonDiffMapExceptIdWithMapsEmpty(t *testing.T) {
+	newObj := &dcim.Device{}
+	existingObj := &dcim.Device{
+		CustomFields: map[string]string{
+			"host_cpu_cores": "10 cpu cores",
+			"host_mem":       "10 GB",
+			"existing_tag1":  "existing_tag1",
+			"existing_tag2":  "existing_tag2",
+		},
+	}
+	// We expect no difference, because all new fields are already present in the attribute
+	expectedDiff := map[string]interface{}{}
+	receivedDiff, err := JsonDiffMapExceptId(newObj, existingObj)
+	if err != nil {
+		t.Errorf("JsonDiffMapExceptId() error = %v", err)
+	}
+	if !reflect.DeepEqual(receivedDiff, expectedDiff) {
+		t.Errorf("JsonDiffMapExceptId() = %v, want %v", receivedDiff, expectedDiff)
+	}
+	// We need to ensure that the diff is a valid JSON
+	_, err = json.Marshal(receivedDiff)
+	if err != nil {
+		t.Errorf("JsonDiffMapExceptId() error = %v", err)
+	}
+}
+
+// TODO: determine how to reset attribute maps
+// func TestJsonDiffMapExceptIdWithMapsReset(t *testing.T) {
+// 	newObj := &dcim.Device{}
+// 	existingObj := &dcim.Device{
+// 		CustomFields: map[string]string{},
+// 	}
+// 	// We expect no difference, because all new fields are already present in the attribute
+// 	expectedDiff := map[string]interface{}{}
+// 	receivedDiff, err := JsonDiffMapExceptId(newObj, existingObj)
+// 	if err != nil {
+// 		t.Errorf("JsonDiffMapExceptId() error = %v", err)
+// 	}
+// 	if !reflect.DeepEqual(receivedDiff, expectedDiff) {
+// 		t.Errorf("JsonDiffMapExceptId() = %v, want %v", receivedDiff, expectedDiff)
+// 	}
+// 	// We need to ensure that the diff is a valid JSON
+// 	_, err = json.Marshal(receivedDiff)
+// 	if err != nil {
+// 		t.Errorf("JsonDiffMapExceptId() error = %v", err)
+// 	}
+// }
 
 func TestJsonDiffMapExceptId(t *testing.T) {
 	tests := []struct {
@@ -90,11 +204,7 @@ func TestJsonDiffMapExceptId(t *testing.T) {
 				},
 			},
 			expected: map[string]interface{}{
-				"tags": []IDObject{
-					{ID: 1},
-					{ID: 2},
-					{ID: 3},
-				},
+				"tags": []int{1, 2, 3},
 			},
 			expectError: false,
 		},
@@ -124,11 +234,7 @@ func TestJsonDiffMapExceptId(t *testing.T) {
 				},
 			},
 			expected: map[string]interface{}{
-				"tags": []IDObject{
-					{ID: 1},
-					{ID: 2},
-					{ID: 3},
-				},
+				"tags": []int{1, 2, 3},
 			},
 			expectError: false,
 		},
@@ -219,12 +325,8 @@ func TestJsonDiffMapComplex(t *testing.T) {
 		"group": IDObject{
 			ID: 4,
 		},
-		"site": nil,
-		"tags": []IDObject{
-			{ID: 1},
-			{ID: 3},
-			{ID: 4},
-		},
+		"site":   nil,
+		"tags":   []int{1, 3, 4},
 		"tenant": nil,
 	}
 
@@ -290,26 +392,12 @@ func TestJsonDiffMapComplex2(t *testing.T) {
 
 func TestJsonDiffMapWithChoiceAttr(t *testing.T) {
 	newObj := &dcim.Device{
-		Name: "Test device",
-		DeviceRole: &dcim.DeviceRole{
-			NetboxObject: common.NetboxObject{
-				ID: 1,
-			},
-			Name:  "Test device role",
-			Slug:  "test-device-role",
-			Color: "000000",
-		},
-		DeviceType: &dcim.DeviceType{
-			NetboxObject: common.NetboxObject{
-				ID: 1,
-			},
-			Model: "Test device model",
-			Slug:  "test-device-type",
-		},
+		Name:   "Test device",
 		Status: &dcim.DeviceStatusActive,
 	}
 
 	existingObj := &dcim.Device{
+		Name: "Test device",
 		NetboxObject: common.NetboxObject{
 			ID:          1,
 			Description: "Test device",
@@ -317,23 +405,11 @@ func TestJsonDiffMapWithChoiceAttr(t *testing.T) {
 				{ID: 2, Name: "Netbox-synced"},
 			},
 		},
-		Name: "Test device",
-		DeviceRole: &dcim.DeviceRole{
-			NetboxObject: common.NetboxObject{ID: 1},
-			Name:         "Test device role",
-			Slug:         "test-device-role",
-			Color:        "000000",
-		},
-		DeviceType: &dcim.DeviceType{
-			NetboxObject: common.NetboxObject{ID: 1},
-			Model:        "test-model",
-			Slug:         "test-device-type",
-		},
 		Status: &dcim.DeviceStatusOffline,
 	}
 	expectedDiffMap := map[string]interface{}{
 		"description": "",
-		"tags":        nil,
+		"tags":        []interface{}{},
 		"status":      "active",
 	}
 
@@ -349,7 +425,6 @@ func TestJsonDiffMapWithChoiceAttr(t *testing.T) {
 	if err != nil {
 		t.Errorf("JsonDiffMapExceptId() error = %v", err)
 	}
-
 }
 
 func TestJsonDiffMapWithMapAttr(t *testing.T) {
@@ -407,7 +482,7 @@ func TestJsonDiffMapWithMapAttr(t *testing.T) {
 	}
 	expectedDiffMap := map[string]interface{}{
 		"description": "",
-		"tags":        nil,
+		"tags":        []interface{}{},
 		"status":      "active",
 	}
 
@@ -470,10 +545,7 @@ func TestJsonDiffMapWithMapAttr2(t *testing.T) {
 	}
 
 	expectedDiffMap := map[string]interface{}{
-		"tags": []IDObject{
-			{ID: 18},
-			{ID: 21},
-		},
+		"tags": []int{18, 21},
 		"custom_fields": map[string]interface{}{
 			"source_id": "abcdefghijkl",
 			"extra_one": "extra_one",
