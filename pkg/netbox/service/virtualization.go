@@ -6,19 +6,19 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/virtualization"
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/pkg/utils"
 )
 
 type ClusterTypeResponse struct {
-	Count    int                          `json:"count"`
-	Next     *string                      `json:"next"`
-	Previous *string                      `json:"previous"`
-	Results  []virtualization.ClusterType `json:"results"`
+	Count    int                   `json:"count"`
+	Next     *string               `json:"next"`
+	Previous *string               `json:"previous"`
+	Results  []objects.ClusterType `json:"results"`
 }
 
 // GET /api/virtualization/cluster-types/?limit=0
-func (api *NetboxAPI) GetAllClusterTypes() ([]*virtualization.ClusterType, error) {
+func (api *NetboxAPI) GetAllClusterTypes() ([]*objects.ClusterType, error) {
 	api.Logger.Debug("Getting all cluster types from NetBox")
 
 	response, err := api.doRequest(MethodGet, "/api/virtualization/cluster-types/?limit=0", nil)
@@ -36,7 +36,7 @@ func (api *NetboxAPI) GetAllClusterTypes() ([]*virtualization.ClusterType, error
 		return nil, err
 	}
 
-	clusterTypes := make([]*virtualization.ClusterType, len(clusterTypeResponse.Results))
+	clusterTypes := make([]*objects.ClusterType, len(clusterTypeResponse.Results))
 	for i := range clusterTypeResponse.Results {
 		clusterTypes[i] = &clusterTypeResponse.Results[i]
 	}
@@ -46,7 +46,7 @@ func (api *NetboxAPI) GetAllClusterTypes() ([]*virtualization.ClusterType, error
 }
 
 // PATCH /api/virtualization/cluster-types/{id}/ -d '{"name": "new_name", ...}'
-func (api *NetboxAPI) PatchClusterType(diffMap map[string]interface{}, clusterTypeId int) (*virtualization.ClusterType, error) {
+func (api *NetboxAPI) PatchClusterType(diffMap map[string]interface{}, clusterTypeId int) (*objects.ClusterType, error) {
 	api.Logger.Debug("Patching cluster type in NetBox, with data: ", diffMap)
 
 	patchBodyJson, err := json.Marshal(diffMap)
@@ -63,7 +63,7 @@ func (api *NetboxAPI) PatchClusterType(diffMap map[string]interface{}, clusterTy
 		return nil, fmt.Errorf("unexpected status code: %d. Error %s", response.StatusCode, response.Body)
 	}
 
-	var patchedClusterType virtualization.ClusterType
+	var patchedClusterType objects.ClusterType
 	err = json.Unmarshal(response.Body, &patchedClusterType)
 	if err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func (api *NetboxAPI) PatchClusterType(diffMap map[string]interface{}, clusterTy
 }
 
 // POST /api/virtualization/cluster-types/
-func (api *NetboxAPI) CreateClusterType(clusterType *virtualization.ClusterType) (*virtualization.ClusterType, error) {
+func (api *NetboxAPI) CreateClusterType(clusterType *objects.ClusterType) (*objects.ClusterType, error) {
 	api.Logger.Debug("Creating cluster type in NetBox")
 
 	requestBody, err := utils.NetboxJsonMarshal(clusterType)
@@ -94,7 +94,7 @@ func (api *NetboxAPI) CreateClusterType(clusterType *virtualization.ClusterType)
 		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
 	}
 
-	var createdClusterType virtualization.ClusterType
+	var createdClusterType objects.ClusterType
 	err = json.Unmarshal(response.Body, &createdClusterType)
 	if err != nil {
 		return nil, err
@@ -105,14 +105,14 @@ func (api *NetboxAPI) CreateClusterType(clusterType *virtualization.ClusterType)
 }
 
 type ClusterGroupResponse struct {
-	Count    int                           `json:"count"`
-	Next     *string                       `json:"next"`
-	Previous *string                       `json:"previous"`
-	Results  []virtualization.ClusterGroup `json:"results"`
+	Count    int                    `json:"count"`
+	Next     *string                `json:"next"`
+	Previous *string                `json:"previous"`
+	Results  []objects.ClusterGroup `json:"results"`
 }
 
 // GET /api/virtualization/cluster-groups/?limit=0
-func (api *NetboxAPI) GetAllClusterGroups() ([]*virtualization.ClusterGroup, error) {
+func (api *NetboxAPI) GetAllClusterGroups() ([]*objects.ClusterGroup, error) {
 	api.Logger.Debug("Getting all cluster groups from NetBox")
 
 	response, err := api.doRequest(MethodGet, "/api/virtualization/cluster-groups/?limit=0", nil)
@@ -130,7 +130,7 @@ func (api *NetboxAPI) GetAllClusterGroups() ([]*virtualization.ClusterGroup, err
 		return nil, err
 	}
 
-	clusterGroups := make([]*virtualization.ClusterGroup, len(clusterGroupResponse.Results))
+	clusterGroups := make([]*objects.ClusterGroup, len(clusterGroupResponse.Results))
 	for i := range clusterGroupResponse.Results {
 		clusterGroups[i] = &clusterGroupResponse.Results[i]
 	}
@@ -139,7 +139,7 @@ func (api *NetboxAPI) GetAllClusterGroups() ([]*virtualization.ClusterGroup, err
 }
 
 // POST /api/virtualization/cluster-groups/
-func (api *NetboxAPI) CreateClusterGroup(clusterGroup *virtualization.ClusterGroup) (*virtualization.ClusterGroup, error) {
+func (api *NetboxAPI) CreateClusterGroup(clusterGroup *objects.ClusterGroup) (*objects.ClusterGroup, error) {
 	api.Logger.Debug("Creating cluster group in NetBox")
 
 	clusterGroupJson, err := utils.NetboxJsonMarshal(clusterGroup)
@@ -156,7 +156,7 @@ func (api *NetboxAPI) CreateClusterGroup(clusterGroup *virtualization.ClusterGro
 		return nil, fmt.Errorf("unexpected status code: %d. Error %s", response.StatusCode, response.Body)
 	}
 
-	var createdClusterGroup virtualization.ClusterGroup
+	var createdClusterGroup objects.ClusterGroup
 	err = json.Unmarshal(response.Body, &createdClusterGroup)
 	if err != nil {
 		return nil, err
@@ -168,7 +168,7 @@ func (api *NetboxAPI) CreateClusterGroup(clusterGroup *virtualization.ClusterGro
 }
 
 // PATCH /api/virtualization/cluster-groups/{id}/ -d '{"name": "new_name", ...}'
-func (api *NetboxAPI) PatchClusterGroup(diffMap map[string]interface{}, clusterGroupId int) (*virtualization.ClusterGroup, error) {
+func (api *NetboxAPI) PatchClusterGroup(diffMap map[string]interface{}, clusterGroupId int) (*objects.ClusterGroup, error) {
 	api.Logger.Debug("Patching cluster group in NetBox, with data: ", diffMap)
 
 	clusterGroupJson, err := json.Marshal(diffMap)
@@ -185,7 +185,7 @@ func (api *NetboxAPI) PatchClusterGroup(diffMap map[string]interface{}, clusterG
 		return nil, fmt.Errorf("unexpected status code: %d. Error %s", response.StatusCode, response.Body)
 	}
 
-	var patchedClusterGroup virtualization.ClusterGroup
+	var patchedClusterGroup objects.ClusterGroup
 	err = json.Unmarshal(response.Body, &patchedClusterGroup)
 	if err != nil {
 		return nil, err
@@ -197,14 +197,14 @@ func (api *NetboxAPI) PatchClusterGroup(diffMap map[string]interface{}, clusterG
 }
 
 type ClustersResponse struct {
-	Count    int                      `json:"count"`
-	Next     *string                  `json:"next"`
-	Previous *string                  `json:"previous"`
-	Results  []virtualization.Cluster `json:"results"`
+	Count    int               `json:"count"`
+	Next     *string           `json:"next"`
+	Previous *string           `json:"previous"`
+	Results  []objects.Cluster `json:"results"`
 }
 
 // GET /api/vritualization/clusters/?limit=0
-func (api *NetboxAPI) GetAllClusters() ([]*virtualization.Cluster, error) {
+func (api *NetboxAPI) GetAllClusters() ([]*objects.Cluster, error) {
 	api.Logger.Debug("Getting all clusters from NetBox")
 
 	response, err := api.doRequest(MethodGet, "/api/virtualization/clusters/?limit=0", nil)
@@ -222,7 +222,7 @@ func (api *NetboxAPI) GetAllClusters() ([]*virtualization.Cluster, error) {
 		return nil, err
 	}
 
-	clusters := make([]*virtualization.Cluster, len(clustersResponse.Results))
+	clusters := make([]*objects.Cluster, len(clustersResponse.Results))
 	for i := range clustersResponse.Results {
 		clusters[i] = &clustersResponse.Results[i]
 	}
@@ -233,7 +233,7 @@ func (api *NetboxAPI) GetAllClusters() ([]*virtualization.Cluster, error) {
 }
 
 // PATCH /api/virtualization/clusters/{id}/ -d '{"name": "new_name", ...}'
-func (api *NetboxAPI) PatchCluster(diffMap map[string]interface{}, clusterId int) (*virtualization.Cluster, error) {
+func (api *NetboxAPI) PatchCluster(diffMap map[string]interface{}, clusterId int) (*objects.Cluster, error) {
 	api.Logger.Debug("Patching cluster in NetBox, with data: ", diffMap)
 
 	clusterJson, err := json.Marshal(diffMap)
@@ -251,7 +251,7 @@ func (api *NetboxAPI) PatchCluster(diffMap map[string]interface{}, clusterId int
 		return nil, fmt.Errorf("unexpected status code: %d. Error %s", response.StatusCode, response.Body)
 	}
 
-	var patchedCluster virtualization.Cluster
+	var patchedCluster objects.Cluster
 	err = json.Unmarshal(response.Body, &patchedCluster)
 	if err != nil {
 		return nil, err
@@ -263,7 +263,7 @@ func (api *NetboxAPI) PatchCluster(diffMap map[string]interface{}, clusterId int
 }
 
 // POST /api/virtualization/clusters/{id}/ -d '{"name": "new_name", ...}'
-func (api *NetboxAPI) CreateCluster(cluster *virtualization.Cluster) (*virtualization.Cluster, error) {
+func (api *NetboxAPI) CreateCluster(cluster *objects.Cluster) (*objects.Cluster, error) {
 	api.Logger.Debug("Creating cluster in NetBox")
 
 	clusterJson, err := utils.NetboxJsonMarshal(cluster)
@@ -282,7 +282,7 @@ func (api *NetboxAPI) CreateCluster(cluster *virtualization.Cluster) (*virtualiz
 		return nil, fmt.Errorf("unexpected status code: %d. Error %s", response.StatusCode, response.Body)
 	}
 
-	var createdCluster virtualization.Cluster
+	var createdCluster objects.Cluster
 	err = json.Unmarshal(response.Body, &createdCluster)
 	if err != nil {
 		return nil, err

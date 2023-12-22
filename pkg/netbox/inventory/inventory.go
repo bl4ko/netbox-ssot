@@ -4,13 +4,8 @@ import (
 	"fmt"
 
 	"github.com/bl4ko/netbox-ssot/pkg/logger"
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/common"
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/dcim"
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/extras"
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/ipam"
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/service"
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/tenancy"
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/virtualization"
 	"github.com/bl4ko/netbox-ssot/pkg/parser"
 )
 
@@ -23,39 +18,41 @@ type NetBoxInventory struct {
 	// NetboxApi is the NetBox API object, for communicating with the NetBox API
 	NetboxApi *service.NetboxAPI
 	// Tags is a list of all tags in the netbox inventory
-	Tags []*common.Tag
+	Tags []*objects.Tag
 	// SitesIndexByName is a map of all sites in the Netbox's inventory, indexed by their name
-	SitesIndexByName map[string]*common.Site
+	SitesIndexByName map[string]*objects.Site
 	// ManufacturersIndexByName is a map of all manufacturers in the Netbox's inventory, indexed by their name
-	ManufacturersIndexByName map[string]*common.Manufacturer
+	ManufacturersIndexByName map[string]*objects.Manufacturer
 	// PlatformsIndexByName is a map of all platforms in the Netbox's inventory, indexed by their name
-	PlatformsIndexByName map[string]*common.Platform
+	PlatformsIndexByName map[string]*objects.Platform
 	// TenantsIndexByName is a map of all tenants in the Netbox's inventory, indexed by their name
-	TenantsIndexByName map[string]*tenancy.Tenant
+	TenantsIndexByName map[string]*objects.Tenant
 	// DeviceTypesIndexByModel is a map of all device types in the Netbox's inventory, indexed by their model
-	DeviceTypesIndexByModel map[string]*dcim.DeviceType
+	DeviceTypesIndexByModel map[string]*objects.DeviceType
 	// DevicesIndexByUuid is a map of all devices in the Netbox's inventory, indexed by uuid (unique identifier)
-	DevicesIndexByUuid map[string]*dcim.Device
+	DevicesIndexByUuid map[string]*objects.Device
 	// VlansIndexByName is a map of all vlans in the Netbox's inventory, indexed by their name
-	VlansIndexByName map[string]*ipam.Vlan
+	VlansIndexByName map[string]*objects.Vlan
 	// ClusterGroupsIndexByName is a map of all cluster groups in the Netbox's inventory, indexed by their name
-	ClusterGroupsIndexByName map[string]*virtualization.ClusterGroup
+	ClusterGroupsIndexByName map[string]*objects.ClusterGroup
 	// ClusterTypesIndexByName is a map of all cluster types in the Netbox's inventory, indexed by their name
-	ClusterTypesIndexByName map[string]*virtualization.ClusterType
+	ClusterTypesIndexByName map[string]*objects.ClusterType
 	// ClustersIndexByName is a map of all clusters in the Netbox's inventory, indexed by their name
-	ClustersIndexByName map[string]*virtualization.Cluster
+	ClustersIndexByName map[string]*objects.Cluster
 	// Netbox's Device Roles is a map of all device roles in the inventory, indexed by name
-	DeviceRolesIndexByName map[string]*dcim.DeviceRole
+	DeviceRolesIndexByName map[string]*objects.DeviceRole
 	// CustomFieldsIndexByName is a map of all custom fields in the inventory, indexed by name
-	CustomFieldsIndexByName map[string]*extras.CustomField
+	CustomFieldsIndexByName map[string]*objects.CustomField
 	// InterfacesIndexByDeviceAnName is a map of all interfaces in the inventory, indexed by their's
 	// device id and their name.
-	InterfacesIndexByDeviceAndName map[int]map[string]*dcim.Interface
+	InterfacesIndexByDeviceAndName map[int]map[string]*objects.Interface
+	// VirtualMachinedIndexByName is a map of all virtual machines in the inventory, indexed by their name
+	VirtualMachinesIndexByName map[string]*objects.VM
 
 	// Orphan manager is a map of { "devices: [device_id1, device_id2, ...], "cluster_groups": [cluster_group_id1, cluster_group_id2, ..."}, to store which objects have been created by netbox-ssot and can be deleted because they are not available in the source anymore
 	OrphanManager map[string][]int
 	// Tag used by netbox-ssot to mark devices that are managed by it
-	SsotTag *common.Tag
+	SsotTag *objects.Tag
 }
 
 // Func string representation

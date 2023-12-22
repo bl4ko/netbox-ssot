@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/ipam"
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/objects"
 )
 
 // // GET /api/dcim/interfaces/?limit=0
-// func (api *NetboxAPI) GetAllInterfaces() ([]*dcim.Interface, error) {
+// func (api *NetboxAPI) GetAllInterfaces() ([]*objects.Interface, error) {
 // 	api.Logger.Debug("Getting all interfaces from NetBox")
 
 // 	response, err := api.doRequest(MethodGet, "/api/dcim/interfaces/?limit=0", nil)
@@ -28,7 +28,7 @@ import (
 // 		return nil, err
 // 	}
 
-// 	interfaces := make([]*dcim.Interface, len(interfaceResponse.Results))
+// 	interfaces := make([]*objects.Interface, len(interfaceResponse.Results))
 // 	for i := range interfaceResponse.Results {
 // 		interfaces[i] = &interfaceResponse.Results[i]
 // 	}
@@ -38,7 +38,7 @@ import (
 // }
 
 // // PATCH /api/dcim/interfaces/{id}/
-// func (api *NetboxAPI) PatchInterface(diffMap map[string]interface{}, interfaceId int) (*dcim.Interface, error) {
+// func (api *NetboxAPI) PatchInterface(diffMap map[string]interface{}, interfaceId int) (*objects.Interface, error) {
 // 	api.Logger.Debug("Patching interface ", interfaceId, " with data: ", diffMap, " in NetBox")
 
 // 	requestBody, err := json.Marshal(diffMap)
@@ -56,7 +56,7 @@ import (
 // 		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
 // 	}
 
-// 	var interfaceResponse dcim.Interface
+// 	var interfaceResponse objects.Interface
 // 	err = json.Unmarshal(response.Body, &interfaceResponse)
 // 	if err != nil {
 // 		return nil, err
@@ -67,7 +67,7 @@ import (
 // }
 
 // // POST /api/dcim/interfaces/
-// func (api *NetboxAPI) CreateInterface(interf *dcim.Interface) (*dcim.Interface, error) {
+// func (api *NetboxAPI) CreateInterface(interf *objects.Interface) (*objects.Interface, error) {
 // 	api.Logger.Debug("Creating interface in NetBox with data: ", interf)
 
 // 	requestBody, err := utils.NetboxJsonMarshal(interf)
@@ -86,7 +86,7 @@ import (
 // 		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
 // 	}
 
-// 	var interfaceResponse dcim.Interface
+// 	var interfaceResponse objects.Interface
 // 	err = json.Unmarshal(response.Body, &interfaceResponse)
 // 	if err != nil {
 // 		return nil, err
@@ -98,14 +98,14 @@ import (
 // }
 
 type IPAddressResponse struct {
-	Count    int              `json:"count"`
-	Next     string           `json:"next"`
-	Previous string           `json:"previous"`
-	Results  []ipam.IPAddress `json:"results"`
+	Count    int                 `json:"count"`
+	Next     string              `json:"next"`
+	Previous string              `json:"previous"`
+	Results  []objects.IPAddress `json:"results"`
 }
 
 // GET /api/ipam/ip-addresses/?limit=0
-func (api *NetboxAPI) GetAllIPAddresses() ([]*ipam.IPAddress, error) {
+func (api *NetboxAPI) GetAllIPAddresses() ([]*objects.IPAddress, error) {
 	api.Logger.Debug("Getting all IP addresses from NetBox")
 
 	response, err := api.doRequest(MethodGet, "/api/ipam/ip-addresses/?limit=0", nil)
@@ -123,7 +123,7 @@ func (api *NetboxAPI) GetAllIPAddresses() ([]*ipam.IPAddress, error) {
 		return nil, err
 	}
 
-	ips := make([]*ipam.IPAddress, len(ipResponse.Results))
+	ips := make([]*objects.IPAddress, len(ipResponse.Results))
 	for i := range ipResponse.Results {
 		ips[i] = &ipResponse.Results[i]
 	}
@@ -133,7 +133,7 @@ func (api *NetboxAPI) GetAllIPAddresses() ([]*ipam.IPAddress, error) {
 }
 
 // PATCH /api/ipam/ip-addresses/{id}/
-func (api *NetboxAPI) PatchIPAddress(diffMap map[string]interface{}, ipId int) (*ipam.IPAddress, error) {
+func (api *NetboxAPI) PatchIPAddress(diffMap map[string]interface{}, ipId int) (*objects.IPAddress, error) {
 	api.Logger.Debug("Patching IP address ", ipId, " with data: ", diffMap, " in NetBox")
 
 	requestBody, err := json.Marshal(diffMap)
@@ -151,7 +151,7 @@ func (api *NetboxAPI) PatchIPAddress(diffMap map[string]interface{}, ipId int) (
 		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
 	}
 
-	var ipResponse ipam.IPAddress
+	var ipResponse objects.IPAddress
 	err = json.Unmarshal(response.Body, &ipResponse)
 	if err != nil {
 		return nil, err
@@ -162,7 +162,7 @@ func (api *NetboxAPI) PatchIPAddress(diffMap map[string]interface{}, ipId int) (
 }
 
 // POST /api/ipam/ip-addresses/
-func (api *NetboxAPI) CreateIPAddress(ip *ipam.IPAddress) (*ipam.IPAddress, error) {
+func (api *NetboxAPI) CreateIPAddress(ip *objects.IPAddress) (*objects.IPAddress, error) {
 	api.Logger.Debug("Creating IP address in NetBox with data: ", ip)
 
 	requestBody, err := json.Marshal(ip)
@@ -181,7 +181,7 @@ func (api *NetboxAPI) CreateIPAddress(ip *ipam.IPAddress) (*ipam.IPAddress, erro
 		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
 	}
 
-	var ipResponse ipam.IPAddress
+	var ipResponse objects.IPAddress
 	err = json.Unmarshal(response.Body, &ipResponse)
 	if err != nil {
 		return nil, err
@@ -193,14 +193,14 @@ func (api *NetboxAPI) CreateIPAddress(ip *ipam.IPAddress) (*ipam.IPAddress, erro
 }
 
 type VlanResponse struct {
-	Count    int         `json:"count"`
-	Next     string      `json:"next"`
-	Previous string      `json:"previous"`
-	Results  []ipam.Vlan `json:"results"`
+	Count    int            `json:"count"`
+	Next     string         `json:"next"`
+	Previous string         `json:"previous"`
+	Results  []objects.Vlan `json:"results"`
 }
 
 // GET /api/ipam/vlans/?limit=0
-func (api *NetboxAPI) GetAllVlans() ([]*ipam.Vlan, error) {
+func (api *NetboxAPI) GetAllVlans() ([]*objects.Vlan, error) {
 	api.Logger.Debug("Getting all Vlans from NetBox")
 
 	response, err := api.doRequest(MethodGet, "/api/ipam/vlans/?limit=0", nil)
@@ -218,7 +218,7 @@ func (api *NetboxAPI) GetAllVlans() ([]*ipam.Vlan, error) {
 		return nil, err
 	}
 
-	vlans := make([]*ipam.Vlan, len(vlanResponse.Results))
+	vlans := make([]*objects.Vlan, len(vlanResponse.Results))
 	for i := range vlanResponse.Results {
 		vlans[i] = &vlanResponse.Results[i]
 	}
@@ -228,7 +228,7 @@ func (api *NetboxAPI) GetAllVlans() ([]*ipam.Vlan, error) {
 }
 
 // PATCH /api/ipam/vlans/{id}/
-func (api *NetboxAPI) PatchVlan(diffMap map[string]interface{}, vlanId int) (*ipam.Vlan, error) {
+func (api *NetboxAPI) PatchVlan(diffMap map[string]interface{}, vlanId int) (*objects.Vlan, error) {
 	api.Logger.Debug("Patching Vlan ", vlanId, " with data: ", diffMap, " in NetBox")
 
 	requestBody, err := json.Marshal(diffMap)
@@ -246,7 +246,7 @@ func (api *NetboxAPI) PatchVlan(diffMap map[string]interface{}, vlanId int) (*ip
 		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
 	}
 
-	var vlanResponse ipam.Vlan
+	var vlanResponse objects.Vlan
 	err = json.Unmarshal(response.Body, &vlanResponse)
 	if err != nil {
 		return nil, err
@@ -257,7 +257,7 @@ func (api *NetboxAPI) PatchVlan(diffMap map[string]interface{}, vlanId int) (*ip
 }
 
 // POST /api/ipam/vlans/
-func (api *NetboxAPI) CreateVlan(vlan *ipam.Vlan) (*ipam.Vlan, error) {
+func (api *NetboxAPI) CreateVlan(vlan *objects.Vlan) (*objects.Vlan, error) {
 	api.Logger.Debug("Creating Vlan in NetBox with data: ", vlan)
 
 	requestBody, err := json.Marshal(vlan)
@@ -276,7 +276,7 @@ func (api *NetboxAPI) CreateVlan(vlan *ipam.Vlan) (*ipam.Vlan, error) {
 		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
 	}
 
-	var vlanResponse ipam.Vlan
+	var vlanResponse objects.Vlan
 	err = json.Unmarshal(response.Body, &vlanResponse)
 	if err != nil {
 		return nil, err

@@ -1,41 +1,51 @@
-package extras
+package objects
 
 import (
 	"fmt"
-
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/common"
 )
+
+type Tag struct {
+	ID          int    `json:"id,omitempty"`
+	Name        string `json:"name,omitempty"`
+	Slug        string `json:"slug,omitempty"`
+	Color       string `json:"color,omitempty"`
+	Description string `json:"description,omitempty"`
+}
+
+func (t Tag) String() string {
+	return fmt.Sprintf("Tag{ID: %d, Name: %s, Slug: %s, Color: %s, Description: %s}", t.ID, t.Name, t.Slug, t.Color, t.Description)
+}
 
 // CustomFieldTypes are predefined netbox's types for CustomFields
 type CustomFieldType struct {
-	common.Choice
+	Choice
 }
 
 // Predefined netbox's types for CustomFields
 // https://github.com/netbox-community/netbox/blob/35be4f05ef376e28d9af4d7245ba10cc286bb62a/netbox/extras/choices.py#L10
 var (
-	CustomFieldTypeText     = CustomFieldType{common.Choice{Value: "text", Label: "Text"}}
-	CustomFieldTypeLongText = CustomFieldType{common.Choice{Value: "longtext", Label: "Text (long)"}}
-	CustomFieldTypeInteger  = CustomFieldType{common.Choice{Value: "integer", Label: "Integer"}}
-	CustomFieldTypeDecimal  = CustomFieldType{common.Choice{Value: "decimal", Label: "Decimal"}}
-	CustomFieldTypeBoolean  = CustomFieldType{common.Choice{Value: "boolean", Label: "Boolean (true/false)"}}
-	CustomFieldTypeDate     = CustomFieldType{common.Choice{Value: "date", Label: "Date"}}
+	CustomFieldTypeText     = CustomFieldType{Choice{Value: "text", Label: "Text"}}
+	CustomFieldTypeLongText = CustomFieldType{Choice{Value: "longtext", Label: "Text (long)"}}
+	CustomFieldTypeInteger  = CustomFieldType{Choice{Value: "integer", Label: "Integer"}}
+	CustomFieldTypeDecimal  = CustomFieldType{Choice{Value: "decimal", Label: "Decimal"}}
+	CustomFieldTypeBoolean  = CustomFieldType{Choice{Value: "boolean", Label: "Boolean (true/false)"}}
+	CustomFieldTypeDate     = CustomFieldType{Choice{Value: "date", Label: "Date"}}
 )
 
 type FilterLogic struct {
-	common.Choice
+	Choice
 }
 
 var (
-	FilterLogicLoose = FilterLogic{common.Choice{Value: "loose", Label: "Loose"}}
+	FilterLogicLoose = FilterLogic{Choice{Value: "loose", Label: "Loose"}}
 )
 
 type UIVisibility struct {
-	common.Choice
+	Choice
 }
 
 var (
-	UIVisibilityReadWrite = UIVisibility{common.Choice{Value: "read-write", Label: "Read/write"}}
+	UIVisibilityReadWrite = UIVisibility{Choice{Value: "read-write", Label: "Read/write"}}
 )
 
 type CustomField struct {
@@ -46,7 +56,7 @@ type CustomField struct {
 	Label string `json:"label,omitempty"`
 	// Type is the type of the custom field. Valid choices are: text, integer, boolean, date, url, select, multiselect. This field is required.
 	Type CustomFieldType `json:"type,omitempty"`
-	// Type of the related object (for object/multi-object fields only) (e.g. dcim.device). This field is required.
+	// Type of the related object (for object/multi-object fields only) (e.g. objects.device). This field is required.
 	ContentTypes []string `json:"content_types,omitempty"`
 	// Description is a description of the field. This field is optional.
 	Description string `json:"description,omitempty"`

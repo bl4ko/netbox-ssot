@@ -6,20 +6,19 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/common"
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/extras"
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/pkg/utils"
 )
 
 type TagResponse struct {
-	Count    int          `json:"count,omitempty"`
-	Next     *string      `json:"next,omitempty"`
-	Previous *string      `json:"previous,omitempty"`
-	Results  []common.Tag `json:"results,omitempty"`
+	Count    int           `json:"count,omitempty"`
+	Next     *string       `json:"next,omitempty"`
+	Previous *string       `json:"previous,omitempty"`
+	Results  []objects.Tag `json:"results,omitempty"`
 }
 
 // /api/extras/tags
-func (api *NetboxAPI) GetAllTags() ([]*common.Tag, error) {
+func (api *NetboxAPI) GetAllTags() ([]*objects.Tag, error) {
 	api.Logger.Debug("Getting all tags from NetBox")
 
 	response, err := api.doRequest(MethodGet, "/api/extras/tags/", nil)
@@ -37,7 +36,7 @@ func (api *NetboxAPI) GetAllTags() ([]*common.Tag, error) {
 		return nil, err
 	}
 
-	tags := make([]*common.Tag, len(tagResponse.Results))
+	tags := make([]*objects.Tag, len(tagResponse.Results))
 	for i := range tagResponse.Results {
 		tags[i] = &tagResponse.Results[i]
 	}
@@ -47,7 +46,7 @@ func (api *NetboxAPI) GetAllTags() ([]*common.Tag, error) {
 }
 
 // GET /api/extras/tags?name={tag_name}
-func (api *NetboxAPI) GetTagByName(name string) (*common.Tag, error) {
+func (api *NetboxAPI) GetTagByName(name string) (*objects.Tag, error) {
 	api.Logger.Debug("Getting tag by name from NetBox")
 
 	response, err := api.doRequest(MethodGet, fmt.Sprintf("/api/extras/tags?name=%s", name), nil)
@@ -76,7 +75,7 @@ func (api *NetboxAPI) GetTagByName(name string) (*common.Tag, error) {
 }
 
 // POST /api/extras/tags/ -d '{"name": "netbox-ssot", "slug": "netbox-ssot"}'
-func (api *NetboxAPI) CreateTag(tag *common.Tag) (*common.Tag, error) {
+func (api *NetboxAPI) CreateTag(tag *objects.Tag) (*objects.Tag, error) {
 	api.Logger.Debug("Creating tag in NetBox: ", tag)
 
 	requestBody, err := utils.NetboxJsonMarshal(tag)
@@ -95,7 +94,7 @@ func (api *NetboxAPI) CreateTag(tag *common.Tag) (*common.Tag, error) {
 		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
 	}
 
-	var tagResponse common.Tag
+	var tagResponse objects.Tag
 	err = json.Unmarshal(response.Body, &tagResponse)
 	if err != nil {
 		return nil, err
@@ -107,7 +106,7 @@ func (api *NetboxAPI) CreateTag(tag *common.Tag) (*common.Tag, error) {
 }
 
 // PUT /api/extras/tags/{tag_id}/ -d '{"name": "netbox-ssot", "slug": "netbox-ssot", ...}'
-func (api *NetboxAPI) UpdateTag(tag *common.Tag) (*common.Tag, error) {
+func (api *NetboxAPI) UpdateTag(tag *objects.Tag) (*objects.Tag, error) {
 	api.Logger.Debug("Updating tag in netbox with data: ", tag)
 
 	// Remove ID of the tag from the request body
@@ -126,7 +125,7 @@ func (api *NetboxAPI) UpdateTag(tag *common.Tag) (*common.Tag, error) {
 		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
 	}
 
-	var tagResponse common.Tag
+	var tagResponse objects.Tag
 	err = json.Unmarshal(response.Body, &tagResponse)
 	if err != nil {
 		return nil, err
@@ -137,7 +136,7 @@ func (api *NetboxAPI) UpdateTag(tag *common.Tag) (*common.Tag, error) {
 }
 
 // PATCH /api/extras/tags/{tag_id}/ -d '{"name": "netbox-ssot", "slug": "netbox-ssot", ...}'
-func (api *NetboxAPI) PatchTag(diffMap map[string]interface{}, tagId int) (*common.Tag, error) {
+func (api *NetboxAPI) PatchTag(diffMap map[string]interface{}, tagId int) (*objects.Tag, error) {
 	api.Logger.Debug("Patching tag[", fmt.Sprintf("%d", tagId), "] in netbox with data: ", diffMap)
 
 	// Remove ID of the tag from the request body
@@ -156,7 +155,7 @@ func (api *NetboxAPI) PatchTag(diffMap map[string]interface{}, tagId int) (*comm
 		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
 	}
 
-	var tagResponse common.Tag
+	var tagResponse objects.Tag
 	err = json.Unmarshal(response.Body, &tagResponse)
 	if err != nil {
 		return nil, err
@@ -167,14 +166,14 @@ func (api *NetboxAPI) PatchTag(diffMap map[string]interface{}, tagId int) (*comm
 }
 
 type CustomFieldResponse struct {
-	Count    int                  `json:"count,omitempty"`
-	Next     *string              `json:"next,omitempty"`
-	Previous *string              `json:"previous,omitempty"`
-	Results  []extras.CustomField `json:"results,omitempty"`
+	Count    int                   `json:"count,omitempty"`
+	Next     *string               `json:"next,omitempty"`
+	Previous *string               `json:"previous,omitempty"`
+	Results  []objects.CustomField `json:"results,omitempty"`
 }
 
 // GET /api/extras/custom-fields/?limit=0
-func (api *NetboxAPI) GetAllCustomFields() ([]*extras.CustomField, error) {
+func (api *NetboxAPI) GetAllCustomFields() ([]*objects.CustomField, error) {
 	api.Logger.Debug("Getting all custom fields from NetBox")
 
 	response, err := api.doRequest(MethodGet, "/api/extras/custom-fields/?limit=0", nil)
@@ -192,7 +191,7 @@ func (api *NetboxAPI) GetAllCustomFields() ([]*extras.CustomField, error) {
 		return nil, err
 	}
 
-	customFields := make([]*extras.CustomField, len(customFieldResponse.Results))
+	customFields := make([]*objects.CustomField, len(customFieldResponse.Results))
 	for i := range customFieldResponse.Results {
 		customFields[i] = &customFieldResponse.Results[i]
 	}
@@ -202,7 +201,7 @@ func (api *NetboxAPI) GetAllCustomFields() ([]*extras.CustomField, error) {
 }
 
 // PATCH /api/extras/custom-fields/{custom_field_id}/ -d '{...}'
-func (api *NetboxAPI) PatchCustomField(diffMap map[string]interface{}, customFieldId int) (*extras.CustomField, error) {
+func (api *NetboxAPI) PatchCustomField(diffMap map[string]interface{}, customFieldId int) (*objects.CustomField, error) {
 	api.Logger.Debug("Patching custom field[", fmt.Sprintf("%d", customFieldId), "] in netbox with data: ", diffMap)
 
 	// Remove ID of the custom field from the request body
@@ -221,7 +220,7 @@ func (api *NetboxAPI) PatchCustomField(diffMap map[string]interface{}, customFie
 		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
 	}
 
-	var customFieldResponse *extras.CustomField
+	var customFieldResponse *objects.CustomField
 	err = json.Unmarshal(response.Body, customFieldResponse)
 	if err != nil {
 		return nil, err
@@ -232,7 +231,7 @@ func (api *NetboxAPI) PatchCustomField(diffMap map[string]interface{}, customFie
 }
 
 // CREATE /api/extras/custom-fields/ -d '{...}'
-func (api *NetboxAPI) CreateCustomField(customField *extras.CustomField) (*extras.CustomField, error) {
+func (api *NetboxAPI) CreateCustomField(customField *objects.CustomField) (*objects.CustomField, error) {
 	api.Logger.Debug("Creating custom field in NetBox: ", customField)
 
 	requestBody, err := utils.NetboxJsonMarshal(customField)
@@ -251,7 +250,7 @@ func (api *NetboxAPI) CreateCustomField(customField *extras.CustomField) (*extra
 		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
 	}
 
-	var customFieldResponse *extras.CustomField
+	var customFieldResponse *objects.CustomField
 	err = json.Unmarshal(response.Body, customFieldResponse)
 	if err != nil {
 		return nil, err

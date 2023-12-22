@@ -3,17 +3,13 @@ package inventory
 import (
 	"slices"
 
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/common"
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/dcim"
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/extras"
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/ipam"
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/virtualization"
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/pkg/utils"
 )
 
 // Function for adding a new tag to NetBoxInventory
-func (ni *NetBoxInventory) AddTag(newTag *common.Tag) (*common.Tag, error) {
-	existingTagIndex := slices.IndexFunc(ni.Tags, func(t *common.Tag) bool {
+func (ni *NetBoxInventory) AddTag(newTag *objects.Tag) (*objects.Tag, error) {
+	existingTagIndex := slices.IndexFunc(ni.Tags, func(t *objects.Tag) bool {
 		return t.Name == newTag.Name
 	})
 	if existingTagIndex == -1 {
@@ -45,7 +41,7 @@ func (ni *NetBoxInventory) AddTag(newTag *common.Tag) (*common.Tag, error) {
 }
 
 // Adding new custom-field to inventory
-func (ni *NetBoxInventory) AddCustomField(newCf *extras.CustomField) error {
+func (ni *NetBoxInventory) AddCustomField(newCf *objects.CustomField) error {
 	if _, ok := ni.CustomFieldsIndexByName[newCf.Name]; ok {
 		existingCf := ni.CustomFieldsIndexByName[newCf.Name]
 		diffMap, err := utils.JsonDiffMapExceptId(newCf, existingCf)
@@ -74,7 +70,7 @@ func (ni *NetBoxInventory) AddCustomField(newCf *extras.CustomField) error {
 }
 
 // Add Cluster to NetBoxInventory
-func (ni *NetBoxInventory) AddClusterGroup(newCg *virtualization.ClusterGroup, newTags []*common.Tag) error {
+func (ni *NetBoxInventory) AddClusterGroup(newCg *objects.ClusterGroup, newTags []*objects.Tag) error {
 	newCg.Tags = append(newCg.Tags, ni.SsotTag)
 	if _, ok := ni.ClusterGroupsIndexByName[newCg.Name]; ok {
 		diffMap, err := utils.JsonDiffMapExceptId(newCg, ni.ClusterGroupsIndexByName[newCg.Name])
@@ -103,7 +99,7 @@ func (ni *NetBoxInventory) AddClusterGroup(newCg *virtualization.ClusterGroup, n
 }
 
 // Add ClusterType to NetBoxInventory
-func (ni *NetBoxInventory) AddClusterType(newClusterType *virtualization.ClusterType) (*virtualization.ClusterType, error) {
+func (ni *NetBoxInventory) AddClusterType(newClusterType *objects.ClusterType) (*objects.ClusterType, error) {
 	newClusterType.Tags = append(newClusterType.Tags, ni.SsotTag)
 	if _, ok := ni.ClusterTypesIndexByName[newClusterType.Name]; ok {
 		diffMap, err := utils.JsonDiffMapExceptId(newClusterType, ni.ClusterTypesIndexByName[newClusterType.Name])
@@ -134,7 +130,7 @@ func (ni *NetBoxInventory) AddClusterType(newClusterType *virtualization.Cluster
 	}
 }
 
-func (ni *NetBoxInventory) AddCluster(newCluster *virtualization.Cluster) error {
+func (ni *NetBoxInventory) AddCluster(newCluster *objects.Cluster) error {
 	newCluster.Tags = append(newCluster.Tags, ni.SsotTag)
 	if _, ok := ni.ClustersIndexByName[newCluster.Name]; ok {
 		diffMap, err := utils.JsonDiffMapExceptId(newCluster, ni.ClustersIndexByName[newCluster.Name])
@@ -162,7 +158,7 @@ func (ni *NetBoxInventory) AddCluster(newCluster *virtualization.Cluster) error 
 	return nil
 }
 
-func (ni *NetBoxInventory) AddDeviceRole(newDeviceRole *dcim.DeviceRole) error {
+func (ni *NetBoxInventory) AddDeviceRole(newDeviceRole *objects.DeviceRole) error {
 	newDeviceRole.Tags = append(newDeviceRole.Tags, ni.SsotTag)
 	if _, ok := ni.DeviceRolesIndexByName[newDeviceRole.Name]; ok {
 		diffMap, err := utils.JsonDiffMapExceptId(newDeviceRole, ni.DeviceRolesIndexByName[newDeviceRole.Name])
@@ -190,7 +186,7 @@ func (ni *NetBoxInventory) AddDeviceRole(newDeviceRole *dcim.DeviceRole) error {
 	return nil
 }
 
-func (ni *NetBoxInventory) AddManufacturer(newManufacturer *common.Manufacturer) (*common.Manufacturer, error) {
+func (ni *NetBoxInventory) AddManufacturer(newManufacturer *objects.Manufacturer) (*objects.Manufacturer, error) {
 	newManufacturer.Tags = append(newManufacturer.Tags, ni.SsotTag)
 	if _, ok := ni.ManufacturersIndexByName[newManufacturer.Name]; ok {
 		diffMap, err := utils.JsonDiffMapExceptId(newManufacturer, ni.ManufacturersIndexByName[newManufacturer.Name])
@@ -218,7 +214,7 @@ func (ni *NetBoxInventory) AddManufacturer(newManufacturer *common.Manufacturer)
 	return ni.ManufacturersIndexByName[newManufacturer.Name], nil
 }
 
-func (ni *NetBoxInventory) AddDeviceType(newDeviceType *dcim.DeviceType) (*dcim.DeviceType, error) {
+func (ni *NetBoxInventory) AddDeviceType(newDeviceType *objects.DeviceType) (*objects.DeviceType, error) {
 	newDeviceType.Tags = append(newDeviceType.Tags, ni.SsotTag)
 	if _, ok := ni.DeviceTypesIndexByModel[newDeviceType.Model]; ok {
 		diffMap, err := utils.JsonDiffMapExceptId(newDeviceType, ni.DeviceTypesIndexByModel[newDeviceType.Model])
@@ -246,7 +242,7 @@ func (ni *NetBoxInventory) AddDeviceType(newDeviceType *dcim.DeviceType) (*dcim.
 	return ni.DeviceTypesIndexByModel[newDeviceType.Model], nil
 }
 
-func (ni *NetBoxInventory) AddPlatform(newPlatform *common.Platform) (*common.Platform, error) {
+func (ni *NetBoxInventory) AddPlatform(newPlatform *objects.Platform) (*objects.Platform, error) {
 	newPlatform.Tags = append(newPlatform.Tags, ni.SsotTag)
 	if _, ok := ni.PlatformsIndexByName[newPlatform.Name]; ok {
 		diffMap, err := utils.JsonDiffMapExceptId(newPlatform, ni.PlatformsIndexByName[newPlatform.Name])
@@ -274,7 +270,7 @@ func (ni *NetBoxInventory) AddPlatform(newPlatform *common.Platform) (*common.Pl
 	return ni.PlatformsIndexByName[newPlatform.Name], nil
 }
 
-func (ni *NetBoxInventory) AddDevice(newDevice *dcim.Device) (*dcim.Device, error) {
+func (ni *NetBoxInventory) AddDevice(newDevice *objects.Device) (*objects.Device, error) {
 	newDevice.Tags = append(newDevice.Tags, ni.SsotTag)
 	if _, ok := ni.DevicesIndexByUuid[newDevice.AssetTag]; ok {
 		diffMap, err := utils.JsonDiffMapExceptId(newDevice, ni.DevicesIndexByUuid[newDevice.AssetTag])
@@ -302,7 +298,7 @@ func (ni *NetBoxInventory) AddDevice(newDevice *dcim.Device) (*dcim.Device, erro
 	return ni.DevicesIndexByUuid[newDevice.AssetTag], nil
 }
 
-func (ni *NetBoxInventory) AddVlan(newVlan *ipam.Vlan) (*ipam.Vlan, error) {
+func (ni *NetBoxInventory) AddVlan(newVlan *objects.Vlan) (*objects.Vlan, error) {
 	newVlan.Tags = append(newVlan.Tags, ni.SsotTag)
 	if _, ok := ni.VlansIndexByName[newVlan.Name]; ok {
 		diffMap, err := utils.JsonDiffMapExceptId(newVlan, ni.VlansIndexByName[newVlan.Name])
@@ -330,7 +326,7 @@ func (ni *NetBoxInventory) AddVlan(newVlan *ipam.Vlan) (*ipam.Vlan, error) {
 	return ni.VlansIndexByName[newVlan.Name], nil
 }
 
-func (ni *NetBoxInventory) AddInterface(newInterface *dcim.Interface) (*dcim.Interface, error) {
+func (ni *NetBoxInventory) AddInterface(newInterface *objects.Interface) (*objects.Interface, error) {
 	newInterface.Tags = append(newInterface.Tags, ni.SsotTag)
 	if _, ok := ni.InterfacesIndexByDeviceAndName[newInterface.Device.ID][newInterface.Name]; ok {
 		diffMap, err := utils.JsonDiffMapExceptId(newInterface, ni.InterfacesIndexByDeviceAndName[newInterface.Device.ID][newInterface.Name])

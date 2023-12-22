@@ -5,18 +5,18 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/tenancy"
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/objects"
 )
 
 type TenantResponse struct {
 	Count    int              `json:"count"`
 	Next     *string          `json:"next"`
 	Previous *string          `json:"previous"`
-	Results  []tenancy.Tenant `json:"results"`
+	Results  []objects.Tenant `json:"results"`
 }
 
 // GET /api/tenancy/tenants/?limit=0
-func (api *NetboxAPI) GetAllTenants() ([]*tenancy.Tenant, error) {
+func (api *NetboxAPI) GetAllTenants() ([]*objects.Tenant, error) {
 	api.Logger.Debug("Getting all tenants from NetBox")
 
 	response, err := api.doRequest(MethodGet, "/api/tenancy/tenants/?limit=0", nil)
@@ -34,7 +34,7 @@ func (api *NetboxAPI) GetAllTenants() ([]*tenancy.Tenant, error) {
 		return nil, err
 	}
 
-	tenants := make([]*tenancy.Tenant, len(tenantResponse.Results))
+	tenants := make([]*objects.Tenant, len(tenantResponse.Results))
 	for i := range tenantResponse.Results {
 		tenants[i] = &tenantResponse.Results[i]
 	}

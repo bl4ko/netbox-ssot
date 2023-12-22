@@ -4,12 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/common"
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/dcim"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/inventory"
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/ipam"
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/tenancy"
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/virtualization"
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/pkg/utils"
 	ovirtsdk4 "github.com/ovirt/go-ovirt"
 )
@@ -207,8 +203,8 @@ func (o *OVirtSource) SyncDatacenters(nbi *inventory.NetBoxInventory) error {
 		if !exists {
 			o.Logger.Warning("description for oVirt datacenter ", name, " is empty.")
 		}
-		nbClusterGroup := &virtualization.ClusterGroup{
-			NetboxObject: common.NetboxObject{Description: description},
+		nbClusterGroup := &objects.ClusterGroup{
+			NetboxObject: objects.NetboxObject{Description: description},
 			Name:         name,
 			Slug:         utils.Slugify(name),
 		}
@@ -221,8 +217,8 @@ func (o *OVirtSource) SyncDatacenters(nbi *inventory.NetBoxInventory) error {
 }
 
 func (o *OVirtSource) SyncClusters(nbi *inventory.NetBoxInventory) error {
-	clusterType := &virtualization.ClusterType{
-		NetboxObject: common.NetboxObject{
+	clusterType := &objects.ClusterType{
+		NetboxObject: objects.NetboxObject{
 			Tags: o.SourceTags,
 		},
 		Name: "oVirt",
@@ -242,7 +238,7 @@ func (o *OVirtSource) SyncClusters(nbi *inventory.NetBoxInventory) error {
 		if !exists {
 			o.Logger.Warning("description for oVirt cluster ", clusterName, " is empty.")
 		}
-		var clusterGroup *virtualization.ClusterGroup
+		var clusterGroup *objects.ClusterGroup
 		if _, ok := o.DataCenters[cluster.MustDataCenter().MustId()]; ok {
 
 		} else {
@@ -253,7 +249,7 @@ func (o *OVirtSource) SyncClusters(nbi *inventory.NetBoxInventory) error {
 				clusterGroup = nbi.ClusterGroupsIndexByName[dataCenterName]
 			}
 		}
-		var clusterSite *common.Site
+		var clusterSite *objects.Site
 		if o.ClusterSiteRelations != nil {
 			match, err := utils.MatchStringToValue(clusterName, o.ClusterSiteRelations)
 			if err != nil {
@@ -266,7 +262,7 @@ func (o *OVirtSource) SyncClusters(nbi *inventory.NetBoxInventory) error {
 				clusterSite = nbi.SitesIndexByName[match]
 			}
 		}
-		var clusterTenant *tenancy.Tenant
+		var clusterTenant *objects.Tenant
 		if o.ClusterTenantRelations != nil {
 			match, err := utils.MatchStringToValue(clusterName, o.ClusterTenantRelations)
 			if err != nil {
@@ -280,14 +276,14 @@ func (o *OVirtSource) SyncClusters(nbi *inventory.NetBoxInventory) error {
 			}
 		}
 
-		nbCluster := &virtualization.Cluster{
-			NetboxObject: common.NetboxObject{
+		nbCluster := &objects.Cluster{
+			NetboxObject: objects.NetboxObject{
 				Description: description,
 				Tags:        o.SourceTags,
 			},
 			Name:   clusterName,
 			Type:   clusterType,
-			Status: virtualization.ClusterStatusActive,
+			Status: objects.ClusterStatusActive,
 			Group:  clusterGroup,
 			Site:   clusterSite,
 			Tenant: clusterTenant,
@@ -316,7 +312,7 @@ func (o *OVirtSource) SyncHosts(nbi *inventory.NetBoxInventory) error {
 			hostDescription = description
 		}
 
-		var hostSite *common.Site
+		var hostSite *objects.Site
 		if o.HostSiteRelations != nil {
 			match, err := utils.MatchStringToValue(hostName, o.HostSiteRelations)
 			if err != nil {
@@ -329,7 +325,7 @@ func (o *OVirtSource) SyncHosts(nbi *inventory.NetBoxInventory) error {
 				hostSite = nbi.SitesIndexByName[match]
 			}
 		}
-		var hostTenant *tenancy.Tenant
+		var hostTenant *objects.Tenant
 		if o.HostTenantRelations != nil {
 			match, err := utils.MatchStringToValue(hostName, o.HostTenantRelations)
 			if err != nil {
@@ -357,7 +353,7 @@ func (o *OVirtSource) SyncHosts(nbi *inventory.NetBoxInventory) error {
 				o.Logger.Warning("Serial number for oVirt host ", hostName, " is empty.")
 			}
 			manufacturerName, _ = hwInfo.Manufacturer()
-			manufacturerName, err = utils.MatchStringToValue(manufacturerName, common.ManufacturerMap)
+			manufacturerName, err = utils.MatchStringToValue(manufacturerName, objects.ManufacturerMap)
 			if err != nil {
 				return fmt.Errorf("error occured when matching oVirt host %s to a NetBox manufacturer: %v", hostName, err)
 			}
@@ -371,11 +367,11 @@ func (o *OVirtSource) SyncHosts(nbi *inventory.NetBoxInventory) error {
 			continue
 		}
 
-		var hostManufacturer *common.Manufacturer
+		var hostManufacturer *objects.Manufacturer
 		if manufacturerName == "" {
 			manufacturerName = "Generic Manufacturer"
 		}
-		hostManufacturer, err = nbi.AddManufacturer(&common.Manufacturer{
+		hostManufacturer, err = nbi.AddManufacturer(&objects.Manufacturer{
 			Name: manufacturerName,
 			Slug: utils.Slugify(manufacturerName),
 		})
@@ -383,8 +379,8 @@ func (o *OVirtSource) SyncHosts(nbi *inventory.NetBoxInventory) error {
 			return fmt.Errorf("failed adding oVirt Manufacturer %v with error: %s", hostManufacturer, err)
 		}
 
-		var hostDeviceType *dcim.DeviceType
-		hostDeviceType, err = nbi.AddDeviceType(&dcim.DeviceType{
+		var hostDeviceType *objects.DeviceType
+		hostDeviceType, err = nbi.AddDeviceType(&objects.DeviceType{
 			Manafacturer: hostManufacturer,
 			Model:        hostModel,
 			Slug:         utils.Slugify(hostModel),
@@ -393,18 +389,18 @@ func (o *OVirtSource) SyncHosts(nbi *inventory.NetBoxInventory) error {
 			return fmt.Errorf("failed adding oVirt DeviceType %v with error: %s", hostDeviceType, err)
 		}
 
-		var hostStatus *dcim.DeviceStatus
+		var hostStatus *objects.DeviceStatus
 		ovirtStatus, exists := host.Status()
 		if exists {
 			switch ovirtStatus {
 			case ovirtsdk4.HOSTSTATUS_UP:
-				hostStatus = &dcim.DeviceStatusActive
+				hostStatus = &objects.DeviceStatusActive
 			default:
-				hostStatus = &dcim.DeviceStatusOffline
+				hostStatus = &objects.DeviceStatusOffline
 			}
 		}
 
-		var hostPlatform *common.Platform
+		var hostPlatform *objects.Platform
 		var platformName string
 		if os, exists := host.Os(); exists {
 			osType, exists := os.Type()
@@ -423,7 +419,7 @@ func (o *OVirtSource) SyncHosts(nbi *inventory.NetBoxInventory) error {
 			}
 			platformName = fmt.Sprintf("%s %s", osType, osVersionName)
 		}
-		hostPlatform, err = nbi.AddPlatform(&common.Platform{
+		hostPlatform, err = nbi.AddPlatform(&objects.Platform{
 			Name: platformName,
 			Slug: utils.Slugify(platformName),
 		})
@@ -447,8 +443,8 @@ func (o *OVirtSource) SyncHosts(nbi *inventory.NetBoxInventory) error {
 		mem, _ := host.Memory()
 		mem /= (1024 * 1024 * 1024) // Value is in Bytes, we convert to GB
 
-		nbHost := &dcim.Device{
-			NetboxObject: common.NetboxObject{Description: hostDescription, Tags: o.SourceTags},
+		nbHost := &objects.Device{
+			NetboxObject: objects.NetboxObject{Description: hostDescription, Tags: o.SourceTags},
 			Name:         hostName,
 			Status:       hostStatus,
 			Platform:     hostPlatform,
@@ -480,13 +476,13 @@ func (o *OVirtSource) SyncHosts(nbi *inventory.NetBoxInventory) error {
 	return nil
 }
 
-func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ovirtsdk4.Host, nbHost *dcim.Device) error {
+func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ovirtsdk4.Host, nbHost *objects.Device) error {
 	nics, exists := ovirtHost.Nics()
 	master2slave := make(map[string][]string) // masterId: [slaveId1, slaveId2, ...]
 	parent2child := make(map[string][]string) // parentId: [childId, ... ]
 	procesedNicsIds := make(map[string]bool)
 	if exists {
-		hostInterfaces := map[string]*dcim.Interface{}
+		hostInterfaces := map[string]*objects.Interface{}
 
 		// First loop through all nics
 		for _, nic := range nics.Slice() {
@@ -499,7 +495,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 			if !exists {
 				o.Logger.Warning("name for oVirt nic with id ", nicId, " is empty.")
 			}
-			// var nicType *dcim.InterfaceType
+			// var nicType *objects.InterfaceType
 			nicSpeedBips, exists := nic.Speed()
 			if !exists {
 				o.Logger.Warning("speed for oVirt nic with id ", nicId, " is empty.")
@@ -533,18 +529,18 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 			// }
 
 			// Determine nic type (virtual, physical, bond...)
-			var nicType *dcim.InterfaceType
+			var nicType *objects.InterfaceType
 			nicBaseInterface, exists := nic.BaseInterface()
 			if exists {
 				// This interface is a vlan bond. We treat is as a virtual interface
-				nicType = &dcim.VirtualInterfaceType
+				nicType = &objects.VirtualInterfaceType
 				parent2child[nicBaseInterface] = append(parent2child[nicBaseInterface], nicId)
 			}
 
 			nicBonding, exists := nic.Bonding()
 			if exists {
 				// Bond interface, we give it a type of LAG
-				nicType = &dcim.LAGInterfaceType
+				nicType = &objects.LAGInterfaceType
 				slaves, exists := nicBonding.Slaves()
 				if exists {
 					for _, slave := range slaves.Slice() {
@@ -556,23 +552,23 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 			if nicType == nil {
 				// This is a physical interface.
 				// TODO: depending on speed assign different nic type
-				nicType = &dcim.OtherInterfaceType
+				nicType = &objects.OtherInterfaceType
 			}
 
-			var nicVlan *ipam.Vlan
+			var nicVlan *objects.Vlan
 			var err error
 			vlan, exists := nic.Vlan()
 			if exists {
 				vlanId, exists := vlan.Id()
 				if exists {
-					var vlanStatus *ipam.VlanStaus
+					var vlanStatus *objects.VlanStaus
 					if nicEnabled {
-						vlanStatus = &ipam.VlanStatusActive
+						vlanStatus = &objects.VlanStatusActive
 					} else {
-						vlanStatus = &ipam.VlanStatusReserved
+						vlanStatus = &objects.VlanStatusReserved
 					}
-					nicVlan, err = nbi.AddVlan(&ipam.Vlan{
-						NetboxObject: common.NetboxObject{
+					nicVlan, err = nbi.AddVlan(&objects.Vlan{
+						NetboxObject: objects.NetboxObject{
 							Tags: o.SourceTags,
 						},
 						Name:   fmt.Sprintf("VLAN-%d", vlanId),
@@ -586,19 +582,19 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 				}
 			}
 
-			var nicTaggedVlans []*ipam.Vlan
+			var nicTaggedVlans []*objects.Vlan
 			if nicVlan != nil {
-				nicTaggedVlans = []*ipam.Vlan{nicVlan}
+				nicTaggedVlans = []*objects.Vlan{nicVlan}
 			}
 
-			newInterface := &dcim.Interface{
-				NetboxObject: common.NetboxObject{
+			newInterface := &objects.Interface{
+				NetboxObject: objects.NetboxObject{
 					Tags:        o.SourceTags,
 					Description: nicComment,
 				},
 				Device: nbHost,
 				Name:   nicName,
-				Speed:  dcim.InterfaceSpeed(nicSpeedKbps),
+				Speed:  objects.InterfaceSpeed(nicSpeedKbps),
 				Status: nicEnabled,
 				MTU:    nicMtu,
 				Type:   nicType,

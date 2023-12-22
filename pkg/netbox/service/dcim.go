@@ -6,20 +6,19 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/common"
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/dcim"
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/pkg/utils"
 )
 
 type SiteResponse struct {
-	Count    int           `json:"count"`
-	Next     *string       `json:"next"`
-	Previous *string       `json:"previous"`
-	Results  []common.Site `json:"results"`
+	Count    int            `json:"count"`
+	Next     *string        `json:"next"`
+	Previous *string        `json:"previous"`
+	Results  []objects.Site `json:"results"`
 }
 
 // GET /api/dcim/sites/?limit=0
-func (api *NetboxAPI) GetAllSites() ([]*common.Site, error) {
+func (api *NetboxAPI) GetAllSites() ([]*objects.Site, error) {
 	api.Logger.Debug("Getting all sites from NetBox")
 
 	response, err := api.doRequest(MethodGet, "/api/dcim/sites/?limit=0", nil)
@@ -37,7 +36,7 @@ func (api *NetboxAPI) GetAllSites() ([]*common.Site, error) {
 		return nil, err
 	}
 
-	sites := make([]*common.Site, len(siteResponse.Results))
+	sites := make([]*objects.Site, len(siteResponse.Results))
 	for i := range siteResponse.Results {
 		sites[i] = &siteResponse.Results[i]
 	}
@@ -48,14 +47,14 @@ func (api *NetboxAPI) GetAllSites() ([]*common.Site, error) {
 
 // top-level JSON object returned by Netbox API
 type DeviceResponse struct {
-	Count    int           `json:"count"`
-	Next     *string       `json:"next"`
-	Previous *string       `json:"previous"`
-	Results  []dcim.Device `json:"results"`
+	Count    int              `json:"count"`
+	Next     *string          `json:"next"`
+	Previous *string          `json:"previous"`
+	Results  []objects.Device `json:"results"`
 }
 
 // GET /api/dcim/devices/?limit=0
-func (api *NetboxAPI) GetAllDevices() ([]*dcim.Device, error) {
+func (api *NetboxAPI) GetAllDevices() ([]*objects.Device, error) {
 	api.Logger.Debug("Getting all devices from NetBox")
 
 	response, err := api.doRequest(MethodGet, "/api/dcim/devices/?limit=0", nil)
@@ -73,7 +72,7 @@ func (api *NetboxAPI) GetAllDevices() ([]*dcim.Device, error) {
 		return nil, err
 	}
 
-	devices := make([]*dcim.Device, len(deviceResponse.Results))
+	devices := make([]*objects.Device, len(deviceResponse.Results))
 	for i := range deviceResponse.Results {
 		devices[i] = &deviceResponse.Results[i]
 	}
@@ -83,7 +82,7 @@ func (api *NetboxAPI) GetAllDevices() ([]*dcim.Device, error) {
 }
 
 // PATCH /api/dcim/devices/{id}/
-func (api *NetboxAPI) PatchDevice(diffMap map[string]interface{}, deviceId int) (*dcim.Device, error) {
+func (api *NetboxAPI) PatchDevice(diffMap map[string]interface{}, deviceId int) (*objects.Device, error) {
 	api.Logger.Debug("Patching device ", deviceId, " with data: ", diffMap, " in NetBox")
 
 	requestBody, err := json.Marshal(diffMap)
@@ -101,7 +100,7 @@ func (api *NetboxAPI) PatchDevice(diffMap map[string]interface{}, deviceId int) 
 		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
 	}
 
-	var deviceResponse dcim.Device
+	var deviceResponse objects.Device
 	err = json.Unmarshal(response.Body, &deviceResponse)
 	if err != nil {
 		return nil, err
@@ -112,7 +111,7 @@ func (api *NetboxAPI) PatchDevice(diffMap map[string]interface{}, deviceId int) 
 }
 
 // POST /api/dcim/devices/
-func (api *NetboxAPI) CreateDevice(device *dcim.Device) (*dcim.Device, error) {
+func (api *NetboxAPI) CreateDevice(device *objects.Device) (*objects.Device, error) {
 	api.Logger.Debug("Creating device in NetBox with data: ", device)
 
 	requestBody, err := utils.NetboxJsonMarshal(device)
@@ -131,7 +130,7 @@ func (api *NetboxAPI) CreateDevice(device *dcim.Device) (*dcim.Device, error) {
 		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
 	}
 
-	var deviceResponse dcim.Device
+	var deviceResponse objects.Device
 	err = json.Unmarshal(response.Body, &deviceResponse)
 	if err != nil {
 		return nil, err
@@ -143,14 +142,14 @@ func (api *NetboxAPI) CreateDevice(device *dcim.Device) (*dcim.Device, error) {
 }
 
 type DeviceRoleResponse struct {
-	Count    int               `json:"count"`
-	Next     *string           `json:"next"`
-	Previous *string           `json:"previous"`
-	Results  []dcim.DeviceRole `json:"results"`
+	Count    int                  `json:"count"`
+	Next     *string              `json:"next"`
+	Previous *string              `json:"previous"`
+	Results  []objects.DeviceRole `json:"results"`
 }
 
 // GET /api/dcim/device-roles/?limit=0
-func (api *NetboxAPI) GetAllDeviceRoles() ([]*dcim.DeviceRole, error) {
+func (api *NetboxAPI) GetAllDeviceRoles() ([]*objects.DeviceRole, error) {
 	api.Logger.Debug("Getting all device roles from NetBox")
 
 	response, err := api.doRequest(MethodGet, "/api/dcim/device-roles/?limit=0", nil)
@@ -168,7 +167,7 @@ func (api *NetboxAPI) GetAllDeviceRoles() ([]*dcim.DeviceRole, error) {
 		return nil, err
 	}
 
-	deviceRoles := make([]*dcim.DeviceRole, len(deviceRoleResponse.Results))
+	deviceRoles := make([]*objects.DeviceRole, len(deviceRoleResponse.Results))
 	for i := range deviceRoleResponse.Results {
 		deviceRoles[i] = &deviceRoleResponse.Results[i]
 	}
@@ -178,7 +177,7 @@ func (api *NetboxAPI) GetAllDeviceRoles() ([]*dcim.DeviceRole, error) {
 }
 
 // POST /api/dcim/device-roles/
-func (api *NetboxAPI) CreateDeviceRole(deviceRole *dcim.DeviceRole) (*dcim.DeviceRole, error) {
+func (api *NetboxAPI) CreateDeviceRole(deviceRole *objects.DeviceRole) (*objects.DeviceRole, error) {
 	api.Logger.Debug("Creating device role with data", deviceRole, " in NetBox")
 
 	requestBody, err := utils.NetboxJsonMarshal(deviceRole)
@@ -197,7 +196,7 @@ func (api *NetboxAPI) CreateDeviceRole(deviceRole *dcim.DeviceRole) (*dcim.Devic
 		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
 	}
 
-	var deviceRoleResponse dcim.DeviceRole
+	var deviceRoleResponse objects.DeviceRole
 	err = json.Unmarshal(response.Body, &deviceRoleResponse)
 	if err != nil {
 		return nil, err
@@ -209,7 +208,7 @@ func (api *NetboxAPI) CreateDeviceRole(deviceRole *dcim.DeviceRole) (*dcim.Devic
 }
 
 // PATCH /api/dcim/device-roles/{id}/
-func (api *NetboxAPI) PatchDeviceRole(diffMap map[string]interface{}, id int) (*dcim.DeviceRole, error) {
+func (api *NetboxAPI) PatchDeviceRole(diffMap map[string]interface{}, id int) (*objects.DeviceRole, error) {
 	api.Logger.Debug("Patching device role ", id, " with data: ", diffMap, " in NetBox")
 
 	requestBody, err := json.Marshal(diffMap)
@@ -228,7 +227,7 @@ func (api *NetboxAPI) PatchDeviceRole(diffMap map[string]interface{}, id int) (*
 		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
 	}
 
-	var deviceRoleResponse dcim.DeviceRole
+	var deviceRoleResponse objects.DeviceRole
 	err = json.Unmarshal(response.Body, &deviceRoleResponse)
 	if err != nil {
 		return nil, err
@@ -240,14 +239,14 @@ func (api *NetboxAPI) PatchDeviceRole(diffMap map[string]interface{}, id int) (*
 }
 
 type ManufacturerResponse struct {
-	Count    int                   `json:"count"`
-	Next     *string               `json:"next"`
-	Previous *string               `json:"previous"`
-	Results  []common.Manufacturer `json:"results"`
+	Count    int                    `json:"count"`
+	Next     *string                `json:"next"`
+	Previous *string                `json:"previous"`
+	Results  []objects.Manufacturer `json:"results"`
 }
 
 // GET /api/dcim/manufacturers/?limit=0
-func (api *NetboxAPI) GetAllManufacturers() ([]*common.Manufacturer, error) {
+func (api *NetboxAPI) GetAllManufacturers() ([]*objects.Manufacturer, error) {
 	api.Logger.Debug("Getting all manufacturers from NetBox")
 
 	response, err := api.doRequest(MethodGet, "/api/dcim/manufacturers/?limit=0", nil)
@@ -265,7 +264,7 @@ func (api *NetboxAPI) GetAllManufacturers() ([]*common.Manufacturer, error) {
 		return nil, err
 	}
 
-	manufacturers := make([]*common.Manufacturer, len(manufacturerResponse.Results))
+	manufacturers := make([]*objects.Manufacturer, len(manufacturerResponse.Results))
 	for i := range manufacturerResponse.Results {
 		manufacturers[i] = &manufacturerResponse.Results[i]
 	}
@@ -275,7 +274,7 @@ func (api *NetboxAPI) GetAllManufacturers() ([]*common.Manufacturer, error) {
 }
 
 // PATCH /api/dcim/manufacturers/{id}/
-func (api *NetboxAPI) PatchManufacturer(diffMap map[string]interface{}, manufacturerId int) (*common.Manufacturer, error) {
+func (api *NetboxAPI) PatchManufacturer(diffMap map[string]interface{}, manufacturerId int) (*objects.Manufacturer, error) {
 	api.Logger.Debug("Patching manufacturer ", manufacturerId, " with data: ", diffMap, " in NetBox")
 
 	requestBody, err := json.Marshal(diffMap)
@@ -293,7 +292,7 @@ func (api *NetboxAPI) PatchManufacturer(diffMap map[string]interface{}, manufact
 		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
 	}
 
-	var manufacturerResponse common.Manufacturer
+	var manufacturerResponse objects.Manufacturer
 	err = json.Unmarshal(response.Body, &manufacturerResponse)
 	if err != nil {
 		return nil, err
@@ -304,7 +303,7 @@ func (api *NetboxAPI) PatchManufacturer(diffMap map[string]interface{}, manufact
 }
 
 // POST /api/dcim/manufacturers/
-func (api *NetboxAPI) CreateManufacturer(manufacturer *common.Manufacturer) (*common.Manufacturer, error) {
+func (api *NetboxAPI) CreateManufacturer(manufacturer *objects.Manufacturer) (*objects.Manufacturer, error) {
 	api.Logger.Debug("Creating manufacturer with data: ", manufacturer, " in NetBox")
 
 	requestBody, err := utils.NetboxJsonMarshal(manufacturer)
@@ -323,7 +322,7 @@ func (api *NetboxAPI) CreateManufacturer(manufacturer *common.Manufacturer) (*co
 		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
 	}
 
-	var manufacturerResponse common.Manufacturer
+	var manufacturerResponse objects.Manufacturer
 	err = json.Unmarshal(response.Body, &manufacturerResponse)
 	if err != nil {
 		return nil, err
@@ -335,14 +334,14 @@ func (api *NetboxAPI) CreateManufacturer(manufacturer *common.Manufacturer) (*co
 }
 
 type PlatformResponse struct {
-	Count    int               `json:"count"`
-	Next     *string           `json:"next"`
-	Previous *string           `json:"previous"`
-	Results  []common.Platform `json:"results"`
+	Count    int                `json:"count"`
+	Next     *string            `json:"next"`
+	Previous *string            `json:"previous"`
+	Results  []objects.Platform `json:"results"`
 }
 
 // GET /api/dcim/platforms/?limit=0
-func (api *NetboxAPI) GetAllPlatforms() ([]*common.Platform, error) {
+func (api *NetboxAPI) GetAllPlatforms() ([]*objects.Platform, error) {
 	api.Logger.Debug("Getting all platforms from NetBox")
 
 	response, err := api.doRequest(MethodGet, "/api/dcim/platforms/?limit=0", nil)
@@ -360,7 +359,7 @@ func (api *NetboxAPI) GetAllPlatforms() ([]*common.Platform, error) {
 		return nil, err
 	}
 
-	platforms := make([]*common.Platform, len(platformResponse.Results))
+	platforms := make([]*objects.Platform, len(platformResponse.Results))
 	for i := range platformResponse.Results {
 		platforms[i] = &platformResponse.Results[i]
 	}
@@ -370,7 +369,7 @@ func (api *NetboxAPI) GetAllPlatforms() ([]*common.Platform, error) {
 }
 
 // PATCH /api/dcim/platforms/{id}/
-func (api *NetboxAPI) PatchPlatform(diffMap map[string]interface{}, platformId int) (*common.Platform, error) {
+func (api *NetboxAPI) PatchPlatform(diffMap map[string]interface{}, platformId int) (*objects.Platform, error) {
 	api.Logger.Debug("Patching platform ", platformId, " with data: ", diffMap, " in NetBox")
 
 	requestBody, err := json.Marshal(diffMap)
@@ -388,7 +387,7 @@ func (api *NetboxAPI) PatchPlatform(diffMap map[string]interface{}, platformId i
 		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
 	}
 
-	var platformResponse common.Platform
+	var platformResponse objects.Platform
 	err = json.Unmarshal(response.Body, &platformResponse)
 	if err != nil {
 		return nil, err
@@ -399,7 +398,7 @@ func (api *NetboxAPI) PatchPlatform(diffMap map[string]interface{}, platformId i
 }
 
 // POSST /api/dcim/platforms/
-func (api *NetboxAPI) CreatePlatform(platform *common.Platform) (*common.Platform, error) {
+func (api *NetboxAPI) CreatePlatform(platform *objects.Platform) (*objects.Platform, error) {
 	api.Logger.Debug("Creating platform in NetBox with data: ", platform)
 
 	requestBody, err := utils.NetboxJsonMarshal(platform)
@@ -418,7 +417,7 @@ func (api *NetboxAPI) CreatePlatform(platform *common.Platform) (*common.Platfor
 		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
 	}
 
-	var platformResponse common.Platform
+	var platformResponse objects.Platform
 	err = json.Unmarshal(response.Body, &platformResponse)
 	if err != nil {
 		return nil, err
@@ -430,14 +429,14 @@ func (api *NetboxAPI) CreatePlatform(platform *common.Platform) (*common.Platfor
 }
 
 type DeviceTypeResponse struct {
-	Count    int               `json:"count"`
-	Next     *string           `json:"next"`
-	Previous *string           `json:"previous"`
-	Results  []dcim.DeviceType `json:"results"`
+	Count    int                  `json:"count"`
+	Next     *string              `json:"next"`
+	Previous *string              `json:"previous"`
+	Results  []objects.DeviceType `json:"results"`
 }
 
 // GET /api/dcim/device-types/?limit=0
-func (api *NetboxAPI) GetAllDeviceTypes() ([]*dcim.DeviceType, error) {
+func (api *NetboxAPI) GetAllDeviceTypes() ([]*objects.DeviceType, error) {
 	api.Logger.Debug("Getting all device types from NetBox")
 
 	response, err := api.doRequest(MethodGet, "/api/dcim/device-types/?limit=0", nil)
@@ -455,7 +454,7 @@ func (api *NetboxAPI) GetAllDeviceTypes() ([]*dcim.DeviceType, error) {
 		return nil, err
 	}
 
-	deviceTypes := make([]*dcim.DeviceType, len(deviceTypeResponse.Results))
+	deviceTypes := make([]*objects.DeviceType, len(deviceTypeResponse.Results))
 	for i := range deviceTypeResponse.Results {
 		deviceTypes[i] = &deviceTypeResponse.Results[i]
 	}
@@ -465,7 +464,7 @@ func (api *NetboxAPI) GetAllDeviceTypes() ([]*dcim.DeviceType, error) {
 }
 
 // PATCH /api/dcim/device-types/{id}/
-func (api *NetboxAPI) PatchDeviceType(diffMap map[string]interface{}, deviceTypeId int) (*dcim.DeviceType, error) {
+func (api *NetboxAPI) PatchDeviceType(diffMap map[string]interface{}, deviceTypeId int) (*objects.DeviceType, error) {
 	api.Logger.Debug("Patching device type ", deviceTypeId, " with data: ", diffMap, " in NetBox")
 
 	requestBody, err := json.Marshal(diffMap)
@@ -483,7 +482,7 @@ func (api *NetboxAPI) PatchDeviceType(diffMap map[string]interface{}, deviceType
 		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
 	}
 
-	var deviceTypeResponse dcim.DeviceType
+	var deviceTypeResponse objects.DeviceType
 	err = json.Unmarshal(response.Body, &deviceTypeResponse)
 	if err != nil {
 		return nil, err
@@ -494,7 +493,7 @@ func (api *NetboxAPI) PatchDeviceType(diffMap map[string]interface{}, deviceType
 }
 
 // POST /api/dcim/device-types/
-func (api *NetboxAPI) CreateDeviceType(deviceType *dcim.DeviceType) (*dcim.DeviceType, error) {
+func (api *NetboxAPI) CreateDeviceType(deviceType *objects.DeviceType) (*objects.DeviceType, error) {
 	api.Logger.Debug("Creating device type in NetBox with data: ", deviceType)
 
 	requestBody, err := utils.NetboxJsonMarshal(deviceType)
@@ -513,7 +512,7 @@ func (api *NetboxAPI) CreateDeviceType(deviceType *dcim.DeviceType) (*dcim.Devic
 		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
 	}
 
-	var deviceTypeResponse dcim.DeviceType
+	var deviceTypeResponse objects.DeviceType
 	err = json.Unmarshal(response.Body, &deviceTypeResponse)
 	if err != nil {
 		return nil, err
@@ -525,14 +524,14 @@ func (api *NetboxAPI) CreateDeviceType(deviceType *dcim.DeviceType) (*dcim.Devic
 }
 
 type InterfaceResponse struct {
-	Count    int              `json:"count"`
-	Next     *string          `json:"next"`
-	Previous *string          `json:"previous"`
-	Results  []dcim.Interface `json:"results"`
+	Count    int                 `json:"count"`
+	Next     *string             `json:"next"`
+	Previous *string             `json:"previous"`
+	Results  []objects.Interface `json:"results"`
 }
 
 // GET /api/dcim/interfaces/?limit=0
-func (api *NetboxAPI) GetAllInterfaces() ([]*dcim.Interface, error) {
+func (api *NetboxAPI) GetAllInterfaces() ([]*objects.Interface, error) {
 	api.Logger.Debug("Getting all interfaces from NetBox")
 
 	response, err := api.doRequest(MethodGet, "/api/dcim/interfaces/?limit=0", nil)
@@ -550,7 +549,7 @@ func (api *NetboxAPI) GetAllInterfaces() ([]*dcim.Interface, error) {
 		return nil, err
 	}
 
-	interfaces := make([]*dcim.Interface, len(interfaceResponse.Results))
+	interfaces := make([]*objects.Interface, len(interfaceResponse.Results))
 	for i := range interfaceResponse.Results {
 		interfaces[i] = &interfaceResponse.Results[i]
 	}
@@ -560,7 +559,7 @@ func (api *NetboxAPI) GetAllInterfaces() ([]*dcim.Interface, error) {
 }
 
 // PATCH /api/dcim/interfaces/{id}/
-func (api *NetboxAPI) PatchInterface(diffMap map[string]interface{}, interfaceId int) (*dcim.Interface, error) {
+func (api *NetboxAPI) PatchInterface(diffMap map[string]interface{}, interfaceId int) (*objects.Interface, error) {
 	api.Logger.Debug("Patching interface with id ", interfaceId, " with data: ", diffMap, " in NetBox")
 
 	requestBody, err := json.Marshal(diffMap)
@@ -578,7 +577,7 @@ func (api *NetboxAPI) PatchInterface(diffMap map[string]interface{}, interfaceId
 		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
 	}
 
-	var interfaceResponse dcim.Interface
+	var interfaceResponse objects.Interface
 	err = json.Unmarshal(response.Body, &interfaceResponse)
 	if err != nil {
 		return nil, err
@@ -589,7 +588,7 @@ func (api *NetboxAPI) PatchInterface(diffMap map[string]interface{}, interfaceId
 }
 
 // POST /api/dcim/interfaces/
-func (api *NetboxAPI) CreateInterface(interf *dcim.Interface) (*dcim.Interface, error) {
+func (api *NetboxAPI) CreateInterface(interf *objects.Interface) (*objects.Interface, error) {
 	api.Logger.Debug("Creating interface in NetBox with data: ", interf)
 
 	requestBody, err := utils.NetboxJsonMarshal(interf)
@@ -608,7 +607,7 @@ func (api *NetboxAPI) CreateInterface(interf *dcim.Interface) (*dcim.Interface, 
 		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
 	}
 
-	var interfaceResponse dcim.Interface
+	var interfaceResponse objects.Interface
 	err = json.Unmarshal(response.Body, &interfaceResponse)
 	if err != nil {
 		return nil, err

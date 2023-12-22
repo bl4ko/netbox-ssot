@@ -8,15 +8,15 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/common"
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/objects"
 )
 
-// Helper function to determine if a given reflect.Value contains an embedded common.Choice
+// Helper function to determine if a given reflect.Value contains an embedded objects.Choice
 func isChoiceEmbedded(v reflect.Value) bool {
 	vType := v.Type()
-	return vType.Field(0).Type == reflect.TypeOf(common.Choice{})
+	return vType.Field(0).Type == reflect.TypeOf(objects.Choice{})
 	// for i := 0; i < v.NumField(); i++ {
-	// 	if vType.Field(i).Type == reflect.TypeOf(common.Choice{}) {
+	// 	if vType.Field(i).Type == reflect.TypeOf(objects.Choice{}) {
 	// 		return true
 	// 	}
 	// }

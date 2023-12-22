@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/bl4ko/netbox-ssot/pkg/logger"
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/common"
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/inventory"
+	"github.com/bl4ko/netbox-ssot/pkg/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/pkg/parser"
 	"github.com/bl4ko/netbox-ssot/pkg/utils"
 )
@@ -23,13 +23,13 @@ type Source interface {
 type CommonConfig struct {
 	Logger       *logger.Logger
 	SourceConfig *parser.SourceConfig
-	SourceTags   []*common.Tag
+	SourceTags   []*objects.Tag
 }
 
 // NewSource creates a Source from the given configuration
 func NewSource(config *parser.SourceConfig, logger *logger.Logger, netboxInventory *inventory.NetBoxInventory) (Source, error) {
 	// First we create default tags for the source
-	sourceTag, err := netboxInventory.AddTag(&common.Tag{
+	sourceTag, err := netboxInventory.AddTag(&objects.Tag{
 		Name:        config.Tag,
 		Slug:        utils.Slugify("source-" + config.Name),
 		Color:       config.TagColor,
@@ -38,7 +38,7 @@ func NewSource(config *parser.SourceConfig, logger *logger.Logger, netboxInvento
 	if err != nil {
 		return nil, fmt.Errorf("error creating sourceTag: %s", err)
 	}
-	sourceTypeTag, err := netboxInventory.AddTag(&common.Tag{
+	sourceTypeTag, err := netboxInventory.AddTag(&objects.Tag{
 		Name:        string(config.Type),
 		Slug:        utils.Slugify("type-" + string(config.Type)),
 		Color:       parser.SourceTypeToTagColorMap[config.Type],
@@ -50,7 +50,7 @@ func NewSource(config *parser.SourceConfig, logger *logger.Logger, netboxInvento
 	commonConfig := CommonConfig{
 		Logger:       logger,
 		SourceConfig: config,
-		SourceTags:   []*common.Tag{sourceTag, sourceTypeTag},
+		SourceTags:   []*objects.Tag{sourceTag, sourceTypeTag},
 	}
 	switch config.Type {
 	case "ovirt":

@@ -1,9 +1,7 @@
-package tenancy
-
-import "github.com/bl4ko/netbox-ssot/pkg/netbox/common"
+package objects
 
 type TenantGroup struct {
-	common.NetboxObject
+	NetboxObject
 	// Name is the name of the tenant group. This field is required.
 	Name string `json:"name,omitempty"`
 	// Slug is the slugified version of the tenant group name. This field is read-only.
@@ -12,7 +10,7 @@ type TenantGroup struct {
 }
 
 type Tenant struct {
-	common.NetboxObject
+	NetboxObject
 	// Name is the name of the tenant. This field is required.
 	Name string `json:"name,omitempty"`
 	// Slug is the slugified version of the tenant name. This field is read-only.
