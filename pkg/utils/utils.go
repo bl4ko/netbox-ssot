@@ -43,7 +43,7 @@ func StructToNetboxJsonMap(obj interface{}) (map[string]interface{}, error) {
 		jsonTag := fieldType.Tag.Get("json")
 		jsonTag = strings.Split(jsonTag, ",")[0]
 
-		if fieldType.Name == "ID" {
+		if fieldType.Name == "Id" {
 			continue
 		}
 
@@ -81,7 +81,7 @@ func StructToNetboxJsonMap(obj interface{}) (map[string]interface{}, error) {
 					attribute = attribute.Elem()
 				}
 				if attribute.Kind() == reflect.Struct {
-					id := attribute.FieldByName("ID")
+					id := attribute.FieldByName("Id")
 					if id.IsValid() && id.Int() != 0 {
 						sliceItems = append(sliceItems, id.Int())
 					} else {
@@ -99,7 +99,7 @@ func StructToNetboxJsonMap(obj interface{}) (map[string]interface{}, error) {
 					netboxJsonMap[jsonTag] = choiceValue.Interface()
 				}
 			} else {
-				id := fieldValue.FieldByName("ID")
+				id := fieldValue.FieldByName("Id")
 				if id.IsValid() {
 					netboxJsonMap[jsonTag] = id.Int()
 				} else {
@@ -129,7 +129,7 @@ func NetboxJsonMarshal(obj interface{}) ([]byte, error) {
 // Struct used for patching objects, when attributes are structs, or slices
 // we only need object with an id for patching.
 type IDObject struct {
-	ID int `json:"id"`
+	ID int `json:"Id"`
 }
 
 // JsonDiffMapExceptID checks if any field except ID field, from two objects, are different.
@@ -160,7 +160,7 @@ func JsonDiffMapExceptId(newObj, existingObj interface{}) (map[string]interface{
 		fieldName := newObject.Type().Field(i).Name
 		jsonTag := newObject.Type().Field(i).Tag.Get("json")
 
-		if fieldName == "ID" {
+		if fieldName == "Id" {
 			continue
 		}
 
@@ -278,7 +278,7 @@ func addSliceDiff(newSlice reflect.Value, existingSlice reflect.Value, jsonTag s
 			if element.Kind() == reflect.Ptr {
 				element = element.Elem()
 			}
-			id := element.FieldByName("ID").Interface().(int)
+			id := element.FieldByName("Id").Interface().(int)
 			newIdSet[id] = true
 		}
 
@@ -296,7 +296,7 @@ func addSliceDiff(newSlice reflect.Value, existingSlice reflect.Value, jsonTag s
 				if existingSlice.Index(j).Kind() == reflect.Ptr {
 					existingSliceEl = existingSliceEl.Elem()
 				}
-				id = existingSliceEl.FieldByName("ID").Interface().(int)
+				id = existingSliceEl.FieldByName("Id").Interface().(int)
 				if _, ok := newIdSet[id]; !ok {
 					diffMap[jsonTag] = newIdSlice
 					return nil
@@ -307,7 +307,7 @@ func addSliceDiff(newSlice reflect.Value, existingSlice reflect.Value, jsonTag s
 	return nil
 }
 
-// Returns json form for patching the difference e.g. { "id": 1 }
+// Returns json form for patching the difference e.g. { "Id": 1 }
 func addStructDiff(newObj reflect.Value, existingObj reflect.Value, jsonTag string, diffMap map[string]interface{}) error {
 
 	// If first struct is nil, that means that we reset the attribute to nil
@@ -317,7 +317,7 @@ func addStructDiff(newObj reflect.Value, existingObj reflect.Value, jsonTag stri
 	}
 
 	// We use ids for comparison between structs, because for patching objects, all we need is id of attribute
-	idField := newObj.FieldByName("ID")
+	idField := newObj.FieldByName("Id")
 
 	// If objects don't have ID field, compare them by their values
 	if !idField.IsValid() {
@@ -337,8 +337,8 @@ func addStructDiff(newObj reflect.Value, existingObj reflect.Value, jsonTag stri
 			diffMap[jsonTag] = IDObject{ID: idField.Interface().(int)}
 		} else {
 			// Objects have ID field, compare their ids
-			if newObj.FieldByName("ID").Interface() != existingObj.FieldByName("ID").Interface() {
-				id := newObj.FieldByName("ID").Interface().(int)
+			if newObj.FieldByName("Id").Interface() != existingObj.FieldByName("Id").Interface() {
+				id := newObj.FieldByName("Id").Interface().(int)
 				diffMap[jsonTag] = IDObject{ID: id}
 			}
 		}

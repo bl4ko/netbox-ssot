@@ -28,7 +28,7 @@ func (ni *NetBoxInventory) AddTag(newTag *objects.Tag) (*objects.Tag, error) {
 			return nil, err
 		}
 		if len(diffMap) > 0 {
-			patchedTag, err := ni.NetboxApi.PatchTag(diffMap, existingTag.ID)
+			patchedTag, err := ni.NetboxApi.PatchTag(diffMap, existingTag.Id)
 			if err != nil {
 				return nil, err
 			}
@@ -50,7 +50,7 @@ func (ni *NetBoxInventory) AddCustomField(newCf *objects.CustomField) error {
 		}
 		if len(diffMap) > 0 {
 			ni.Logger.Debug("Custom field ", newCf.Name, " already exists in NetBox but is out of date. Patching it... ")
-			patchedCf, err := ni.NetboxApi.PatchCustomField(diffMap, existingCf.ID)
+			patchedCf, err := ni.NetboxApi.PatchCustomField(diffMap, existingCf.Id)
 			if err != nil {
 				return err
 			}

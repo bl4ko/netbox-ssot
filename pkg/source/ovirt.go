@@ -175,20 +175,21 @@ func (o *OVirtSource) Sync(nbi *inventory.NetBoxInventory) error {
 	o.Logger.Info("Syncing oVirt source ", o.SourceConfig.Name, " with netbox")
 	err := o.SyncDatacenters(nbi)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to sync oVirt datacenters: %v", err)
 	}
 	err = o.SyncClusters(nbi)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to sync oVirt clusters: %v", err)
 	}
 	err = o.SyncHosts(nbi)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to sync oVirt hosts: %v", err)
 	}
-
-	// TODO
-	// err = o.SyncVms(nbi)
-
+	err = o.SyncVms(nbi)
+	if err != nil {
+		return fmt.Errorf("failed to sync oVirt vms: %v", err)
+	}
+	o.Logger.Info("Successfully synced oVirt source ", o.SourceConfig.Name, " with netbox")
 	return nil
 }
 
@@ -661,5 +662,13 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 			}
 		}
 	}
+	return nil
+}
+
+func (o *OVirtSource) SyncVms(nbi *inventory.NetBoxInventory) error {
+	for vmId, vm := range o.Vms {
+		fmt.Printf("%s: %v\n", vmId, vm)
+	}
+
 	return nil
 }

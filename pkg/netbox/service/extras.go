@@ -116,7 +116,7 @@ func (api *NetboxAPI) UpdateTag(tag *objects.Tag) (*objects.Tag, error) {
 	}
 
 	requestBodyBuffer := bytes.NewBuffer(requestBody)
-	response, err := api.doRequest(MethodPut, fmt.Sprintf("/api/extras/tags/%d/", tag.ID), requestBodyBuffer)
+	response, err := api.doRequest(MethodPut, fmt.Sprintf("/api/extras/tags/%d/", tag.Id), requestBodyBuffer)
 	if err != nil {
 		return nil, err
 	}

@@ -5,7 +5,7 @@ import (
 )
 
 type Tag struct {
-	ID          int    `json:"id,omitempty"`
+	Id          int    `json:"id,omitempty"`
 	Name        string `json:"name,omitempty"`
 	Slug        string `json:"slug,omitempty"`
 	Color       string `json:"color,omitempty"`
@@ -13,7 +13,7 @@ type Tag struct {
 }
 
 func (t Tag) String() string {
-	return fmt.Sprintf("Tag{ID: %d, Name: %s, Slug: %s, Color: %s, Description: %s}", t.ID, t.Name, t.Slug, t.Color, t.Description)
+	return fmt.Sprintf("Tag{ID: %d, Name: %s, Slug: %s, Color: %s, Description: %s}", t.Id, t.Name, t.Slug, t.Color, t.Description)
 }
 
 // CustomFieldTypes are predefined netbox's types for CustomFields
@@ -49,7 +49,7 @@ var (
 )
 
 type CustomField struct {
-	ID int `json:"id,omitempty"`
+	Id int `json:"id,omitempty"`
 	// Name of the custom field (e.g. host_cpu_cores). This field is required.
 	Name string `json:"name,omitempty"`
 	// Label represents name of the field as displayed to users (e.g. Physical CPU cores). If not provided, the name will be used instead.
@@ -72,5 +72,5 @@ type CustomField struct {
 }
 
 func (cf CustomField) String() string {
-	return fmt.Sprintf("CustomField{ID: %d, Name: %s, Label: %s, ...}", cf.ID, cf.Name, cf.Label)
+	return fmt.Sprintf("CustomField{ID: %d, Name: %s, Label: %s, ...}", cf.Id, cf.Name, cf.Label)
 }

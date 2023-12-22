@@ -143,7 +143,7 @@ func TestJsonDiffMapExceptId(t *testing.T) {
 				Description: "Test tag",
 			},
 			existingObj: &objects.Tag{
-				ID:          1,
+				Id:          1,
 				Name:        "Test",
 				Slug:        "test",
 				Color:       "000000",
@@ -161,7 +161,7 @@ func TestJsonDiffMapExceptId(t *testing.T) {
 				Description: "Changed tag",
 			},
 			existingObj: &objects.Tag{
-				ID:          1,
+				Id:          1,
 				Name:        "Test",
 				Slug:        "test",
 				Color:       "000000",
@@ -181,9 +181,9 @@ func TestJsonDiffMapExceptId(t *testing.T) {
 				Slug: "new-group",
 				NetboxObject: objects.NetboxObject{
 					Tags: []*objects.Tag{
-						{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-						{ID: 2, Name: "Test2", Slug: "test2", Color: "000000", Description: "Test tag 2"},
-						{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+						{Id: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+						{Id: 2, Name: "Test2", Slug: "test2", Color: "000000", Description: "Test tag 2"},
+						{Id: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
 					},
 					Description: "New group",
 				},
@@ -193,8 +193,8 @@ func TestJsonDiffMapExceptId(t *testing.T) {
 				Slug: "new-group",
 				NetboxObject: objects.NetboxObject{
 					Tags: []*objects.Tag{
-						{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-						{ID: 2, Name: "Test2", Slug: "test2", Color: "000000", Description: "Test tag 2"},
+						{Id: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+						{Id: 2, Name: "Test2", Slug: "test2", Color: "000000", Description: "Test tag 2"},
 					},
 					Description: "New group",
 				},
@@ -212,9 +212,9 @@ func TestJsonDiffMapExceptId(t *testing.T) {
 				NetboxObject: objects.NetboxObject{
 					Description: "New group",
 					Tags: []*objects.Tag{
-						{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-						{ID: 2, Name: "Test2", Slug: "test2", Color: "000000", Description: "Test tag 2"},
-						{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+						{Id: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+						{Id: 2, Name: "Test2", Slug: "test2", Color: "000000", Description: "Test tag 2"},
+						{Id: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
 					},
 				},
 			},
@@ -224,8 +224,8 @@ func TestJsonDiffMapExceptId(t *testing.T) {
 				NetboxObject: objects.NetboxObject{
 					Description: "New group",
 					Tags: []*objects.Tag{
-						{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-						{ID: 2, Name: "Test2", Slug: "test2", Color: "000000", Description: "Test tag 2"},
+						{Id: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+						{Id: 2, Name: "Test2", Slug: "test2", Color: "000000", Description: "Test tag 2"},
 					},
 				},
 			},
@@ -274,9 +274,9 @@ func TestJsonDiffMapComplex(t *testing.T) {
 		NetboxObject: objects.NetboxObject{
 			Description: "New Description",
 			Tags: []*objects.Tag{
-				{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-				{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
-				{ID: 4, Name: "TestX", Slug: "test2", Color: "000000", Description: "Test tag 2"},
+				{Id: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+				{Id: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+				{Id: 4, Name: "TestX", Slug: "test2", Color: "000000", Description: "Test tag 2"},
 			},
 		},
 	}
@@ -286,7 +286,7 @@ func TestJsonDiffMapComplex(t *testing.T) {
 			Description: "Hosting cluster",
 			Tags: []*objects.Tag{
 				{
-					ID:    2,
+					Id:    2,
 					Name:  "Netbox-synced",
 					Slug:  "netbox-synced",
 					Color: "9e9e9e",
@@ -343,7 +343,7 @@ func TestJsonDiffMapComplex(t *testing.T) {
 
 func TestJsonDiffMapComplex2(t *testing.T) {
 	newObj := &objects.CustomField{
-		ID:            0,
+		Id:            0,
 		Name:          "New Custom field",
 		Label:         "New-custom-field",
 		Type:          objects.CustomFieldTypeText,
@@ -354,7 +354,7 @@ func TestJsonDiffMapComplex2(t *testing.T) {
 		DisplayWeight: 100,
 	}
 	existingObj := &objects.CustomField{
-		ID:            1,
+		Id:            1,
 		Name:          "New Custom field",
 		Label:         "New-custom-field",
 		Type:          objects.CustomFieldTypeText,
@@ -398,7 +398,7 @@ func TestJsonDiffMapWithChoiceAttr(t *testing.T) {
 			Id:          1,
 			Description: "Test device",
 			Tags: []*objects.Tag{
-				{ID: 2, Name: "Netbox-synced"},
+				{Id: 2, Name: "Netbox-synced"},
 			},
 		},
 		Status: &objects.DeviceStatusOffline,
@@ -453,7 +453,7 @@ func TestJsonDiffMapWithMapAttr(t *testing.T) {
 			Id:          1,
 			Description: "Test device",
 			Tags: []*objects.Tag{
-				{ID: 2, Name: "Netbox-synced"},
+				{Id: 2, Name: "Netbox-synced"},
 			},
 		},
 		Name: "Test device",
@@ -502,14 +502,14 @@ func TestJsonDiffMapWithMapAttr2(t *testing.T) {
 		NetboxObject: objects.NetboxObject{
 			Tags: []*objects.Tag{
 				{
-					ID:          18,
+					Id:          18,
 					Name:        "Source: olvm",
 					Slug:        "source-olvm",
 					Color:       "07426b",
 					Description: "Automatically created tag by netbox-ssot for source srcolvm",
 				},
 				{
-					ID:          21,
+					Id:          21,
 					Name:        "ovirt",
 					Slug:        "type-ovirt",
 					Color:       "ff0000",
@@ -528,7 +528,7 @@ func TestJsonDiffMapWithMapAttr2(t *testing.T) {
 		NetboxObject: objects.NetboxObject{
 			Tags: []*objects.Tag{
 				{
-					ID:          15,
+					Id:          15,
 					Name:        "existingTag",
 					Slug:        "exiting-tag",
 					Color:       "07426b",
@@ -619,9 +619,9 @@ func TestNetboxMarshal(t *testing.T) {
 		NetboxObject: objects.NetboxObject{
 			Description: "Test Description",
 			Tags: []*objects.Tag{
-				{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-				{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
-				{ID: 4, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+				{Id: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+				{Id: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+				{Id: 4, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
 			},
 		},
 		Status: objects.ClusterStatusActive,
@@ -630,8 +630,8 @@ func TestNetboxMarshal(t *testing.T) {
 			NetboxObject: objects.NetboxObject{
 				Id: 2,
 				Tags: []*objects.Tag{
-					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-					{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+					{Id: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+					{Id: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
 				},
 			},
 			Name: "oVirt",
@@ -641,8 +641,8 @@ func TestNetboxMarshal(t *testing.T) {
 			NetboxObject: objects.NetboxObject{
 				Id: 4,
 				Tags: []*objects.Tag{
-					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-					{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+					{Id: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+					{Id: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
 				},
 				Description: "New cluster group",
 			},
@@ -653,8 +653,8 @@ func TestNetboxMarshal(t *testing.T) {
 			NetboxObject: objects.NetboxObject{
 				Id: 2,
 				Tags: []*objects.Tag{
-					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-					{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+					{Id: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+					{Id: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
 				},
 			},
 			Name:   "New York",
@@ -665,9 +665,9 @@ func TestNetboxMarshal(t *testing.T) {
 			NetboxObject: objects.NetboxObject{
 				Id: 1,
 				Tags: []*objects.Tag{
-					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-					{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
-					{ID: 4, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+					{Id: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+					{Id: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+					{Id: 4, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
 				},
 			},
 			Name: "Default",
@@ -699,9 +699,9 @@ func TestNetboxJsonMarshalWithChoiceAttr(t *testing.T) {
 		NetboxObject: objects.NetboxObject{
 			Description: "Test Description",
 			Tags: []*objects.Tag{
-				{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-				{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
-				{ID: 4, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+				{Id: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+				{Id: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+				{Id: 4, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
 			},
 		},
 		Name: "Test device",
@@ -709,7 +709,7 @@ func TestNetboxJsonMarshalWithChoiceAttr(t *testing.T) {
 			NetboxObject: objects.NetboxObject{
 				Id: 1,
 				Tags: []*objects.Tag{
-					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+					{Id: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
 				},
 				Description: "Test device role",
 			},
@@ -721,7 +721,7 @@ func TestNetboxJsonMarshalWithChoiceAttr(t *testing.T) {
 			NetboxObject: objects.NetboxObject{
 				Id: 1,
 				Tags: []*objects.Tag{
-					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+					{Id: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
 				},
 				Description: "Test device type",
 			},
@@ -733,7 +733,7 @@ func TestNetboxJsonMarshalWithChoiceAttr(t *testing.T) {
 				Id:          1,
 				Description: "Test site",
 				Tags: []*objects.Tag{
-					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+					{Id: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
 				},
 			},
 			Name:   "Test site",
