@@ -261,12 +261,12 @@ func TestJsonDiffMapComplex(t *testing.T) {
 	newObj := &objects.Cluster{
 		Name: "Hosting",
 		Type: &objects.ClusterType{
-			NetboxObject: objects.NetboxObject{ID: 2},
+			NetboxObject: objects.NetboxObject{Id: 2},
 			Name:         "oVirt",
 			Slug:         "ovirt",
 		},
 		Group: &objects.ClusterGroup{
-			NetboxObject: objects.NetboxObject{ID: 4},
+			NetboxObject: objects.NetboxObject{Id: 4},
 			Name:         "New Cluster Group",
 			Slug:         "new-cluster-group",
 		},
@@ -282,7 +282,7 @@ func TestJsonDiffMapComplex(t *testing.T) {
 	}
 	existingObj := &objects.Cluster{
 		NetboxObject: objects.NetboxObject{
-			ID:          7,
+			Id:          7,
 			Description: "Hosting cluster",
 			Tags: []*objects.Tag{
 				{
@@ -295,23 +295,23 @@ func TestJsonDiffMapComplex(t *testing.T) {
 		},
 		Name: "Hosting",
 		Type: &objects.ClusterType{
-			NetboxObject: objects.NetboxObject{ID: 2},
+			NetboxObject: objects.NetboxObject{Id: 2},
 			Name:         "oVirt",
 			Slug:         "ovirt",
 		},
 		Group: &objects.ClusterGroup{
-			NetboxObject: objects.NetboxObject{ID: 3},
+			NetboxObject: objects.NetboxObject{Id: 3},
 			Name:         "Hosting",
 			Slug:         "hosting",
 		},
 		Status: objects.ClusterStatusActive,
 		Tenant: &objects.Tenant{
-			NetboxObject: objects.NetboxObject{ID: 1},
+			NetboxObject: objects.NetboxObject{Id: 1},
 			Name:         "Default",
 			Slug:         "default",
 		},
 		Site: &objects.Site{
-			NetboxObject: objects.NetboxObject{ID: 2},
+			NetboxObject: objects.NetboxObject{Id: 2},
 			Name:         "New York",
 			Slug:         "new-york",
 		},
@@ -395,7 +395,7 @@ func TestJsonDiffMapWithChoiceAttr(t *testing.T) {
 	existingObj := &objects.Device{
 		Name: "Test device",
 		NetboxObject: objects.NetboxObject{
-			ID:          1,
+			Id:          1,
 			Description: "Test device",
 			Tags: []*objects.Tag{
 				{ID: 2, Name: "Netbox-synced"},
@@ -428,7 +428,7 @@ func TestJsonDiffMapWithMapAttr(t *testing.T) {
 		Name: "Test device",
 		DeviceRole: &objects.DeviceRole{
 			NetboxObject: objects.NetboxObject{
-				ID: 1,
+				Id: 1,
 			},
 			Name:  "Test device role",
 			Slug:  "test-device-role",
@@ -436,7 +436,7 @@ func TestJsonDiffMapWithMapAttr(t *testing.T) {
 		},
 		DeviceType: &objects.DeviceType{
 			NetboxObject: objects.NetboxObject{
-				ID: 1,
+				Id: 1,
 			},
 			Model: "Test device model",
 			Slug:  "test-device-type",
@@ -450,7 +450,7 @@ func TestJsonDiffMapWithMapAttr(t *testing.T) {
 
 	existingObj := &objects.Device{
 		NetboxObject: objects.NetboxObject{
-			ID:          1,
+			Id:          1,
 			Description: "Test device",
 			Tags: []*objects.Tag{
 				{ID: 2, Name: "Netbox-synced"},
@@ -458,13 +458,13 @@ func TestJsonDiffMapWithMapAttr(t *testing.T) {
 		},
 		Name: "Test device",
 		DeviceRole: &objects.DeviceRole{
-			NetboxObject: objects.NetboxObject{ID: 1},
+			NetboxObject: objects.NetboxObject{Id: 1},
 			Name:         "Test device role",
 			Slug:         "test-device-role",
 			Color:        "000000",
 		},
 		DeviceType: &objects.DeviceType{
-			NetboxObject: objects.NetboxObject{ID: 1},
+			NetboxObject: objects.NetboxObject{Id: 1},
 			Model:        "test-model",
 			Slug:         "test-device-type",
 		},
@@ -628,7 +628,7 @@ func TestNetboxMarshal(t *testing.T) {
 		Name:   "Test",
 		Type: &objects.ClusterType{
 			NetboxObject: objects.NetboxObject{
-				ID: 2,
+				Id: 2,
 				Tags: []*objects.Tag{
 					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
 					{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
@@ -639,7 +639,7 @@ func TestNetboxMarshal(t *testing.T) {
 		},
 		Group: &objects.ClusterGroup{
 			NetboxObject: objects.NetboxObject{
-				ID: 4,
+				Id: 4,
 				Tags: []*objects.Tag{
 					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
 					{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
@@ -651,7 +651,7 @@ func TestNetboxMarshal(t *testing.T) {
 		},
 		Site: &objects.Site{
 			NetboxObject: objects.NetboxObject{
-				ID: 2,
+				Id: 2,
 				Tags: []*objects.Tag{
 					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
 					{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
@@ -663,7 +663,7 @@ func TestNetboxMarshal(t *testing.T) {
 		},
 		Tenant: &objects.Tenant{
 			NetboxObject: objects.NetboxObject{
-				ID: 1,
+				Id: 1,
 				Tags: []*objects.Tag{
 					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
 					{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
@@ -707,7 +707,7 @@ func TestNetboxJsonMarshalWithChoiceAttr(t *testing.T) {
 		Name: "Test device",
 		DeviceRole: &objects.DeviceRole{
 			NetboxObject: objects.NetboxObject{
-				ID: 1,
+				Id: 1,
 				Tags: []*objects.Tag{
 					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
 				},
@@ -719,7 +719,7 @@ func TestNetboxJsonMarshalWithChoiceAttr(t *testing.T) {
 		},
 		DeviceType: &objects.DeviceType{
 			NetboxObject: objects.NetboxObject{
-				ID: 1,
+				Id: 1,
 				Tags: []*objects.Tag{
 					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
 				},
@@ -730,7 +730,7 @@ func TestNetboxJsonMarshalWithChoiceAttr(t *testing.T) {
 		Status:  &objects.DeviceStatusActive,
 		Site: &objects.Site{
 			NetboxObject: objects.NetboxObject{
-				ID:          1,
+				Id:          1,
 				Description: "Test site",
 				Tags: []*objects.Tag{
 					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},

@@ -45,9 +45,11 @@ type NetBoxInventory struct {
 	CustomFieldsIndexByName map[string]*objects.CustomField
 	// InterfacesIndexByDeviceAnName is a map of all interfaces in the inventory, indexed by their's
 	// device id and their name.
-	InterfacesIndexByDeviceAndName map[int]map[string]*objects.Interface
+	InterfacesIndexByDeviceIdAndName map[int]map[string]*objects.Interface
 	// VirtualMachinedIndexByName is a map of all virtual machines in the inventory, indexed by their name
-	VirtualMachinesIndexByName map[string]*objects.VM
+	VMsIndexByName map[string]*objects.VM
+	// VirtualMachineInterfacesIndexByVMAndName is a map of all virtual machine interfaces in the inventory, indexed by their's virtual machine id and their name
+	VMInterfacesIndexByVmIdAndName map[int]map[string]*objects.VMInterface
 
 	// Orphan manager is a map of { "devices: [device_id1, device_id2, ...], "cluster_groups": [cluster_group_id1, cluster_group_id2, ..."}, to store which objects have been created by netbox-ssot and can be deleted because they are not available in the source anymore
 	OrphanManager map[string][]int
@@ -138,6 +140,14 @@ func (netboxInventory *NetBoxInventory) Init() error {
 		return err
 	}
 	err = netboxInventory.InitClusters()
+	if err != nil {
+		return err
+	}
+	err = netboxInventory.InitVMs()
+	if err != nil {
+		return err
+	}
+	err = netboxInventory.InitVMInterfaces()
 	if err != nil {
 		return err
 	}

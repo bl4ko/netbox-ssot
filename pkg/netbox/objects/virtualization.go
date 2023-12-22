@@ -1,5 +1,7 @@
 package objects
 
+import "fmt"
+
 type ClusterGroup struct {
 	NetboxObject
 	// Name is the name of the cluster group. This field is required.
@@ -61,12 +63,6 @@ type VM struct {
 	Name string `json:"name,omitempty"`
 	// VMStatus is the status of the virtual machine. This field is required.
 	VMStatus VMStatus `json:"status,omitempty"`
-	// CPUs is the number of CPUs for the virtual machine.
-	CPUs int `json:"vcpus,omitempty"`
-	// RAM is the amount of RAM for the virtual machine in MB.
-	RAM int `json:"memory,omitempty"`
-	// Disk is the amount of disk space for the virtual machine in GB.
-	Disk int `json:"disk,omitempty"`
 	// Site is the site to which this virtual machine belongs.
 	Site *Site `json:"site,omitempty"`
 	// Cluster is the cluster to which this virtual machine belongs.
@@ -74,6 +70,60 @@ type VM struct {
 	// Device is a specific host that this virtual machine is hosted on.
 	Device *Device `json:"device,omitempty"`
 
+	// Tenant is the tenant to which this virtual machine belongs.
+	Tenant *Tenant `json:"tenant,omitempty"`
+
 	// Platform is the platform of the virtual machine.
 	Platform *Platform `json:"platform,omitempty"`
+	// PrimaryIPv4 is the primary IPv4 address assigned to the virtual machine.
+	PrimaryIPv4 *IPAddress `json:"primary_ip4,omitempty"`
+	// PrimaryIPv6 is the primary IPv6 address assigned to the virtual machine.
+	PrimaryIPv6 *IPAddress `json:"primary_ip6,omitempty"`
+
+	// VCPUs is the number of virtual CPUs allocated to the virtual machine.
+	VCPUs float32 `json:"vcpus,omitempty"`
+	// Memory is the amount of memory allocated to the virtual machine in MB.
+	Memory int `json:"memory,omitempty"`
+	// Disk is the amount of disk space allocated to the virtual machine in GB.
+	Disk int `json:"disk,omitempty"`
+
+	// Additional Comments
+	Comments string `json:"comments,omitempty"`
+}
+
+func (vm VM) String() string {
+	return fmt.Sprintf("{VM: %s}", vm.Name)
+}
+
+// 802.1Q VLAN Tagging Mode
+type VMInterfaceMode struct {
+	Choice
+}
+
+var (
+	VMInterfaceModeAccess    = VMInterfaceMode{Choice{Value: "access", Label: "Access"}}
+	VMInterfaceModeTagged    = VMInterfaceMode{Choice{Value: "tagged", Label: "Tagged"}}
+	VmInterfaceModeTaggedAll = VMInterfaceMode{Choice{Value: "tagged-all", Label: "Tagged All"}}
+)
+
+type VMInterface struct {
+	NetboxObject
+	// VM that this interface belongs to. This field is required.
+	VM *VM `json:"virtual_machine,omitempty"`
+	// Name is the name of the interface. This field is required.
+	Name string `json:"name,omitempty"`
+	// MAC address of the interface.
+	MACAddress string `json:"mac_address,omitempty"`
+	// MTU of the interface.
+	MTU int `json:"mtu,omitempty"`
+	// Related parent interface of this interface.
+	ParentInterface *VMInterface `json:"parent,omitempty"`
+	// Related bridged interface
+	BridgedInterface *VMInterface `json:"bridge,omitempty"`
+	// 802.1Q VLAN Tagging Mode
+	Mode *VMInterfaceMode `json:"mode,omitempty"`
+}
+
+func (vmi VMInterface) String() string {
+	return fmt.Sprintf("{VMInterface: %s-%s}", vmi.VM.Name, vmi.Name)
 }

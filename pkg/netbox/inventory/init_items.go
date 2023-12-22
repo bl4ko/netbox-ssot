@@ -257,14 +257,14 @@ func (ni *NetBoxInventory) InitInterfaces() error {
 	if err != nil {
 		return err
 	}
-	ni.InterfacesIndexByDeviceAndName = make(map[int]map[string]*objects.Interface)
+	ni.InterfacesIndexByDeviceIdAndName = make(map[int]map[string]*objects.Interface)
 	for _, intf := range nbInterfaces {
-		if ni.InterfacesIndexByDeviceAndName[intf.Device.ID] == nil {
-			ni.InterfacesIndexByDeviceAndName[intf.Device.ID] = make(map[string]*objects.Interface)
+		if ni.InterfacesIndexByDeviceIdAndName[intf.Device.Id] == nil {
+			ni.InterfacesIndexByDeviceIdAndName[intf.Device.Id] = make(map[string]*objects.Interface)
 		}
-		ni.InterfacesIndexByDeviceAndName[intf.Device.ID][intf.Name] = intf
+		ni.InterfacesIndexByDeviceIdAndName[intf.Device.Id][intf.Name] = intf
 	}
-	ni.Logger.Debug("Successfully collected interfaces from NetBox: ", ni.InterfacesIndexByDeviceAndName)
+	ni.Logger.Debug("Successfully collected interfaces from NetBox: ", ni.InterfacesIndexByDeviceIdAndName)
 	return nil
 }
 
@@ -278,5 +278,34 @@ func (ni *NetBoxInventory) InitVlans() error {
 		ni.VlansIndexByName[vlan.Name] = vlan
 	}
 	ni.Logger.Debug("Successfully collected vlans from NetBox: ", ni.VlansIndexByName)
+	return nil
+}
+
+func (ni *NetBoxInventory) InitVMs() error {
+	nbVMs, err := ni.NetboxApi.GetAllVMs()
+	if err != nil {
+		return err
+	}
+	ni.VMsIndexByName = make(map[string]*objects.VM)
+	for _, vm := range nbVMs {
+		ni.VMsIndexByName[vm.Name] = vm
+	}
+	ni.Logger.Debug("Successfully collected VMs from NetBox: ", ni.VMsIndexByName)
+	return nil
+}
+
+func (ni *NetBoxInventory) InitVMInterfaces() error {
+	nbVMInterfaces, err := ni.NetboxApi.GetAllVMInterfaces()
+	if err != nil {
+		return err
+	}
+	ni.VMInterfacesIndexByVmIdAndName = make(map[int]map[string]*objects.VMInterface)
+	for _, vmIntf := range nbVMInterfaces {
+		if ni.VMInterfacesIndexByVmIdAndName[vmIntf.VM.Id] == nil {
+			ni.VMInterfacesIndexByVmIdAndName[vmIntf.VM.Id] = make(map[string]*objects.VMInterface)
+		}
+		ni.VMInterfacesIndexByVmIdAndName[vmIntf.VM.Id][vmIntf.Name] = vmIntf
+	}
+	ni.Logger.Debug("Successfully collected VM interfaces from NetBox: ", ni.VMInterfacesIndexByVmIdAndName)
 	return nil
 }

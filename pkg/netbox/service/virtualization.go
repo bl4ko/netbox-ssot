@@ -292,3 +292,191 @@ func (api *NetboxAPI) CreateCluster(cluster *objects.Cluster) (*objects.Cluster,
 
 	return &createdCluster, nil
 }
+
+type VMResponse struct {
+	Count    int          `json:"count"`
+	Next     *string      `json:"next"`
+	Previous *string      `json:"previous"`
+	Results  []objects.VM `json:"results"`
+}
+
+// GET /api/virtualization/virtual-machines/?limit=0
+func (api *NetboxAPI) GetAllVMs() ([]*objects.VM, error) {
+	api.Logger.Debug("Getting all virtual machines from NetBox")
+
+	response, err := api.doRequest(MethodGet, "/api/virtualization/virtual-machines/?limit=0", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d. Error %s", response.StatusCode, response.Body)
+	}
+
+	var vmResponse VMResponse
+	err = json.Unmarshal(response.Body, &vmResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	vms := make([]*objects.VM, len(vmResponse.Results))
+	for i := range vmResponse.Results {
+		vms[i] = &vmResponse.Results[i]
+	}
+
+	api.Logger.Debug("Successfully received virtual machines: ", vmResponse.Results)
+
+	return vms, nil
+}
+
+// PATH /api/virtualization/virtual-machines/{id}/ -d '{"name": "new_name", ...}'
+func (api *NetboxAPI) PatchVM(diffMap map[string]interface{}, vmId int) (*objects.VM, error) {
+	api.Logger.Debug("Patching VM with id", vmId, " with data: ", diffMap)
+
+	vmJson, err := json.Marshal(diffMap)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := api.doRequest(MethodPatch, fmt.Sprintf("/api/virtualization/virtual-machines/%d/", vmId), bytes.NewBuffer(vmJson))
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
+	}
+
+	var patchedVM objects.VM
+	err = json.Unmarshal(response.Body, &patchedVM)
+	if err != nil {
+		return nil, err
+	}
+
+	api.Logger.Debug("Successfully patched VM: ", patchedVM)
+
+	return &patchedVM, nil
+}
+
+// POST /api/virtualization/virtual-machines/
+func (api *NetboxAPI) CreateVM(vm *objects.VM) (*objects.VM, error) {
+	api.Logger.Debug("Creating VM in NetBox with data: ", vm)
+
+	vmJson, err := utils.NetboxJsonMarshal(vm)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := api.doRequest(MethodPost, "/api/virtualization/virtual-machines/", bytes.NewBuffer(vmJson))
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
+	}
+
+	var createdVM objects.VM
+	err = json.Unmarshal(response.Body, &createdVM)
+	if err != nil {
+		return nil, err
+	}
+
+	api.Logger.Debug("Successfully created VM: ", createdVM)
+
+	return &createdVM, nil
+}
+
+type VMInterfaceResponse struct {
+	Count    int                   `json:"count"`
+	Next     *string               `json:"next"`
+	Previous *string               `json:"previous"`
+	Results  []objects.VMInterface `json:"results"`
+}
+
+// GET /api/virtualization/interfaces/?limit=0
+func (api *NetboxAPI) GetAllVMInterfaces() ([]*objects.VMInterface, error) {
+	api.Logger.Debug("Getting all VM interfaces from NetBox")
+
+	response, err := api.doRequest(MethodGet, "/api/virtualization/interfaces/?limit=0", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code %d: %s", response.StatusCode, response.Body)
+	}
+
+	var vmInterfaceResponse VMInterfaceResponse
+	err = json.Unmarshal(response.Body, &vmInterfaceResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	vmInterfaces := make([]*objects.VMInterface, len(vmInterfaceResponse.Results))
+	for i := range vmInterfaceResponse.Results {
+		vmInterfaces[i] = &vmInterfaceResponse.Results[i]
+	}
+
+	api.Logger.Debug("Successfully received VM interfaces: ", vmInterfaceResponse.Results)
+
+	return vmInterfaces, nil
+}
+
+// PATCH /api/virtualization/interfaces/{id}/ -d '{"name": "new_name", ...}'
+func (api *NetboxAPI) PatchVMInterface(diffMap map[string]interface{}, vmInterfaceId int) (*objects.VMInterface, error) {
+	api.Logger.Debug("Patching VM interface with id", vmInterfaceId, " with data: ", diffMap)
+
+	vmInterfaceJson, err := json.Marshal(diffMap)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := api.doRequest(MethodPatch, fmt.Sprintf("/api/virtualization/interfaces/%d/", vmInterfaceId), bytes.NewBuffer(vmInterfaceJson))
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code %d: %s", response.StatusCode, response.Body)
+	}
+
+	var patchedVMInterface objects.VMInterface
+	err = json.Unmarshal(response.Body, &patchedVMInterface)
+	if err != nil {
+		return nil, err
+	}
+
+	api.Logger.Debug("Successfully patched VM interface: ", patchedVMInterface)
+
+	return &patchedVMInterface, nil
+}
+
+// POST /api/virtualization/interfaces/
+func (api *NetboxAPI) CreateVMInterface(vmInterface *objects.VMInterface) (*objects.VMInterface, error) {
+	api.Logger.Debug("Creating VM interface in NetBox with data: ", vmInterface)
+
+	vmInterfaceJson, err := utils.NetboxJsonMarshal(vmInterface)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := api.doRequest(MethodPost, "/api/virtualization/interfaces/", bytes.NewBuffer(vmInterfaceJson))
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("unexpected status code %d: %s", response.StatusCode, response.Body)
+	}
+
+	var createdVMInterface objects.VMInterface
+	err = json.Unmarshal(response.Body, &createdVMInterface)
+	if err != nil {
+		return nil, err
+	}
+
+	api.Logger.Debug("Successfully created VM interface: ", createdVMInterface)
+
+	return &createdVMInterface, nil
+}

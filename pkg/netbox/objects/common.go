@@ -12,8 +12,8 @@ type Choice struct {
 // We can this struct as an embedded struct in other structs that represent
 // NetBox objects.
 type NetboxObject struct {
-	// Netbox's ID of the object.
-	ID int `json:"id,omitempty"`
+	// Netbox's Id of the object.
+	Id int `json:"id,omitempty"`
 	// List of tags assigned to this object.
 	Tags []*Tag `json:"tags,omitempty"`
 	// Description represents custom description of the object.
