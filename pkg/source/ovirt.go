@@ -484,6 +484,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 	nics, exists := ovirtHost.Nics()
 	master2slave := make(map[string][]string) // masterId: [slaveId1, slaveId2, ...]
 	parent2child := make(map[string][]string) // parentId: [childId, ... ]
+	procesedNicsIds := make(map[string]bool)
 	if exists {
 		hostInterfaces := map[string]*dcim.Interface{}
 
@@ -607,34 +608,62 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 				TaggedVlans: nicTaggedVlans,
 			}
 
-			newInterface, err = nbi.AddInterface(newInterface)
-			if err != nil {
-				return fmt.Errorf("failed to add oVirt interface %s with error: %v", nicName, err)
-			}
-
+			procesedNicsIds[nicId] = true
 			hostInterfaces[nicId] = newInterface
 		}
 
 		// Second loop to add relations between interfaces (e.g. [eno1, eno2] -> bond1)
-		for master, slaves := range master2slave {
-			masterInterface := hostInterfaces[master]
-			for _, slave := range slaves {
-				slaveInterface := hostInterfaces[slave]
+		for masterId, slavesIds := range master2slave {
+			var err error
+			masterInterface := hostInterfaces[masterId]
+			if _, ok := procesedNicsIds[masterId]; ok {
+				masterInterface, err = nbi.AddInterface(masterInterface)
+				if err != nil {
+					return fmt.Errorf("failed to add oVirt master interface %s with error: %v", masterInterface.Name, err)
+				}
+				delete(procesedNicsIds, masterId)
+				hostInterfaces[masterId] = masterInterface
+			}
+			for _, slaveId := range slavesIds {
+				slaveInterface := hostInterfaces[slaveId]
 				slaveInterface.LAG = masterInterface
-				nbi.AddInterface(slaveInterface)
+				slaveInterface, err := nbi.AddInterface(slaveInterface)
+				if err != nil {
+					return fmt.Errorf("failed to add oVirt slave interface %s with error: %v", slaveInterface.Name, err)
+				}
+				delete(procesedNicsIds, slaveId)
+				hostInterfaces[slaveId] = slaveInterface
 			}
 		}
 
 		// Third loop we connect children with parents (e.g. [bond1.605, bond1.604, bond1.603] -> bond1)
 		for parent, children := range parent2child {
 			parentInterface := hostInterfaces[parent]
+			if _, ok := procesedNicsIds[parent]; ok {
+				parentInterface, err := nbi.AddInterface(parentInterface)
+				if err != nil {
+					return fmt.Errorf("failed to add oVirt parent interface %s with error: %v", parentInterface.Name, err)
+				}
+				delete(procesedNicsIds, parent)
+			}
 			for _, child := range children {
 				childInterface := hostInterfaces[child]
 				childInterface.ParentInterface = parentInterface
-				nbi.AddInterface(childInterface)
+				childInterface, err := nbi.AddInterface(childInterface)
+				if err != nil {
+					return fmt.Errorf("failed to add oVirt child interface %s with error: %v", childInterface.Name, err)
+				}
+				hostInterfaces[child] = childInterface
+				delete(procesedNicsIds, child)
+			}
+		}
+		// Now we check if there are any nics that were not processed
+		for nicId := range procesedNicsIds {
+			_, err := nbi.AddInterface(hostInterfaces[nicId])
+			if err != nil {
+				return fmt.Errorf("failed to add oVirt interface %s with error: %v", hostInterfaces[nicId].Name, err)
 			}
 		}
 	}
-
 	return nil
 }
