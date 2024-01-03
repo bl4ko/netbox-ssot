@@ -366,7 +366,7 @@ func TestJsonDiffMapComplex2(t *testing.T) {
 		DisplayWeight: 10,
 	}
 	expectedDiff := map[string]interface{}{
-		"content_types": []string{"dcim.device, dcim.cluster"},
+		"content_types": []string{"objects.device, objects.cluster"},
 		"description":   "",
 		"weight":        100,
 	}

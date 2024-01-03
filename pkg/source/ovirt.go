@@ -28,7 +28,7 @@ type OVirtSource struct {
 
 func (o *OVirtSource) Init() error {
 	// Initialise regex relations
-	o.Logger.Info("Initializing regex relations for oVirt source ", o.SourceConfig.Name)
+	o.Logger.Debug("Initializing regex relations for oVirt source ", o.SourceConfig.Name)
 	o.HostSiteRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.HostSiteRelations)
 	o.Logger.Debug("HostSiteRelations: ", o.HostSiteRelations)
 	o.ClusterSiteRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.ClusterSiteRelations)
@@ -41,7 +41,7 @@ func (o *OVirtSource) Init() error {
 	o.Logger.Debug("VmTenantRelations: ", o.VmTenantRelations)
 
 	// Initialise the connection
-	o.Logger.Info("Initializing oVirt source ", o.SourceConfig.Name)
+	o.Logger.Debug("Initializing oVirt source ", o.SourceConfig.Name)
 	conn, err := ovirtsdk4.NewConnectionBuilder().
 		URL(fmt.Sprintf("%s://%s:%d/ovirt-engine/api", o.SourceConfig.HTTPScheme, o.SourceConfig.Hostname, o.SourceConfig.Port)).
 		Username(o.SourceConfig.Username).
@@ -171,8 +171,8 @@ func (o *OVirtSource) InitVms(conn *ovirtsdk4.Connection) error {
 	return nil
 }
 
+// Function that syncs all data from oVirt to Netbox
 func (o *OVirtSource) Sync(nbi *inventory.NetBoxInventory) error {
-	o.Logger.Info("Syncing oVirt source ", o.SourceConfig.Name, " with netbox")
 	err := o.SyncDatacenters(nbi)
 	if err != nil {
 		return fmt.Errorf("failed to sync oVirt datacenters: %v", err)
@@ -189,7 +189,6 @@ func (o *OVirtSource) Sync(nbi *inventory.NetBoxInventory) error {
 	if err != nil {
 		return fmt.Errorf("failed to sync oVirt vms: %v", err)
 	}
-	o.Logger.Info("Successfully synced oVirt source ", o.SourceConfig.Name, " with netbox")
 	return nil
 }
 
@@ -200,10 +199,8 @@ func (o *OVirtSource) SyncDatacenters(nbi *inventory.NetBoxInventory) error {
 		if !exists {
 			return fmt.Errorf("failed to get name for oVirt datacenter %s", name)
 		}
-		description, exists := datacenter.Description()
-		if !exists {
-			o.Logger.Warning("description for oVirt datacenter ", name, " is empty.")
-		}
+		description, _ := datacenter.Description()
+
 		nbClusterGroup := &objects.ClusterGroup{
 			NetboxObject: objects.NetboxObject{Description: description},
 			Name:         name,
@@ -211,7 +208,7 @@ func (o *OVirtSource) SyncDatacenters(nbi *inventory.NetBoxInventory) error {
 		}
 		err := nbi.AddClusterGroup(nbClusterGroup, o.SourceTags)
 		if err != nil {
-			return fmt.Errorf("failed to add oVirt data center %s as NetBox cluster group: %v", name, err)
+			return fmt.Errorf("failed to add oVirt data center %s as Netbox cluster group: %v", name, err)
 		}
 	}
 	return nil
@@ -254,11 +251,11 @@ func (o *OVirtSource) SyncClusters(nbi *inventory.NetBoxInventory) error {
 		if o.ClusterSiteRelations != nil {
 			match, err := utils.MatchStringToValue(clusterName, o.ClusterSiteRelations)
 			if err != nil {
-				return fmt.Errorf("failed to match oVirt cluster %s to a NetBox site: %v", clusterName, err)
+				return fmt.Errorf("failed to match oVirt cluster %s to a Netbox site: %v", clusterName, err)
 			}
 			if match != "" {
 				if _, ok := nbi.SitesIndexByName[match]; !ok {
-					return fmt.Errorf("failed to match oVirt cluster %s to a NetBox site: %v. Site with this name doesn't exist", clusterName, match)
+					return fmt.Errorf("failed to match oVirt cluster %s to a Netbox site: %v. Site with this name doesn't exist", clusterName, match)
 				}
 				clusterSite = nbi.SitesIndexByName[match]
 			}
@@ -267,11 +264,11 @@ func (o *OVirtSource) SyncClusters(nbi *inventory.NetBoxInventory) error {
 		if o.ClusterTenantRelations != nil {
 			match, err := utils.MatchStringToValue(clusterName, o.ClusterTenantRelations)
 			if err != nil {
-				return fmt.Errorf("error occured when matching oVirt cluster %s to a NetBox tenant: %v", clusterName, err)
+				return fmt.Errorf("error occured when matching oVirt cluster %s to a Netbox tenant: %v", clusterName, err)
 			}
 			if match != "" {
 				if _, ok := nbi.TenantsIndexByName[match]; !ok {
-					return fmt.Errorf("failed to match oVirt cluster %s to a NetBox tenant: %v. Tenant with this name doesn't exist", clusterName, match)
+					return fmt.Errorf("failed to match oVirt cluster %s to a Netbox tenant: %v. Tenant with this name doesn't exist", clusterName, match)
 				}
 				clusterTenant = nbi.TenantsIndexByName[match]
 			}
@@ -291,7 +288,7 @@ func (o *OVirtSource) SyncClusters(nbi *inventory.NetBoxInventory) error {
 		}
 		err := nbi.AddCluster(nbCluster)
 		if err != nil {
-			return fmt.Errorf("failed to add oVirt cluster %s as NetBox cluster: %v", clusterName, err)
+			return fmt.Errorf("failed to add oVirt cluster %s as Netbox cluster: %v", clusterName, err)
 		}
 	}
 	return nil
@@ -317,11 +314,11 @@ func (o *OVirtSource) SyncHosts(nbi *inventory.NetBoxInventory) error {
 		if o.HostSiteRelations != nil {
 			match, err := utils.MatchStringToValue(hostName, o.HostSiteRelations)
 			if err != nil {
-				return fmt.Errorf("error occured when matching oVirt host %s to a NetBox site: %v", hostName, err)
+				return fmt.Errorf("error occured when matching oVirt host %s to a Netbox site: %v", hostName, err)
 			}
 			if match != "" {
 				if _, ok := nbi.SitesIndexByName[match]; !ok {
-					return fmt.Errorf("failed to match oVirt host %s to a NetBox site: %v. Site with this name doesn't exist", hostName, match)
+					return fmt.Errorf("failed to match oVirt host %s to a Netbox site: %v. Site with this name doesn't exist", hostName, match)
 				}
 				hostSite = nbi.SitesIndexByName[match]
 			}
@@ -330,11 +327,11 @@ func (o *OVirtSource) SyncHosts(nbi *inventory.NetBoxInventory) error {
 		if o.HostTenantRelations != nil {
 			match, err := utils.MatchStringToValue(hostName, o.HostTenantRelations)
 			if err != nil {
-				return fmt.Errorf("error occured when matching oVirt host %s to a NetBox tenant: %v", hostName, err)
+				return fmt.Errorf("error occured when matching oVirt host %s to a Netbox tenant: %v", hostName, err)
 			}
 			if match != "" {
 				if _, ok := nbi.TenantsIndexByName[match]; !ok {
-					return fmt.Errorf("failed to match oVirt host %s to a NetBox tenant: %v. Tenant with this name doesn't exist", hostName, match)
+					return fmt.Errorf("failed to match oVirt host %s to a Netbox tenant: %v. Tenant with this name doesn't exist", hostName, match)
 				}
 				hostTenant = nbi.TenantsIndexByName[match]
 			}
@@ -356,7 +353,7 @@ func (o *OVirtSource) SyncHosts(nbi *inventory.NetBoxInventory) error {
 			manufacturerName, _ = hwInfo.Manufacturer()
 			manufacturerName, err = utils.MatchStringToValue(manufacturerName, objects.ManufacturerMap)
 			if err != nil {
-				return fmt.Errorf("error occured when matching oVirt host %s to a NetBox manufacturer: %v", hostName, err)
+				return fmt.Errorf("error occured when matching oVirt host %s to a Netbox manufacturer: %v", hostName, err)
 			}
 
 			hostModel, exists = hwInfo.ProductName()
@@ -402,24 +399,19 @@ func (o *OVirtSource) SyncHosts(nbi *inventory.NetBoxInventory) error {
 		}
 
 		var hostPlatform *objects.Platform
-		var platformName string
+		osType := "Generic OS"
+		osVersion := "Generic Version"
 		if os, exists := host.Os(); exists {
-			osType, exists := os.Type()
-			if !exists {
-				osType = "Generic OS"
+			if ovirtOsType, exists := os.Type(); exists {
+				osType = ovirtOsType
 			}
-			osVersion, exists := os.Version()
-			var osVersionName string
-			if !exists {
-				osVersionName = "Generic Version"
-			} else {
-				osVersionName, exists = osVersion.FullVersion()
-				if !exists {
-					osVersionName = "Generic Version"
+			if ovirtOsVersion, exists := os.Version(); exists {
+				if osFullVersion, exists := ovirtOsVersion.FullVersion(); exists {
+					osVersion = osFullVersion
 				}
 			}
-			platformName = fmt.Sprintf("%s %s", osType, osVersionName)
 		}
+		platformName := utils.GeneratePlatformName(osType, osVersion)
 		hostPlatform, err = nbi.AddPlatform(&objects.Platform{
 			Name: platformName,
 			Slug: utils.Slugify(platformName),
@@ -667,8 +659,203 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 
 func (o *OVirtSource) SyncVms(nbi *inventory.NetBoxInventory) error {
 	for vmId, vm := range o.Vms {
-		fmt.Printf("%s: %v\n", vmId, vm)
+		// VM's name, which is used as unique identifier for VMs in Netbox
+		vmName, exists := vm.Name()
+		if !exists {
+			o.Logger.Warning("name for oVirt vm with id ", vmId, " is empty. VM has to have unique name to be synced to netbox. Skipping...")
+		}
+
+		// VM's Cluster
+		var vmCluster *objects.Cluster
+		cluster, exists := vm.Cluster()
+		if exists {
+			if _, ok := o.Clusters[cluster.MustId()]; ok {
+				vmCluster = nbi.ClustersIndexByName[o.Clusters[cluster.MustId()].MustName()]
+			}
+		}
+
+		// Get VM's site,tenant and platform from cluster
+		var vmTenantGroup *objects.TenantGroup
+		var vmTenant *objects.Tenant
+		var vmSite *objects.Site
+		if vmCluster != nil {
+			vmTenantGroup = vmCluster.TenantGroup
+			vmTenant = vmCluster.Tenant
+			vmSite = vmCluster.Site
+		}
+
+		// VM's Status
+		var vmStatus *objects.VMStatus
+		status, exists := vm.Status()
+		if exists {
+			switch status {
+			case ovirtsdk4.VMSTATUS_UP:
+				vmStatus = &objects.VMStatusActive
+			default:
+				vmStatus = &objects.VMStatusOffline
+			}
+		}
+
+		// VM's Host Device (server)
+		var vmHostDevice *objects.Device
+		host, exists := vm.Host()
+		if exists {
+			if _, ok := o.Hosts[host.MustId()]; ok {
+				vmHostDevice = nbi.DevicesIndexByUuid[o.Hosts[host.MustId()].MustHardwareInformation().MustUuid()]
+			}
+		}
+
+		// vmVCPUs
+		var vmVCPUs float32
+		if cpuData, exists := vm.Cpu(); exists {
+			if cpuTopology, exists := cpuData.Topology(); exists {
+				if cores, exists := cpuTopology.Cores(); exists {
+					vmVCPUs = float32(cores)
+				}
+			}
+		}
+
+		// Memory
+		var vmMemorySizeBytes int64
+		if memory, exists := vm.Memory(); exists {
+			vmMemorySizeBytes = memory
+		}
+
+		// Disks
+		var vmDiskSizeBytes int64
+		if diskAttachment, exists := vm.DiskAttachments(); exists {
+			for _, diskAttachment := range diskAttachment.Slice() {
+				if ovirtDisk, exists := diskAttachment.Disk(); exists {
+					disk := o.Disks[ovirtDisk.MustId()]
+					if provisionedDiskSize, exists := disk.ProvisionedSize(); exists {
+						vmDiskSizeBytes += provisionedDiskSize
+					}
+				}
+			}
+		}
+
+		// VM's comments
+		var vmComments string
+		if comments, exists := vm.Comment(); exists {
+			vmComments = comments
+		}
+
+		// VM's Platform
+		var vmPlatform *objects.Platform
+		vmOsType := "Generic OS"
+		vmOsVersion := "Generic Version"
+		if guestOs, exists := vm.GuestOperatingSystem(); exists {
+			if guestOsType, exists := guestOs.Distribution(); exists {
+				vmOsType = guestOsType
+			}
+			if guestOsKernel, exists := guestOs.Kernel(); exists {
+				if guestOsVersion, exists := guestOsKernel.Version(); exists {
+					if osFullVersion, exists := guestOsVersion.FullVersion(); exists {
+						vmOsVersion = osFullVersion
+					}
+				}
+			}
+		} else {
+			if os, exists := vm.Os(); exists {
+				if ovirtOsType, exists := os.Type(); exists {
+					vmOsType = ovirtOsType
+				}
+				if ovirtOsVersion, exists := os.Version(); exists {
+					if osFullVersion, exists := ovirtOsVersion.FullVersion(); exists {
+						vmOsVersion = osFullVersion
+					}
+				}
+			}
+		}
+		platformName := utils.GeneratePlatformName(vmOsType, vmOsVersion)
+		vmPlatform, err := nbi.AddPlatform(&objects.Platform{
+			Name: platformName,
+			Slug: utils.Slugify(platformName),
+		})
+		if err != nil {
+			return fmt.Errorf("failed adding oVirt vm's Platform %v with error: %s", vmPlatform, err)
+		}
+
+		newVM, err := nbi.AddVM(&objects.VM{
+			NetboxObject: objects.NetboxObject{
+				Tags: o.SourceTags,
+			},
+			Name:        vmName,
+			Cluster:     vmCluster,
+			Site:        vmSite,
+			Tenant:      vmTenant,
+			TenantGroup: vmTenantGroup,
+			Status:      vmStatus,
+			Host:        vmHostDevice,
+			Platform:    vmPlatform,
+			Comments:    vmComments,
+			VCPUs:       vmVCPUs,
+			Memory:      int(vmMemorySizeBytes / 1024 / 1024),      // MBs
+			Disk:        int(vmDiskSizeBytes / 1024 / 1024 / 1024), // GBs
+		})
+		if err != nil {
+			return fmt.Errorf("failed to sync oVirt vm: %v", err)
+		}
+
+		err = syncVmInterfaces(nbi, vm, newVM)
+		if err != nil {
+			return fmt.Errorf("failed to sync oVirt vm's interfaces: %v", err)
+		}
 	}
 
+	return nil
+}
+
+func syncVmInterfaces(nbi *inventory.NetBoxInventory, ovirtVm *ovirtsdk4.Vm, netboxVm *objects.VM) error {
+	// VM's Networking Data
+	// var vmPrimaryIpv4 *objects.IPAddress
+	// var vmPrimaryIpv6 *objects.IPAddress
+	// vmInterfaces := make(map[string]*objects.VMInterface) // interfaceName: interface
+	// vmIps := make(map[string][]string)                    // interfaceName: [ip1, ip2, ...]
+	// if reportedDevices, exist := vm.ReportedDevices(); exist {
+	// 	for _, reportedDevice := range reportedDevices.Slice() {
+	// 		if reportedDeviceType, exist := reportedDevice.Type(); exist {
+	// 			if reportedDeviceType == "network" {
+	// 				// We add interface to the list
+	// 				reportedDeviceName, exists := reportedDevice.Name()
+	// 				if exists {
+	// 					vmInterfaces[reportedDeviceName] = &objects.VMInterface{
+	// 						NetboxObject: objects.NetboxObject{
+	// 							Tags:        o.SourceTags,
+	// 							Description: reportedDevice.MustDescription(),
+	// 						},
+	// 						Name:       reportedDeviceName,
+	// 						MACAddress: reportedDevice.MustMac().MustAddress(),
+	// 					}
+	// 				} else {
+	// 					o.Logger.Warning("name for oVirt vm's reported device is empty. Skipping...")
+	// 					continue
+	// 				}
+
+	// 				if reportedDeviceIps, exist := reportedDevice.Ips(); exist {
+	// 					for _, ip := range reportedDeviceIps.Slice() {
+	// 						if ipVersion, exists := ip.Version(); exists {
+	// 							// vmInterfaces[reportedDeviceName] = append(vmInterfaces[reportedDeviceName], &objects.IPAddress{
+	// 							// 	NetboxObject: objects.NetboxObject{
+	// 							// 		Tags: o.SourceTags,
+	// 							// 	},
+	// 							// 	Address: ip.MustAddress(),
+	// 							// 	Tenant:  vmTenant,
+	// 							// })
+	// 							// TODO: criteria to determine if reported device is primary IP
+	// 							switch ipVersion {
+	// 							case "v4":
+
+	// 							case "v6":
+	// 							}
+	// 						}
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }
+	// vmInterfaces = vmInterfaces
+	// vmIps = vmIps
 	return nil
 }

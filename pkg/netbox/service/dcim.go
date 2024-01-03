@@ -19,7 +19,7 @@ type SiteResponse struct {
 
 // GET /api/dcim/sites/?limit=0
 func (api *NetboxAPI) GetAllSites() ([]*objects.Site, error) {
-	api.Logger.Debug("Getting all sites from NetBox")
+	api.Logger.Debug("Getting all sites from Netbox")
 
 	response, err := api.doRequest(MethodGet, "/api/dcim/sites/?limit=0", nil)
 	if err != nil {
@@ -55,7 +55,7 @@ type DeviceResponse struct {
 
 // GET /api/dcim/devices/?limit=0
 func (api *NetboxAPI) GetAllDevices() ([]*objects.Device, error) {
-	api.Logger.Debug("Getting all devices from NetBox")
+	api.Logger.Debug("Getting all devices from Netbox")
 
 	response, err := api.doRequest(MethodGet, "/api/dcim/devices/?limit=0", nil)
 	if err != nil {
@@ -83,7 +83,7 @@ func (api *NetboxAPI) GetAllDevices() ([]*objects.Device, error) {
 
 // PATCH /api/dcim/devices/{id}/
 func (api *NetboxAPI) PatchDevice(diffMap map[string]interface{}, deviceId int) (*objects.Device, error) {
-	api.Logger.Debug("Patching device ", deviceId, " with data: ", diffMap, " in NetBox")
+	api.Logger.Debug("Patching device ", deviceId, " with data: ", diffMap, " in Netbox")
 
 	requestBody, err := json.Marshal(diffMap)
 	if err != nil {
@@ -112,7 +112,7 @@ func (api *NetboxAPI) PatchDevice(diffMap map[string]interface{}, deviceId int) 
 
 // POST /api/dcim/devices/
 func (api *NetboxAPI) CreateDevice(device *objects.Device) (*objects.Device, error) {
-	api.Logger.Debug("Creating device in NetBox with data: ", device)
+	api.Logger.Debug("Creating device in Netbox with data: ", device)
 
 	requestBody, err := utils.NetboxJsonMarshal(device)
 	if err != nil {
@@ -150,7 +150,7 @@ type DeviceRoleResponse struct {
 
 // GET /api/dcim/device-roles/?limit=0
 func (api *NetboxAPI) GetAllDeviceRoles() ([]*objects.DeviceRole, error) {
-	api.Logger.Debug("Getting all device roles from NetBox")
+	api.Logger.Debug("Getting all device roles from Netbox")
 
 	response, err := api.doRequest(MethodGet, "/api/dcim/device-roles/?limit=0", nil)
 	if err != nil {
@@ -178,7 +178,7 @@ func (api *NetboxAPI) GetAllDeviceRoles() ([]*objects.DeviceRole, error) {
 
 // POST /api/dcim/device-roles/
 func (api *NetboxAPI) CreateDeviceRole(deviceRole *objects.DeviceRole) (*objects.DeviceRole, error) {
-	api.Logger.Debug("Creating device role with data", deviceRole, " in NetBox")
+	api.Logger.Debug("Creating device role with data", deviceRole, " in Netbox")
 
 	requestBody, err := utils.NetboxJsonMarshal(deviceRole)
 	if err != nil {
@@ -209,7 +209,7 @@ func (api *NetboxAPI) CreateDeviceRole(deviceRole *objects.DeviceRole) (*objects
 
 // PATCH /api/dcim/device-roles/{id}/
 func (api *NetboxAPI) PatchDeviceRole(diffMap map[string]interface{}, id int) (*objects.DeviceRole, error) {
-	api.Logger.Debug("Patching device role ", id, " with data: ", diffMap, " in NetBox")
+	api.Logger.Debug("Patching device role ", id, " with data: ", diffMap, " in Netbox")
 
 	requestBody, err := json.Marshal(diffMap)
 	if err != nil {
@@ -247,7 +247,7 @@ type ManufacturerResponse struct {
 
 // GET /api/dcim/manufacturers/?limit=0
 func (api *NetboxAPI) GetAllManufacturers() ([]*objects.Manufacturer, error) {
-	api.Logger.Debug("Getting all manufacturers from NetBox")
+	api.Logger.Debug("Getting all manufacturers from Netbox")
 
 	response, err := api.doRequest(MethodGet, "/api/dcim/manufacturers/?limit=0", nil)
 	if err != nil {
@@ -275,7 +275,7 @@ func (api *NetboxAPI) GetAllManufacturers() ([]*objects.Manufacturer, error) {
 
 // PATCH /api/dcim/manufacturers/{id}/
 func (api *NetboxAPI) PatchManufacturer(diffMap map[string]interface{}, manufacturerId int) (*objects.Manufacturer, error) {
-	api.Logger.Debug("Patching manufacturer ", manufacturerId, " with data: ", diffMap, " in NetBox")
+	api.Logger.Debug("Patching manufacturer ", manufacturerId, " with data: ", diffMap, " in Netbox")
 
 	requestBody, err := json.Marshal(diffMap)
 	if err != nil {
@@ -304,7 +304,7 @@ func (api *NetboxAPI) PatchManufacturer(diffMap map[string]interface{}, manufact
 
 // POST /api/dcim/manufacturers/
 func (api *NetboxAPI) CreateManufacturer(manufacturer *objects.Manufacturer) (*objects.Manufacturer, error) {
-	api.Logger.Debug("Creating manufacturer with data: ", manufacturer, " in NetBox")
+	api.Logger.Debug("Creating manufacturer with data: ", manufacturer, " in Netbox")
 
 	requestBody, err := utils.NetboxJsonMarshal(manufacturer)
 	if err != nil {
@@ -342,7 +342,7 @@ type PlatformResponse struct {
 
 // GET /api/dcim/platforms/?limit=0
 func (api *NetboxAPI) GetAllPlatforms() ([]*objects.Platform, error) {
-	api.Logger.Debug("Getting all platforms from NetBox")
+	api.Logger.Debug("Getting all platforms from Netbox")
 
 	response, err := api.doRequest(MethodGet, "/api/dcim/platforms/?limit=0", nil)
 	if err != nil {
@@ -370,7 +370,7 @@ func (api *NetboxAPI) GetAllPlatforms() ([]*objects.Platform, error) {
 
 // PATCH /api/dcim/platforms/{id}/
 func (api *NetboxAPI) PatchPlatform(diffMap map[string]interface{}, platformId int) (*objects.Platform, error) {
-	api.Logger.Debug("Patching platform ", platformId, " with data: ", diffMap, " in NetBox")
+	api.Logger.Debug("Patching platform ", platformId, " with data: ", diffMap, " in Netbox")
 
 	requestBody, err := json.Marshal(diffMap)
 	if err != nil {
@@ -399,7 +399,7 @@ func (api *NetboxAPI) PatchPlatform(diffMap map[string]interface{}, platformId i
 
 // POSST /api/dcim/platforms/
 func (api *NetboxAPI) CreatePlatform(platform *objects.Platform) (*objects.Platform, error) {
-	api.Logger.Debug("Creating platform in NetBox with data: ", platform)
+	api.Logger.Debug("Creating platform in Netbox with data: ", platform)
 
 	requestBody, err := utils.NetboxJsonMarshal(platform)
 	if err != nil {
@@ -437,7 +437,7 @@ type DeviceTypeResponse struct {
 
 // GET /api/dcim/device-types/?limit=0
 func (api *NetboxAPI) GetAllDeviceTypes() ([]*objects.DeviceType, error) {
-	api.Logger.Debug("Getting all device types from NetBox")
+	api.Logger.Debug("Getting all device types from Netbox")
 
 	response, err := api.doRequest(MethodGet, "/api/dcim/device-types/?limit=0", nil)
 	if err != nil {
@@ -465,7 +465,7 @@ func (api *NetboxAPI) GetAllDeviceTypes() ([]*objects.DeviceType, error) {
 
 // PATCH /api/dcim/device-types/{id}/
 func (api *NetboxAPI) PatchDeviceType(diffMap map[string]interface{}, deviceTypeId int) (*objects.DeviceType, error) {
-	api.Logger.Debug("Patching device type ", deviceTypeId, " with data: ", diffMap, " in NetBox")
+	api.Logger.Debug("Patching device type ", deviceTypeId, " with data: ", diffMap, " in Netbox")
 
 	requestBody, err := json.Marshal(diffMap)
 	if err != nil {
@@ -494,7 +494,7 @@ func (api *NetboxAPI) PatchDeviceType(diffMap map[string]interface{}, deviceType
 
 // POST /api/dcim/device-types/
 func (api *NetboxAPI) CreateDeviceType(deviceType *objects.DeviceType) (*objects.DeviceType, error) {
-	api.Logger.Debug("Creating device type in NetBox with data: ", deviceType)
+	api.Logger.Debug("Creating device type in Netbox with data: ", deviceType)
 
 	requestBody, err := utils.NetboxJsonMarshal(deviceType)
 	if err != nil {
@@ -532,7 +532,7 @@ type InterfaceResponse struct {
 
 // GET /api/dcim/interfaces/?limit=0
 func (api *NetboxAPI) GetAllInterfaces() ([]*objects.Interface, error) {
-	api.Logger.Debug("Getting all interfaces from NetBox")
+	api.Logger.Debug("Getting all interfaces from Netbox")
 
 	response, err := api.doRequest(MethodGet, "/api/dcim/interfaces/?limit=0", nil)
 	if err != nil {
@@ -560,7 +560,7 @@ func (api *NetboxAPI) GetAllInterfaces() ([]*objects.Interface, error) {
 
 // PATCH /api/dcim/interfaces/{id}/
 func (api *NetboxAPI) PatchInterface(diffMap map[string]interface{}, interfaceId int) (*objects.Interface, error) {
-	api.Logger.Debug("Patching interface with id ", interfaceId, " with data: ", diffMap, " in NetBox")
+	api.Logger.Debug("Patching interface with id ", interfaceId, " with data: ", diffMap, " in Netbox")
 
 	requestBody, err := json.Marshal(diffMap)
 	if err != nil {
@@ -589,7 +589,7 @@ func (api *NetboxAPI) PatchInterface(diffMap map[string]interface{}, interfaceId
 
 // POST /api/dcim/interfaces/
 func (api *NetboxAPI) CreateInterface(interf *objects.Interface) (*objects.Interface, error) {
-	api.Logger.Debug("Creating interface in NetBox with data: ", interf)
+	api.Logger.Debug("Creating interface in Netbox with data: ", interf)
 
 	requestBody, err := utils.NetboxJsonMarshal(interf)
 	if err != nil {

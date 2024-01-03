@@ -11,7 +11,7 @@ import (
 
 // // GET /api/dcim/interfaces/?limit=0
 // func (api *NetboxAPI) GetAllInterfaces() ([]*objects.Interface, error) {
-// 	api.Logger.Debug("Getting all interfaces from NetBox")
+// 	api.Logger.Debug("Getting all interfaces from Netbox")
 
 // 	response, err := api.doRequest(MethodGet, "/api/dcim/interfaces/?limit=0", nil)
 // 	if err != nil {
@@ -39,7 +39,7 @@ import (
 
 // // PATCH /api/dcim/interfaces/{id}/
 // func (api *NetboxAPI) PatchInterface(diffMap map[string]interface{}, interfaceId int) (*objects.Interface, error) {
-// 	api.Logger.Debug("Patching interface ", interfaceId, " with data: ", diffMap, " in NetBox")
+// 	api.Logger.Debug("Patching interface ", interfaceId, " with data: ", diffMap, " in Netbox")
 
 // 	requestBody, err := json.Marshal(diffMap)
 // 	if err != nil {
@@ -68,7 +68,7 @@ import (
 
 // // POST /api/dcim/interfaces/
 // func (api *NetboxAPI) CreateInterface(interf *objects.Interface) (*objects.Interface, error) {
-// 	api.Logger.Debug("Creating interface in NetBox with data: ", interf)
+// 	api.Logger.Debug("Creating interface in Netbox with data: ", interf)
 
 // 	requestBody, err := utils.NetboxJsonMarshal(interf)
 // 	if err != nil {
@@ -106,7 +106,7 @@ type IPAddressResponse struct {
 
 // GET /api/ipam/ip-addresses/?limit=0
 func (api *NetboxAPI) GetAllIPAddresses() ([]*objects.IPAddress, error) {
-	api.Logger.Debug("Getting all IP addresses from NetBox")
+	api.Logger.Debug("Getting all IP addresses from Netbox")
 
 	response, err := api.doRequest(MethodGet, "/api/ipam/ip-addresses/?limit=0", nil)
 	if err != nil {
@@ -134,7 +134,7 @@ func (api *NetboxAPI) GetAllIPAddresses() ([]*objects.IPAddress, error) {
 
 // PATCH /api/ipam/ip-addresses/{id}/
 func (api *NetboxAPI) PatchIPAddress(diffMap map[string]interface{}, ipId int) (*objects.IPAddress, error) {
-	api.Logger.Debug("Patching IP address ", ipId, " with data: ", diffMap, " in NetBox")
+	api.Logger.Debug("Patching IP address ", ipId, " with data: ", diffMap, " in Netbox")
 
 	requestBody, err := json.Marshal(diffMap)
 	if err != nil {
@@ -163,7 +163,7 @@ func (api *NetboxAPI) PatchIPAddress(diffMap map[string]interface{}, ipId int) (
 
 // POST /api/ipam/ip-addresses/
 func (api *NetboxAPI) CreateIPAddress(ip *objects.IPAddress) (*objects.IPAddress, error) {
-	api.Logger.Debug("Creating IP address in NetBox with data: ", ip)
+	api.Logger.Debug("Creating IP address in Netbox with data: ", ip)
 
 	requestBody, err := json.Marshal(ip)
 	if err != nil {
@@ -201,7 +201,7 @@ type VlanResponse struct {
 
 // GET /api/ipam/vlans/?limit=0
 func (api *NetboxAPI) GetAllVlans() ([]*objects.Vlan, error) {
-	api.Logger.Debug("Getting all Vlans from NetBox")
+	api.Logger.Debug("Getting all Vlans from Netbox")
 
 	response, err := api.doRequest(MethodGet, "/api/ipam/vlans/?limit=0", nil)
 	if err != nil {
@@ -229,7 +229,7 @@ func (api *NetboxAPI) GetAllVlans() ([]*objects.Vlan, error) {
 
 // PATCH /api/ipam/vlans/{id}/
 func (api *NetboxAPI) PatchVlan(diffMap map[string]interface{}, vlanId int) (*objects.Vlan, error) {
-	api.Logger.Debug("Patching Vlan ", vlanId, " with data: ", diffMap, " in NetBox")
+	api.Logger.Debug("Patching Vlan ", vlanId, " with data: ", diffMap, " in Netbox")
 
 	requestBody, err := json.Marshal(diffMap)
 	if err != nil {
@@ -258,7 +258,7 @@ func (api *NetboxAPI) PatchVlan(diffMap map[string]interface{}, vlanId int) (*ob
 
 // POST /api/ipam/vlans/
 func (api *NetboxAPI) CreateVlan(vlan *objects.Vlan) (*objects.Vlan, error) {
-	api.Logger.Debug("Creating Vlan in NetBox with data: ", vlan)
+	api.Logger.Debug("Creating Vlan in Netbox with data: ", vlan)
 
 	requestBody, err := json.Marshal(vlan)
 	if err != nil {

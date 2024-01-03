@@ -19,7 +19,7 @@ type TagResponse struct {
 
 // /api/extras/tags
 func (api *NetboxAPI) GetAllTags() ([]*objects.Tag, error) {
-	api.Logger.Debug("Getting all tags from NetBox")
+	api.Logger.Debug("Getting all tags from Netbox")
 
 	response, err := api.doRequest(MethodGet, "/api/extras/tags/", nil)
 	if err != nil {
@@ -47,7 +47,7 @@ func (api *NetboxAPI) GetAllTags() ([]*objects.Tag, error) {
 
 // GET /api/extras/tags?name={tag_name}
 func (api *NetboxAPI) GetTagByName(name string) (*objects.Tag, error) {
-	api.Logger.Debug("Getting tag by name from NetBox")
+	api.Logger.Debug("Getting tag by name from Netbox")
 
 	response, err := api.doRequest(MethodGet, fmt.Sprintf("/api/extras/tags?name=%s", name), nil)
 	if err != nil {
@@ -76,7 +76,7 @@ func (api *NetboxAPI) GetTagByName(name string) (*objects.Tag, error) {
 
 // POST /api/extras/tags/ -d '{"name": "netbox-ssot", "slug": "netbox-ssot"}'
 func (api *NetboxAPI) CreateTag(tag *objects.Tag) (*objects.Tag, error) {
-	api.Logger.Debug("Creating tag in NetBox: ", tag)
+	api.Logger.Debug("Creating tag in Netbox: ", tag)
 
 	requestBody, err := utils.NetboxJsonMarshal(tag)
 	if err != nil {
@@ -174,7 +174,7 @@ type CustomFieldResponse struct {
 
 // GET /api/extras/custom-fields/?limit=0
 func (api *NetboxAPI) GetAllCustomFields() ([]*objects.CustomField, error) {
-	api.Logger.Debug("Getting all custom fields from NetBox")
+	api.Logger.Debug("Getting all custom fields from Netbox")
 
 	response, err := api.doRequest(MethodGet, "/api/extras/custom-fields/?limit=0", nil)
 	if err != nil {
@@ -232,7 +232,7 @@ func (api *NetboxAPI) PatchCustomField(diffMap map[string]interface{}, customFie
 
 // CREATE /api/extras/custom-fields/ -d '{...}'
 func (api *NetboxAPI) CreateCustomField(customField *objects.CustomField) (*objects.CustomField, error) {
-	api.Logger.Debug("Creating custom field in NetBox: ", customField)
+	api.Logger.Debug("Creating custom field in Netbox: ", customField)
 
 	requestBody, err := utils.NetboxJsonMarshal(customField)
 	if err != nil {

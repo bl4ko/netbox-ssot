@@ -129,7 +129,7 @@ func NetboxJsonMarshal(obj interface{}) ([]byte, error) {
 // Struct used for patching objects, when attributes are structs, or slices
 // we only need object with an id for patching.
 type IDObject struct {
-	ID int `json:"Id"`
+	ID int `json:"id"`
 }
 
 // JsonDiffMapExceptID checks if any field except ID field, from two objects, are different.
@@ -436,4 +436,11 @@ func Slugify(name string) string {
 	reg, _ := regexp.Compile("[^a-z0-9_-]+")
 	name = reg.ReplaceAllString(name, "")
 	return name
+}
+
+// Function that takes osType and osVersion and returns a
+// an universal platform name that then can be shared between
+// multiple objects.
+func GeneratePlatformName(osType string, osVersion string) string {
+	return fmt.Sprintf("%s %s", osType, osVersion)
 }

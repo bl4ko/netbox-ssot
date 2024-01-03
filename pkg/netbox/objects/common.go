@@ -1,4 +1,4 @@
-// This file contains all objects that are common to all NetBox objects.
+// This file contains all objects that are common to all Netbox objects.
 package objects
 
 // Choice represents a choice in a Netbox's choice field.
@@ -8,9 +8,9 @@ type Choice struct {
 	Label string `json:"label,omitempty"`
 }
 
-// Struct representing attributes that are common to all objects in NetBox.
+// Struct representing attributes that are common to all objects in Netbox.
 // We can this struct as an embedded struct in other structs that represent
-// NetBox objects.
+// Netbox objects.
 type NetboxObject struct {
 	// Netbox's Id of the object.
 	Id int `json:"id,omitempty"`

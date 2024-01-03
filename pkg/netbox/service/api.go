@@ -10,7 +10,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/pkg/logger"
 )
 
-// NetboxAPI is a service used for communicating with the NetBox API.
+// NetboxAPI is a service used for communicating with the Netbox API.
 // It is created via constructur func newNetboxAPI()
 type NetboxAPI struct {
 	Logger     *logger.Logger
@@ -27,7 +27,7 @@ const (
 	MethodPatch  = "PATCH"
 )
 
-// APIResponse is a struct that represents a response from the NetBox API.
+// APIResponse is a struct that represents a response from the Netbox API.
 type APIResponse struct {
 	StatusCode int
 	Body       []byte

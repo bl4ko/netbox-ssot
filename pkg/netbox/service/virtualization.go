@@ -19,7 +19,7 @@ type ClusterTypeResponse struct {
 
 // GET /api/virtualization/cluster-types/?limit=0
 func (api *NetboxAPI) GetAllClusterTypes() ([]*objects.ClusterType, error) {
-	api.Logger.Debug("Getting all cluster types from NetBox")
+	api.Logger.Debug("Getting all cluster types from Netbox")
 
 	response, err := api.doRequest(MethodGet, "/api/virtualization/cluster-types/?limit=0", nil)
 	if err != nil {
@@ -47,7 +47,7 @@ func (api *NetboxAPI) GetAllClusterTypes() ([]*objects.ClusterType, error) {
 
 // PATCH /api/virtualization/cluster-types/{id}/ -d '{"name": "new_name", ...}'
 func (api *NetboxAPI) PatchClusterType(diffMap map[string]interface{}, clusterTypeId int) (*objects.ClusterType, error) {
-	api.Logger.Debug("Patching cluster type in NetBox, with data: ", diffMap)
+	api.Logger.Debug("Patching cluster type with id ", clusterTypeId, "with data: ", diffMap)
 
 	patchBodyJson, err := json.Marshal(diffMap)
 	if err != nil {
@@ -77,7 +77,7 @@ func (api *NetboxAPI) PatchClusterType(diffMap map[string]interface{}, clusterTy
 
 // POST /api/virtualization/cluster-types/
 func (api *NetboxAPI) CreateClusterType(clusterType *objects.ClusterType) (*objects.ClusterType, error) {
-	api.Logger.Debug("Creating cluster type in NetBox")
+	api.Logger.Debug("Creating cluster type in Netbox")
 
 	requestBody, err := utils.NetboxJsonMarshal(clusterType)
 	if err != nil {
@@ -113,7 +113,7 @@ type ClusterGroupResponse struct {
 
 // GET /api/virtualization/cluster-groups/?limit=0
 func (api *NetboxAPI) GetAllClusterGroups() ([]*objects.ClusterGroup, error) {
-	api.Logger.Debug("Getting all cluster groups from NetBox")
+	api.Logger.Debug("Getting all cluster groups from Netbox")
 
 	response, err := api.doRequest(MethodGet, "/api/virtualization/cluster-groups/?limit=0", nil)
 	if err != nil {
@@ -140,7 +140,7 @@ func (api *NetboxAPI) GetAllClusterGroups() ([]*objects.ClusterGroup, error) {
 
 // POST /api/virtualization/cluster-groups/
 func (api *NetboxAPI) CreateClusterGroup(clusterGroup *objects.ClusterGroup) (*objects.ClusterGroup, error) {
-	api.Logger.Debug("Creating cluster group in NetBox")
+	api.Logger.Debug("Creating cluster group in Netbox")
 
 	clusterGroupJson, err := utils.NetboxJsonMarshal(clusterGroup)
 	if err != nil {
@@ -169,7 +169,7 @@ func (api *NetboxAPI) CreateClusterGroup(clusterGroup *objects.ClusterGroup) (*o
 
 // PATCH /api/virtualization/cluster-groups/{id}/ -d '{"name": "new_name", ...}'
 func (api *NetboxAPI) PatchClusterGroup(diffMap map[string]interface{}, clusterGroupId int) (*objects.ClusterGroup, error) {
-	api.Logger.Debug("Patching cluster group in NetBox, with data: ", diffMap)
+	api.Logger.Debug("Patching cluster group with id ", clusterGroupId, ", with data: ", diffMap)
 
 	clusterGroupJson, err := json.Marshal(diffMap)
 	if err != nil {
@@ -205,7 +205,7 @@ type ClustersResponse struct {
 
 // GET /api/vritualization/clusters/?limit=0
 func (api *NetboxAPI) GetAllClusters() ([]*objects.Cluster, error) {
-	api.Logger.Debug("Getting all clusters from NetBox")
+	api.Logger.Debug("Getting all clusters from Netbox")
 
 	response, err := api.doRequest(MethodGet, "/api/virtualization/clusters/?limit=0", nil)
 	if err != nil {
@@ -234,7 +234,7 @@ func (api *NetboxAPI) GetAllClusters() ([]*objects.Cluster, error) {
 
 // PATCH /api/virtualization/clusters/{id}/ -d '{"name": "new_name", ...}'
 func (api *NetboxAPI) PatchCluster(diffMap map[string]interface{}, clusterId int) (*objects.Cluster, error) {
-	api.Logger.Debug("Patching cluster in NetBox, with data: ", diffMap)
+	api.Logger.Debug("Patching cluster with id ", clusterId, ", with data: ", diffMap)
 
 	clusterJson, err := json.Marshal(diffMap)
 	fmt.Println(string(clusterJson))
@@ -264,7 +264,7 @@ func (api *NetboxAPI) PatchCluster(diffMap map[string]interface{}, clusterId int
 
 // POST /api/virtualization/clusters/{id}/ -d '{"name": "new_name", ...}'
 func (api *NetboxAPI) CreateCluster(cluster *objects.Cluster) (*objects.Cluster, error) {
-	api.Logger.Debug("Creating cluster in NetBox")
+	api.Logger.Debug("Creating cluster in Netbox")
 
 	clusterJson, err := utils.NetboxJsonMarshal(cluster)
 	if err != nil {
@@ -302,7 +302,7 @@ type VMResponse struct {
 
 // GET /api/virtualization/virtual-machines/?limit=0
 func (api *NetboxAPI) GetAllVMs() ([]*objects.VM, error) {
-	api.Logger.Debug("Getting all virtual machines from NetBox")
+	api.Logger.Debug("Getting all virtual machines from Netbox")
 
 	response, err := api.doRequest(MethodGet, "/api/virtualization/virtual-machines/?limit=0", nil)
 	if err != nil {
@@ -331,7 +331,7 @@ func (api *NetboxAPI) GetAllVMs() ([]*objects.VM, error) {
 
 // PATH /api/virtualization/virtual-machines/{id}/ -d '{"name": "new_name", ...}'
 func (api *NetboxAPI) PatchVM(diffMap map[string]interface{}, vmId int) (*objects.VM, error) {
-	api.Logger.Debug("Patching VM with id", vmId, " with data: ", diffMap)
+	api.Logger.Debug("Patching VM with id ", vmId, " with data: ", diffMap)
 
 	vmJson, err := json.Marshal(diffMap)
 	if err != nil {
@@ -360,7 +360,7 @@ func (api *NetboxAPI) PatchVM(diffMap map[string]interface{}, vmId int) (*object
 
 // POST /api/virtualization/virtual-machines/
 func (api *NetboxAPI) CreateVM(vm *objects.VM) (*objects.VM, error) {
-	api.Logger.Debug("Creating VM in NetBox with data: ", vm)
+	api.Logger.Debug("Creating VM in Netbox with data: ", vm)
 
 	vmJson, err := utils.NetboxJsonMarshal(vm)
 	if err != nil {
@@ -396,7 +396,7 @@ type VMInterfaceResponse struct {
 
 // GET /api/virtualization/interfaces/?limit=0
 func (api *NetboxAPI) GetAllVMInterfaces() ([]*objects.VMInterface, error) {
-	api.Logger.Debug("Getting all VM interfaces from NetBox")
+	api.Logger.Debug("Getting all VM interfaces from Netbox")
 
 	response, err := api.doRequest(MethodGet, "/api/virtualization/interfaces/?limit=0", nil)
 	if err != nil {
@@ -425,7 +425,7 @@ func (api *NetboxAPI) GetAllVMInterfaces() ([]*objects.VMInterface, error) {
 
 // PATCH /api/virtualization/interfaces/{id}/ -d '{"name": "new_name", ...}'
 func (api *NetboxAPI) PatchVMInterface(diffMap map[string]interface{}, vmInterfaceId int) (*objects.VMInterface, error) {
-	api.Logger.Debug("Patching VM interface with id", vmInterfaceId, " with data: ", diffMap)
+	api.Logger.Debug("Patching VM interface with id ", vmInterfaceId, " with data: ", diffMap)
 
 	vmInterfaceJson, err := json.Marshal(diffMap)
 	if err != nil {
@@ -454,7 +454,7 @@ func (api *NetboxAPI) PatchVMInterface(diffMap map[string]interface{}, vmInterfa
 
 // POST /api/virtualization/interfaces/
 func (api *NetboxAPI) CreateVMInterface(vmInterface *objects.VMInterface) (*objects.VMInterface, error) {
-	api.Logger.Debug("Creating VM interface in NetBox with data: ", vmInterface)
+	api.Logger.Debug("Creating VM interface in Netbox with data: ", vmInterface)
 
 	vmInterfaceJson, err := utils.NetboxJsonMarshal(vmInterface)
 	if err != nil {

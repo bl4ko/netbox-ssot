@@ -4,14 +4,14 @@ import (
 	"github.com/bl4ko/netbox-ssot/pkg/netbox/objects"
 )
 
-// Collect all tags from NetBox API and store them in the NetBoxInventory
+// Collect all tags from Netbox API and store them in the NetBoxInventory
 func (netboxInventory *NetBoxInventory) InitTags() error {
 	nbTags, err := netboxInventory.NetboxApi.GetAllTags()
 	if err != nil {
 		return err
 	}
 	netboxInventory.Tags = nbTags
-	netboxInventory.Logger.Debug("Successfully collected tags from NetBox: ", netboxInventory.Tags)
+	netboxInventory.Logger.Debug("Successfully collected tags from Netbox: ", netboxInventory.Tags)
 
 	// Custom tag for all netbox objects
 	ssotTag, err := netboxInventory.NetboxApi.GetTagByName("netbox-ssot")
@@ -19,7 +19,7 @@ func (netboxInventory *NetBoxInventory) InitTags() error {
 		return err
 	}
 	if ssotTag == nil {
-		netboxInventory.Logger.Info("Tag netbox-ssot not found in NetBox. Creating it now...")
+		netboxInventory.Logger.Info("Tag netbox-ssot not found in Netbox. Creating it now...")
 		newTag := objects.Tag{Name: "netbox-ssot", Slug: "netbox-ssot", Description: "Tag used by netbox-ssot to mark devices that are managed by it", Color: "00add8"}
 		ssotTag, err = netboxInventory.NetboxApi.CreateTag(&newTag)
 		if err != nil {
@@ -30,7 +30,7 @@ func (netboxInventory *NetBoxInventory) InitTags() error {
 	return nil
 }
 
-// Collects all tenants from NetBox API and store them in the NetBoxInventory
+// Collects all tenants from Netbox API and store them in the NetBoxInventory
 func (NetBoxInventory *NetBoxInventory) InitTenants() error {
 	nbTenants, err := NetBoxInventory.NetboxApi.GetAllTenants()
 	if err != nil {
@@ -41,11 +41,11 @@ func (NetBoxInventory *NetBoxInventory) InitTenants() error {
 	for _, tenant := range nbTenants {
 		NetBoxInventory.TenantsIndexByName[tenant.Name] = tenant
 	}
-	NetBoxInventory.Logger.Debug("Successfully collected tenants from NetBox: ", NetBoxInventory.TenantsIndexByName)
+	NetBoxInventory.Logger.Debug("Successfully collected tenants from Netbox: ", NetBoxInventory.TenantsIndexByName)
 	return nil
 }
 
-// Collects all sites from NetBox API and store them in the NetBoxInventory
+// Collects all sites from Netbox API and store them in the NetBoxInventory
 func (netboxInventory *NetBoxInventory) InitSites() error {
 	nbSites, err := netboxInventory.NetboxApi.GetAllSites()
 	if err != nil {
@@ -56,11 +56,11 @@ func (netboxInventory *NetBoxInventory) InitSites() error {
 	for _, site := range nbSites {
 		netboxInventory.SitesIndexByName[site.Name] = site
 	}
-	netboxInventory.Logger.Debug("Successfully collected sites from NetBox: ", netboxInventory.SitesIndexByName)
+	netboxInventory.Logger.Debug("Successfully collected sites from Netbox: ", netboxInventory.SitesIndexByName)
 	return nil
 }
 
-// Collects all manufacturesrs from NetBox API and store them in NetBoxInventory
+// Collects all manufacturesrs from Netbox API and store them in NetBoxInventory
 func (netboxInventory *NetBoxInventory) InitManufacturers() error {
 	nbManufacturers, err := netboxInventory.NetboxApi.GetAllManufacturers()
 	if err != nil {
@@ -71,11 +71,11 @@ func (netboxInventory *NetBoxInventory) InitManufacturers() error {
 	for _, manufacturer := range nbManufacturers {
 		netboxInventory.ManufacturersIndexByName[manufacturer.Name] = manufacturer
 	}
-	netboxInventory.Logger.Debug("Successfully collected manufacturers from NetBox: ", netboxInventory.ManufacturersIndexByName)
+	netboxInventory.Logger.Debug("Successfully collected manufacturers from Netbox: ", netboxInventory.ManufacturersIndexByName)
 	return nil
 }
 
-// Collects all platforms from NetBox API and store them in the NetBoxInventory
+// Collects all platforms from Netbox API and store them in the NetBoxInventory
 func (NetBoxInventory *NetBoxInventory) InitPlatforms() error {
 	nbPlatforms, err := NetBoxInventory.NetboxApi.GetAllPlatforms()
 	if err != nil {
@@ -86,11 +86,11 @@ func (NetBoxInventory *NetBoxInventory) InitPlatforms() error {
 	for _, platform := range nbPlatforms {
 		NetBoxInventory.PlatformsIndexByName[platform.Name] = platform
 	}
-	NetBoxInventory.Logger.Debug("Successfully collected platforms from NetBox: ", NetBoxInventory.PlatformsIndexByName)
+	NetBoxInventory.Logger.Debug("Successfully collected platforms from Netbox: ", NetBoxInventory.PlatformsIndexByName)
 	return nil
 }
 
-// Collect all devices from NetBox API and store them in the NetBoxInventory
+// Collect all devices from Netbox API and store them in the NetBoxInventory
 func (netboxInventory *NetBoxInventory) InitDevices() error {
 	nbDevices, err := netboxInventory.NetboxApi.GetAllDevices()
 	if err != nil {
@@ -101,11 +101,11 @@ func (netboxInventory *NetBoxInventory) InitDevices() error {
 	for _, device := range nbDevices {
 		netboxInventory.DevicesIndexByUuid[device.AssetTag] = device
 	}
-	netboxInventory.Logger.Debug("Successfully collected devices from NetBox: ", netboxInventory.DevicesIndexByUuid)
+	netboxInventory.Logger.Debug("Successfully collected devices from Netbox: ", netboxInventory.DevicesIndexByUuid)
 	return nil
 }
 
-// Collects all deviceRoles from NetBox API and store them in the
+// Collects all deviceRoles from Netbox API and store them in the
 // NetBoxInventory
 func (netboxInventory *NetBoxInventory) InitDeviceRoles() error {
 	nbDeviceRoles, err := netboxInventory.NetboxApi.GetAllDeviceRoles()
@@ -118,7 +118,7 @@ func (netboxInventory *NetBoxInventory) InitDeviceRoles() error {
 		netboxInventory.DeviceRolesIndexByName[deviceRole.Name] = deviceRole
 	}
 
-	netboxInventory.Logger.Debug("Successfully collected device roles from NetBox: ", netboxInventory.DeviceRolesIndexByName)
+	netboxInventory.Logger.Debug("Successfully collected device roles from Netbox: ", netboxInventory.DeviceRolesIndexByName)
 	return nil
 }
 
@@ -140,7 +140,7 @@ func (netboxInventory *NetBoxInventory) InitCustomFields() error {
 	for _, customField := range customFields {
 		netboxInventory.CustomFieldsIndexByName[customField.Name] = customField
 	}
-	netboxInventory.Logger.Debug("Successfully collected custom fields from NetBox: ", netboxInventory.CustomFieldsIndexByName)
+	netboxInventory.Logger.Debug("Successfully collected custom fields from Netbox: ", netboxInventory.CustomFieldsIndexByName)
 	return nil
 }
 
@@ -148,7 +148,7 @@ func (netboxInventory *NetBoxInventory) InitCustomFields() error {
 // Currently these are two:
 // - host_cpu_cores
 // - host_memory
-// - sourceId - this is used to store the ID of the source object in NetBox (interfaces)
+// - sourceId - this is used to store the ID of the source object in Netbox (interfaces)
 func (netboxInventory *NetBoxInventory) InitSsotCustomFields() error {
 	err := netboxInventory.AddCustomField(&objects.CustomField{
 		Name:          "host_cpu_cores",
@@ -196,7 +196,7 @@ func (netboxInventory *NetBoxInventory) InitSsotCustomFields() error {
 	return nil
 }
 
-// Collects all nbClusters from NetBox API and stores them in the NetBoxInventory
+// Collects all nbClusters from Netbox API and stores them in the NetBoxInventory
 func (netboxInventory *NetBoxInventory) InitClusterGroups() error {
 	nbClusters, err := netboxInventory.NetboxApi.GetAllClusterGroups()
 	if err != nil {
@@ -207,11 +207,11 @@ func (netboxInventory *NetBoxInventory) InitClusterGroups() error {
 	for _, clusterGroup := range nbClusters {
 		netboxInventory.ClusterGroupsIndexByName[clusterGroup.Name] = clusterGroup
 	}
-	netboxInventory.Logger.Debug("Successfully collected cluster groups from NetBox: ", netboxInventory.ClusterGroupsIndexByName)
+	netboxInventory.Logger.Debug("Successfully collected cluster groups from Netbox: ", netboxInventory.ClusterGroupsIndexByName)
 	return nil
 }
 
-// Collects all ClusterTypes from NetBox API and stores them in the NetBoxInventory
+// Collects all ClusterTypes from Netbox API and stores them in the NetBoxInventory
 func (netboxInventory *NetBoxInventory) InitClusterTypes() error {
 	nbClusterTypes, err := netboxInventory.NetboxApi.GetAllClusterTypes()
 	if err != nil {
@@ -221,11 +221,11 @@ func (netboxInventory *NetBoxInventory) InitClusterTypes() error {
 	for _, clusterType := range nbClusterTypes {
 		netboxInventory.ClusterTypesIndexByName[clusterType.Name] = clusterType
 	}
-	netboxInventory.Logger.Debug("Successfully collected cluster types from NetBox: ", netboxInventory.ClusterTypesIndexByName)
+	netboxInventory.Logger.Debug("Successfully collected cluster types from Netbox: ", netboxInventory.ClusterTypesIndexByName)
 	return nil
 }
 
-// Collects all clusters from NetBox API and stores them to local inventory
+// Collects all clusters from Netbox API and stores them to local inventory
 func (netboxInventory *NetBoxInventory) InitClusters() error {
 	nbClusters, err := netboxInventory.NetboxApi.GetAllClusters()
 	if err != nil {
@@ -235,7 +235,7 @@ func (netboxInventory *NetBoxInventory) InitClusters() error {
 	for _, cluster := range nbClusters {
 		netboxInventory.ClustersIndexByName[cluster.Name] = cluster
 	}
-	netboxInventory.Logger.Debug("Successfully collected clusters from NetBox: ", netboxInventory.ClustersIndexByName)
+	netboxInventory.Logger.Debug("Successfully collected clusters from Netbox: ", netboxInventory.ClustersIndexByName)
 	return nil
 }
 
@@ -248,7 +248,7 @@ func (ni *NetBoxInventory) InitDeviceTypes() error {
 	for _, deviceType := range nbDeviceTypes {
 		ni.DeviceTypesIndexByModel[deviceType.Model] = deviceType
 	}
-	ni.Logger.Debug("Successfully collected device types from NetBox: ", ni.DeviceTypesIndexByModel)
+	ni.Logger.Debug("Successfully collected device types from Netbox: ", ni.DeviceTypesIndexByModel)
 	return nil
 }
 
@@ -264,7 +264,7 @@ func (ni *NetBoxInventory) InitInterfaces() error {
 		}
 		ni.InterfacesIndexByDeviceIdAndName[intf.Device.Id][intf.Name] = intf
 	}
-	ni.Logger.Debug("Successfully collected interfaces from NetBox: ", ni.InterfacesIndexByDeviceIdAndName)
+	ni.Logger.Debug("Successfully collected interfaces from Netbox: ", ni.InterfacesIndexByDeviceIdAndName)
 	return nil
 }
 
@@ -277,7 +277,7 @@ func (ni *NetBoxInventory) InitVlans() error {
 	for _, vlan := range nbVlans {
 		ni.VlansIndexByName[vlan.Name] = vlan
 	}
-	ni.Logger.Debug("Successfully collected vlans from NetBox: ", ni.VlansIndexByName)
+	ni.Logger.Debug("Successfully collected vlans from Netbox: ", ni.VlansIndexByName)
 	return nil
 }
 
@@ -290,7 +290,7 @@ func (ni *NetBoxInventory) InitVMs() error {
 	for _, vm := range nbVMs {
 		ni.VMsIndexByName[vm.Name] = vm
 	}
-	ni.Logger.Debug("Successfully collected VMs from NetBox: ", ni.VMsIndexByName)
+	ni.Logger.Debug("Successfully collected VMs from Netbox: ", ni.VMsIndexByName)
 	return nil
 }
 
@@ -299,13 +299,13 @@ func (ni *NetBoxInventory) InitVMInterfaces() error {
 	if err != nil {
 		return err
 	}
-	ni.VMInterfacesIndexByVmIdAndName = make(map[int]map[string]*objects.VMInterface)
+	ni.VMInterfacesIndexByVMIdAndName = make(map[int]map[string]*objects.VMInterface)
 	for _, vmIntf := range nbVMInterfaces {
-		if ni.VMInterfacesIndexByVmIdAndName[vmIntf.VM.Id] == nil {
-			ni.VMInterfacesIndexByVmIdAndName[vmIntf.VM.Id] = make(map[string]*objects.VMInterface)
+		if ni.VMInterfacesIndexByVMIdAndName[vmIntf.VM.Id] == nil {
+			ni.VMInterfacesIndexByVMIdAndName[vmIntf.VM.Id] = make(map[string]*objects.VMInterface)
 		}
-		ni.VMInterfacesIndexByVmIdAndName[vmIntf.VM.Id][vmIntf.Name] = vmIntf
+		ni.VMInterfacesIndexByVMIdAndName[vmIntf.VM.Id][vmIntf.Name] = vmIntf
 	}
-	ni.Logger.Debug("Successfully collected VM interfaces from NetBox: ", ni.VMInterfacesIndexByVmIdAndName)
+	ni.Logger.Debug("Successfully collected VM interfaces from Netbox: ", ni.VMInterfacesIndexByVMIdAndName)
 	return nil
 }

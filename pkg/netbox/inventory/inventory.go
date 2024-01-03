@@ -13,9 +13,9 @@ import (
 type NetBoxInventory struct {
 	// Logger is the logger used for logging messages
 	Logger *logger.Logger
-	// NetboxConfig is the NetBox configuration
+	// NetboxConfig is the Netbox configuration
 	NetboxConfig *parser.NetboxConfig
-	// NetboxApi is the NetBox API object, for communicating with the NetBox API
+	// NetboxApi is the Netbox API object, for communicating with the Netbox API
 	NetboxApi *service.NetboxAPI
 	// Tags is a list of all tags in the netbox inventory
 	Tags []*objects.Tag
@@ -49,7 +49,7 @@ type NetBoxInventory struct {
 	// VirtualMachinedIndexByName is a map of all virtual machines in the inventory, indexed by their name
 	VMsIndexByName map[string]*objects.VM
 	// VirtualMachineInterfacesIndexByVMAndName is a map of all virtual machine interfaces in the inventory, indexed by their's virtual machine id and their name
-	VMInterfacesIndexByVmIdAndName map[int]map[string]*objects.VMInterface
+	VMInterfacesIndexByVMIdAndName map[int]map[string]*objects.VMInterface
 
 	// Orphan manager is a map of { "devices: [device_id1, device_id2, ...], "cluster_groups": [cluster_group_id1, cluster_group_id2, ..."}, to store which objects have been created by netbox-ssot and can be deleted because they are not available in the source anymore
 	OrphanManager map[string][]int
@@ -70,11 +70,11 @@ func NewNetboxInventory(logger *logger.Logger, nbConfig *parser.NetboxConfig) *N
 	return nbi
 }
 
-// Init function that initialises the NetBoxInventory object with objects from NetBox
+// Init function that initialises the NetBoxInventory object with objects from Netbox
 func (netboxInventory *NetBoxInventory) Init() error {
 	baseURL := fmt.Sprintf("%s://%s:%d", netboxInventory.NetboxConfig.HTTPScheme, netboxInventory.NetboxConfig.Hostname, netboxInventory.NetboxConfig.Port)
 
-	netboxInventory.Logger.Debug("Initialising NetBox API with baseURL: ", baseURL)
+	netboxInventory.Logger.Debug("Initialising Netbox API with baseURL: ", baseURL)
 	netboxInventory.NetboxApi = service.NewNetBoxAPI(netboxInventory.Logger, baseURL, netboxInventory.NetboxConfig.ApiToken, netboxInventory.NetboxConfig.ValidateCert)
 
 	err := netboxInventory.InitTags()

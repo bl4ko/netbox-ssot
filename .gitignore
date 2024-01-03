@@ -1,5 +1,6 @@
 .vscode 
 config.yaml
+__debug*
 
 # Created by https://www.toptal.com/developers/gitignore/api/go
 # Edit at https://www.toptal.com/developers/gitignore?templates=go

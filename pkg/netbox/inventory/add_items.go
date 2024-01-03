@@ -13,7 +13,7 @@ func (ni *NetBoxInventory) AddTag(newTag *objects.Tag) (*objects.Tag, error) {
 		return t.Name == newTag.Name
 	})
 	if existingTagIndex == -1 {
-		ni.Logger.Debug("Tag ", newTag.Name, " does not exist in NetBox. Creating it...")
+		ni.Logger.Debug("Tag ", newTag.Name, " does not exist in Netbox. Creating it...")
 		createdTag, err := ni.NetboxApi.CreateTag(newTag)
 		if err != nil {
 			return nil, err
@@ -21,7 +21,7 @@ func (ni *NetBoxInventory) AddTag(newTag *objects.Tag) (*objects.Tag, error) {
 		ni.Tags = append(ni.Tags, createdTag)
 		return createdTag, nil
 	} else {
-		ni.Logger.Debug("Tag ", newTag.Name, " already exists in NetBox...")
+		ni.Logger.Debug("Tag ", newTag.Name, " already exists in Netbox...")
 		existingTag := ni.Tags[existingTagIndex]
 		diffMap, err := utils.JsonDiffMapExceptId(newTag, existingTag)
 		if err != nil {
@@ -49,17 +49,17 @@ func (ni *NetBoxInventory) AddCustomField(newCf *objects.CustomField) error {
 			return err
 		}
 		if len(diffMap) > 0 {
-			ni.Logger.Debug("Custom field ", newCf.Name, " already exists in NetBox but is out of date. Patching it... ")
+			ni.Logger.Debug("Custom field ", newCf.Name, " already exists in Netbox but is out of date. Patching it... ")
 			patchedCf, err := ni.NetboxApi.PatchCustomField(diffMap, existingCf.Id)
 			if err != nil {
 				return err
 			}
 			ni.CustomFieldsIndexByName[newCf.Name] = patchedCf
 		} else {
-			ni.Logger.Debug("Custom field ", newCf.Name, " already exists in NetBox and is up to date...")
+			ni.Logger.Debug("Custom field ", newCf.Name, " already exists in Netbox and is up to date...")
 		}
 	} else {
-		ni.Logger.Debug("Custom field ", newCf.Name, " does not exist in NetBox. Creating it...")
+		ni.Logger.Debug("Custom field ", newCf.Name, " does not exist in Netbox. Creating it...")
 		newCf, err := ni.NetboxApi.CreateCustomField(newCf)
 		if err != nil {
 			return err
@@ -78,17 +78,17 @@ func (ni *NetBoxInventory) AddClusterGroup(newCg *objects.ClusterGroup, newTags 
 			return err
 		}
 		if len(diffMap) > 0 {
-			ni.Logger.Debug("Cluster group ", newCg.Name, " already exists in NetBox but is out of date. Patching it...")
+			ni.Logger.Debug("Cluster group ", newCg.Name, " already exists in Netbox but is out of date. Patching it...")
 			patchedCg, err := ni.NetboxApi.PatchClusterGroup(diffMap, ni.ClusterGroupsIndexByName[newCg.Name].Id)
 			if err != nil {
 				return err
 			}
 			ni.ClusterGroupsIndexByName[newCg.Name] = patchedCg
 		} else {
-			ni.Logger.Debug("Cluster group ", newCg.Name, " already exists in NetBox and is up to date...")
+			ni.Logger.Debug("Cluster group ", newCg.Name, " already exists in Netbox and is up to date...")
 		}
 	} else {
-		ni.Logger.Debug("Cluster group ", newCg.Name, " does not exist in NetBox. Creating it...")
+		ni.Logger.Debug("Cluster group ", newCg.Name, " does not exist in Netbox. Creating it...")
 		newCg, err := ni.NetboxApi.CreateClusterGroup(newCg)
 		if err != nil {
 			return err
@@ -107,7 +107,7 @@ func (ni *NetBoxInventory) AddClusterType(newClusterType *objects.ClusterType) (
 			return nil, err
 		}
 		if len(diffMap) > 0 {
-			ni.Logger.Debug("Cluster type ", newClusterType.Name, " already exists in NetBox but is out of date. Patching it...")
+			ni.Logger.Debug("Cluster type ", newClusterType.Name, " already exists in Netbox but is out of date. Patching it...")
 			patchedClusterType, err := ni.NetboxApi.PatchClusterType(diffMap, ni.ClusterTypesIndexByName[newClusterType.Name].Id)
 			if err != nil {
 				return nil, err
@@ -115,12 +115,12 @@ func (ni *NetBoxInventory) AddClusterType(newClusterType *objects.ClusterType) (
 			ni.ClusterTypesIndexByName[newClusterType.Name] = patchedClusterType
 			return patchedClusterType, nil
 		} else {
-			ni.Logger.Debug("Cluster type ", newClusterType.Name, " already exists in NetBox and is up to date...")
+			ni.Logger.Debug("Cluster type ", newClusterType.Name, " already exists in Netbox and is up to date...")
 			existingClusterType := ni.ClusterTypesIndexByName[newClusterType.Name]
 			return existingClusterType, nil
 		}
 	} else {
-		ni.Logger.Debug("Cluster type ", newClusterType.Name, " does not exist in NetBox. Creating it...")
+		ni.Logger.Debug("Cluster type ", newClusterType.Name, " does not exist in Netbox. Creating it...")
 		newClusterType, err := ni.NetboxApi.CreateClusterType(newClusterType)
 		if err != nil {
 			return nil, err
@@ -138,17 +138,17 @@ func (ni *NetBoxInventory) AddCluster(newCluster *objects.Cluster) error {
 			return err
 		}
 		if len(diffMap) > 0 {
-			ni.Logger.Debug("Cluster ", newCluster.Name, " already exists in NetBox but is out of date. Patching it...")
+			ni.Logger.Debug("Cluster ", newCluster.Name, " already exists in Netbox but is out of date. Patching it...")
 			patchedCluster, err := ni.NetboxApi.PatchCluster(diffMap, ni.ClustersIndexByName[newCluster.Name].Id)
 			if err != nil {
 				return err
 			}
 			ni.ClustersIndexByName[newCluster.Name] = patchedCluster
 		} else {
-			ni.Logger.Debug("Cluster ", newCluster.Name, " already exists in NetBox and is up to date...")
+			ni.Logger.Debug("Cluster ", newCluster.Name, " already exists in Netbox and is up to date...")
 		}
 	} else {
-		ni.Logger.Debug("Cluster ", newCluster.Name, " does not exist in NetBox. Creating it...")
+		ni.Logger.Debug("Cluster ", newCluster.Name, " does not exist in Netbox. Creating it...")
 		newCluster, err := ni.NetboxApi.CreateCluster(newCluster)
 		if err != nil {
 			return err
@@ -166,17 +166,17 @@ func (ni *NetBoxInventory) AddDeviceRole(newDeviceRole *objects.DeviceRole) erro
 			return err
 		}
 		if len(diffMap) > 0 {
-			ni.Logger.Debug("Device role ", newDeviceRole.Name, " already exists in NetBox but is out of date. Patching it...")
+			ni.Logger.Debug("Device role ", newDeviceRole.Name, " already exists in Netbox but is out of date. Patching it...")
 			patchedDeviceRole, err := ni.NetboxApi.PatchDeviceRole(diffMap, ni.DeviceRolesIndexByName[newDeviceRole.Name].Id)
 			if err != nil {
 				return err
 			}
 			ni.DeviceRolesIndexByName[newDeviceRole.Name] = patchedDeviceRole
 		} else {
-			ni.Logger.Debug("Device role ", newDeviceRole.Name, " already exists in NetBox and is up to date...")
+			ni.Logger.Debug("Device role ", newDeviceRole.Name, " already exists in Netbox and is up to date...")
 		}
 	} else {
-		ni.Logger.Debug("Device role ", newDeviceRole.Name, " does not exist in NetBox. Creating it...")
+		ni.Logger.Debug("Device role ", newDeviceRole.Name, " does not exist in Netbox. Creating it...")
 		newDeviceRole, err := ni.NetboxApi.CreateDeviceRole(newDeviceRole)
 		if err != nil {
 			return err
@@ -194,17 +194,17 @@ func (ni *NetBoxInventory) AddManufacturer(newManufacturer *objects.Manufacturer
 			return nil, err
 		}
 		if len(diffMap) > 0 {
-			ni.Logger.Debug("Manufacturer ", newManufacturer.Name, " already exists in NetBox but is out of date. Patching it...")
+			ni.Logger.Debug("Manufacturer ", newManufacturer.Name, " already exists in Netbox but is out of date. Patching it...")
 			patchedManufacturer, err := ni.NetboxApi.PatchManufacturer(diffMap, ni.ManufacturersIndexByName[newManufacturer.Name].Id)
 			if err != nil {
 				return nil, err
 			}
 			ni.ManufacturersIndexByName[newManufacturer.Name] = patchedManufacturer
 		} else {
-			ni.Logger.Debug("Manufacturer ", newManufacturer.Name, " already exists in NetBox and is up to date...")
+			ni.Logger.Debug("Manufacturer ", newManufacturer.Name, " already exists in Netbox and is up to date...")
 		}
 	} else {
-		ni.Logger.Debug("Manufacturer ", newManufacturer.Name, " does not exist in NetBox. Creating it...")
+		ni.Logger.Debug("Manufacturer ", newManufacturer.Name, " does not exist in Netbox. Creating it...")
 		newManufacturer, err := ni.NetboxApi.CreateManufacturer(newManufacturer)
 		if err != nil {
 			return nil, err
@@ -222,17 +222,17 @@ func (ni *NetBoxInventory) AddDeviceType(newDeviceType *objects.DeviceType) (*ob
 			return nil, err
 		}
 		if len(diffMap) > 0 {
-			ni.Logger.Debug("Device type ", newDeviceType.Model, " already exists in NetBox but is out of date. Patching it...")
+			ni.Logger.Debug("Device type ", newDeviceType.Model, " already exists in Netbox but is out of date. Patching it...")
 			patchedDeviceType, err := ni.NetboxApi.PatchDeviceType(diffMap, ni.DeviceTypesIndexByModel[newDeviceType.Model].Id)
 			if err != nil {
 				return nil, err
 			}
 			ni.DeviceTypesIndexByModel[newDeviceType.Model] = patchedDeviceType
 		} else {
-			ni.Logger.Debug("Device type ", newDeviceType.Model, " already exists in NetBox and is up to date...")
+			ni.Logger.Debug("Device type ", newDeviceType.Model, " already exists in Netbox and is up to date...")
 		}
 	} else {
-		ni.Logger.Debug("Device type ", newDeviceType.Model, " does not exist in NetBox. Creating it...")
+		ni.Logger.Debug("Device type ", newDeviceType.Model, " does not exist in Netbox. Creating it...")
 		newDeviceType, err := ni.NetboxApi.CreateDeviceType(newDeviceType)
 		if err != nil {
 			return nil, err
@@ -250,17 +250,17 @@ func (ni *NetBoxInventory) AddPlatform(newPlatform *objects.Platform) (*objects.
 			return nil, err
 		}
 		if len(diffMap) > 0 {
-			ni.Logger.Debug("Platform ", newPlatform.Name, " already exists in NetBox but is out of date. Patching it...")
+			ni.Logger.Debug("Platform ", newPlatform.Name, " already exists in Netbox but is out of date. Patching it...")
 			patchedPlatform, err := ni.NetboxApi.PatchPlatform(diffMap, ni.PlatformsIndexByName[newPlatform.Name].Id)
 			if err != nil {
 				return nil, err
 			}
 			ni.PlatformsIndexByName[newPlatform.Name] = patchedPlatform
 		} else {
-			ni.Logger.Debug("Platform ", newPlatform.Name, " already exists in NetBox and is up to date...")
+			ni.Logger.Debug("Platform ", newPlatform.Name, " already exists in Netbox and is up to date...")
 		}
 	} else {
-		ni.Logger.Debug("Platform ", newPlatform.Name, " does not exist in NetBox. Creating it...")
+		ni.Logger.Debug("Platform ", newPlatform.Name, " does not exist in Netbox. Creating it...")
 		newPlatform, err := ni.NetboxApi.CreatePlatform(newPlatform)
 		if err != nil {
 			return nil, err
@@ -278,17 +278,17 @@ func (ni *NetBoxInventory) AddDevice(newDevice *objects.Device) (*objects.Device
 			return nil, err
 		}
 		if len(diffMap) > 0 {
-			ni.Logger.Debug("Device ", newDevice.Name, " already exists in NetBox but is out of date. Patching it...")
+			ni.Logger.Debug("Device ", newDevice.Name, " already exists in Netbox but is out of date. Patching it...")
 			patchedDevice, err := ni.NetboxApi.PatchDevice(diffMap, ni.DevicesIndexByUuid[newDevice.AssetTag].Id)
 			if err != nil {
 				return nil, err
 			}
 			ni.DevicesIndexByUuid[newDevice.AssetTag] = patchedDevice
 		} else {
-			ni.Logger.Debug("Device ", newDevice.Name, " already exists in NetBox and is up to date...")
+			ni.Logger.Debug("Device ", newDevice.Name, " already exists in Netbox and is up to date...")
 		}
 	} else {
-		ni.Logger.Debug("Device ", newDevice.Name, " does not exist in NetBox. Creating it...")
+		ni.Logger.Debug("Device ", newDevice.Name, " does not exist in Netbox. Creating it...")
 		newDevice, err := ni.NetboxApi.CreateDevice(newDevice)
 		if err != nil {
 			return nil, err
@@ -306,17 +306,17 @@ func (ni *NetBoxInventory) AddVlan(newVlan *objects.Vlan) (*objects.Vlan, error)
 			return nil, err
 		}
 		if len(diffMap) > 0 {
-			ni.Logger.Debug("Vlan ", newVlan.Name, " already exists in NetBox but is out of date. Patching it...")
+			ni.Logger.Debug("Vlan ", newVlan.Name, " already exists in Netbox but is out of date. Patching it...")
 			patchedVlan, err := ni.NetboxApi.PatchVlan(diffMap, ni.VlansIndexByName[newVlan.Name].Id)
 			if err != nil {
 				return nil, err
 			}
 			ni.VlansIndexByName[newVlan.Name] = patchedVlan
 		} else {
-			ni.Logger.Debug("Vlan ", newVlan.Name, " already exists in NetBox and is up to date...")
+			ni.Logger.Debug("Vlan ", newVlan.Name, " already exists in Netbox and is up to date...")
 		}
 	} else {
-		ni.Logger.Debug("Vlan ", newVlan.Name, " does not exist in NetBox. Creating it...")
+		ni.Logger.Debug("Vlan ", newVlan.Name, " does not exist in Netbox. Creating it...")
 		newVlan, err := ni.NetboxApi.CreateVlan(newVlan)
 		if err != nil {
 			return nil, err
@@ -334,17 +334,17 @@ func (ni *NetBoxInventory) AddInterface(newInterface *objects.Interface) (*objec
 			return nil, err
 		}
 		if len(diffMap) > 0 {
-			ni.Logger.Debug("Interface ", newInterface.Name, " already exists in NetBox but is out of date. Patching it...")
+			ni.Logger.Debug("Interface ", newInterface.Name, " already exists in Netbox but is out of date. Patching it...")
 			patchedInterface, err := ni.NetboxApi.PatchInterface(diffMap, ni.InterfacesIndexByDeviceIdAndName[newInterface.Device.Id][newInterface.Name].Id)
 			if err != nil {
 				return nil, err
 			}
 			ni.InterfacesIndexByDeviceIdAndName[newInterface.Device.Id][newInterface.Name] = patchedInterface
 		} else {
-			ni.Logger.Debug("Interface ", newInterface.Name, " already exists in NetBox and is up to date...")
+			ni.Logger.Debug("Interface ", newInterface.Name, " already exists in Netbox and is up to date...")
 		}
 	} else {
-		ni.Logger.Debug("Interface ", newInterface.Name, " does not exist in NetBox. Creating it...")
+		ni.Logger.Debug("Interface ", newInterface.Name, " does not exist in Netbox. Creating it...")
 		newInterface, err := ni.NetboxApi.CreateInterface(newInterface)
 		if err != nil {
 			return nil, err
@@ -352,4 +352,33 @@ func (ni *NetBoxInventory) AddInterface(newInterface *objects.Interface) (*objec
 		ni.InterfacesIndexByDeviceIdAndName[newInterface.Device.Id][newInterface.Name] = newInterface
 	}
 	return ni.InterfacesIndexByDeviceIdAndName[newInterface.Device.Id][newInterface.Name], nil
+}
+
+func (ni *NetBoxInventory) AddVM(newVm *objects.VM) (*objects.VM, error) {
+	newVm.Tags = append(newVm.Tags, ni.SsotTag)
+	if _, ok := ni.VMsIndexByName[newVm.Name]; ok {
+		diffMap, err := utils.JsonDiffMapExceptId(newVm, ni.VMsIndexByName[newVm.Name])
+		if err != nil {
+			return nil, err
+		}
+		if len(diffMap) > 0 {
+			ni.Logger.Debug("VM ", newVm.Name, " already exists in Netbox but is out of date. Patching it...")
+			patchedVm, err := ni.NetboxApi.PatchVM(diffMap, ni.VMsIndexByName[newVm.Name].Id)
+			if err != nil {
+				return nil, err
+			}
+			ni.VMsIndexByName[newVm.Name] = patchedVm
+		} else {
+			ni.Logger.Debug("VM ", newVm.Name, " already exists in Netbox and is up to date...")
+		}
+	} else {
+		ni.Logger.Debug("VM ", newVm.Name, " does not exist in Netbox. Creating it...")
+		newVm, err := ni.NetboxApi.CreateVM(newVm)
+		if err != nil {
+			return nil, err
+		}
+		ni.VMsIndexByName[newVm.Name] = newVm
+		return newVm, nil
+	}
+	return ni.VMsIndexByName[newVm.Name], nil
 }

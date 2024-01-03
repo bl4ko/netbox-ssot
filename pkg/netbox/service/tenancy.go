@@ -17,7 +17,7 @@ type TenantResponse struct {
 
 // GET /api/tenancy/tenants/?limit=0
 func (api *NetboxAPI) GetAllTenants() ([]*objects.Tenant, error) {
-	api.Logger.Debug("Getting all tenants from NetBox")
+	api.Logger.Debug("Getting all tenants from Netbox")
 
 	response, err := api.doRequest(MethodGet, "/api/tenancy/tenants/?limit=0", nil)
 	if err != nil {

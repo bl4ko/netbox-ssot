@@ -43,7 +43,7 @@ netbox:
   hostname: "netbox.example.com" # Netbox FQDN
   port: 443 # Netbox Port
   # Proxy: TODO
-  # proxy: "" # Defines a proxy which will be used to connect to NetBox. Proxy setting needs to include ; the schema. Proxy basic auth example: http://user:pass@10.10.1.10:312
+  # proxy: "" # Defines a proxy which will be used to connect to Netbox. Proxy setting needs to include ; the schema. Proxy basic auth example: http://user:pass@10.10.1.10:312
   # proxyPort: ""
   validateCert: true # Validate Netbox TLS certificate
   clientCert: "" # Path to client certificate

@@ -15,7 +15,7 @@ import (
 type Source interface {
 	// Init initializes the source
 	Init() error
-	// Sync syncs the source to NetBox inventory
+	// Sync syncs the source to Netbox inventory
 	Sync(*inventory.NetBoxInventory) error
 }
 
