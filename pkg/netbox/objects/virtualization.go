@@ -47,6 +47,10 @@ type Cluster struct {
 	Tenant *Tenant `json:"tenant,omitempty"`
 }
 
+func (c Cluster) String() string {
+	return fmt.Sprintf("Cluster{ID: %d, Name: %s, Type: %s}", c.Id, c.Name, c.Type.Name)
+}
+
 type VMStatus struct {
 	Choice
 }
@@ -94,7 +98,7 @@ type VM struct {
 }
 
 func (vm VM) String() string {
-	return fmt.Sprintf("{VM: %s}", vm.Name)
+	return fmt.Sprintf("VM{Id: %d, Name: %s}", vm.Id, vm.Name)
 }
 
 // 802.1Q VLAN Tagging Mode
@@ -127,5 +131,5 @@ type VMInterface struct {
 }
 
 func (vmi VMInterface) String() string {
-	return fmt.Sprintf("{VMInterface: %s-%s}", vmi.VM.Name, vmi.Name)
+	return fmt.Sprintf("VMInterface{Name: %s, VM: %s}", vmi.Name, vmi.VM.Name)
 }

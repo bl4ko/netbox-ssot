@@ -797,7 +797,7 @@ func (o *OVirtSource) SyncVms(nbi *inventory.NetBoxInventory) error {
 			return fmt.Errorf("failed to sync oVirt vm: %v", err)
 		}
 
-		err = syncVmInterfaces(nbi, vm, newVM)
+		err = o.syncVmInterfaces(nbi, vm, newVM)
 		if err != nil {
 			return fmt.Errorf("failed to sync oVirt vm's interfaces: %v", err)
 		}
@@ -806,56 +806,89 @@ func (o *OVirtSource) SyncVms(nbi *inventory.NetBoxInventory) error {
 	return nil
 }
 
-func syncVmInterfaces(nbi *inventory.NetBoxInventory, ovirtVm *ovirtsdk4.Vm, netboxVm *objects.VM) error {
-	// VM's Networking Data
-	// var vmPrimaryIpv4 *objects.IPAddress
-	// var vmPrimaryIpv6 *objects.IPAddress
-	// vmInterfaces := make(map[string]*objects.VMInterface) // interfaceName: interface
-	// vmIps := make(map[string][]string)                    // interfaceName: [ip1, ip2, ...]
-	// if reportedDevices, exist := vm.ReportedDevices(); exist {
-	// 	for _, reportedDevice := range reportedDevices.Slice() {
-	// 		if reportedDeviceType, exist := reportedDevice.Type(); exist {
-	// 			if reportedDeviceType == "network" {
-	// 				// We add interface to the list
-	// 				reportedDeviceName, exists := reportedDevice.Name()
-	// 				if exists {
-	// 					vmInterfaces[reportedDeviceName] = &objects.VMInterface{
-	// 						NetboxObject: objects.NetboxObject{
-	// 							Tags:        o.SourceTags,
-	// 							Description: reportedDevice.MustDescription(),
-	// 						},
-	// 						Name:       reportedDeviceName,
-	// 						MACAddress: reportedDevice.MustMac().MustAddress(),
-	// 					}
-	// 				} else {
-	// 					o.Logger.Warning("name for oVirt vm's reported device is empty. Skipping...")
-	// 					continue
-	// 				}
+// Synces VM's interfaces to Netbox
+func (o *OVirtSource) syncVmInterfaces(nbi *inventory.NetBoxInventory, ovirtVm *ovirtsdk4.Vm, netboxVm *objects.VM) error {
+	var vmPrimaryIpv4 *objects.IPAddress
+	var vmPrimaryIpv6 *objects.IPAddress
+	if reportedDevices, exist := ovirtVm.ReportedDevices(); exist {
+		for _, reportedDevice := range reportedDevices.Slice() {
+			if reportedDeviceType, exist := reportedDevice.Type(); exist {
+				if reportedDeviceType == "network" {
+					// We add interface to the list
+					var vmInterface *objects.VMInterface
+					var err error
+					if reportedDeviceName, exists := reportedDevice.Name(); exists {
+						vmInterface, err = nbi.AddVMInterface(&objects.VMInterface{
+							NetboxObject: objects.NetboxObject{
+								Tags:        o.SourceTags,
+								Description: reportedDevice.MustDescription(),
+							},
+							VM:         netboxVm,
+							Name:       reportedDeviceName,
+							MACAddress: reportedDevice.MustMac().MustAddress(),
+						})
+						if err != nil {
+							return fmt.Errorf("failed to sync oVirt vm's interface %s: %v", reportedDeviceName, err)
+						}
+					} else {
+						o.Logger.Warning("name for oVirt vm's reported device is empty. Skipping...")
+						continue
+					}
 
-	// 				if reportedDeviceIps, exist := reportedDevice.Ips(); exist {
-	// 					for _, ip := range reportedDeviceIps.Slice() {
-	// 						if ipVersion, exists := ip.Version(); exists {
-	// 							// vmInterfaces[reportedDeviceName] = append(vmInterfaces[reportedDeviceName], &objects.IPAddress{
-	// 							// 	NetboxObject: objects.NetboxObject{
-	// 							// 		Tags: o.SourceTags,
-	// 							// 	},
-	// 							// 	Address: ip.MustAddress(),
-	// 							// 	Tenant:  vmTenant,
-	// 							// })
-	// 							// TODO: criteria to determine if reported device is primary IP
-	// 							switch ipVersion {
-	// 							case "v4":
+					if reportedDeviceIps, exist := reportedDevice.Ips(); exist {
+						for _, ip := range reportedDeviceIps.Slice() {
+							if ipVersion, exists := ip.Version(); exists {
+								// Try to do reverse lookup of IP to get DNS name
+								hostname := utils.ReverseLookup(ip.MustAddress())
 
-	// 							case "v6":
-	// 							}
-	// 						}
-	// 					}
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
-	// vmInterfaces = vmInterfaces
-	// vmIps = vmIps
+								ipAddress, err := nbi.AddIPAddress(&objects.IPAddress{
+									NetboxObject: objects.NetboxObject{
+										Tags: o.SourceTags,
+									},
+									Address:            ip.MustAddress(),
+									Tenant:             netboxVm.Tenant,
+									Status:             &objects.IPAddressStatusActive,
+									DNSName:            hostname,
+									AssignedObjectType: objects.AssignedObjectTypeVMInterface,
+									AssignedObjectId:   vmInterface.Id,
+									AssignedObject:     vmInterface,
+								})
+
+								if err != nil {
+									return fmt.Errorf("failed to sync oVirt vm's interface %s ip %s: %v", vmInterface, ip.MustAddress(), err)
+								}
+
+								// TODO: criteria to determine if reported device is primary IP
+								switch ipVersion {
+								case "v4":
+									if vmPrimaryIpv4 == nil {
+										vmPrimaryIpv4 = ipAddress
+									}
+								case "v6":
+									if vmPrimaryIpv6 == nil {
+										vmPrimaryIpv6 = ipAddress
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	// Update netboxVM with primary IPs
+	if vmPrimaryIpv4 != nil && vmPrimaryIpv4.Address != netboxVm.PrimaryIPv4.Address {
+		netboxVm.PrimaryIPv4 = vmPrimaryIpv4
+		if _, err := nbi.AddVM(netboxVm); err != nil {
+			return fmt.Errorf("failed to sync oVirt vm's primary ipv4: %v", err)
+		}
+	}
+	if vmPrimaryIpv6 != nil && vmPrimaryIpv6.Address != netboxVm.PrimaryIPv6.Address {
+		netboxVm.PrimaryIPv6 = vmPrimaryIpv6
+		if _, err := nbi.AddVM(netboxVm); err != nil {
+			return fmt.Errorf("failed to sync oVirt vm's primary ipv6: %v", err)
+		}
+	}
+
 	return nil
 }

@@ -151,43 +151,46 @@ func (netboxInventory *NetBoxInventory) InitCustomFields() error {
 // - sourceId - this is used to store the ID of the source object in Netbox (interfaces)
 func (netboxInventory *NetBoxInventory) InitSsotCustomFields() error {
 	err := netboxInventory.AddCustomField(&objects.CustomField{
-		Name:          "host_cpu_cores",
-		Label:         "Host CPU cores",
-		Type:          objects.CustomFieldTypeText,
-		FilterLogic:   objects.FilterLogicLoose,
-		UIVisibility:  objects.UIVisibilityReadWrite,
-		DisplayWeight: 100,
-		Description:   "Number of CPU cores on the host",
-		SearchWeight:  1000,
-		ContentTypes:  []string{"dcim.device"},
+		Name:                  "host_cpu_cores",
+		Label:                 "Host CPU cores",
+		Type:                  objects.CustomFieldTypeText,
+		FilterLogic:           objects.FilterLogicLoose,
+		CustomFieldUIVisible:  &objects.CustomFieldUIVisibleAlways,
+		CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
+		DisplayWeight:         100,
+		Description:           "Number of CPU cores on the host",
+		SearchWeight:          1000,
+		ContentTypes:          []string{"dcim.device"},
 	})
 	if err != nil {
 		return err
 	}
 	err = netboxInventory.AddCustomField(&objects.CustomField{
-		Name:          "host_memory",
-		Label:         "Host memory",
-		Type:          objects.CustomFieldTypeText,
-		FilterLogic:   objects.FilterLogicLoose,
-		UIVisibility:  objects.UIVisibilityReadWrite,
-		DisplayWeight: 100,
-		Description:   "Amount of memory on the host",
-		SearchWeight:  1000,
-		ContentTypes:  []string{"dcim.device"},
+		Name:                  "host_memory",
+		Label:                 "Host memory",
+		Type:                  objects.CustomFieldTypeText,
+		FilterLogic:           objects.FilterLogicLoose,
+		CustomFieldUIVisible:  &objects.CustomFieldUIVisibleAlways,
+		CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
+		DisplayWeight:         100,
+		Description:           "Amount of memory on the host",
+		SearchWeight:          1000,
+		ContentTypes:          []string{"dcim.device"},
 	})
 	if err != nil {
 		return err
 	}
 	err = netboxInventory.AddCustomField(&objects.CustomField{
-		Name:          "source_id",
-		Label:         "Source ID",
-		Type:          objects.CustomFieldTypeText,
-		FilterLogic:   objects.FilterLogicLoose,
-		UIVisibility:  objects.UIVisibilityReadWrite,
-		DisplayWeight: 100,
-		Description:   "ID of the object on the source API",
-		SearchWeight:  1000,
-		ContentTypes:  []string{"dcim.interface"},
+		Name:                  "source_id",
+		Label:                 "Source ID",
+		Type:                  objects.CustomFieldTypeText,
+		FilterLogic:           objects.FilterLogicLoose,
+		CustomFieldUIVisible:  &objects.CustomFieldUIVisibleAlways,
+		CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
+		DisplayWeight:         100,
+		Description:           "ID of the object on the source API",
+		SearchWeight:          1000,
+		ContentTypes:          []string{"dcim.interface"},
 	})
 	if err != nil {
 		return err
@@ -307,5 +310,18 @@ func (ni *NetBoxInventory) InitVMInterfaces() error {
 		ni.VMInterfacesIndexByVMIdAndName[vmIntf.VM.Id][vmIntf.Name] = vmIntf
 	}
 	ni.Logger.Debug("Successfully collected VM interfaces from Netbox: ", ni.VMInterfacesIndexByVMIdAndName)
+	return nil
+}
+
+func (ni *NetBoxInventory) InitIPAddresses() error {
+	ipAddresses, err := ni.NetboxApi.GetAllIPAddresses()
+	if err != nil {
+		return err
+	}
+	ni.IPAdressesIndexByAddress = make(map[string]*objects.IPAddress)
+	for _, ipAddr := range ipAddresses {
+		ni.IPAdressesIndexByAddress[ipAddr.Address] = ipAddr
+	}
+	ni.Logger.Debug("Successfully collected IP addresses from Netbox: ", ni.IPAdressesIndexByAddress)
 	return nil
 }

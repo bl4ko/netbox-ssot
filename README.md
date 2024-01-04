@@ -91,3 +91,9 @@ source:  # Array of sources
     #     - vm: ".*"
     #       host: ".*"
 ```
+
+## Usage
+
+```bash
+docker run -v /path/to/config.yaml:/app/config.yaml netbox-ssot
+```

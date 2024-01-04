@@ -1,5 +1,7 @@
 package objects
 
+import "fmt"
+
 type IPAddressStatus struct {
 	Choice
 }
@@ -29,8 +31,8 @@ var (
 type AssignedObjectType string
 
 const (
-	AssignedObjectTypeVMInterface     = "objects.vminterface"
-	AssignedObjectTypeDeviceInterface = "objects.interface"
+	AssignedObjectTypeVMInterface     = "virtualization.vminterface"
+	AssignedObjectTypeDeviceInterface = "dcim.interface"
 )
 
 type IPAddress struct {
@@ -48,11 +50,16 @@ type IPAddress struct {
 	Tenant *Tenant `json:"tenant,omitempty"`
 
 	// AssignedInterface
-	AssignedObjectType *AssignedObjectType `json:"assigned_interface,omitempty"`
+	// AssignedObjectType is either a DeviceInterface or a VMInterface
+	AssignedObjectType AssignedObjectType `json:"assigned_object_type,omitempty"`
 	// ID of the assigned object (either a DeviceInterface or a VMInterface)
-	AssignedObjectID int `json:"assigned_object_id,omitempty"`
+	AssignedObjectId int `json:"assigned_object_id,omitempty"`
 	// AssignedObject can be either a DeviceInterface or a VMInterface
 	AssignedObject interface{} `json:"assigned_object,omitempty"`
+}
+
+func (ip IPAddress) String() string {
+	return fmt.Sprintf("IPAddress{Id: %d, Address: %s, Status: %s, DNSName: %s}", ip.Id, ip.Address, ip.Status, ip.DNSName)
 }
 
 type VlanStaus struct {
@@ -80,7 +87,7 @@ type Vlan struct {
 }
 
 func (v Vlan) String() string {
-	return v.Name
+	return fmt.Sprintf("Vlan{Id: %d, Name: %s, Vid: %d, Status: %s}", v.Id, v.Name, v.Vid, v.Status)
 }
 
 type IpRange struct {

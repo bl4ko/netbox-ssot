@@ -382,3 +382,62 @@ func (ni *NetBoxInventory) AddVM(newVm *objects.VM) (*objects.VM, error) {
 	}
 	return ni.VMsIndexByName[newVm.Name], nil
 }
+
+func (ni *NetBoxInventory) AddVMInterface(newVMInterface *objects.VMInterface) (*objects.VMInterface, error) {
+	newVMInterface.Tags = append(newVMInterface.Tags, ni.SsotTag)
+	if _, ok := ni.VMInterfacesIndexByVMIdAndName[newVMInterface.VM.Id][newVMInterface.Name]; ok {
+		diffMap, err := utils.JsonDiffMapExceptId(newVMInterface, ni.VMInterfacesIndexByVMIdAndName[newVMInterface.VM.Id][newVMInterface.Name])
+		if err != nil {
+			return nil, err
+		}
+		if len(diffMap) > 0 {
+			ni.Logger.Debug("VM interface ", newVMInterface.Name, " already exists in Netbox but is out of date. Patching it...")
+			patchedVMInterface, err := ni.NetboxApi.PatchVMInterface(diffMap, ni.VMInterfacesIndexByVMIdAndName[newVMInterface.VM.Id][newVMInterface.Name].Id)
+			if err != nil {
+				return nil, err
+			}
+			ni.VMInterfacesIndexByVMIdAndName[newVMInterface.VM.Id][newVMInterface.Name] = patchedVMInterface
+		} else {
+			ni.Logger.Debug("VM interface ", newVMInterface.Name, " already exists in Netbox and is up to date...")
+		}
+	} else {
+		ni.Logger.Debug("VM interface ", newVMInterface.Name, " does not exist in Netbox. Creating it...")
+		newVMInterface, err := ni.NetboxApi.CreateVMInterface(newVMInterface)
+		if err != nil {
+			return nil, err
+		}
+		if ni.VMInterfacesIndexByVMIdAndName[newVMInterface.VM.Id] == nil {
+			ni.VMInterfacesIndexByVMIdAndName[newVMInterface.VM.Id] = make(map[string]*objects.VMInterface)
+		}
+		ni.VMInterfacesIndexByVMIdAndName[newVMInterface.VM.Id][newVMInterface.Name] = newVMInterface
+	}
+	return ni.VMInterfacesIndexByVMIdAndName[newVMInterface.VM.Id][newVMInterface.Name], nil
+}
+
+func (ni *NetBoxInventory) AddIPAddress(newIPAddress *objects.IPAddress) (*objects.IPAddress, error) {
+	newIPAddress.Tags = append(newIPAddress.Tags, ni.SsotTag)
+	if _, ok := ni.IPAdressesIndexByAddress[newIPAddress.Address]; ok {
+		diffMap, err := utils.JsonDiffMapExceptId(newIPAddress, ni.IPAdressesIndexByAddress[newIPAddress.Address])
+		if err != nil {
+			return nil, err
+		}
+		if len(diffMap) > 0 {
+			ni.Logger.Debug("IP address ", newIPAddress.Address, " already exists in Netbox but is out of date. Patching it...")
+			patchedIPAddress, err := ni.NetboxApi.PatchIPAddress(diffMap, ni.IPAdressesIndexByAddress[newIPAddress.Address].Id)
+			if err != nil {
+				return nil, err
+			}
+			ni.IPAdressesIndexByAddress[newIPAddress.Address] = patchedIPAddress
+		} else {
+			ni.Logger.Debug("IP address ", newIPAddress.Address, " already exists in Netbox and is up to date...")
+		}
+	} else {
+		ni.Logger.Debug("IP address ", newIPAddress.Address, " does not exist in Netbox. Creating it...")
+		newIPAddress, err := ni.NetboxApi.CreateIPAddress(newIPAddress)
+		if err != nil {
+			return nil, err
+		}
+		ni.IPAdressesIndexByAddress[newIPAddress.Address] = newIPAddress
+	}
+	return ni.IPAdressesIndexByAddress[newIPAddress.Address], nil
+}

@@ -346,5 +346,5 @@ type Interface struct {
 }
 
 func (i Interface) String() string {
-	return fmt.Sprintf("[%s]-%s", i.Device.Name, i.Name)
+	return fmt.Sprintf("Interface{Id: %d, Device: %s, Name: %s}", i.Id, i.Device.Name, i.Name)
 }

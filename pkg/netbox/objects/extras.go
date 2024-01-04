@@ -13,7 +13,7 @@ type Tag struct {
 }
 
 func (t Tag) String() string {
-	return fmt.Sprintf("Tag{ID: %d, Name: %s, Slug: %s, Color: %s, Description: %s}", t.Id, t.Name, t.Slug, t.Color, t.Description)
+	return fmt.Sprintf("Tag{Id: %d, Name: %s, Slug: %s, Color: %s, Description: %s}", t.Id, t.Name, t.Slug, t.Color, t.Description)
 }
 
 // CustomFieldTypes are predefined netbox's types for CustomFields
@@ -40,12 +40,24 @@ var (
 	FilterLogicLoose = FilterLogic{Choice{Value: "loose", Label: "Loose"}}
 )
 
-type UIVisibility struct {
+type CustomFieldUIVisible struct {
 	Choice
 }
 
 var (
-	UIVisibilityReadWrite = UIVisibility{Choice{Value: "read-write", Label: "Read/write"}}
+	CustomFieldUIVisibleAlways = CustomFieldUIVisible{Choice{Value: "always", Label: "Always"}}
+	CustomFieldUIVisibleIfSet  = CustomFieldUIVisible{Choice{Value: "if-set", Label: "If set"}}
+	CustomFieldUIVisibleHidden = CustomFieldUIVisible{Choice{Value: "hidden", Label: "Hidden"}}
+)
+
+type CustomFieldUIEditable struct {
+	Choice
+}
+
+var (
+	CustomFieldUIEditableYes    = CustomFieldUIEditable{Choice{Value: "yes", Label: "Yes"}}
+	CustomFieldUIEditableNo     = CustomFieldUIEditable{Choice{Value: "no", Label: "No"}}
+	CustomFieldUIEditableHidden = CustomFieldUIEditable{Choice{Value: "hidden", Label: "Hidden"}}
 )
 
 type CustomField struct {
@@ -64,13 +76,15 @@ type CustomField struct {
 	SearchWeight int `json:"search_weight,omitempty"`
 	// Filter logic. This field is required. (Default loose)
 	FilterLogic FilterLogic `json:"filter_logic,omitempty"`
-	// UI visibility. This field is required. (Default read-write)
-	UIVisibility UIVisibility `json:"ui_visibility,omitempty"`
+	// UI visible. This field is required. (Default read-write)
+	CustomFieldUIVisible *CustomFieldUIVisible `json:"ui_visible,omitempty"`
+	// UI editable. This field is required. (Default read-write)
+	CustomFieldUIEditable *CustomFieldUIEditable `json:"ui_editable,omitempty"`
 	// Display Weight. Fields with higher weights appear lower in a form.
 	// default 100
 	DisplayWeight int `json:"weight,omitempty"`
 }
 
 func (cf CustomField) String() string {
-	return fmt.Sprintf("CustomField{ID: %d, Name: %s, Label: %s, ...}", cf.Id, cf.Name, cf.Label)
+	return fmt.Sprintf("CustomField{Id: %d, Name: %s, Label: %s, ...}", cf.Id, cf.Name, cf.Label)
 }

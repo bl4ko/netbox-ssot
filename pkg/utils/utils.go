@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"reflect"
 	"regexp"
 	"slices"
@@ -407,19 +408,19 @@ func ConvertStringsToRegexPairs(input []string) map[string]string {
 	return output
 }
 
-// Matches input string to a regex from input map, and returns the value
-// If there is no match, it returns an empty string
+// Matches input string to a regex from input map patterns,
+// and returns the value. If there is no match, it returns an empty string
 func MatchStringToValue(input string, patterns map[string]string) (string, error) {
 	for regex, value := range patterns {
 		matched, err := regexp.MatchString(regex, input)
 		if err != nil {
-			return "", err // Handle regex compilation error
+			return "", err
 		}
 		if matched {
 			return value, nil
 		}
 	}
-	return "", nil // Return an empty string or an error if no match is found
+	return "", nil
 }
 
 // Converts string name to its slugified version.
@@ -443,4 +444,19 @@ func Slugify(name string) string {
 // multiple objects.
 func GeneratePlatformName(osType string, osVersion string) string {
 	return fmt.Sprintf("%s %s", osType, osVersion)
+}
+
+// Function that receives ipAddress and performs a reverse lookup
+// to get the hostname. If the reverse lookup fails, it returns an empty string.
+func ReverseLookup(ipAddress string) string {
+	names, err := net.LookupAddr(ipAddress)
+	if err != nil {
+		return ""
+	}
+
+	if len(names) > 0 {
+		return names[0]
+	}
+
+	return ""
 }
