@@ -28,7 +28,7 @@ type OVirtSource struct {
 }
 
 func (o *OVirtSource) Init() error {
-	// Initialise regex relations
+	// Initialize regex relations
 	o.Logger.Debug("Initializing regex relations for oVirt source ", o.SourceConfig.Name)
 	o.HostSiteRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.HostSiteRelations)
 	o.Logger.Debug("HostSiteRelations: ", o.HostSiteRelations)
@@ -41,7 +41,7 @@ func (o *OVirtSource) Init() error {
 	o.VmTenantRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.VmTenantRelations)
 	o.Logger.Debug("VmTenantRelations: ", o.VmTenantRelations)
 
-	// Initialise the connection
+	// Initialize the connection
 	o.Logger.Debug("Initializing oVirt source ", o.SourceConfig.Name)
 	conn, err := ovirtsdk4.NewConnectionBuilder().
 		URL(fmt.Sprintf("%s://%s:%d/ovirt-engine/api", o.SourceConfig.HTTPScheme, o.SourceConfig.Hostname, o.SourceConfig.Port)).
@@ -94,9 +94,9 @@ func (o *OVirtSource) InitDisks(conn *ovirtsdk4.Connection) error {
 		for _, disk := range disks.Slice() {
 			o.Disks[disk.MustId()] = disk
 		}
-		o.Logger.Debug("Successfully initalized oVirt disks: ", o.Disks)
+		o.Logger.Debug("Successfully initialized oVirt disks: ", o.Disks)
 	} else {
-		o.Logger.Warning("Error initialising oVirt disks")
+		o.Logger.Warning("Error initializing oVirt disks")
 	}
 	return nil
 }
@@ -111,14 +111,14 @@ func (o *OVirtSource) InitDataCenters(conn *ovirtsdk4.Connection) error {
 		for _, dataCenter := range dataCenters.Slice() {
 			o.DataCenters[dataCenter.MustId()] = dataCenter
 		}
-		o.Logger.Debug("Successfully initalized oVirt data centers: ", o.DataCenters)
+		o.Logger.Debug("Successfully initialized oVirt data centers: ", o.DataCenters)
 	} else {
-		o.Logger.Warning("Error initialising oVirt data centers")
+		o.Logger.Warning("Error initializing oVirt data centers")
 	}
 	return nil
 }
 
-// Function that queries ovirt api for clustrers and stores them locally
+// Function that queries ovirt api for clusters and stores them locally
 func (o *OVirtSource) InitClusters(conn *ovirtsdk4.Connection) error {
 	clustersResponse, err := conn.SystemService().ClustersService().List().Send()
 	if err != nil {
@@ -129,9 +129,9 @@ func (o *OVirtSource) InitClusters(conn *ovirtsdk4.Connection) error {
 		for _, cluster := range clusters.Slice() {
 			o.Clusters[cluster.MustId()] = cluster
 		}
-		o.Logger.Debug("Successfully initalized oVirt clusters: ", o.Clusters)
+		o.Logger.Debug("Successfully initialized oVirt clusters: ", o.Clusters)
 	} else {
-		o.Logger.Warning("Error initialising oVirt clusters")
+		o.Logger.Warning("Error initializing oVirt clusters")
 	}
 	return nil
 }
@@ -147,14 +147,14 @@ func (o *OVirtSource) InitHosts(conn *ovirtsdk4.Connection) error {
 		for _, host := range hosts.Slice() {
 			o.Hosts[host.MustId()] = host
 		}
-		o.Logger.Debug("Successfully initalized oVirt hosts: ", hosts)
+		o.Logger.Debug("Successfully initialized oVirt hosts: ", hosts)
 	} else {
-		o.Logger.Warning("Error initialising oVirt hosts")
+		o.Logger.Warning("Error initializing oVirt hosts")
 	}
 	return nil
 }
 
-// Function that quries the ovirt api for vms and stores them locally
+// Function that queries the ovirt api for vms and stores them locally
 func (o *OVirtSource) InitVms(conn *ovirtsdk4.Connection) error {
 	vmsResponse, err := conn.SystemService().VmsService().List().Follow("nics,diskattachments,reporteddevices").Send()
 	if err != nil {
@@ -165,9 +165,9 @@ func (o *OVirtSource) InitVms(conn *ovirtsdk4.Connection) error {
 		for _, vm := range vms.Slice() {
 			o.Vms[vm.MustId()] = vm
 		}
-		o.Logger.Debug("Successfully initalized oVirt vms: ", vms)
+		o.Logger.Debug("Successfully initialized oVirt vms: ", vms)
 	} else {
-		o.Logger.Warning("Error initialising oVirt vms")
+		o.Logger.Warning("Error initializing oVirt vms")
 	}
 	return nil
 }
@@ -265,7 +265,7 @@ func (o *OVirtSource) SyncClusters(nbi *inventory.NetBoxInventory) error {
 		if o.ClusterTenantRelations != nil {
 			match, err := utils.MatchStringToValue(clusterName, o.ClusterTenantRelations)
 			if err != nil {
-				return fmt.Errorf("error occured when matching oVirt cluster %s to a Netbox tenant: %v", clusterName, err)
+				return fmt.Errorf("error occurred when matching oVirt cluster %s to a Netbox tenant: %v", clusterName, err)
 			}
 			if match != "" {
 				if _, ok := nbi.TenantsIndexByName[match]; !ok {
@@ -315,7 +315,7 @@ func (o *OVirtSource) SyncHosts(nbi *inventory.NetBoxInventory) error {
 		if o.HostSiteRelations != nil {
 			match, err := utils.MatchStringToValue(hostName, o.HostSiteRelations)
 			if err != nil {
-				return fmt.Errorf("error occured when matching oVirt host %s to a Netbox site: %v", hostName, err)
+				return fmt.Errorf("error occurred when matching oVirt host %s to a Netbox site: %v", hostName, err)
 			}
 			if match != "" {
 				if _, ok := nbi.SitesIndexByName[match]; !ok {
@@ -328,7 +328,7 @@ func (o *OVirtSource) SyncHosts(nbi *inventory.NetBoxInventory) error {
 		if o.HostTenantRelations != nil {
 			match, err := utils.MatchStringToValue(hostName, o.HostTenantRelations)
 			if err != nil {
-				return fmt.Errorf("error occured when matching oVirt host %s to a Netbox tenant: %v", hostName, err)
+				return fmt.Errorf("error occurred when matching oVirt host %s to a Netbox tenant: %v", hostName, err)
 			}
 			if match != "" {
 				if _, ok := nbi.TenantsIndexByName[match]; !ok {
@@ -354,7 +354,7 @@ func (o *OVirtSource) SyncHosts(nbi *inventory.NetBoxInventory) error {
 			manufacturerName, _ = hwInfo.Manufacturer()
 			manufacturerName, err = utils.MatchStringToValue(manufacturerName, objects.ManufacturerMap)
 			if err != nil {
-				return fmt.Errorf("error occured when matching oVirt host %s to a Netbox manufacturer: %v", hostName, err)
+				return fmt.Errorf("error occurred when matching oVirt host %s to a Netbox manufacturer: %v", hostName, err)
 			}
 
 			hostModel, exists = hwInfo.ProductName()
@@ -380,7 +380,7 @@ func (o *OVirtSource) SyncHosts(nbi *inventory.NetBoxInventory) error {
 
 		var hostDeviceType *objects.DeviceType
 		hostDeviceType, err = nbi.AddDeviceType(&objects.DeviceType{
-			Manafacturer: hostManufacturer,
+			Manufacturer: hostManufacturer,
 			Model:        hostModel,
 			Slug:         utils.Slugify(hostModel),
 		})
@@ -474,7 +474,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 	nics, exists := ovirtHost.Nics()
 	master2slave := make(map[string][]string) // masterId: [slaveId1, slaveId2, ...]
 	parent2child := make(map[string][]string) // parentId: [childId, ... ]
-	procesedNicsIds := make(map[string]bool)
+	processedNicsIds := make(map[string]bool)
 	if exists {
 		hostInterfaces := map[string]*objects.Interface{}
 
@@ -555,7 +555,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 			if exists {
 				vlanId, exists := vlan.Id()
 				if exists {
-					var vlanStatus *objects.VlanStaus
+					var vlanStatus *objects.VlanStatus
 					if nicEnabled {
 						vlanStatus = &objects.VlanStatusActive
 					} else {
@@ -598,7 +598,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 				TaggedVlans: nicTaggedVlans,
 			}
 
-			procesedNicsIds[nicId] = true
+			processedNicsIds[nicId] = true
 			hostInterfaces[nicId] = newInterface
 		}
 
@@ -606,12 +606,12 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 		for masterId, slavesIds := range master2slave {
 			var err error
 			masterInterface := hostInterfaces[masterId]
-			if _, ok := procesedNicsIds[masterId]; ok {
+			if _, ok := processedNicsIds[masterId]; ok {
 				masterInterface, err = nbi.AddInterface(masterInterface)
 				if err != nil {
 					return fmt.Errorf("failed to add oVirt master interface %s with error: %v", masterInterface.Name, err)
 				}
-				delete(procesedNicsIds, masterId)
+				delete(processedNicsIds, masterId)
 				hostInterfaces[masterId] = masterInterface
 			}
 			for _, slaveId := range slavesIds {
@@ -621,7 +621,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 				if err != nil {
 					return fmt.Errorf("failed to add oVirt slave interface %s with error: %v", slaveInterface.Name, err)
 				}
-				delete(procesedNicsIds, slaveId)
+				delete(processedNicsIds, slaveId)
 				hostInterfaces[slaveId] = slaveInterface
 			}
 		}
@@ -629,12 +629,12 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 		// Third loop we connect children with parents (e.g. [bond1.605, bond1.604, bond1.603] -> bond1)
 		for parent, children := range parent2child {
 			parentInterface := hostInterfaces[parent]
-			if _, ok := procesedNicsIds[parent]; ok {
+			if _, ok := processedNicsIds[parent]; ok {
 				parentInterface, err := nbi.AddInterface(parentInterface)
 				if err != nil {
 					return fmt.Errorf("failed to add oVirt parent interface %s with error: %v", parentInterface.Name, err)
 				}
-				delete(procesedNicsIds, parent)
+				delete(processedNicsIds, parent)
 			}
 			for _, child := range children {
 				childInterface := hostInterfaces[child]
@@ -644,11 +644,11 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 					return fmt.Errorf("failed to add oVirt child interface %s with error: %v", childInterface.Name, err)
 				}
 				hostInterfaces[child] = childInterface
-				delete(procesedNicsIds, child)
+				delete(processedNicsIds, child)
 			}
 		}
 		// Now we check if there are any nics that were not processed
-		for nicId := range procesedNicsIds {
+		for nicId := range processedNicsIds {
 			_, err := nbi.AddInterface(hostInterfaces[nicId])
 			if err != nil {
 				return fmt.Errorf("failed to add oVirt interface %s with error: %v", hostInterfaces[nicId].Name, err)
@@ -660,7 +660,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 
 func (o *OVirtSource) SyncVms(nbi *inventory.NetBoxInventory) error {
 	for vmId, vm := range o.Vms {
-		// VM's name, which is used as unique identifier for VMs in Netbox
+		// VM name, which is used as unique identifier for VMs in Netbox
 		vmName, exists := vm.Name()
 		if !exists {
 			o.Logger.Warning("name for oVirt vm with id ", vmId, " is empty. VM has to have unique name to be synced to netbox. Skipping...")
@@ -807,7 +807,7 @@ func (o *OVirtSource) SyncVms(nbi *inventory.NetBoxInventory) error {
 	return nil
 }
 
-// Synces VM's interfaces to Netbox
+// Syncs VM's interfaces to Netbox
 func (o *OVirtSource) syncVmInterfaces(nbi *inventory.NetBoxInventory, ovirtVm *ovirtsdk4.Vm, netboxVm *objects.VM) error {
 	var vmPrimaryIpv4 *objects.IPAddress
 	var vmPrimaryIpv6 *objects.IPAddress

@@ -60,7 +60,7 @@ func (nbi *NetBoxInventory) InitSites() error {
 	return nil
 }
 
-// Collects all manufacturesrs from Netbox API and store them in NetBoxInventory
+// Collects all manufacturers from Netbox API and store them in NetBoxInventory
 func (nbi *NetBoxInventory) InitManufacturers() error {
 	nbManufacturers, err := nbi.NetboxApi.GetAllManufacturers()
 	if err != nil {
@@ -331,7 +331,7 @@ func (ni *NetBoxInventory) InitVlans() error {
 		return err
 	}
 
-	// Initialize internal indexs of vlans by name
+	// Initialize internal index of vlans by name
 	ni.VlansIndexByName = make(map[string]*objects.Vlan)
 	// Add vlans to orphan manager
 	ni.OrphanManager["/api/ipam/vlans/"] = make(map[int]bool, 0)

@@ -83,11 +83,11 @@ func NewNetboxInventory(logger *logger.Logger, nbConfig *parser.NetboxConfig) *N
 	return nbi
 }
 
-// Init function that initialises the NetBoxInventory object with objects from Netbox
+// Init function that initializes the NetBoxInventory object with objects from Netbox
 func (netboxInventory *NetBoxInventory) Init() error {
 	baseURL := fmt.Sprintf("%s://%s:%d", netboxInventory.NetboxConfig.HTTPScheme, netboxInventory.NetboxConfig.Hostname, netboxInventory.NetboxConfig.Port)
 
-	netboxInventory.Logger.Debug("Initialising Netbox API with baseURL: ", baseURL)
+	netboxInventory.Logger.Debug("Initializing Netbox API with baseURL: ", baseURL)
 	netboxInventory.NetboxApi = service.NewNetBoxAPI(netboxInventory.Logger, baseURL, netboxInventory.NetboxConfig.ApiToken, netboxInventory.NetboxConfig.ValidateCert)
 
 	err := netboxInventory.InitTags()

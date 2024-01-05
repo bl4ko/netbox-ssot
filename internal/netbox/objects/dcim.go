@@ -9,13 +9,13 @@ type SiteStatus struct {
 }
 
 var (
-	SiteStatusActive         = SiteStatus{Choice{Value: "active", Label: "Active"}}
-	SiteStatusOffline        = SiteStatus{Choice{Value: "offline", Label: "Offline"}}
-	SiteStatusPlanned        = SiteStatus{Choice{Value: "planned", Label: "Planned"}}
-	SiteStatusStaged         = SiteStatus{Choice{Value: "staged", Label: "Staged"}}
-	SiteStatusFailed         = SiteStatus{Choice{Value: "failed", Label: "Failed"}}
-	SiteStatusInventory      = SiteStatus{Choice{Value: "inventory", Label: "Inventory"}}
-	SiteStatucDecommisioning = SiteStatus{Choice{Value: "decommissioning", Label: "Decommissioning"}}
+	SiteStatusActive          = SiteStatus{Choice{Value: "active", Label: "Active"}}
+	SiteStatusOffline         = SiteStatus{Choice{Value: "offline", Label: "Offline"}}
+	SiteStatusPlanned         = SiteStatus{Choice{Value: "planned", Label: "Planned"}}
+	SiteStatusStaged          = SiteStatus{Choice{Value: "staged", Label: "Staged"}}
+	SiteStatusFailed          = SiteStatus{Choice{Value: "failed", Label: "Failed"}}
+	SiteStatusInventory       = SiteStatus{Choice{Value: "inventory", Label: "Inventory"}}
+	SiteStatusDecommissioning = SiteStatus{Choice{Value: "decommissioning", Label: "Decommissioning"}}
 )
 
 // Site ares used for functional groupings.
@@ -38,7 +38,7 @@ type Platform struct {
 	// URL-friendly unique shorthand. This field is required.
 	Slug string `json:"slug,omitempty"`
 	// Manufacturer is the manufacturer of the platform.
-	Manafacturer *Manufacturer `json:"manufacturer,omitempty"`
+	Manufacturer *Manufacturer `json:"manufacturer,omitempty"`
 }
 
 type Region struct {
@@ -101,7 +101,7 @@ var ManufacturerMap = map[string]string{
 type DeviceType struct {
 	NetboxObject
 	// Manufacturer is the manufacturer of the device type. This field is required.
-	Manafacturer *Manufacturer `json:"manufacturer,omitempty"`
+	Manufacturer *Manufacturer `json:"manufacturer,omitempty"`
 	// Model is the model of the device type. This field is required.
 	Model string `json:"model,omitempty"`
 	// Slug is a URL-friendly unique shorthand. This field is required.
@@ -330,7 +330,7 @@ type Interface struct {
 	Type *InterfaceType `json:"type,omitempty"`
 	// Interface speed in kbps
 	Speed InterfaceSpeed `json:"speed,omitempty"`
-	// Related Intefaces
+	// Related Interfaces
 	// Parent is the parent interface, if any.
 	ParentInterface *Interface `json:"parent,omitempty"`
 	// BridgedInterface is the bridged interface, if any.

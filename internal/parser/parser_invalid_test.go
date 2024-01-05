@@ -12,7 +12,7 @@ func TestInvalidConfig1(t *testing.T) {
 	_, err := ParseConfig(filename)
 	fmt.Printf("%v", err)
 	if err == nil || err.Error() != expectedErr {
-		t.Errorf("Expecrted error: %v, got: %v", expectedErr, err)
+		t.Errorf("Expected error: %v, got: %v", expectedErr, err)
 		return
 	}
 }

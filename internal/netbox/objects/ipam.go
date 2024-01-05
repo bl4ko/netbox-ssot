@@ -43,7 +43,7 @@ type IPAddress struct {
 	Status *IPAddressStatus `json:"status,omitempty"`
 	// Role of the IP address.
 	Role *IPAddressRole `json:"role,omitempty"`
-	// Hostanme or FQDN (not case-sensitive)
+	// Hostname or FQDN (not case-sensitive)
 	DNSName string `json:"dns_name,omitempty"`
 
 	// Tenancy
@@ -62,14 +62,14 @@ func (ip IPAddress) String() string {
 	return fmt.Sprintf("IPAddress{Id: %d, Address: %s, Status: %s, DNSName: %s}", ip.Id, ip.Address, ip.Status, ip.DNSName)
 }
 
-type VlanStaus struct {
+type VlanStatus struct {
 	Choice
 }
 
 var (
-	VlanStatusActive     = VlanStaus{Choice{Value: "active", Label: "Active"}}
-	VlanStatusReserved   = VlanStaus{Choice{Value: "reserved", Label: "Reserved"}}
-	VlanStatusDeprecated = VlanStaus{Choice{Value: "deprecated", Label: "Deprecated"}}
+	VlanStatusActive     = VlanStatus{Choice{Value: "active", Label: "Active"}}
+	VlanStatusReserved   = VlanStatus{Choice{Value: "reserved", Label: "Reserved"}}
+	VlanStatusDeprecated = VlanStatus{Choice{Value: "deprecated", Label: "Deprecated"}}
 )
 
 type Vlan struct {
@@ -79,7 +79,7 @@ type Vlan struct {
 	// VID of the VLAN. This field is required.
 	Vid int `json:"vid,omitempty"`
 	// Status of the VLAN. This field is required. Default is "active".
-	Status *VlanStaus `json:"status,omitempty"`
+	Status *VlanStatus `json:"status,omitempty"`
 	// Tenant that this VLAN belongs to.
 	Tenant *Tenant `json:"tenant,omitempty"`
 	// Comments about this Vlan.

@@ -21,7 +21,7 @@ func main() {
 		fmt.Println("Parser:", err)
 		return
 	}
-	// Initialise Logger
+	// Initialize Logger
 	logger, err := logger.New(config.Logger.Dest, config.Logger.Level)
 	if err != nil {
 		fmt.Println("Logger:", err)
