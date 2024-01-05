@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bl4ko/netbox-ssot/pkg/logger"
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/inventory"
-	"github.com/bl4ko/netbox-ssot/pkg/parser"
-	"github.com/bl4ko/netbox-ssot/pkg/source"
+	"github.com/bl4ko/netbox-ssot/internal/logger"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
+	"github.com/bl4ko/netbox-ssot/internal/parser"
+	"github.com/bl4ko/netbox-ssot/internal/source"
 )
 
 func main() {

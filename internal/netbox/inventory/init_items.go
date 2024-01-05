@@ -1,7 +1,7 @@
 package inventory
 
 import (
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 )
 
 // Collect all tags from Netbox API and store them in the NetBoxInventory

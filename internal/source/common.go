@@ -4,11 +4,11 @@ package source
 import (
 	"fmt"
 
-	"github.com/bl4ko/netbox-ssot/pkg/logger"
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/inventory"
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/objects"
-	"github.com/bl4ko/netbox-ssot/pkg/parser"
-	"github.com/bl4ko/netbox-ssot/pkg/utils"
+	"github.com/bl4ko/netbox-ssot/internal/logger"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/parser"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
 // Source is an interface for all sources (e.g. oVirt, VMware, etc.)

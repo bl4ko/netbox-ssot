@@ -3,8 +3,8 @@ package inventory
 import (
 	"slices"
 
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/objects"
-	"github.com/bl4ko/netbox-ssot/pkg/utils"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
 // Function for adding a new tag to NetBoxInventory

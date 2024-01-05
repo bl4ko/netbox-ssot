@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/bl4ko/netbox-ssot/pkg/logger"
+	"github.com/bl4ko/netbox-ssot/internal/logger"
 )
 
 // NetboxAPI is a service used for communicating with the Netbox API.

@@ -2,11 +2,12 @@ package source
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/inventory"
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/objects"
-	"github.com/bl4ko/netbox-ssot/pkg/utils"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 	ovirtsdk4 "github.com/ovirt/go-ovirt"
 )
 
@@ -825,7 +826,7 @@ func (o *OVirtSource) syncVmInterfaces(nbi *inventory.NetBoxInventory, ovirtVm *
 							},
 							VM:         netboxVm,
 							Name:       reportedDeviceName,
-							MACAddress: reportedDevice.MustMac().MustAddress(),
+							MACAddress: strings.ToUpper(reportedDevice.MustMac().MustAddress()),
 						})
 						if err != nil {
 							return fmt.Errorf("failed to sync oVirt vm's interface %s: %v", reportedDeviceName, err)
@@ -837,36 +838,62 @@ func (o *OVirtSource) syncVmInterfaces(nbi *inventory.NetBoxInventory, ovirtVm *
 
 					if reportedDeviceIps, exist := reportedDevice.Ips(); exist {
 						for _, ip := range reportedDeviceIps.Slice() {
-							if ipVersion, exists := ip.Version(); exists {
-								// Try to do reverse lookup of IP to get DNS name
-								hostname := utils.ReverseLookup(ip.MustAddress())
+							if ipAddress, exists := ip.Address(); exists {
+								if ipVersion, exists := ip.Version(); exists {
 
-								ipAddress, err := nbi.AddIPAddress(&objects.IPAddress{
-									NetboxObject: objects.NetboxObject{
-										Tags: o.SourceTags,
-									},
-									Address:            ip.MustAddress(),
-									Tenant:             netboxVm.Tenant,
-									Status:             &objects.IPAddressStatusActive,
-									DNSName:            hostname,
-									AssignedObjectType: objects.AssignedObjectTypeVMInterface,
-									AssignedObjectId:   vmInterface.Id,
-									AssignedObject:     vmInterface,
-								})
-
-								if err != nil {
-									return fmt.Errorf("failed to sync oVirt vm's interface %s ip %s: %v", vmInterface, ip.MustAddress(), err)
-								}
-
-								// TODO: criteria to determine if reported device is primary IP
-								switch ipVersion {
-								case "v4":
-									if vmPrimaryIpv4 == nil {
-										vmPrimaryIpv4 = ipAddress
+									// Filter IPs, we won't sync IPs from specific interfaces
+									// like docker, flannel, calico, etc. interfaces
+									valid, err := utils.FilterVMInterfaceNames(vmInterface.Name)
+									if err != nil {
+										return fmt.Errorf("failed to match oVirt vm's interface %s to a Netbox interface filter: %v", vmInterface.Name, err)
 									}
-								case "v6":
-									if vmPrimaryIpv6 == nil {
-										vmPrimaryIpv6 = ipAddress
+									if !valid {
+										continue
+									}
+
+									// Try to do reverse lookup of IP to get DNS name
+									hostname := utils.ReverseLookup(ipAddress)
+
+									// Set default mask
+									var ipMask string
+									if netMask, exists := ip.Netmask(); exists {
+										ipMask = fmt.Sprintf("/%s", netMask)
+									} else {
+										switch ipVersion {
+										case "v4":
+											ipMask = "/32"
+										case "v6":
+											ipMask = "/128"
+										}
+									}
+
+									ipAddress, err := nbi.AddIPAddress(&objects.IPAddress{
+										NetboxObject: objects.NetboxObject{
+											Tags: o.SourceTags,
+										},
+										Address:            ipAddress + ipMask,
+										Tenant:             netboxVm.Tenant,
+										Status:             &objects.IPAddressStatusActive,
+										DNSName:            hostname,
+										AssignedObjectType: objects.AssignedObjectTypeVMInterface,
+										AssignedObjectId:   vmInterface.Id,
+										AssignedObject:     vmInterface,
+									})
+
+									if err != nil {
+										return fmt.Errorf("failed to sync oVirt vm's interface %s ip %s: %v", vmInterface, ip.MustAddress(), err)
+									}
+
+									// TODO: criteria to determine if reported device is primary IP
+									switch ipVersion {
+									case "v4":
+										if vmPrimaryIpv4 == nil {
+											vmPrimaryIpv4 = ipAddress
+										}
+									case "v6":
+										if vmPrimaryIpv6 == nil {
+											vmPrimaryIpv6 = ipAddress
+										}
 									}
 								}
 							}

@@ -1,4 +1,4 @@
-FROM golang:1.21.4
+FROM golang:1.21.4 as builder
 
 WORKDIR /app
 
@@ -6,10 +6,16 @@ COPY go.mod go.sum ./
 
 RUN go mod download
 
-COPY  ./pkg ./pkg 
+COPY ./internal ./internal 
 
-COPY ./main.go ./main.go
+COPY ./cmd ./cmd
 
-RUN go build -o main .
+RUN go build -o ./cmd/netbox-ssot/main ./cmd/netbox-ssot/main.go 
 
-CMD ["/app/main"]
+FROM alpine:latest 
+
+WORKDIR /app
+
+COPY --from=builder /app/cmd/netbox-ssot/main ./main
+
+CMD ["./main"]

@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 )
 
 func TestJsonDiffMapExceptIdWithMapsAddition(t *testing.T) {
@@ -350,7 +350,6 @@ func TestJsonDiffMapComplex2(t *testing.T) {
 		ContentTypes:  []string{"objects.device, objects.cluster"},
 		SearchWeight:  1000,
 		FilterLogic:   objects.FilterLogicLoose,
-		UIVisibility:  objects.UIVisibilityReadWrite,
 		DisplayWeight: 100,
 	}
 	existingObj := &objects.CustomField{
@@ -362,7 +361,6 @@ func TestJsonDiffMapComplex2(t *testing.T) {
 		Description:   "New custom field",
 		SearchWeight:  1000,
 		FilterLogic:   objects.FilterLogicLoose,
-		UIVisibility:  objects.UIVisibilityReadWrite,
 		DisplayWeight: 10,
 	}
 	expectedDiff := map[string]interface{}{

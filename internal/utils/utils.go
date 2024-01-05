@@ -9,7 +9,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 )
 
 // Helper function to determine if a given reflect.Value contains an embedded objects.Choice
@@ -459,4 +459,26 @@ func ReverseLookup(ipAddress string) string {
 	}
 
 	return ""
+}
+
+// Function that returns true if the given string
+// representing an vm's interface name is valid and false otherwise.
+// Valid interface names are the ones that pass regex filtering.
+func FilterVMInterfaceNames(vmIfaceName string) (bool, error) {
+	ifaceFilter := map[string]string{
+		"docker*":  "yes",
+		"flannel*": "yes",
+		"calico*":  "yes",
+	}
+
+	ifaceName, err := MatchStringToValue(vmIfaceName, ifaceFilter)
+	if err != nil {
+		return false, err
+	}
+
+	if ifaceName == "yes" {
+		return false, nil
+	}
+
+	return true, nil
 }

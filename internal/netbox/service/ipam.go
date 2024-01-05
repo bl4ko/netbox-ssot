@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/objects"
-	"github.com/bl4ko/netbox-ssot/pkg/utils"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
 type IPAddressResponse struct {

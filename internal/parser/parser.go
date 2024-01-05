@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/bl4ko/netbox-ssot/pkg/utils"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 	"gopkg.in/yaml.v3"
 )
 

@@ -3,10 +3,10 @@ package inventory
 import (
 	"fmt"
 
-	"github.com/bl4ko/netbox-ssot/pkg/logger"
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/objects"
-	"github.com/bl4ko/netbox-ssot/pkg/netbox/service"
-	"github.com/bl4ko/netbox-ssot/pkg/parser"
+	"github.com/bl4ko/netbox-ssot/internal/logger"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/service"
+	"github.com/bl4ko/netbox-ssot/internal/parser"
 )
 
 // NetBoxInventory is a singleton class to manage a inventory of NetBoxObject objects
