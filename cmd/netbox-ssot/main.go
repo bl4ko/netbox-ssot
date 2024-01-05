@@ -68,4 +68,12 @@ func main() {
 
 		logger.Info("Source ", sourceConfig.Name, " successfully")
 	}
+
+	// Orphan manager cleanup
+	logger.Info("Cleaning up orphaned objects...")
+	err = netboxInventory.DeleteOrphans()
+	if err != nil {
+		logger.Error(err)
+		return
+	}
 }

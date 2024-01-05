@@ -17,11 +17,11 @@ type TagResponse struct {
 	Results  []objects.Tag `json:"results,omitempty"`
 }
 
-// /api/extras/tags
+// GET /api/extras/tags/?limit=0
 func (api *NetboxAPI) GetAllTags() ([]*objects.Tag, error) {
 	api.Logger.Debug("Getting all tags from Netbox")
 
-	response, err := api.doRequest(MethodGet, "/api/extras/tags/", nil)
+	response, err := api.doRequest(MethodGet, "/api/extras/tags/?limit=0", nil)
 	if err != nil {
 		return nil, err
 	}

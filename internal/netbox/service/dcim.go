@@ -53,11 +53,11 @@ type DeviceResponse struct {
 	Results  []objects.Device `json:"results"`
 }
 
-// GET /api/dcim/devices/?limit=0
+// GET /api/dcim/devices/?limit=0&tag=netbox-ssot
 func (api *NetboxAPI) GetAllDevices() ([]*objects.Device, error) {
 	api.Logger.Debug("Getting all devices from Netbox")
 
-	response, err := api.doRequest(MethodGet, "/api/dcim/devices/?limit=0", nil)
+	response, err := api.doRequest(MethodGet, "/api/dcim/devices/?limit=0&tag=netbox-ssot", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -148,11 +148,11 @@ type DeviceRoleResponse struct {
 	Results  []objects.DeviceRole `json:"results"`
 }
 
-// GET /api/dcim/device-roles/?limit=0
+// GET /api/dcim/device-roles/?limit=0&tag=netbox-ssot
 func (api *NetboxAPI) GetAllDeviceRoles() ([]*objects.DeviceRole, error) {
 	api.Logger.Debug("Getting all device roles from Netbox")
 
-	response, err := api.doRequest(MethodGet, "/api/dcim/device-roles/?limit=0", nil)
+	response, err := api.doRequest(MethodGet, "/api/dcim/device-roles/?limit=0&tag=netbox-ssot", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -245,11 +245,11 @@ type ManufacturerResponse struct {
 	Results  []objects.Manufacturer `json:"results"`
 }
 
-// GET /api/dcim/manufacturers/?limit=0
+// GET /api/dcim/manufacturers/?limit=0&tag=netbox-ssot
 func (api *NetboxAPI) GetAllManufacturers() ([]*objects.Manufacturer, error) {
 	api.Logger.Debug("Getting all manufacturers from Netbox")
 
-	response, err := api.doRequest(MethodGet, "/api/dcim/manufacturers/?limit=0", nil)
+	response, err := api.doRequest(MethodGet, "/api/dcim/manufacturers/?limit=0&tag=netbox-ssot", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -340,11 +340,11 @@ type PlatformResponse struct {
 	Results  []objects.Platform `json:"results"`
 }
 
-// GET /api/dcim/platforms/?limit=0
+// GET /api/dcim/platforms/?limit=0&tag=netbox-ssot
 func (api *NetboxAPI) GetAllPlatforms() ([]*objects.Platform, error) {
 	api.Logger.Debug("Getting all platforms from Netbox")
 
-	response, err := api.doRequest(MethodGet, "/api/dcim/platforms/?limit=0", nil)
+	response, err := api.doRequest(MethodGet, "/api/dcim/platforms/?limit=0&tag=netbox-ssot", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -439,7 +439,7 @@ type DeviceTypeResponse struct {
 func (api *NetboxAPI) GetAllDeviceTypes() ([]*objects.DeviceType, error) {
 	api.Logger.Debug("Getting all device types from Netbox")
 
-	response, err := api.doRequest(MethodGet, "/api/dcim/device-types/?limit=0", nil)
+	response, err := api.doRequest(MethodGet, "/api/dcim/device-types/?limit=0&tag=netbox-ssot", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -534,7 +534,7 @@ type InterfaceResponse struct {
 func (api *NetboxAPI) GetAllInterfaces() ([]*objects.Interface, error) {
 	api.Logger.Debug("Getting all interfaces from Netbox")
 
-	response, err := api.doRequest(MethodGet, "/api/dcim/interfaces/?limit=0", nil)
+	response, err := api.doRequest(MethodGet, "/api/dcim/interfaces/?limit=0&tag=netbox-ssot", nil)
 	if err != nil {
 		return nil, err
 	}

@@ -207,7 +207,7 @@ func (o *OVirtSource) SyncDatacenters(nbi *inventory.NetBoxInventory) error {
 			Name:         name,
 			Slug:         utils.Slugify(name),
 		}
-		err := nbi.AddClusterGroup(nbClusterGroup, o.SourceTags)
+		_, err := nbi.AddClusterGroup(nbClusterGroup, o.SourceTags)
 		if err != nil {
 			return fmt.Errorf("failed to add oVirt data center %s as Netbox cluster group: %v", name, err)
 		}

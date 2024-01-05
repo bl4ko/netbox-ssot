@@ -5,146 +5,166 @@ import (
 )
 
 // Collect all tags from Netbox API and store them in the NetBoxInventory
-func (netboxInventory *NetBoxInventory) InitTags() error {
-	nbTags, err := netboxInventory.NetboxApi.GetAllTags()
+func (nbi *NetBoxInventory) InitTags() error {
+	nbTags, err := nbi.NetboxApi.GetAllTags()
 	if err != nil {
 		return err
 	}
-	netboxInventory.Tags = nbTags
-	netboxInventory.Logger.Debug("Successfully collected tags from Netbox: ", netboxInventory.Tags)
+	nbi.Tags = nbTags
+	nbi.Logger.Debug("Successfully collected tags from Netbox: ", nbi.Tags)
 
 	// Custom tag for all netbox objects
-	ssotTag, err := netboxInventory.NetboxApi.GetTagByName("netbox-ssot")
+	ssotTag, err := nbi.NetboxApi.GetTagByName("netbox-ssot")
 	if err != nil {
 		return err
 	}
 	if ssotTag == nil {
-		netboxInventory.Logger.Info("Tag netbox-ssot not found in Netbox. Creating it now...")
+		nbi.Logger.Info("Tag netbox-ssot not found in Netbox. Creating it now...")
 		newTag := objects.Tag{Name: "netbox-ssot", Slug: "netbox-ssot", Description: "Tag used by netbox-ssot to mark devices that are managed by it", Color: "00add8"}
-		ssotTag, err = netboxInventory.NetboxApi.CreateTag(&newTag)
+		ssotTag, err = nbi.NetboxApi.CreateTag(&newTag)
 		if err != nil {
 			return err
 		}
 	}
-	netboxInventory.SsotTag = ssotTag
+	nbi.SsotTag = ssotTag
 	return nil
 }
 
 // Collects all tenants from Netbox API and store them in the NetBoxInventory
-func (NetBoxInventory *NetBoxInventory) InitTenants() error {
-	nbTenants, err := NetBoxInventory.NetboxApi.GetAllTenants()
+func (nbi *NetBoxInventory) InitTenants() error {
+	nbTenants, err := nbi.NetboxApi.GetAllTenants()
 	if err != nil {
 		return err
 	}
 	// We also create an index of tenants by name for easier access
-	NetBoxInventory.TenantsIndexByName = make(map[string]*objects.Tenant)
+	nbi.TenantsIndexByName = make(map[string]*objects.Tenant)
 	for _, tenant := range nbTenants {
-		NetBoxInventory.TenantsIndexByName[tenant.Name] = tenant
+		nbi.TenantsIndexByName[tenant.Name] = tenant
 	}
-	NetBoxInventory.Logger.Debug("Successfully collected tenants from Netbox: ", NetBoxInventory.TenantsIndexByName)
+	nbi.Logger.Debug("Successfully collected tenants from Netbox: ", nbi.TenantsIndexByName)
 	return nil
 }
 
 // Collects all sites from Netbox API and store them in the NetBoxInventory
-func (netboxInventory *NetBoxInventory) InitSites() error {
-	nbSites, err := netboxInventory.NetboxApi.GetAllSites()
+func (nbi *NetBoxInventory) InitSites() error {
+	nbSites, err := nbi.NetboxApi.GetAllSites()
 	if err != nil {
 		return err
 	}
 	// We also create an index of sites by name for easier access
-	netboxInventory.SitesIndexByName = make(map[string]*objects.Site)
+	nbi.SitesIndexByName = make(map[string]*objects.Site)
 	for _, site := range nbSites {
-		netboxInventory.SitesIndexByName[site.Name] = site
+		nbi.SitesIndexByName[site.Name] = site
 	}
-	netboxInventory.Logger.Debug("Successfully collected sites from Netbox: ", netboxInventory.SitesIndexByName)
+	nbi.Logger.Debug("Successfully collected sites from Netbox: ", nbi.SitesIndexByName)
 	return nil
 }
 
 // Collects all manufacturesrs from Netbox API and store them in NetBoxInventory
-func (netboxInventory *NetBoxInventory) InitManufacturers() error {
-	nbManufacturers, err := netboxInventory.NetboxApi.GetAllManufacturers()
+func (nbi *NetBoxInventory) InitManufacturers() error {
+	nbManufacturers, err := nbi.NetboxApi.GetAllManufacturers()
 	if err != nil {
 		return err
 	}
-	// We also create an index of manufacturers by name for easier access
-	netboxInventory.ManufacturersIndexByName = make(map[string]*objects.Manufacturer)
+	// Initialize internal index of manufacturers by name
+	nbi.ManufacturersIndexByName = make(map[string]*objects.Manufacturer)
+	// OrphanManager takes care of all manufacturers created by netbox-ssot
+	nbi.OrphanManager["/api/dcim/manufacturers/"] = make(map[int]bool, 0)
+
 	for _, manufacturer := range nbManufacturers {
-		netboxInventory.ManufacturersIndexByName[manufacturer.Name] = manufacturer
+		nbi.ManufacturersIndexByName[manufacturer.Name] = manufacturer
+		nbi.OrphanManager["/api/dcim/manufacturers/"][manufacturer.Id] = true
 	}
-	netboxInventory.Logger.Debug("Successfully collected manufacturers from Netbox: ", netboxInventory.ManufacturersIndexByName)
+
+	nbi.Logger.Debug("Successfully collected manufacturers from Netbox: ", nbi.ManufacturersIndexByName)
 	return nil
 }
 
 // Collects all platforms from Netbox API and store them in the NetBoxInventory
-func (NetBoxInventory *NetBoxInventory) InitPlatforms() error {
-	nbPlatforms, err := NetBoxInventory.NetboxApi.GetAllPlatforms()
+func (nbi *NetBoxInventory) InitPlatforms() error {
+	nbPlatforms, err := nbi.NetboxApi.GetAllPlatforms()
 	if err != nil {
 		return err
 	}
-	// We also create an index of platforms by name for easier access
-	NetBoxInventory.PlatformsIndexByName = make(map[string]*objects.Platform)
+	// Initialize internal index of platforms by name
+	nbi.PlatformsIndexByName = make(map[string]*objects.Platform)
+	// OrphanManager takes care of all platforms created by netbox-ssot
+	nbi.OrphanManager["/api/dcim/platforms/"] = make(map[int]bool, 0)
+
 	for _, platform := range nbPlatforms {
-		NetBoxInventory.PlatformsIndexByName[platform.Name] = platform
+		nbi.PlatformsIndexByName[platform.Name] = platform
+		nbi.OrphanManager["/api/dcim/platforms/"][platform.Id] = true
 	}
-	NetBoxInventory.Logger.Debug("Successfully collected platforms from Netbox: ", NetBoxInventory.PlatformsIndexByName)
+
+	nbi.Logger.Debug("Successfully collected platforms from Netbox: ", nbi.PlatformsIndexByName)
 	return nil
 }
 
-// Collect all devices from Netbox API and store them in the NetBoxInventory
-func (netboxInventory *NetBoxInventory) InitDevices() error {
-	nbDevices, err := netboxInventory.NetboxApi.GetAllDevices()
+// Collect all devices from Netbox API and store them in the NetBoxInventory.
+func (nbi *NetBoxInventory) InitDevices() error {
+	nbDevices, err := nbi.NetboxApi.GetAllDevices()
 	if err != nil {
 		return err
 	}
-	// We also create an index of devices by name for easier access
-	netboxInventory.DevicesIndexByUuid = make(map[string]*objects.Device)
+	// Initialize internal index of devices by UUID
+	nbi.DevicesIndexByUuid = make(map[string]*objects.Device)
+	// OrphanManager takes care of all devices created by netbox-ssot
+	nbi.OrphanManager["/api/dcim/devices/"] = make(map[int]bool, 0)
+
 	for _, device := range nbDevices {
-		netboxInventory.DevicesIndexByUuid[device.AssetTag] = device
+		nbi.DevicesIndexByUuid[device.AssetTag] = device
+		nbi.OrphanManager["/api/dcim/devices/"][device.Id] = true
 	}
-	netboxInventory.Logger.Debug("Successfully collected devices from Netbox: ", netboxInventory.DevicesIndexByUuid)
+
+	nbi.Logger.Debug("Successfully collected devices from Netbox: ", nbi.DevicesIndexByUuid)
 	return nil
 }
 
 // Collects all deviceRoles from Netbox API and store them in the
 // NetBoxInventory
-func (netboxInventory *NetBoxInventory) InitDeviceRoles() error {
-	nbDeviceRoles, err := netboxInventory.NetboxApi.GetAllDeviceRoles()
+func (nbi *NetBoxInventory) InitDeviceRoles() error {
+	nbDeviceRoles, err := nbi.NetboxApi.GetAllDeviceRoles()
 	if err != nil {
 		return err
 	}
 	// We also create an index of device roles by name for easier access
-	netboxInventory.DeviceRolesIndexByName = make(map[string]*objects.DeviceRole)
+	nbi.DeviceRolesIndexByName = make(map[string]*objects.DeviceRole)
+	// OrphanManager takes care of all device roles created by netbox-ssot
+	nbi.OrphanManager["/api/dcim/device-roles/"] = make(map[int]bool, 0)
+
 	for _, deviceRole := range nbDeviceRoles {
-		netboxInventory.DeviceRolesIndexByName[deviceRole.Name] = deviceRole
+		nbi.DeviceRolesIndexByName[deviceRole.Name] = deviceRole
+		nbi.OrphanManager["/api/dcim/device-roles/"][deviceRole.Id] = true
 	}
 
-	netboxInventory.Logger.Debug("Successfully collected device roles from Netbox: ", netboxInventory.DeviceRolesIndexByName)
+	nbi.Logger.Debug("Successfully collected device roles from Netbox: ", nbi.DeviceRolesIndexByName)
 	return nil
 }
 
 // Ensures that attribute ServerDeviceRole is proper initialized
-func (netboxInventory *NetBoxInventory) InitServerDeviceRole() error {
-	err := netboxInventory.AddDeviceRole(&objects.DeviceRole{Name: "Server", Slug: "server", Color: "00add8", VMRole: true})
+func (nbi *NetBoxInventory) InitServerDeviceRole() error {
+	err := nbi.AddDeviceRole(&objects.DeviceRole{Name: "Server", Slug: "server", Color: "00add8", VMRole: true})
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (netboxInventory *NetBoxInventory) InitCustomFields() error {
-	customFields, err := netboxInventory.NetboxApi.GetAllCustomFields()
+func (nbi *NetBoxInventory) InitCustomFields() error {
+	customFields, err := nbi.NetboxApi.GetAllCustomFields()
 	if err != nil {
 		return err
 	}
-	netboxInventory.CustomFieldsIndexByName = make(map[string]*objects.CustomField)
+	// Initialize internal index of custom fields by name
+	nbi.CustomFieldsIndexByName = make(map[string]*objects.CustomField)
 	for _, customField := range customFields {
-		netboxInventory.CustomFieldsIndexByName[customField.Name] = customField
+		nbi.CustomFieldsIndexByName[customField.Name] = customField
 	}
-	netboxInventory.Logger.Debug("Successfully collected custom fields from Netbox: ", netboxInventory.CustomFieldsIndexByName)
+	nbi.Logger.Debug("Successfully collected custom fields from Netbox: ", nbi.CustomFieldsIndexByName)
 	return nil
 }
 
-// This function initialises all custom fields required for servers and other objects
+// This function Initializes all custom fields required for servers and other objects
 // Currently these are two:
 // - host_cpu_cores
 // - host_memory
@@ -200,45 +220,63 @@ func (netboxInventory *NetBoxInventory) InitSsotCustomFields() error {
 }
 
 // Collects all nbClusters from Netbox API and stores them in the NetBoxInventory
-func (netboxInventory *NetBoxInventory) InitClusterGroups() error {
-	nbClusters, err := netboxInventory.NetboxApi.GetAllClusterGroups()
+func (nbi *NetBoxInventory) InitClusterGroups() error {
+	nbClusters, err := nbi.NetboxApi.GetAllClusterGroups()
 	if err != nil {
 		return err
 	}
-	// We also create an index of cluster groups by name for easier access
-	netboxInventory.ClusterGroupsIndexByName = make(map[string]*objects.ClusterGroup)
+	// Initialize internal index of cluster groups by name
+	nbi.ClusterGroupsIndexByName = make(map[string]*objects.ClusterGroup)
+	// OrphanManager takes care of all cluster groups created by netbox-ssot
+	nbi.OrphanManager["/api/virtualization/clusters/"] = make(map[int]bool, 0)
+
 	for _, clusterGroup := range nbClusters {
-		netboxInventory.ClusterGroupsIndexByName[clusterGroup.Name] = clusterGroup
+		nbi.ClusterGroupsIndexByName[clusterGroup.Name] = clusterGroup
+		nbi.OrphanManager["/api/virtualization/clusters/"][clusterGroup.Id] = true
 	}
-	netboxInventory.Logger.Debug("Successfully collected cluster groups from Netbox: ", netboxInventory.ClusterGroupsIndexByName)
+	nbi.Logger.Debug("Successfully collected cluster groups from Netbox: ", nbi.ClusterGroupsIndexByName)
 	return nil
 }
 
 // Collects all ClusterTypes from Netbox API and stores them in the NetBoxInventory
-func (netboxInventory *NetBoxInventory) InitClusterTypes() error {
-	nbClusterTypes, err := netboxInventory.NetboxApi.GetAllClusterTypes()
+func (nbi *NetBoxInventory) InitClusterTypes() error {
+	nbClusterTypes, err := nbi.NetboxApi.GetAllClusterTypes()
 	if err != nil {
 		return err
 	}
-	netboxInventory.ClusterTypesIndexByName = make(map[string]*objects.ClusterType)
+
+	// Initialize internal index of cluster types by name
+	nbi.ClusterTypesIndexByName = make(map[string]*objects.ClusterType)
+	// OrphanManager takes care of all cluster types created by netbox-ssot
+	nbi.OrphanManager["/api/virtualization/cluster-types/"] = make(map[int]bool, 0)
+
 	for _, clusterType := range nbClusterTypes {
-		netboxInventory.ClusterTypesIndexByName[clusterType.Name] = clusterType
+		nbi.ClusterTypesIndexByName[clusterType.Name] = clusterType
+		nbi.OrphanManager["/api/virtualization/cluster-types/"][clusterType.Id] = true
 	}
-	netboxInventory.Logger.Debug("Successfully collected cluster types from Netbox: ", netboxInventory.ClusterTypesIndexByName)
+
+	nbi.Logger.Debug("Successfully collected cluster types from Netbox: ", nbi.ClusterTypesIndexByName)
 	return nil
 }
 
 // Collects all clusters from Netbox API and stores them to local inventory
-func (netboxInventory *NetBoxInventory) InitClusters() error {
-	nbClusters, err := netboxInventory.NetboxApi.GetAllClusters()
+func (nbi *NetBoxInventory) InitClusters() error {
+	nbClusters, err := nbi.NetboxApi.GetAllClusters()
 	if err != nil {
 		return err
 	}
-	netboxInventory.ClustersIndexByName = make(map[string]*objects.Cluster)
+
+	// Initialize internal index of clusters by name
+	nbi.ClustersIndexByName = make(map[string]*objects.Cluster)
+	// OrphanManager takes care of all clusters created by netbox-ssot
+	nbi.OrphanManager["/api/virtualization/clusters/"] = make(map[int]bool, 0)
+
 	for _, cluster := range nbClusters {
-		netboxInventory.ClustersIndexByName[cluster.Name] = cluster
+		nbi.ClustersIndexByName[cluster.Name] = cluster
+		nbi.OrphanManager["/api/virtualization/clusters/"][cluster.Id] = true
 	}
-	netboxInventory.Logger.Debug("Successfully collected clusters from Netbox: ", netboxInventory.ClustersIndexByName)
+
+	nbi.Logger.Debug("Successfully collected clusters from Netbox: ", nbi.ClustersIndexByName)
 	return nil
 }
 
@@ -247,81 +285,128 @@ func (ni *NetBoxInventory) InitDeviceTypes() error {
 	if err != nil {
 		return err
 	}
+
+	// Initialize internal index of device types by model
 	ni.DeviceTypesIndexByModel = make(map[string]*objects.DeviceType)
+	// OrphanManager takes care of all device types created by netbox-ssot
+	ni.OrphanManager["/api/dcim/device-types/"] = make(map[int]bool, 0)
+
 	for _, deviceType := range nbDeviceTypes {
 		ni.DeviceTypesIndexByModel[deviceType.Model] = deviceType
+		ni.OrphanManager["/api/dcim/device-types/"][deviceType.Id] = true
 	}
+
 	ni.Logger.Debug("Successfully collected device types from Netbox: ", ni.DeviceTypesIndexByModel)
 	return nil
 }
 
+// Collects all interfaces from Netbox API and stores them to local inventory
 func (ni *NetBoxInventory) InitInterfaces() error {
 	nbInterfaces, err := ni.NetboxApi.GetAllInterfaces()
 	if err != nil {
 		return err
 	}
+
+	// Initialize internal index of interfaces by device id and name
 	ni.InterfacesIndexByDeviceIdAndName = make(map[int]map[string]*objects.Interface)
+	// OrphanManager takes care of all interfaces created by netbox-ssot
+	ni.OrphanManager["/api/dcim/interfaces/"] = make(map[int]bool, 0)
+
 	for _, intf := range nbInterfaces {
 		if ni.InterfacesIndexByDeviceIdAndName[intf.Device.Id] == nil {
 			ni.InterfacesIndexByDeviceIdAndName[intf.Device.Id] = make(map[string]*objects.Interface)
 		}
 		ni.InterfacesIndexByDeviceIdAndName[intf.Device.Id][intf.Name] = intf
+		ni.OrphanManager["/api/dcim/interfaces/"][intf.Id] = true
 	}
+
 	ni.Logger.Debug("Successfully collected interfaces from Netbox: ", ni.InterfacesIndexByDeviceIdAndName)
 	return nil
 }
 
+// Collects all vlans from Netbox API and stores them to local inventory
 func (ni *NetBoxInventory) InitVlans() error {
 	nbVlans, err := ni.NetboxApi.GetAllVlans()
 	if err != nil {
 		return err
 	}
+
+	// Initialize internal indexs of vlans by name
 	ni.VlansIndexByName = make(map[string]*objects.Vlan)
+	// Add vlans to orphan manager
+	ni.OrphanManager["/api/ipam/vlans/"] = make(map[int]bool, 0)
+
 	for _, vlan := range nbVlans {
 		ni.VlansIndexByName[vlan.Name] = vlan
+		ni.OrphanManager["/api/ipam/vlans/"][vlan.Id] = true
 	}
+
 	ni.Logger.Debug("Successfully collected vlans from Netbox: ", ni.VlansIndexByName)
 	return nil
 }
 
+// Collects all vms from Netbox API and stores them to local inventory
 func (ni *NetBoxInventory) InitVMs() error {
 	nbVMs, err := ni.NetboxApi.GetAllVMs()
 	if err != nil {
 		return err
 	}
+
+	// Initialize internal index of VMs by name
 	ni.VMsIndexByName = make(map[string]*objects.VM)
+	// Add VMs to orphan manager
+	ni.OrphanManager["/api/virtualization/virtual-machines/"] = make(map[int]bool, 0)
+
 	for _, vm := range nbVMs {
 		ni.VMsIndexByName[vm.Name] = vm
+		ni.OrphanManager["/api/virtualization/virtual-machines/"][vm.Id] = true
 	}
+
 	ni.Logger.Debug("Successfully collected VMs from Netbox: ", ni.VMsIndexByName)
 	return nil
 }
 
+// Collects all VMInterfaces from Netbox API and stores them to local inventory
 func (ni *NetBoxInventory) InitVMInterfaces() error {
 	nbVMInterfaces, err := ni.NetboxApi.GetAllVMInterfaces()
 	if err != nil {
 		return err
 	}
+
+	// Initialize internal index of VM interfaces by VM id and name
 	ni.VMInterfacesIndexByVMIdAndName = make(map[int]map[string]*objects.VMInterface)
+	// Add VMInterfaces to orphan manager
+	ni.OrphanManager["/api/virtualization/interfaces/"] = make(map[int]bool, 0)
+
 	for _, vmIntf := range nbVMInterfaces {
 		if ni.VMInterfacesIndexByVMIdAndName[vmIntf.VM.Id] == nil {
 			ni.VMInterfacesIndexByVMIdAndName[vmIntf.VM.Id] = make(map[string]*objects.VMInterface)
 		}
 		ni.VMInterfacesIndexByVMIdAndName[vmIntf.VM.Id][vmIntf.Name] = vmIntf
+		ni.OrphanManager["/api/virtualization/interfaces/"][vmIntf.Id] = true
 	}
+
 	ni.Logger.Debug("Successfully collected VM interfaces from Netbox: ", ni.VMInterfacesIndexByVMIdAndName)
 	return nil
 }
 
+// Collects all IP addresses from Netbox API and stores them to local inventory
 func (ni *NetBoxInventory) InitIPAddresses() error {
 	ipAddresses, err := ni.NetboxApi.GetAllIPAddresses()
 	if err != nil {
 		return err
 	}
+
+	// Initializes internal index of IP addresses by address
 	ni.IPAdressesIndexByAddress = make(map[string]*objects.IPAddress)
+	// Add IP addresses to orphan manager
+	ni.OrphanManager["/api/ipam/ip-addresses/"] = make(map[int]bool, 0)
+
 	for _, ipAddr := range ipAddresses {
 		ni.IPAdressesIndexByAddress[ipAddr.Address] = ipAddr
+		ni.OrphanManager["/api/ipam/ip-addresses/"][ipAddr.Id] = true
 	}
+
 	ni.Logger.Debug("Successfully collected IP addresses from Netbox: ", ni.IPAdressesIndexByAddress)
 	return nil
 }

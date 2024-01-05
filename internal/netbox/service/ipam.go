@@ -17,11 +17,11 @@ type IPAddressResponse struct {
 	Results  []objects.IPAddress `json:"results"`
 }
 
-// GET /api/ipam/ip-addresses/?limit=0
+// GET /api/ipam/ip-addresses/?limit=0&tag=netbox-ssot
 func (api *NetboxAPI) GetAllIPAddresses() ([]*objects.IPAddress, error) {
 	api.Logger.Debug("Getting all IP addresses from Netbox")
 
-	response, err := api.doRequest(MethodGet, "/api/ipam/ip-addresses/?limit=0", nil)
+	response, err := api.doRequest(MethodGet, "/api/ipam/ip-addresses/?limit=0&tag=netbox-ssot", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +116,7 @@ type VlanResponse struct {
 func (api *NetboxAPI) GetAllVlans() ([]*objects.Vlan, error) {
 	api.Logger.Debug("Getting all Vlans from Netbox")
 
-	response, err := api.doRequest(MethodGet, "/api/ipam/vlans/?limit=0", nil)
+	response, err := api.doRequest(MethodGet, "/api/ipam/vlans/?limit=0&tag=netbox-ssot", nil)
 	if err != nil {
 		return nil, err
 	}

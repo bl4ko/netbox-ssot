@@ -53,8 +53,19 @@ type NetBoxInventory struct {
 	// IPAdressesIndexByAddress is a map of all IP addresses in the inventory, indexed by their address
 	IPAdressesIndexByAddress map[string]*objects.IPAddress
 
-	// Orphan manager is a map of { "devices: [device_id1, device_id2, ...], "cluster_groups": [cluster_group_id1, cluster_group_id2, ..."}, to store which objects have been created by netbox-ssot and can be deleted because they are not available in the source anymore
-	OrphanManager map[string][]int
+	// Orphan manager is a map of objectAPIPath to a set of managed ids for that object type.
+	//
+	// {
+	//		"/api/dcim/devices/": {22: true, 3: true, ...},
+	//		"/api/dcim/interface/": {15: true, 36: true, ...},
+	//  	"/api/virtualization/clusters/": {121: true, 122: true, ...},
+	//  	"...": [...]
+	// }
+	//
+	// It stores which objects have been created by netbox-ssot and can be deleted
+	// because they are not available in the sources anymore
+	OrphanManager map[string]map[int]bool
+
 	// Tag used by netbox-ssot to mark devices that are managed by it
 	SsotTag *objects.Tag
 }
@@ -68,7 +79,7 @@ func (nbi NetBoxInventory) String() string {
 // It takes a logger and a NetboxConfig as parameters, and returns a pointer to the newly created NetBoxInventory.
 // The logger is used for logging messages, and the NetboxConfig is used to configure the NetBoxInventory.
 func NewNetboxInventory(logger *logger.Logger, nbConfig *parser.NetboxConfig) *NetBoxInventory {
-	nbi := &NetBoxInventory{Logger: logger, NetboxConfig: nbConfig}
+	nbi := &NetBoxInventory{Logger: logger, NetboxConfig: nbConfig, OrphanManager: make(map[string]map[int]bool)}
 	return nbi
 }
 

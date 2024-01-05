@@ -17,11 +17,11 @@ type ClusterTypeResponse struct {
 	Results  []objects.ClusterType `json:"results"`
 }
 
-// GET /api/virtualization/cluster-types/?limit=0
+// GET /api/virtualization/cluster-types/?limit=0&tag=netbox-ssot
 func (api *NetboxAPI) GetAllClusterTypes() ([]*objects.ClusterType, error) {
 	api.Logger.Debug("Getting all cluster types from Netbox")
 
-	response, err := api.doRequest(MethodGet, "/api/virtualization/cluster-types/?limit=0", nil)
+	response, err := api.doRequest(MethodGet, "/api/virtualization/cluster-types/?limit=0&tag=netbox-ssot", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -111,11 +111,11 @@ type ClusterGroupResponse struct {
 	Results  []objects.ClusterGroup `json:"results"`
 }
 
-// GET /api/virtualization/cluster-groups/?limit=0
+// GET /api/virtualization/cluster-groups/?limit=0&tag=netbox-ssot
 func (api *NetboxAPI) GetAllClusterGroups() ([]*objects.ClusterGroup, error) {
 	api.Logger.Debug("Getting all cluster groups from Netbox")
 
-	response, err := api.doRequest(MethodGet, "/api/virtualization/cluster-groups/?limit=0", nil)
+	response, err := api.doRequest(MethodGet, "/api/virtualization/cluster-groups/?limit=0&tag=netbox-ssot", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -203,11 +203,11 @@ type ClustersResponse struct {
 	Results  []objects.Cluster `json:"results"`
 }
 
-// GET /api/vritualization/clusters/?limit=0
+// GET /api/vritualization/clusters/?limit=0&tag=netbox-ssot
 func (api *NetboxAPI) GetAllClusters() ([]*objects.Cluster, error) {
 	api.Logger.Debug("Getting all clusters from Netbox")
 
-	response, err := api.doRequest(MethodGet, "/api/virtualization/clusters/?limit=0", nil)
+	response, err := api.doRequest(MethodGet, "/api/virtualization/clusters/?limit=0&netbox-ssot", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -300,11 +300,11 @@ type VMResponse struct {
 	Results  []objects.VM `json:"results"`
 }
 
-// GET /api/virtualization/virtual-machines/?limit=0
+// GET /api/virtualization/virtual-machines/?limit=0&tag=netbox-ssot
 func (api *NetboxAPI) GetAllVMs() ([]*objects.VM, error) {
 	api.Logger.Debug("Getting all virtual machines from Netbox")
 
-	response, err := api.doRequest(MethodGet, "/api/virtualization/virtual-machines/?limit=0", nil)
+	response, err := api.doRequest(MethodGet, "/api/virtualization/virtual-machines/?limit=0&tag=netbox-ssot", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -394,11 +394,11 @@ type VMInterfaceResponse struct {
 	Results  []objects.VMInterface `json:"results"`
 }
 
-// GET /api/virtualization/interfaces/?limit=0
+// GET /api/virtualization/interfaces/?limit=0&tag=netbox-ssot
 func (api *NetboxAPI) GetAllVMInterfaces() ([]*objects.VMInterface, error) {
 	api.Logger.Debug("Getting all VM interfaces from Netbox")
 
-	response, err := api.doRequest(MethodGet, "/api/virtualization/interfaces/?limit=0", nil)
+	response, err := api.doRequest(MethodGet, "/api/virtualization/interfaces/?limit=0&tag=netbox-ssot", nil)
 	if err != nil {
 		return nil, err
 	}
