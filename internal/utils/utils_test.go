@@ -559,6 +559,45 @@ func TestJsonDiffMapWithMapAttr2(t *testing.T) {
 	}
 }
 
+func TestJsonDiffMapWithInterfaceAttr(t *testing.T) {
+	newIPAddress := &objects.IPAddress{
+		AssignedObjectType: objects.AssignedObjectTypeVMInterface,
+		AssignedObjectId:   1799,
+		AssignedObject: &objects.VMInterface{
+			NetboxObject: objects.NetboxObject{
+				Id: 1799,
+			},
+			Name: "ens3",
+			VM: &objects.VM{
+				Name: "test-vm",
+			},
+		},
+	}
+	existingIPAddress := &objects.IPAddress{
+		AssignedObjectType: objects.AssignedObjectTypeVMInterface,
+		AssignedObjectId:   1799,
+		AssignedObject: interface{}(map[string]interface{}{
+			"id":   1799,
+			"name": "ens3",
+		}),
+	}
+
+	expectedDiffMap := map[string]interface{}{}
+
+	gotDiffMap, err := JsonDiffMapExceptId(newIPAddress, existingIPAddress)
+	if err != nil {
+		t.Errorf("JsonDiffMapExceptId() error = %v", err)
+	}
+	// try to marshal gotDiffMap
+	_, err = json.Marshal(gotDiffMap)
+	if err != nil {
+		t.Errorf("JsonDiffMapExceptId() error = %v", err)
+	}
+	if !reflect.DeepEqual(gotDiffMap, expectedDiffMap) {
+		t.Errorf("JsonDiffMapExceptId() = %v, want %v", gotDiffMap, expectedDiffMap)
+	}
+}
+
 func TestSlugify(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -758,5 +797,48 @@ func TestNetboxJsonMarshalWithChoiceAttr(t *testing.T) {
 	}
 	if !reflect.DeepEqual(expectedJson, responseJson) {
 		t.Errorf("NetboxMarshal() = %s\nwant %s", string(responseJson), string(expectedJson))
+	}
+}
+
+func TestFilterVMInterfaceNames(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    []string
+		expected []string
+	}{
+		{
+			name:     "No interfaces",
+			input:    []string{},
+			expected: []string{},
+		},
+		{
+			name:     "No VM interfaces",
+			input:    []string{"eth0", "eth1", "eth2"},
+			expected: []string{"eth0", "eth1", "eth2"},
+		},
+		{
+			name:     "One VM interface",
+			input:    []string{"eth0", "docker0", "eth1", "cali7839a755dc1"},
+			expected: []string{"eth0", "eth1"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			filteredSlice := make([]string, 0)
+			for _, iface := range tt.input {
+				filtered, err := IsVMInterfaceNameValid(iface)
+				if err != nil {
+					t.Errorf("FilterVMInterfaceNames() error = %v", err)
+				}
+				if filtered == true {
+					filteredSlice = append(filteredSlice, iface)
+				}
+			}
+
+			if !reflect.DeepEqual(filteredSlice, tt.expected) {
+				t.Errorf("FilterVMInterfaceNames() = %v, want %v", filteredSlice, tt.expected)
+			}
+		})
 	}
 }

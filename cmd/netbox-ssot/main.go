@@ -66,7 +66,7 @@ func main() {
 			return
 		}
 
-		logger.Info("Source ", sourceConfig.Name, " successfully")
+		logger.Info("Source ", sourceConfig.Name, " synced successfully")
 	}
 
 	// Orphan manager cleanup

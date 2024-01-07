@@ -843,7 +843,7 @@ func (o *OVirtSource) syncVmInterfaces(nbi *inventory.NetBoxInventory, ovirtVm *
 
 									// Filter IPs, we won't sync IPs from specific interfaces
 									// like docker, flannel, calico, etc. interfaces
-									valid, err := utils.FilterVMInterfaceNames(vmInterface.Name)
+									valid, err := utils.IsVMInterfaceNameValid(vmInterface.Name)
 									if err != nil {
 										return fmt.Errorf("failed to match oVirt vm's interface %s to a Netbox interface filter: %v", vmInterface.Name, err)
 									}
@@ -881,7 +881,10 @@ func (o *OVirtSource) syncVmInterfaces(nbi *inventory.NetBoxInventory, ovirtVm *
 									})
 
 									if err != nil {
-										return fmt.Errorf("failed to sync oVirt vm's interface %s ip %s: %v", vmInterface, ip.MustAddress(), err)
+										// TODO: return should be here, commented just for now
+										// return fmt.Errorf("failed to sync oVirt vm's interface %s ip %s: %v", vmInterface, ip.MustAddress(), err)
+										o.Logger.Error(fmt.Sprintf("failed to sync oVirt vm's interface %s ip %s: %v", vmInterface, ip.MustAddress(), err))
+
 									}
 
 									// TODO: criteria to determine if reported device is primary IP
@@ -904,18 +907,20 @@ func (o *OVirtSource) syncVmInterfaces(nbi *inventory.NetBoxInventory, ovirtVm *
 		}
 	}
 	// Update netboxVM with primary IPs
-	if vmPrimaryIpv4 != nil && vmPrimaryIpv4.Address != netboxVm.PrimaryIPv4.Address {
-		netboxVm.PrimaryIPv4 = vmPrimaryIpv4
-		if _, err := nbi.AddVM(netboxVm); err != nil {
-			return fmt.Errorf("failed to sync oVirt vm's primary ipv4: %v", err)
-		}
-	}
-	if vmPrimaryIpv6 != nil && vmPrimaryIpv6.Address != netboxVm.PrimaryIPv6.Address {
-		netboxVm.PrimaryIPv6 = vmPrimaryIpv6
-		if _, err := nbi.AddVM(netboxVm); err != nil {
-			return fmt.Errorf("failed to sync oVirt vm's primary ipv6: %v", err)
-		}
-	}
+	// TODO: determine which ip is primary ipv4 and which is primary ipv6
+	// TODO: then assign them to netboxVM
+	// if vmPrimaryIpv4 != nil && (netboxVm.PrimaryIPv4 == nil || vmPrimaryIpv4.Address != netboxVm.PrimaryIPv4.Address) {
+	// 	netboxVm.PrimaryIPv4 = vmPrimaryIpv4
+	// 	if _, err := nbi.AddVM(netboxVm); err != nil {
+	// 		return fmt.Errorf("failed to sync oVirt vm's primary ipv4: %v", err)
+	// 	}
+	// }
+	// if vmPrimaryIpv6 != nil && (netboxVm.PrimaryIPv6 == nil || vmPrimaryIpv6.Address != netboxVm.PrimaryIPv6.Address) {
+	// 	netboxVm.PrimaryIPv6 = vmPrimaryIpv6
+	// 	if _, err := nbi.AddVM(netboxVm); err != nil {
+	// 		return fmt.Errorf("failed to sync oVirt vm's primary ipv6: %v", err)
+	// 	}
+	// }
 
 	return nil
 }

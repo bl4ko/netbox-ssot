@@ -285,6 +285,7 @@ func (ni *NetBoxInventory) AddDevice(newDevice *objects.Device) (*objects.Device
 	newDevice.Tags = append(newDevice.Tags, ni.SsotTag)
 	if _, ok := ni.DevicesIndexByUuid[newDevice.AssetTag]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
+		delete(ni.OrphanManager["/api/dcim/devices/"], ni.DevicesIndexByUuid[newDevice.AssetTag].Id)
 		diffMap, err := utils.JsonDiffMapExceptId(newDevice, ni.DevicesIndexByUuid[newDevice.AssetTag])
 		if err != nil {
 			return nil, err

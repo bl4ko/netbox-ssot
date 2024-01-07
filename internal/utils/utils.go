@@ -198,6 +198,13 @@ func JsonDiffMapExceptId(newObj, existingObj interface{}) (map[string]interface{
 		}
 
 		switch newObjectField.Kind() {
+
+		case reflect.Interface:
+			err := addInterfaceDiff(newObjectField, existingObjectField, jsonTag, diff)
+			if err != nil {
+				return nil, fmt.Errorf("error processing JsonDiffMapExceptId when processing interface %s", err)
+			}
+
 		case reflect.Slice:
 			err := addSliceDiff(newObjectField, existingObjectField, jsonTag, diff)
 			if err != nil {
@@ -230,6 +237,55 @@ func JsonDiffMapExceptId(newObj, existingObj interface{}) (map[string]interface{
 	}
 
 	return diff, nil
+}
+
+// Function that takes two interfaces and returns a map
+// that is empty if the objects are the same (e.g. no difference)
+// or a map with single key-value pair, where key is the json tag
+// of the field that is different, and value is the id of the
+// new object.
+//
+// This is currently only implemented for object.IPAddress.AssignedObject.
+// Where we compare *struct (newInterface) with map (existingInterface)
+func addInterfaceDiff(newInterface reflect.Value, existingInterface reflect.Value, jsonTag string, diffMap map[string]interface{}) error {
+
+	// If first interface is nil, that means that we reset the value
+	if !newInterface.IsValid() {
+		if existingInterface.IsValid() {
+			diffMap[jsonTag] = nil
+		}
+		return nil
+	}
+
+	var newId int
+	var existingId int
+
+	switch v := newInterface.Interface().(type) {
+	case *objects.VMInterface:
+		newId = newInterface.Interface().(*objects.VMInterface).Id
+	case *objects.Interface:
+		newId = newInterface.Interface().(*objects.Interface).Id
+	default:
+		fmt.Printf("addInterfaceDiff: unknown type %T\n", v)
+	}
+
+	existingMap, ok := existingInterface.Interface().(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("existing interface is not a map")
+	}
+
+	//
+	existingIdFloat, ok := existingMap["id"].(float64)
+	if !ok {
+		return fmt.Errorf("id in existing interface is not a float64")
+	}
+	existingId = int(existingIdFloat)
+
+	if newId != existingId {
+		diffMap[jsonTag] = IDObject{ID: newId}
+	}
+
+	return nil
 }
 
 // Function that takes two objects (of type slice) and returns a map
@@ -464,11 +520,9 @@ func ReverseLookup(ipAddress string) string {
 // Function that returns true if the given string
 // representing an vm's interface name is valid and false otherwise.
 // Valid interface names are the ones that pass regex filtering.
-func FilterVMInterfaceNames(vmIfaceName string) (bool, error) {
+func IsVMInterfaceNameValid(vmIfaceName string) (bool, error) {
 	ifaceFilter := map[string]string{
-		"docker*":  "yes",
-		"flannel*": "yes",
-		"calico*":  "yes",
+		"^(docker|cali|flannel|veth|br-|cni|tun|tap|lo|virbr|vxlan|wg|kube-bridge|kube-ipvs)\\w*": "yes",
 	}
 
 	ifaceName, err := MatchStringToValue(vmIfaceName, ifaceFilter)

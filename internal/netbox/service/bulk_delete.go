@@ -12,7 +12,7 @@ func (api *NetboxAPI) BulkDeleteObjects(objectPath string, idSet map[int]bool) e
 
 	// Netbox API supports only JSON request body in the following format:
 	// [ {"id": 1}, {"id": 2}, {"id": 3} ]
-	netboxFormatIds := make([]map[string]int, len(idSet))
+	netboxFormatIds := make([]map[string]int, 0)
 	for id := range idSet {
 		netboxFormatIds = append(netboxFormatIds, map[string]int{"id": id})
 	}

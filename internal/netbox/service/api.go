@@ -54,7 +54,7 @@ func NewNetBoxAPI(logger *logger.Logger, baseURL string, apiToken string, valida
 }
 
 func (api *NetboxAPI) doRequest(method string, path string, body io.Reader) (*APIResponse, error) {
-	ctx, cancelCtx := context.WithTimeout(context.Background(), time.Second*10)
+	ctx, cancelCtx := context.WithTimeout(context.Background(), time.Second*60)
 	defer cancelCtx()
 
 	req, err := http.NewRequestWithContext(ctx, method, api.BaseURL+path, body)

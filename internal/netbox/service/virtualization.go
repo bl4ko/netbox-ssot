@@ -207,7 +207,7 @@ type ClustersResponse struct {
 func (api *NetboxAPI) GetAllClusters() ([]*objects.Cluster, error) {
 	api.Logger.Debug("Getting all clusters from Netbox")
 
-	response, err := api.doRequest(MethodGet, "/api/virtualization/clusters/?limit=0&netbox-ssot", nil)
+	response, err := api.doRequest(MethodGet, "/api/virtualization/clusters/?limit=0&tag=netbox-ssot", nil)
 	if err != nil {
 		return nil, err
 	}
