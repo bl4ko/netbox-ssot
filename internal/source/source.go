@@ -8,26 +8,13 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/parser"
+	"github.com/bl4ko/netbox-ssot/internal/source/common"
+	"github.com/bl4ko/netbox-ssot/internal/source/ovirt"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
-// Source is an interface for all sources (e.g. oVirt, VMware, etc.)
-type Source interface {
-	// Init initializes the source
-	Init() error
-	// Sync syncs the source to Netbox inventory
-	Sync(*inventory.NetBoxInventory) error
-}
-
-// CommonConfig is a common configuration that all sources share
-type CommonConfig struct {
-	Logger       *logger.Logger
-	SourceConfig *parser.SourceConfig
-	SourceTags   []*objects.Tag
-}
-
 // NewSource creates a Source from the given configuration
-func NewSource(config *parser.SourceConfig, logger *logger.Logger, netboxInventory *inventory.NetBoxInventory) (Source, error) {
+func NewSource(config *parser.SourceConfig, logger *logger.Logger, netboxInventory *inventory.NetBoxInventory) (common.Source, error) {
 	// First we create default tags for the source
 	sourceTag, err := netboxInventory.AddTag(&objects.Tag{
 		Name:        config.Tag,
@@ -47,14 +34,14 @@ func NewSource(config *parser.SourceConfig, logger *logger.Logger, netboxInvento
 	if err != nil {
 		return nil, fmt.Errorf("error creating sourceTypeTag: %s", err)
 	}
-	commonConfig := CommonConfig{
+	commonConfig := common.CommonConfig{
 		Logger:       logger,
 		SourceConfig: config,
 		SourceTags:   []*objects.Tag{sourceTag, sourceTypeTag},
 	}
 	switch config.Type {
 	case "ovirt":
-		return &OVirtSource{CommonConfig: commonConfig}, nil
+		return &ovirt.OVirtSource{CommonConfig: commonConfig}, nil
 	default:
 		return nil, fmt.Errorf("unsupported source type: %s", config.Type)
 	}

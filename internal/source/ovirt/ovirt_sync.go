@@ -1,9 +1,8 @@
-package source
+package ovirt
 
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
@@ -11,189 +10,24 @@ import (
 	ovirtsdk4 "github.com/ovirt/go-ovirt"
 )
 
-// OVirtSource represents an oVirt source
-type OVirtSource struct {
-	CommonConfig
-	Disks       map[string]*ovirtsdk4.Disk
-	DataCenters map[string]*ovirtsdk4.DataCenter
-	Clusters    map[string]*ovirtsdk4.Cluster
-	Hosts       map[string]*ovirtsdk4.Host
-	Vms         map[string]*ovirtsdk4.Vm
-
-	HostSiteRelations      map[string]string
-	ClusterSiteRelations   map[string]string
-	ClusterTenantRelations map[string]string
-	HostTenantRelations    map[string]string
-	VmTenantRelations      map[string]string
-}
-
-func (o *OVirtSource) Init() error {
-	// Initialize regex relations
-	o.Logger.Debug("Initializing regex relations for oVirt source ", o.SourceConfig.Name)
-	o.HostSiteRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.HostSiteRelations)
-	o.Logger.Debug("HostSiteRelations: ", o.HostSiteRelations)
-	o.ClusterSiteRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.ClusterSiteRelations)
-	o.Logger.Debug("ClusterSiteRelations: ", o.ClusterSiteRelations)
-	o.ClusterTenantRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.ClusterTenantRelations)
-	o.Logger.Debug("ClusterTenantRelations: ", o.ClusterTenantRelations)
-	o.HostTenantRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.HostTenantRelations)
-	o.Logger.Debug("HostTenantRelations: ", o.HostTenantRelations)
-	o.VmTenantRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.VmTenantRelations)
-	o.Logger.Debug("VmTenantRelations: ", o.VmTenantRelations)
-
-	// Initialize the connection
-	o.Logger.Debug("Initializing oVirt source ", o.SourceConfig.Name)
-	conn, err := ovirtsdk4.NewConnectionBuilder().
-		URL(fmt.Sprintf("%s://%s:%d/ovirt-engine/api", o.SourceConfig.HTTPScheme, o.SourceConfig.Hostname, o.SourceConfig.Port)).
-		Username(o.SourceConfig.Username).
-		Password(o.SourceConfig.Password).
-		Insecure(!o.SourceConfig.ValidateCert).
-		Compress(true).
-		Timeout(time.Second * 10).
-		Build()
-	if err != nil {
-		return fmt.Errorf("failed to create oVirt connection: %v", err)
-	}
-	defer conn.Close()
-
-	err = o.InitDisks(conn)
-	if err != nil {
-		return fmt.Errorf("failed to initialize oVirt disks: %v", err)
-	}
-
-	err = o.InitDataCenters(conn)
-	if err != nil {
-		return fmt.Errorf("failed to initialize oVirt data centers: %v", err)
-	}
-
-	err = o.InitClusters(conn)
-	if err != nil {
-		return fmt.Errorf("failed to initialize oVirt clusters: %v", err)
-	}
-
-	err = o.InitHosts(conn)
-	if err != nil {
-		return fmt.Errorf("failed to initialize oVirt hosts: %v", err)
-	}
-
-	err = o.InitVms(conn)
-	if err != nil {
-		return fmt.Errorf("failed to initialize oVirt vms: %v", err)
-	}
-	return nil
-}
-
-func (o *OVirtSource) InitDisks(conn *ovirtsdk4.Connection) error {
-	// Get the disks
-	disksResponse, err := conn.SystemService().DisksService().List().Send()
-	if err != nil {
-		return fmt.Errorf("failed to get oVirt disks: %v", err)
-	}
-	o.Disks = make(map[string]*ovirtsdk4.Disk)
-	if disks, ok := disksResponse.Disks(); ok {
-		for _, disk := range disks.Slice() {
-			o.Disks[disk.MustId()] = disk
-		}
-		o.Logger.Debug("Successfully initialized oVirt disks: ", o.Disks)
-	} else {
-		o.Logger.Warning("Error initializing oVirt disks")
-	}
-	return nil
-}
-
-func (o *OVirtSource) InitDataCenters(conn *ovirtsdk4.Connection) error {
-	dataCentersResponse, err := conn.SystemService().DataCentersService().List().Send()
-	if err != nil {
-		return fmt.Errorf("failed to get oVirt data centers: %v", err)
-	}
-	o.DataCenters = make(map[string]*ovirtsdk4.DataCenter)
-	if dataCenters, ok := dataCentersResponse.DataCenters(); ok {
-		for _, dataCenter := range dataCenters.Slice() {
-			o.DataCenters[dataCenter.MustId()] = dataCenter
-		}
-		o.Logger.Debug("Successfully initialized oVirt data centers: ", o.DataCenters)
-	} else {
-		o.Logger.Warning("Error initializing oVirt data centers")
-	}
-	return nil
-}
-
-// Function that queries ovirt api for clusters and stores them locally
-func (o *OVirtSource) InitClusters(conn *ovirtsdk4.Connection) error {
-	clustersResponse, err := conn.SystemService().ClustersService().List().Send()
-	if err != nil {
-		return fmt.Errorf("failed to get oVirt clusters: %v", err)
-	}
-	o.Clusters = make(map[string]*ovirtsdk4.Cluster)
-	if clusters, ok := clustersResponse.Clusters(); ok {
-		for _, cluster := range clusters.Slice() {
-			o.Clusters[cluster.MustId()] = cluster
-		}
-		o.Logger.Debug("Successfully initialized oVirt clusters: ", o.Clusters)
-	} else {
-		o.Logger.Warning("Error initializing oVirt clusters")
-	}
-	return nil
-}
-
-// Function that queries ovirt api for hosts and stores them locally
-func (o *OVirtSource) InitHosts(conn *ovirtsdk4.Connection) error {
-	hostsResponse, err := conn.SystemService().HostsService().List().Follow("nics").Send()
-	if err != nil {
-		return fmt.Errorf("failed to get oVirt hosts: %+v", err)
-	}
-	o.Hosts = make(map[string]*ovirtsdk4.Host)
-	if hosts, ok := hostsResponse.Hosts(); ok {
-		for _, host := range hosts.Slice() {
-			o.Hosts[host.MustId()] = host
-		}
-		o.Logger.Debug("Successfully initialized oVirt hosts: ", hosts)
-	} else {
-		o.Logger.Warning("Error initializing oVirt hosts")
-	}
-	return nil
-}
-
-// Function that queries the ovirt api for vms and stores them locally
-func (o *OVirtSource) InitVms(conn *ovirtsdk4.Connection) error {
-	vmsResponse, err := conn.SystemService().VmsService().List().Follow("nics,diskattachments,reporteddevices").Send()
-	if err != nil {
-		return fmt.Errorf("failed to get oVirt vms: %+v", err)
-	}
-	o.Vms = make(map[string]*ovirtsdk4.Vm)
-	if vms, ok := vmsResponse.Vms(); ok {
-		for _, vm := range vms.Slice() {
-			o.Vms[vm.MustId()] = vm
-		}
-		o.Logger.Debug("Successfully initialized oVirt vms: ", vms)
-	} else {
-		o.Logger.Warning("Error initializing oVirt vms")
-	}
-	return nil
-}
-
 // Function that syncs all data from oVirt to Netbox
 func (o *OVirtSource) Sync(nbi *inventory.NetBoxInventory) error {
-	err := o.SyncDatacenters(nbi)
-	if err != nil {
-		return fmt.Errorf("failed to sync oVirt datacenters: %v", err)
+	syncFunctions := []func(*inventory.NetBoxInventory) error{
+		o.syncDatacenters,
+		o.syncClusters,
+		o.syncHosts,
+		o.syncVms,
 	}
-	err = o.SyncClusters(nbi)
-	if err != nil {
-		return fmt.Errorf("failed to sync oVirt clusters: %v", err)
-	}
-	err = o.SyncHosts(nbi)
-	if err != nil {
-		return fmt.Errorf("failed to sync oVirt hosts: %v", err)
-	}
-	err = o.SyncVms(nbi)
-	if err != nil {
-		return fmt.Errorf("failed to sync oVirt vms: %v", err)
+	for _, syncFunc := range syncFunctions {
+		err := syncFunc(nbi)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-func (o *OVirtSource) SyncDatacenters(nbi *inventory.NetBoxInventory) error {
+func (o *OVirtSource) syncDatacenters(nbi *inventory.NetBoxInventory) error {
 	// First sync oVirt DataCenters as NetBoxClusterGroups
 	for _, datacenter := range o.DataCenters {
 		name, exists := datacenter.Name()
@@ -215,7 +49,7 @@ func (o *OVirtSource) SyncDatacenters(nbi *inventory.NetBoxInventory) error {
 	return nil
 }
 
-func (o *OVirtSource) SyncClusters(nbi *inventory.NetBoxInventory) error {
+func (o *OVirtSource) syncClusters(nbi *inventory.NetBoxInventory) error {
 	clusterType := &objects.ClusterType{
 		NetboxObject: objects.NetboxObject{
 			Tags: o.SourceTags,
@@ -297,7 +131,7 @@ func (o *OVirtSource) SyncClusters(nbi *inventory.NetBoxInventory) error {
 
 // Host in oVirt is a represented as device in netbox with a
 // custom role Server
-func (o *OVirtSource) SyncHosts(nbi *inventory.NetBoxInventory) error {
+func (o *OVirtSource) syncHosts(nbi *inventory.NetBoxInventory) error {
 	for hostId, host := range o.Hosts {
 		hostName, exists := host.Name()
 		if !exists {
@@ -658,7 +492,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 	return nil
 }
 
-func (o *OVirtSource) SyncVms(nbi *inventory.NetBoxInventory) error {
+func (o *OVirtSource) syncVms(nbi *inventory.NetBoxInventory) error {
 	for vmId, vm := range o.Vms {
 		// VM name, which is used as unique identifier for VMs in Netbox
 		vmName, exists := vm.Name()
