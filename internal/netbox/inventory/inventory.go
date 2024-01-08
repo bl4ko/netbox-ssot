@@ -90,83 +90,34 @@ func (netboxInventory *NetBoxInventory) Init() error {
 	netboxInventory.Logger.Debug("Initializing Netbox API with baseURL: ", baseURL)
 	netboxInventory.NetboxApi = service.NewNetBoxAPI(netboxInventory.Logger, baseURL, netboxInventory.NetboxConfig.ApiToken, netboxInventory.NetboxConfig.ValidateCert)
 
-	err := netboxInventory.InitTags()
-	if err != nil {
-		return err
+	// order matters. TODO: use parallelization in the future, on the init functions that can be parallelized
+	initFunctions := []func() error{
+		netboxInventory.InitTags,
+		netboxInventory.InitTenants,
+		netboxInventory.InitSites,
+		netboxInventory.InitManufacturers,
+		netboxInventory.InitPlatforms,
+		netboxInventory.InitDevices,
+		netboxInventory.InitInterfaces,
+		netboxInventory.InitIPAddresses,
+		netboxInventory.InitVlans,
+		netboxInventory.InitDeviceRoles,
+		netboxInventory.InitServerDeviceRole,
+		netboxInventory.InitDeviceTypes,
+		netboxInventory.InitCustomFields,
+		netboxInventory.InitSsotCustomFields,
+		netboxInventory.InitClusterGroups,
+		netboxInventory.InitClusterTypes,
+		netboxInventory.InitClusters,
+		netboxInventory.InitVMs,
+		netboxInventory.InitVMInterfaces,
 	}
-	err = netboxInventory.InitTenants()
-	if err != nil {
-		return err
+	for _, initFunc := range initFunctions {
+		if err := initFunc(); err != nil {
+			return err
+		}
 	}
-	err = netboxInventory.InitSites()
-	if err != nil {
-		return err
-	}
-	err = netboxInventory.InitManufacturers()
-	if err != nil {
-		return err
-	}
-	err = netboxInventory.InitPlatforms()
-	if err != nil {
-		return err
-	}
-	err = netboxInventory.InitDevices()
-	if err != nil {
-		return err
-	}
-	err = netboxInventory.InitInterfaces()
-	if err != nil {
-		return err
-	}
-	err = netboxInventory.InitIPAddresses()
-	if err != nil {
-		return err
-	}
-	err = netboxInventory.InitVlans()
-	if err != nil {
-		return err
-	}
-	err = netboxInventory.InitDeviceRoles()
-	if err != nil {
-		return err
-	}
-	// init server device role which is required for separation of device object into servers
-	err = netboxInventory.InitServerDeviceRole()
-	if err != nil {
-		return err
-	}
-	err = netboxInventory.InitDeviceTypes()
-	if err != nil {
-		return err
-	}
-	// init custom fields. Custom fields can be used for devices to add physical cores and memory to each device representing server.
-	err = netboxInventory.InitCustomFields()
-	if err != nil {
-		return err
-	}
-	err = netboxInventory.InitSsotCustomFields()
-	if err != nil {
-		return err
-	}
-	err = netboxInventory.InitClusterGroups()
-	if err != nil {
-		return err
-	}
-	err = netboxInventory.InitClusterTypes()
-	if err != nil {
-		return err
-	}
-	err = netboxInventory.InitClusters()
-	if err != nil {
-		return err
-	}
-	err = netboxInventory.InitVMs()
-	if err != nil {
-		return err
-	}
-	err = netboxInventory.InitVMInterfaces()
-	if err != nil {
-		return err
-	}
+
 	return nil
+
 }
