@@ -1,6 +1,8 @@
 package objects
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type IPAddressStatus struct {
 	Choice
@@ -45,17 +47,13 @@ type IPAddress struct {
 	Role *IPAddressRole `json:"role,omitempty"`
 	// Hostname or FQDN (not case-sensitive)
 	DNSName string `json:"dns_name,omitempty"`
-
 	// Tenancy
 	Tenant *Tenant `json:"tenant,omitempty"`
 
-	// AssignedInterface
-	// AssignedObjectType is either a DeviceInterface or a VMInterface
+	// AssignedObjectType is either a DeviceInterface or a VMInterface.
 	AssignedObjectType AssignedObjectType `json:"assigned_object_type,omitempty"`
-	// ID of the assigned object (either a DeviceInterface or a VMInterface)
+	// ID of the assigned object (either an ID of DeviceInterface or an ID of VMInterface).
 	AssignedObjectId int `json:"assigned_object_id,omitempty"`
-	// AssignedObject can be either a DeviceInterface or a VMInterface
-	AssignedObject interface{} `json:"assigned_object,omitempty"`
 }
 
 func (ip IPAddress) String() string {

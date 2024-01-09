@@ -8,7 +8,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 )
 
-func TestJsonDiffMapExceptIdWithMapsAddition(t *testing.T) {
+func TestMapsAddition(t *testing.T) {
 	newObj := &objects.Device{
 		CustomFields: map[string]string{
 			"host_cpu_cores": "10 cpu cores",
@@ -46,7 +46,7 @@ func TestJsonDiffMapExceptIdWithMapsAddition(t *testing.T) {
 	}
 }
 
-func TestJsonDiffMapExceptIdWithMapsNoAddition(t *testing.T) {
+func TestMapsNoAddition(t *testing.T) {
 	newObj := &objects.Device{
 		CustomFields: map[string]string{
 			"host_cpu_cores": "10 cpu cores",
@@ -77,7 +77,7 @@ func TestJsonDiffMapExceptIdWithMapsNoAddition(t *testing.T) {
 	}
 }
 
-func TestJsonDiffMapExceptIdWithMapsEmpty(t *testing.T) {
+func TestMapsEmpty(t *testing.T) {
 	newObj := &objects.Device{}
 	existingObj := &objects.Device{
 		CustomFields: map[string]string{
@@ -124,6 +124,90 @@ func TestJsonDiffMapExceptIdWithMapsEmpty(t *testing.T) {
 // 		t.Errorf("JsonDiffMapExceptId() error = %v", err)
 // 	}
 // }
+
+// When we add a new object, with struct attributes. For each of these fields there are two options:
+//
+// If field is not set in new struct, we keep the value from existing struct (no difference).
+//
+// If field is set in new struct, and is different from existing struct, we expect the difference to be the new value.
+func TestStructAddition(t *testing.T) {
+	newStruct := &objects.Device{
+		Tenant: &objects.Tenant{
+			NetboxObject: objects.NetboxObject{
+				Id: 1,
+			},
+		},
+	}
+	existingStruct := &objects.Device{
+		Tenant: &objects.Tenant{
+			NetboxObject: objects.NetboxObject{
+				Id: 2,
+			},
+		},
+		Site: &objects.Site{
+			NetboxObject: objects.NetboxObject{
+				Id: 3,
+			},
+			Name: "Existing site",
+		},
+	}
+
+	expectedDiff := map[string]interface{}{
+		"tenant": IDObject{ID: 1},
+	}
+	ouputDiff, err := JsonDiffMapExceptId(newStruct, existingStruct)
+	if err != nil {
+		t.Errorf("JsonDiffMapExceptId() error = %v", err)
+	}
+	if !reflect.DeepEqual(ouputDiff, expectedDiff) {
+		t.Errorf("JsonDiffMapExceptId() = %v, want %v", ouputDiff, expectedDiff)
+	}
+}
+
+// When we add a new struct, which's attributes are subset of attributes of the existing struct.
+func TestStructNoAddition(t *testing.T) {
+	newStruct := &objects.Device{
+		Name: "Existing Device",
+	}
+	existingStruct := &objects.Device{
+		Name: "Existing Device",
+		Tenant: &objects.Tenant{
+			Name: "Existing tenant",
+		},
+		Site: &objects.Site{
+			Name: "Existing site",
+		},
+	}
+	expectedOutput := map[string]interface{}{}
+	receivedOutput, err := JsonDiffMapExceptId(newStruct, existingStruct)
+	if err != nil {
+		t.Errorf("JsonDiffMapExceptId() error = %v", err)
+	}
+	if !reflect.DeepEqual(receivedOutput, expectedOutput) {
+		t.Errorf("JsonDiffMapExceptId() = %v, want %v", receivedOutput, expectedOutput)
+	}
+}
+
+// When we add a new struct, that is empty, we expect no difference.
+func TestStructEmpty(t *testing.T) {
+	newStruct := &objects.Device{}
+	existingStruct := &objects.Device{
+		Tenant: &objects.Tenant{
+			Name: "Existing tenant",
+		},
+		Site: &objects.Site{
+			Name: "Existing site",
+		},
+	}
+	expectedOutput := map[string]interface{}{}
+	receivedOutput, err := JsonDiffMapExceptId(newStruct, existingStruct)
+	if err != nil {
+		t.Errorf("JsonDiffMapExceptId() error = %v", err)
+	}
+	if !reflect.DeepEqual(receivedOutput, expectedOutput) {
+		t.Errorf("JsonDiffMapExceptId() = %v, want %v", receivedOutput, expectedOutput)
+	}
+}
 
 func TestJsonDiffMapExceptId(t *testing.T) {
 	tests := []struct {
@@ -320,9 +404,7 @@ func TestJsonDiffMapComplex(t *testing.T) {
 		"group": IDObject{
 			ID: 4,
 		},
-		"site":   nil,
-		"tags":   []int{1, 3, 4},
-		"tenant": nil,
+		"tags": []int{1, 3, 4},
 	}
 
 	diff, err := JsonDiffMapExceptId(newObj, existingObj)
@@ -545,45 +627,6 @@ func TestJsonDiffMapWithMapAttr2(t *testing.T) {
 		},
 	}
 	gotDiffMap, err := JsonDiffMapExceptId(newInterface, existingInterface)
-	if err != nil {
-		t.Errorf("JsonDiffMapExceptId() error = %v", err)
-	}
-	// try to marshal gotDiffMap
-	_, err = json.Marshal(gotDiffMap)
-	if err != nil {
-		t.Errorf("JsonDiffMapExceptId() error = %v", err)
-	}
-	if !reflect.DeepEqual(gotDiffMap, expectedDiffMap) {
-		t.Errorf("JsonDiffMapExceptId() = %v, want %v", gotDiffMap, expectedDiffMap)
-	}
-}
-
-func TestJsonDiffMapWithInterfaceAttr(t *testing.T) {
-	newIPAddress := &objects.IPAddress{
-		AssignedObjectType: objects.AssignedObjectTypeVMInterface,
-		AssignedObjectId:   1799,
-		AssignedObject: &objects.VMInterface{
-			NetboxObject: objects.NetboxObject{
-				Id: 1799,
-			},
-			Name: "ens3",
-			VM: &objects.VM{
-				Name: "test-vm",
-			},
-		},
-	}
-	existingIPAddress := &objects.IPAddress{
-		AssignedObjectType: objects.AssignedObjectTypeVMInterface,
-		AssignedObjectId:   1799,
-		AssignedObject: interface{}(map[string]interface{}{
-			"id":   1799,
-			"name": "ens3",
-		}),
-	}
-
-	expectedDiffMap := map[string]interface{}{}
-
-	gotDiffMap, err := JsonDiffMapExceptId(newIPAddress, existingIPAddress)
 	if err != nil {
 		t.Errorf("JsonDiffMapExceptId() error = %v", err)
 	}

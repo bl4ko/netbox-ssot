@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 	ovirtsdk4 "github.com/ovirt/go-ovirt"
@@ -70,5 +71,22 @@ func (o *OVirtSource) Init() error {
 		}
 	}
 
+	return nil
+}
+
+// Function that syncs all data from oVirt to Netbox
+func (o *OVirtSource) Sync(nbi *inventory.NetBoxInventory) error {
+	syncFunctions := []func(*inventory.NetBoxInventory) error{
+		o.syncDatacenters,
+		o.syncClusters,
+		o.syncHosts,
+		o.syncVms,
+	}
+	for _, syncFunc := range syncFunctions {
+		err := syncFunc(nbi)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }

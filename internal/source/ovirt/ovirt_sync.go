@@ -10,23 +10,6 @@ import (
 	ovirtsdk4 "github.com/ovirt/go-ovirt"
 )
 
-// Function that syncs all data from oVirt to Netbox
-func (o *OVirtSource) Sync(nbi *inventory.NetBoxInventory) error {
-	syncFunctions := []func(*inventory.NetBoxInventory) error{
-		o.syncDatacenters,
-		o.syncClusters,
-		o.syncHosts,
-		o.syncVms,
-	}
-	for _, syncFunc := range syncFunctions {
-		err := syncFunc(nbi)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (o *OVirtSource) syncDatacenters(nbi *inventory.NetBoxInventory) error {
 	// First sync oVirt DataCenters as NetBoxClusterGroups
 	for _, datacenter := range o.DataCenters {
@@ -711,7 +694,6 @@ func (o *OVirtSource) syncVmInterfaces(nbi *inventory.NetBoxInventory, ovirtVm *
 										DNSName:            hostname,
 										AssignedObjectType: objects.AssignedObjectTypeVMInterface,
 										AssignedObjectId:   vmInterface.Id,
-										AssignedObject:     vmInterface,
 									})
 
 									if err != nil {
