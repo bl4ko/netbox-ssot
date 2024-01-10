@@ -17,6 +17,8 @@ type NetboxAPI struct {
 	HttpClient *http.Client
 	BaseURL    string
 	ApiKey     string
+	Timeout    int // in seconds
+	MaxRetires int
 }
 
 const (
@@ -34,7 +36,7 @@ type APIResponse struct {
 }
 
 // Constructor function for creating a new netBoxAPI instance.
-func NewNetBoxAPI(logger *logger.Logger, baseURL string, apiToken string, validateCert bool) *NetboxAPI {
+func NewNetBoxAPI(logger *logger.Logger, baseURL string, apiToken string, validateCert bool, timeout int) *NetboxAPI {
 	var client *http.Client
 	if validateCert {
 		client = &http.Client{}
@@ -50,11 +52,12 @@ func NewNetBoxAPI(logger *logger.Logger, baseURL string, apiToken string, valida
 		Logger:     logger,
 		BaseURL:    baseURL,
 		ApiKey:     apiToken,
+		Timeout:    timeout,
 	}
 }
 
 func (api *NetboxAPI) doRequest(method string, path string, body io.Reader) (*APIResponse, error) {
-	ctx, cancelCtx := context.WithTimeout(context.Background(), time.Second*60)
+	ctx, cancelCtx := context.WithTimeout(context.Background(), time.Second*time.Duration(api.Timeout))
 	defer cancelCtx()
 
 	req, err := http.NewRequestWithContext(ctx, method, api.BaseURL+path, body)

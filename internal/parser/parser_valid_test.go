@@ -37,9 +37,6 @@ func findDifferentFields(firstConf Config, secondConf Config) map[string]string 
 	if firstConf.Netbox.Timeout != secondConf.Netbox.Timeout {
 		field2diff["Netbox.Timeout"] = fmt.Sprintf("%d != %d", firstConf.Netbox.Timeout, secondConf.Netbox.Timeout)
 	}
-	if firstConf.Netbox.MaxRetries != secondConf.Netbox.MaxRetries {
-		field2diff["Netbox.MaxRetries"] = fmt.Sprintf("%d != %d", firstConf.Netbox.MaxRetries, secondConf.Netbox.MaxRetries)
-	}
 	if firstConf.Netbox.Tag != secondConf.Netbox.Tag {
 		field2diff["Netbox.Tag"] = fmt.Sprintf("%s != %s", firstConf.Netbox.Tag, secondConf.Netbox.Tag)
 	}
@@ -147,7 +144,6 @@ func TestValidConfig(t *testing.T) {
 			Port:         666,
 			ValidateCert: false,         // Default
 			Timeout:      30,            // Default
-			MaxRetries:   3,             // Default
 			Tag:          "netbox-ssot", // Default
 			TagColor:     "00add8",      // Default
 		},

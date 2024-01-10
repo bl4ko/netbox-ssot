@@ -1,23 +1,41 @@
 # Netbox-SSOT
 
+Netbox-ssot is a tool to keep Netbox in sync with external data sources. 
+Currently the supported external data sources types are:
+
+- `ovirt`
+
+
 
 ## Configuration
 
+Example config can be found in [example section](#example-config)
+
+### Logger
+
+| Parameter      | Description                                            | Type | Possible values | Default | Required |
+| -------------- | ------------------------------------------------------ | ---- | --------------- | ------- | -------- |
+| `logger.level` | Log level                                              | int  | 0-3             | 1       | Yes      |
+| `logger.dest`  | Log output filename. Default `""` representing stdout. | str  | Any valid path  | ""      | No       |
+
+
+### Netbox
+
+| Parameter             | Description                                             | Type   | Possible values | Default       | Required |
+| --------------------- | ------------------------------------------------------- | ------ | --------------- | ------------- | -------- |
+| `netbox.apiToken`     | apiToken to access netbox                               | str    | Any valid token | ""            | Yes      |
+| `netbox.hostname`     | Netbox hostname (e.g `netbox.example.com`)              | str    | Valid hostname  | ""            | Yes      |
+| `netbox.port`         | Netbox port                                             | int    | 0-65536         | 443           | No       |
+| `netbox.HTTPScheme`   | Netbox API HTTP scheme                                  | str    | http, https     | https         | No       |
+| `netbox.validateCert` | Validate Netbox's TLS certificate                       | bool   | true, false     | false         | No       |
+| `netbox.timeout`      | Max netbox API call length in seconds                   | int    | >=0             | 30            | No       |
+| `netbox.tag`          | Tag to be applied to all objects managed by netbox-ssot | string | any             | "netbox-ssot" | No       |
+| `netbox.tagColor`     | TagColor for the netbox-ssot tag.                       | string | any             | "07426b"      | No       |
+
+### Source
+
 | Parameter                 | Description                                                      | Type         | Possible values | Default                 | Required |
 | ------------------------- | ---------------------------------------------------------------- | ------------ | --------------- | ----------------------- | -------- |
-| `logger.level`            | Log level                                                        | int          | 0-3             | 1                       | Yes      |
-| `logger.dest`             | Log output filename. Default `""` representing stdout.           | str          | Any valid path  | ""                      | No       |
-| `netbox.apiToken`         | apiToken to access netbox                                        | str          | Any valid token | ""                      | Yes      |
-| `netbox.hostname`         | Netbox hostname (e.g `netbox.example.com`)                       | str          | Valid hostname  | ""                      | Yes      |
-| `netbox.port`             | Netbox port                                                      | int          | 0-65536         | 443                     | No       |
-| `netbox.HTTPScheme`       | Netbox API HTTP scheme                                           | str          | http, https     | https                   | No       |
-| `netbox.validateCert`     | Validate Netbox's TLS certificate                                | bool         | true, false     | false                   | No       |
-| `netbox.clientCert`       | Path to client certificate                                       | str          | any             | ""                      | No       |
-| `netbox.clientCertKey`    | Path to client certificate key                                   | str          | any             | ""                      | No       |
-| `netbox.timeout`          | API call timeout in seconds                                      | int          | >=0             | 30                      | No       |
-| `netbox.maxRetries`       | Number of retries for failed API calls                           | int          | >=0             | 3                       | No       |
-| `netbox.tag`              | Tag to be applied to all objects managed by netbox-ssot          | string       | any             | "netbox-ssot"           | No       |
-| `netbox.tagColor`         | TagColor for the netbox-ssot tag.                                | string       | any             | "07426b"                | No       |
 | `source`                  | Array of data sources. Each data source requires its own config  | []SourceType | SourceType      | []                      | No       |
 | `source.name`             | Name of the data source.                                         | str          | any             | ""                      | Yes      |
 | `source.type`             | Data source type                                                 | str          | ovirt, vmware   | ""                      | Yes      |
@@ -31,7 +49,7 @@
 | `source.tagColor`         | TagColor for the source tag.                                     | string       | any             | ovirt: "07426b"         | No       |
 
 
-Example config
+### Example config
 
 ```yaml
 logger:
@@ -49,7 +67,6 @@ netbox:
   clientCert: "" # Path to client certificate
   clientCertKey: "" # Path to client certificate key
   timeout: 30 # API call timeout in seconds
-  maxRetries: 3 # Number of retries for failed API calls
   # TODO:
   # useCaching: false # Enable caching of Netbox data
   # cacheDir: "/tmp" # Path to cache directory

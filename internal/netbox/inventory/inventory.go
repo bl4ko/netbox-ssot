@@ -88,7 +88,7 @@ func (netboxInventory *NetBoxInventory) Init() error {
 	baseURL := fmt.Sprintf("%s://%s:%d", netboxInventory.NetboxConfig.HTTPScheme, netboxInventory.NetboxConfig.Hostname, netboxInventory.NetboxConfig.Port)
 
 	netboxInventory.Logger.Debug("Initializing Netbox API with baseURL: ", baseURL)
-	netboxInventory.NetboxApi = service.NewNetBoxAPI(netboxInventory.Logger, baseURL, netboxInventory.NetboxConfig.ApiToken, netboxInventory.NetboxConfig.ValidateCert)
+	netboxInventory.NetboxApi = service.NewNetBoxAPI(netboxInventory.Logger, baseURL, netboxInventory.NetboxConfig.ApiToken, netboxInventory.NetboxConfig.ValidateCert, netboxInventory.NetboxConfig.Timeout)
 
 	// order matters. TODO: use parallelization in the future, on the init functions that can be parallelized
 	initFunctions := []func() error{

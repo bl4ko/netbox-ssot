@@ -37,18 +37,17 @@ const (
 type NetboxConfig struct {
 	ApiToken string `yaml:"apiToken"`
 	Hostname string `yaml:"hostname"`
+	Port     int    `yaml:"port"`
 	// Can be http or https (default)
 	HTTPScheme   HTTPScheme `yaml:"httpScheme"`
-	Port         int        `yaml:"port"`
 	ValidateCert bool       `yaml:"validateCert"`
 	Timeout      int        `yaml:"timeout"`
-	MaxRetries   int        `yaml:"maxRetries"`
 	Tag          string     `yaml:"tag"`
 	TagColor     string     `yaml:"tagColor"`
 }
 
 func (n NetboxConfig) String() string {
-	return fmt.Sprintf("NetboxConfig{ApiToken: %s, Hostname: %s, Port: %d, HTTPScheme: %s, ValidateCert: %t, Timeout: %d, MaxRetries: %d, Tag: %s, TagColor: %s}", n.ApiToken, n.Hostname, n.Port, n.HTTPScheme, n.ValidateCert, n.Timeout, n.MaxRetries, n.Tag, n.TagColor)
+	return fmt.Sprintf("NetboxConfig{ApiToken: %s, Hostname: %s, Port: %d, HTTPScheme: %s, ValidateCert: %t, Timeout: %d, Tag: %s, TagColor: %s}", n.ApiToken, n.Hostname, n.Port, n.HTTPScheme, n.ValidateCert, n.Timeout, n.Tag, n.TagColor)
 }
 
 type SourceType string
@@ -126,9 +125,6 @@ func validateNetboxConfig(config *Config) error {
 	if config.Netbox.Timeout < 0 {
 		return errors.New("netbox.timeout: cannot be negative")
 	}
-	if config.Netbox.MaxRetries < 0 {
-		return errors.New("netbox.maxRetries: cannot be negative")
-	}
 	if config.Netbox.Tag == "" {
 		config.Netbox.Tag = "netbox-ssot"
 	}
@@ -183,7 +179,7 @@ func validateSourceConfig(config *Config) error {
 		}
 		switch externalSource.Type {
 		case Ovirt:
-			// Do nothing
+		case Vmware:
 		default:
 			return errors.New(externalSourceStr + "type is not valid")
 		}
@@ -239,7 +235,6 @@ func ParseConfig(filename string) (*Config, error) {
 			HTTPScheme: "https",
 			Port:       443,
 			Timeout:    30,
-			MaxRetries: 3,
 		},
 		Sources: []SourceConfig{},
 	}
