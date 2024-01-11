@@ -8,7 +8,7 @@ type Tag struct {
 	Id          int    `json:"id,omitempty"`
 	Name        string `json:"name,omitempty"`
 	Slug        string `json:"slug,omitempty"`
-	Color       string `json:"color,omitempty"`
+	Color       Color  `json:"color,omitempty"`
 	Description string `json:"description,omitempty"`
 }
 

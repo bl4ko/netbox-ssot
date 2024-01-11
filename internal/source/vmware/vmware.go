@@ -126,18 +126,18 @@ func (vc *VmwareSource) Init() error {
 
 // Function that syncs all data from oVirt to Netbox
 func (vc *VmwareSource) Sync(nbi *inventory.NetBoxInventory) error {
-	// syncFunctions := []func(*inventory.NetBoxInventory) error{
-	// 	vs.syncDatacenters,
-	// 	vs.syncClusters,
-	// 	vs.syncHosts,
-	// 	vs.syncVms,
-	// }
-	// for _, syncFunc := range syncFunctions {
-	// 	err := syncFunc(nbi)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
+	syncFunctions := []func(*inventory.NetBoxInventory) error{
+		vc.syncDatacenters,
+		vc.syncClusters,
+		vc.syncHosts,
+		vc.syncVms,
+	}
+	for _, syncFunc := range syncFunctions {
+		err := syncFunc(nbi)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

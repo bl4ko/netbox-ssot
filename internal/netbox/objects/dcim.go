@@ -117,7 +117,7 @@ type DeviceRole struct {
 	// URL-friendly unique shorthand. This field is required.
 	Slug string `json:"slug,omitempty"`
 	// Color of the device role. This field is required.
-	Color string `json:"color,omitempty"`
+	Color Color `json:"color,omitempty"`
 	// VMRole is whether this device role is used to represent virtual machines.
 	VMRole bool `json:"vm_role,omitempty"`
 }

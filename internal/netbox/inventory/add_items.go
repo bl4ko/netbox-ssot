@@ -67,7 +67,7 @@ func (ni *NetBoxInventory) AddCustomField(newCf *objects.CustomField) error {
 	return nil
 }
 
-func (ni *NetBoxInventory) AddClusterGroup(newCg *objects.ClusterGroup, newTags []*objects.Tag) (*objects.ClusterGroup, error) {
+func (ni *NetBoxInventory) AddClusterGroup(newCg *objects.ClusterGroup) (*objects.ClusterGroup, error) {
 	newCg.Tags = append(newCg.Tags, ni.SsotTag)
 	if _, ok := ni.ClusterGroupsIndexByName[newCg.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
