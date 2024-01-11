@@ -18,12 +18,12 @@ import (
 // VmwareSource represents an vsphere source
 type VmwareSource struct {
 	common.CommonConfig
-	Disks       map[string]*mo.Datastore
-	DataCenters map[string]*mo.Datacenter
-	Clusters    map[string]*mo.ClusterComputeResource
-	Hosts       map[string]*mo.HostSystem
-	Vms         map[string]*mo.VirtualMachine
-	Network     map[string]*mo.Network
+	Disks                       map[string]*mo.Datastore
+	DataCenters                 map[string]*mo.Datacenter
+	Clusters                    map[string]*mo.ClusterComputeResource
+	Hosts                       map[string]*mo.HostSystem
+	Vms                         map[string]*mo.VirtualMachine
+	DistributedVirtualPortgrups map[string]*mo.DistributedVirtualPortgroup // For vlans
 
 	// Relations between objects "object_id": "object_id"
 	Cluster2Datacenter map[string]string
@@ -99,6 +99,7 @@ func (vc *VmwareSource) Init() error {
 
 	// Initialise items to local storage
 	initFunctions := []func(context.Context, *view.ContainerView) error{
+		vc.InitVlans,
 		vc.InitDisks,
 		vc.InitDataCenters,
 		vc.InitClusters,

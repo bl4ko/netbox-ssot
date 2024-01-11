@@ -8,6 +8,19 @@ import (
 	"github.com/vmware/govmomi/vim25/mo"
 )
 
+// In vsphere we get vlans from DistributedVirtualPortgroups
+func (vc *VmwareSource) InitVlans(ctx context.Context, containerView *view.ContainerView) error {
+	var dvpgs []mo.DistributedVirtualPortgroup
+	err := containerView.Retrieve(ctx, []string{"DistributedVirtualPortgroup"}, []string{"config"}, &dvpgs)
+	if err != nil {
+		return fmt.Errorf("failed retrieving DistributedVirtualPortgroups: %s", err)
+	}
+	for _, dvpg := range dvpgs {
+		vc.DistributedVirtualPortgrups[dvpg.Self.Value] = &dvpg
+	}
+	return nil
+}
+
 func (vc *VmwareSource) InitDisks(ctx context.Context, containerView *view.ContainerView) error {
 	var disks []mo.Datastore
 	err := containerView.Retrieve(ctx, []string{"Datastore"}, []string{"summary", "host", "vm"}, &disks)
@@ -53,7 +66,7 @@ func (vc *VmwareSource) InitClusters(ctx context.Context, containerView *view.Co
 
 func (vc *VmwareSource) InitHosts(ctx context.Context, containerView *view.ContainerView) error {
 	var hosts []mo.HostSystem
-	err := containerView.Retrieve(ctx, []string{"HostSystem"}, []string{"name", "summary.host", "summary.hardware", "vm", "config.network"}, &hosts)
+	err := containerView.Retrieve(ctx, []string{"HostSystem"}, []string{"name", "summary.host", "summary.hardware", "summary.runtime", "vm", "config.network"}, &hosts)
 	if err != nil {
 		return fmt.Errorf("failed retrieving hosts: %s", err)
 	}

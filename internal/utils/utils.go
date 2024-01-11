@@ -70,6 +70,12 @@ func Slugify(name string) string {
 // an universal platform name that then can be shared between
 // multiple objects.
 func GeneratePlatformName(osType string, osVersion string) string {
+	if osType == "" {
+		osType = "Generic OS"
+	}
+	if osVersion == "" {
+		osVersion = "Generic Version"
+	}
 	return fmt.Sprintf("%s %s", osType, osVersion)
 }
 

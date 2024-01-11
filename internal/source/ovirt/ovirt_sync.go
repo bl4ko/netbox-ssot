@@ -217,8 +217,7 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetBoxInventory) error {
 		}
 
 		var hostPlatform *objects.Platform
-		osType := "Generic OS"
-		osVersion := "Generic Version"
+		var osType, osVersion string
 		if os, exists := host.Os(); exists {
 			if ovirtOsType, exists := os.Type(); exists {
 				osType = ovirtOsType
