@@ -406,7 +406,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 				Name:   nicName,
 				Speed:  objects.InterfaceSpeed(nicSpeedKbps),
 				Status: nicEnabled,
-				MTU:    nicMtu,
+				MTU:    int(nicMtu),
 				Type:   nicType,
 				CustomFields: map[string]string{
 					"source_id": nicId,

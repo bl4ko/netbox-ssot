@@ -2,12 +2,14 @@ package vmware
 
 import (
 	"fmt"
+	"slices"
+	"strings"
 
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 	ovirtsdk4 "github.com/ovirt/go-ovirt"
-	"github.com/vmware/govmomi/vim25/types"
+	"github.com/vmware/govmomi/vim25/mo"
 )
 
 func (vc *VmwareSource) syncDatacenters(nbi *inventory.NetBoxInventory) error {
@@ -229,193 +231,244 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetBoxInventory) error {
 	return nil
 }
 
-// func (vc *VmwareSource) syncHostNics(nbi *inventory.NetBoxInventory, vmwareHost *mo.HostSystem, nbHost *objects.Device) error {
-// 	// nics, exists := vmwareHost.Nics()
-// 	// master2slave := make(map[string][]string) // masterId: [slaveId1, slaveId2, ...]
-// 	// parent2child := make(map[string][]string) // parentId: [childId, ... ]
-// 	// processedNicsIds := make(map[string]bool)
-// 	// if exists {
-// 	// 	hostInterfaces := map[string]*objects.Interface{}
+func (vc *VmwareSource) syncHostNics(nbi *inventory.NetBoxInventory, vcHost *mo.HostSystem, nbHost *objects.Device) error {
 
-// 	// 	// First loop through all nics
-// 	// 	for _, nic := range nics.Slice() {
-// 	// 		nicId, exists := nic.Id()
-// 	// 		if !exists {
-// 	// 			vc.Logger.Warning("id for oVirt nic with id ", nicId, " is empty. This should not happen! Skipping...")
-// 	// 			continue
-// 	// 		}
-// 	// 		nicName, exists := nic.Name()
-// 	// 		if !exists {
-// 	// 			vc.Logger.Warning("name for oVirt nic with id ", nicId, " is empty.")
-// 	// 		}
-// 	// 		// var nicType *objects.InterfaceType
-// 	// 		nicSpeedBips, exists := nic.Speed()
-// 	// 		if !exists {
-// 	// 			vc.Logger.Warning("speed for oVirt nic with id ", nicId, " is empty.")
-// 	// 		}
-// 	// 		nicSpeedKbps := nicSpeedBips / 1000
+	// Sync host's physical interfaces
+	err := vc.syncHostPhysicalNics(nbi, vcHost, nbHost)
+	if err != nil {
+		return fmt.Errorf("physicial interfaces sync: %s", err)
+	}
 
-// 	// 		nicMtu, exists := nic.Mtu()
-// 	// 		if !exists {
-// 	// 			vc.Logger.Warning("mtu for oVirt nic with id ", nicId, " is empty.")
-// 	// 		}
+	// Sync host's virtual interfaces
+	err = vc.syncHostVirtualNics(nbi, vcHost, nbHost)
+	if err != nil {
+		return fmt.Errorf("virtual interfaces sync: %s", err)
+	}
 
-// 	// 		nicComment, _ := nic.Comment()
+	return nil
+}
 
-// 	// 		var nicEnabled bool
-// 	// 		ovirtNicStatus, exists := nic.Status()
-// 	// 		if exists {
-// 	// 			switch ovirtNicStatus {
-// 	// 			case ovirtsdk4.NICSTATUS_UP:
-// 	// 				nicEnabled = true
-// 	// 			default:
-// 	// 				nicEnabled = false
-// 	// 			}
-// 	// 		}
+func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetBoxInventory, vcHost *mo.HostSystem, nbHost *objects.Device) error {
 
-// 	// 		// bridged, exists := nic.Bridged()
-// 	// 		// if exists {
-// 	// 		// 	if bridged {
-// 	// 		// 		// This interface is bridged
-// 	// 		// 		fmt.Printf("nic[%s] is bridged\n", nicName)
-// 	// 		// 	}
-// 	// 		// }
+	// Collect data from physical interfaces
+	for _, pnic := range vcHost.Config.Network.Pnic {
+		pnicName := pnic.Device
+		pnicLinkSpeed := pnic.LinkSpeed.SpeedMb
+		var pnicMode *objects.InterfaceMode
+		var pnicMtu int
+		var taggedVlanList []*objects.Vlan // when mode="tagged"
+		if pnicLinkSpeed == 0 {
+			pnicLinkSpeed = pnic.Spec.LinkSpeed.SpeedMb
+			if pnicLinkSpeed == 0 {
+				pnicLinkSpeed = pnic.ValidLinkSpecification[0].SpeedMb
+			}
+		}
+		var pnicDescription string
+		if pnicLinkSpeed > 1000 {
+			pnicDescription = fmt.Sprintf("%dGB/s", pnicLinkSpeed/1000)
+		} else {
+			pnicDescription = fmt.Sprintf("%dMB/s", pnicLinkSpeed)
+		}
+		pnicDescription += " pNIC"
 
-// 	// 		// Determine nic type (virtual, physical, bond...)
-// 	// 		var nicType *objects.InterfaceType
-// 	// 		nicBaseInterface, exists := nic.BaseInterface()
-// 	// 		if exists {
-// 	// 			// This interface is a vlan bond. We treat is as a virtual interface
-// 	// 			nicType = &objects.VirtualInterfaceType
-// 	// 			parent2child[nicBaseInterface] = append(parent2child[nicBaseInterface], nicId)
-// 	// 		}
+		// Check virtual switches for data
+		for vswitch, vswitchData := range vc.Networks.HostVirtualSwitches[nbHost.Name] {
+			if slices.Contains(vswitchData.pnics, pnic.Key) {
+				pnicDescription = fmt.Sprintf("%s (%s)", pnicDescription, vswitch)
+				pnicMtu = vswitchData.mtu
+			}
+		}
 
-// 	// 		nicBonding, exists := nic.Bonding()
-// 	// 		if exists {
-// 	// 			// Bond interface, we give it a type of LAG
-// 	// 			nicType = &objects.LAGInterfaceType
-// 	// 			slaves, exists := nicBonding.Slaves()
-// 	// 			if exists {
-// 	// 				for _, slave := range slaves.Slice() {
-// 	// 					master2slave[nicId] = append(master2slave[nicId], slave.MustId())
-// 	// 				}
-// 	// 			}
-// 	// 		}
+		// Check proxy switches for data
+		for _, pswitchData := range vc.Networks.HostProxySwitches[nbHost.Name] {
+			if slices.Contains(pswitchData.pnics, pnic.Key) {
+				pnicDescription = fmt.Sprintf("%s (%s)", pnicDescription, pswitchData.name)
+				pnicMtu = pswitchData.mtu
+				pnicMode = &objects.InterfaceModeTaggedAll
+			}
+		}
 
-// 	// 		if nicType == nil {
-// 	// 			// This is a physical interface.
-// 	// 			// TODO: depending on speed assign different nic type
-// 	// 			nicType = &objects.OtherInterfaceType
-// 	// 		}
+		// Check vlans on this pnic
+		pnicVlans := []*objects.Vlan{}
+		for portgroupName, portgroupData := range vc.Networks.HostPortgroups[nbHost.Name] {
+			if slices.Contains(portgroupData.nics, pnicName) {
+				pnicVlans = append(pnicVlans, &objects.Vlan{
+					Name: portgroupName,
+					Vid:  portgroupData.vlanId,
+				})
+			}
+		}
 
-// 	// 		var nicVlan *objects.Vlan
-// 	// 		var err error
-// 	// 		vlan, exists := nic.Vlan()
-// 	// 		if exists {
-// 	// 			vlanId, exists := vlan.Id()
-// 	// 			if exists {
-// 	// 				var vlanStatus *objects.VlanStatus
-// 	// 				if nicEnabled {
-// 	// 					vlanStatus = &objects.VlanStatusActive
-// 	// 				} else {
-// 	// 					vlanStatus = &objects.VlanStatusReserved
-// 	// 				}
-// 	// 				nicVlan, err = nbi.AddVlan(&objects.Vlan{
-// 	// 					NetboxObject: objects.NetboxObject{
-// 	// 						Tags: vc.SourceTags,
-// 	// 					},
-// 	// 					Name:   fmt.Sprintf("VLAN-%d", vlanId),
-// 	// 					Vid:    int(vlanId),
-// 	// 					Status: vlanStatus,
-// 	// 					Tenant: nbHost.Tenant,
-// 	// 				})
-// 	// 				if err != nil {
-// 	// 					return fmt.Errorf("failed to add oVirt vlan %s with error: %v", nicName, err)
-// 	// 				}
-// 	// 			}
-// 	// 		}
+		// Determine interface mode for non VM traffic NIC, from vlans data
+		if len(pnicVlans) > 0 {
+			vlanIdSet := map[int]bool{} // set of vlans
+			for _, pnicVlan := range pnicVlans {
+				vlanIdSet[pnicVlan.Vid] = true
+			}
+			if len(vlanIdSet) == 1 && vlanIdSet[0] {
+				pnicMode = &objects.InterfaceModeAccess
+			} else if vlanIdSet[4095] {
+				pnicMode = &objects.InterfaceModeTaggedAll
+			} else {
+				pnicMode = &objects.InterfaceModeTagged
+			}
+			taggedVlanList = []*objects.Vlan{}
+			if pnicMode == &objects.InterfaceModeTagged {
+				for _, pnicVlan := range pnicVlans {
+					if pnicVlan.Vid == 0 {
+						continue
+					}
+					taggedVlanList = append(taggedVlanList, pnicVlan)
+				}
+			}
+		}
 
-// 	// 		var nicTaggedVlans []*objects.Vlan
-// 	// 		if nicVlan != nil {
-// 	// 			nicTaggedVlans = []*objects.Vlan{nicVlan}
-// 	// 		}
+		// After collecting all of the data add interface to nbi
+		_, err := nbi.AddInterface(&objects.Interface{
+			NetboxObject: objects.NetboxObject{
+				Tags:        vc.SourceTags,
+				Description: pnicDescription,
+			},
+			Device:      nbHost,
+			Name:        pnicName,
+			Status:      true,
+			Type:        &objects.OtherInterfaceType, //  TODO: Get type from link speed
+			Speed:       objects.InterfaceSpeed(pnicLinkSpeed),
+			MTU:         pnicMtu,
+			Mode:        pnicMode,
+			TaggedVlans: taggedVlanList,
+		})
+		if err != nil {
+			return fmt.Errorf("failed adding physical interface: %s", err)
+		}
+	}
+	return nil
+}
 
-// 	// 		newInterface := &objects.Interface{
-// 	// 			NetboxObject: objects.NetboxObject{
-// 	// 				Tags:        vc.SourceTags,
-// 	// 				Description: nicComment,
-// 	// 			},
-// 	// 			Device: nbHost,
-// 	// 			Name:   nicName,
-// 	// 			Speed:  objects.InterfaceSpeed(nicSpeedKbps),
-// 	// 			Status: nicEnabled,
-// 	// 			MTU:    nicMtu,
-// 	// 			Type:   nicType,
-// 	// 			CustomFields: map[string]string{
-// 	// 				"source_id": nicId,
-// 	// 			},
-// 	// 			TaggedVlans: nicTaggedVlans,
-// 	// 		}
+func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetBoxInventory, vcHost *mo.HostSystem, nbHost *objects.Device) error {
+	// Collect data over all virtual itnerfaces
+	for _, vnic := range vcHost.Config.Network.Vnic {
+		vnicName := vnic.Device
+		vnicPortgroupData, vnicPortgroupDataOk := vc.Networks.HostPortgroups[vcHost.Name][vnic.Portgroup]
+		vnicDvPortgroupKey := vnic.Spec.DistributedVirtualPort.PortgroupKey
+		vnicDvPortgroupData, vnicDvPortgroupDataOk := vc.Networks.DistributedVirtualPortgroups[vnicDvPortgroupKey]
+		vnicPortgroupVlanId := 0
+		vnicDvPortgroupVlanIds := []int{}
+		var vnicMode *objects.InterfaceMode
+		var vlanDescription, vnicDescription string
 
-// 	// 		processedNicsIds[nicId] = true
-// 	// 		hostInterfaces[nicId] = newInterface
-// 	// 	}
+		// Get data from local portgroup, or distributed portgroup
+		if vnicPortgroupDataOk {
+			vnicPortgroupVlanId = vnicPortgroupData.vlanId
+			vnicSwitch := vnicPortgroupData.vswitch
+			vnicDescription = fmt.Sprintf("%s (%s, vlan ID: %d)", vnic.Portgroup, vnicSwitch, vnicPortgroupVlanId)
+		} else if vnicDvPortgroupDataOk {
+			vnicDescription = vnicDvPortgroupData.Name
+			vnicDvPortgroupVlanIds = vnicDvPortgroupData.VlanIds
+			if len(vnicDvPortgroupVlanIds) == 1 && vnicDvPortgroupData.VlanIds[0] == 4095 {
+				vnicDescription = "all vlans"
+				vnicMode = &objects.InterfaceModeTaggedAll
+			} else {
+				if len(vnicDvPortgroupData.VlanIdRanges) > 0 {
+					vlanDescription = fmt.Sprintf("vlan IDs: %s", strings.Join(vnicDvPortgroupData.VlanIdRanges, ","))
+				} else {
+					vlanDescription = fmt.Sprintf("vlan ID: %d", vnicDvPortgroupData.VlanIds[0])
+				}
+				if len(vnicDvPortgroupData.VlanIds) == 1 && vnicDvPortgroupData.VlanIds[0] == 0 {
+					vnicMode = &objects.InterfaceModeAccess
+				} else {
+					vnicMode = &objects.InterfaceModeTagged
+				}
+			}
+			vnicDvPortgroupDwSwitchUuid := vnic.Spec.DistributedVirtualPort.SwitchUuid
+			vnicVswitch, vnicVswitchOk := vc.Networks.HostVirtualSwitches[vcHost.Name][vnicDvPortgroupDwSwitchUuid]
+			if vnicVswitchOk {
+				vnicDescription = fmt.Sprintf("%s (%v, %s)", vnicDescription, vnicVswitch, vlanDescription)
+			}
+		}
 
-// 	// 	// Second loop to add relations between interfaces (e.g. [eno1, eno2] -> bond1)
-// 	// 	for masterId, slavesIds := range master2slave {
-// 	// 		var err error
-// 	// 		masterInterface := hostInterfaces[masterId]
-// 	// 		if _, ok := processedNicsIds[masterId]; ok {
-// 	// 			masterInterface, err = nbi.AddInterface(masterInterface)
-// 	// 			if err != nil {
-// 	// 				return fmt.Errorf("failed to add oVirt master interface %s with error: %v", masterInterface.Name, err)
-// 	// 			}
-// 	// 			delete(processedNicsIds, masterId)
-// 	// 			hostInterfaces[masterId] = masterInterface
-// 	// 		}
-// 	// 		for _, slaveId := range slavesIds {
-// 	// 			slaveInterface := hostInterfaces[slaveId]
-// 	// 			slaveInterface.LAG = masterInterface
-// 	// 			slaveInterface, err := nbi.AddInterface(slaveInterface)
-// 	// 			if err != nil {
-// 	// 				return fmt.Errorf("failed to add oVirt slave interface %s with error: %v", slaveInterface.Name, err)
-// 	// 			}
-// 	// 			delete(processedNicsIds, slaveId)
-// 	// 			hostInterfaces[slaveId] = slaveInterface
-// 	// 		}
-// 		}
+		var vnicUntaggedVlan *objects.Vlan
+		var vnicTaggedVlans []*objects.Vlan
+		if vnicPortgroupData != nil && vnicPortgroupVlanId != 0 {
+			vnicUntaggedVlan = &objects.Vlan{
+				Name:   fmt.Sprintf("ESXi %s (ID: %d) (%s)", vnic.Portgroup, vnicPortgroupVlanId, nbHost.Site.Name),
+				Vid:    vnicPortgroupVlanId,
+				Tenant: nbHost.Tenant,
+			}
+		} else if vnicDvPortgroupData != nil {
+			for _, vnicDvPortgroupDataVlanId := range vnicDvPortgroupVlanIds {
+				if vnicMode != &objects.InterfaceModeTagged {
+					break
+				}
+				if vnicDvPortgroupDataVlanId == 0 {
+					continue
+				}
+				vnicTaggedVlans = append(vnicTaggedVlans, &objects.Vlan{
+					Name:   fmt.Sprintf("%s-%d", vnicDvPortgroupData.Name, vnicDvPortgroupDataVlanId),
+					Vid:    vnicDvPortgroupDataVlanId,
+					Tenant: nbHost.Tenant,
+				})
+			}
+		}
 
-// 		// Third loop we connect children with parents (e.g. [bond1.605, bond1.604, bond1.603] -> bond1)
-// 	// 	for parent, children := range parent2child {
-// 	// 		parentInterface := hostInterfaces[parent]
-// 	// 		if _, ok := processedNicsIds[parent]; ok {
-// 	// 			parentInterface, err := nbi.AddInterface(parentInterface)
-// 	// 			if err != nil {
-// 	// 				return fmt.Errorf("failed to add oVirt parent interface %s with error: %v", parentInterface.Name, err)
-// 	// 			}
-// 	// 			delete(processedNicsIds, parent)
-// 	// 		}
-// 	// 		for _, child := range children {
-// 	// 			childInterface := hostInterfaces[child]
-// 	// 			childInterface.ParentInterface = parentInterface
-// 	// 			childInterface, err := nbi.AddInterface(childInterface)
-// 	// 			if err != nil {
-// 	// 				return fmt.Errorf("failed to add oVirt child interface %s with error: %v", childInterface.Name, err)
-// 	// 			}
-// 	// 			hostInterfaces[child] = childInterface
-// 	// 			delete(processedNicsIds, child)
-// 	// 		}
-// 	// 	}
-// 	// 	// Now we check if there are any nics that were not processed
-// 	// 	for nicId := range processedNicsIds {
-// 	// 		_, err := nbi.AddInterface(hostInterfaces[nicId])
-// 	// 		if err != nil {
-// 	// 			return fmt.Errorf("failed to add oVirt interface %s with error: %v", hostInterfaces[nicId].Name, err)
-// 	// 		}
-// 	// 	}
-// 	// }
-// 	return nil
-// }
+		nbVnic, err := nbi.AddInterface(&objects.Interface{
+			NetboxObject: objects.NetboxObject{
+				Tags:        vc.SourceTags,
+				Description: vnicDescription,
+			},
+			Device:       nbHost,
+			Name:         vnicName,
+			Status:       true,
+			Type:         &objects.VirtualInterfaceType,
+			MTU:          int(vnic.Spec.Mtu),
+			Mode:         vnicMode,
+			TaggedVlans:  vnicTaggedVlans,
+			UntaggedVlan: vnicUntaggedVlan,
+		})
+		if err != nil {
+			return err
+		}
+
+		// Get IPv4 address for this vnic. TODO: filter
+		ipv4_address := vnic.Spec.Ip.IpAddress
+		ipv4_mask := vnic.Spec.Ip.SubnetMask
+		ipv4_dns := utils.ReverseLookup(ipv4_address)
+		_, err = nbi.AddIPAddress(&objects.IPAddress{
+			NetboxObject: objects.NetboxObject{
+				Tags: vc.SourceTags,
+			},
+			Address:            fmt.Sprintf("%s/%s", ipv4_address, ipv4_mask),
+			Status:             &objects.IPAddressStatusActive, // TODO
+			DNSName:            ipv4_dns,
+			Tenant:             nbHost.Tenant,
+			AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
+			AssignedObjectId:   nbVnic.Id,
+		})
+		if err != nil {
+			return err
+		}
+
+		for _, ipv6_entry := range vnic.Spec.Ip.IpV6Config.IpV6Address {
+			ipv6_address := ipv6_entry.IpAddress
+			ipv6_mask := ipv6_entry.PrefixLength
+			// TODO: Filter out ipv6 addresses
+			_, err = nbi.AddIPAddress(&objects.IPAddress{
+				NetboxObject: objects.NetboxObject{
+					Tags: vc.SourceTags,
+				},
+				Address:            fmt.Sprintf("%s/%d", ipv6_address, ipv6_mask),
+				Status:             &objects.IPAddressStatusActive, // TODO
+				Tenant:             nbHost.Tenant,
+				AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
+				AssignedObjectId:   nbVnic.Id,
+			})
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
 
 func (vc *VmwareSource) syncVms(nbi *inventory.NetBoxInventory) error {
 	// for vmId, vm := range vc.Vms {
@@ -684,24 +737,24 @@ func (vc *VmwareSource) syncVmInterfaces(nbi *inventory.NetBoxInventory, ovirtVm
 }
 
 func (vc *VmwareSource) syncVlans(nbi *inventory.NetBoxInventory) error {
-	for _, dvpg := range vc.DistributedVirtualPortgrups {
-		if dvsPortSetting, ok := dvpg.Config.DefaultPortConfig.(*types.VMwareDVSPortSetting); ok {
-			// VLAN information is part of the VLAN configuration
-			if vlanSpec, ok := dvsPortSetting.Vlan.(*types.VmwareDistributedVirtualSwitchVlanIdSpec); ok {
-				vlan := &objects.Vlan{
-					NetboxObject: objects.NetboxObject{
-						Tags: vc.SourceTags,
-					},
-					Name:   dvpg.Config.Name,
-					Vid:    int(vlanSpec.VlanId),
-					Status: &objects.VlanStatusActive, // TODO
-				}
-				nbi.AddVlan(vlan)
-			}
-			// else {
-			// TODO Handle other types like trunking, private VLAN, etc., if necessary
-			// }
-		}
-	}
+	// for _, dvpg := range vc.DistributedVirtualPortgrups {
+	// 	if dvsPortSetting, ok := dvpg.Config.DefaultPortConfig.(*types.VMwareDVSPortSetting); ok {
+	// 		// VLAN information is part of the VLAN configuration
+	// 		if vlanSpec, ok := dvsPortSetting.Vlan.(*types.VmwareDistributedVirtualSwitchVlanIdSpec); ok {
+	// 			vlan := &objects.Vlan{
+	// 				NetboxObject: objects.NetboxObject{
+	// 					Tags: vc.SourceTags,
+	// 				},
+	// 				Name:   dvpg.Config.Name,
+	// 				Vid:    int(vlanSpec.VlanId),
+	// 				Status: &objects.VlanStatusActive, // TODO
+	// 			}
+	// 			nbi.AddVlan(vlan)
+	// 		}
+	// 		// else {
+	// 		// TODO Handle other types like trunking, private VLAN, etc., if necessary
+	// 		// }
+	// 	}
+	// }
 	return nil
 }

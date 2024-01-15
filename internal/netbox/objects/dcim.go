@@ -317,6 +317,16 @@ const (
 // 	100: BASEFX,
 // }
 
+type InterfaceMode struct {
+	Choice
+}
+
+var (
+	InterfaceModeAccess    = InterfaceMode{Choice{Value: "access", Label: "Access"}}
+	InterfaceModeTagged    = InterfaceMode{Choice{Value: "tagged", Label: "Tagged"}}
+	InterfaceModeTaggedAll = InterfaceMode{Choice{Value: "tagged-all", Label: "Tagged (All)"}}
+)
+
 // Interface represents a physical data interface within a device.
 type Interface struct {
 	NetboxObject
@@ -338,9 +348,14 @@ type Interface struct {
 	// LAG is the LAG to which the interface belongs, if any.
 	LAG *Interface `json:"lag,omitempty"`
 	// MTU is the maximum transmission unit (MTU) configured for the interface.
-	MTU int64 `json:"mtu,omitempty"`
+	MTU int `json:"mtu,omitempty"`
+
+	//802.1Q Mode
+	Mode *InterfaceMode `json:"mode,omitempty"`
 	// TaggedVlans is a list of all the VLANs to which the interface is tagged.
 	TaggedVlans []*Vlan `json:"tagged_vlans,omitempty"`
+	// UntaggedVlan
+	UntaggedVlan *Vlan `json:"untagged_vlan,omitempty"`
 	// CustomFields that can be added to a device. We use source_id custom field to store the id of the interface in the source system.
 	CustomFields map[string]string `json:"custom_fields,omitempty"`
 }

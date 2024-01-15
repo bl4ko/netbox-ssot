@@ -15,15 +15,46 @@ import (
 	"github.com/vmware/govmomi/vim25/mo"
 )
 
+type DistributedPortgroupData struct {
+	Name         string
+	VlanIds      []int
+	VlanIdRanges []string
+	Private      bool
+}
+
+type HostVirtualSwitchData struct {
+	mtu   int
+	pnics []string
+}
+
+type HostProxySwitchData struct {
+	name  string
+	mtu   int
+	pnics []string
+}
+
+type HostPortgroupData struct {
+	vlanId  int
+	vswitch string
+	nics    []string
+}
+
+type NetworkData struct {
+	DistributedVirtualPortgroups map[string]*DistributedPortgroupData         // Portgroup.key -> PortgroupData
+	HostVirtualSwitches          map[string]map[string]*HostVirtualSwitchData // hostName -> VSwitchName-> VSwitchData
+	HostProxySwitches            map[string]map[string]*HostProxySwitchData   // hostName -> PSwitchName ->
+	HostPortgroups               map[string]map[string]*HostPortgroupData     // hostname -> Portgroup.Spec.Name -> HostPortgroupDAta
+}
+
 // VmwareSource represents an vsphere source
 type VmwareSource struct {
 	common.CommonConfig
-	Disks                       map[string]*mo.Datastore
-	DataCenters                 map[string]*mo.Datacenter
-	Clusters                    map[string]*mo.ClusterComputeResource
-	Hosts                       map[string]*mo.HostSystem
-	Vms                         map[string]*mo.VirtualMachine
-	DistributedVirtualPortgrups map[string]*mo.DistributedVirtualPortgroup // For vlans
+	Disks       map[string]*mo.Datastore
+	DataCenters map[string]*mo.Datacenter
+	Clusters    map[string]*mo.ClusterComputeResource
+	Hosts       map[string]*mo.HostSystem
+	Vms         map[string]*mo.VirtualMachine
+	Networks    NetworkData
 
 	// Relations between objects "object_id": "object_id"
 	Cluster2Datacenter map[string]string
@@ -99,7 +130,7 @@ func (vc *VmwareSource) Init() error {
 
 	// Initialise items to local storage
 	initFunctions := []func(context.Context, *view.ContainerView) error{
-		vc.InitVlans,
+		vc.InitNetworks,
 		vc.InitDisks,
 		vc.InitDataCenters,
 		vc.InitClusters,
