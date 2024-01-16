@@ -314,22 +314,52 @@ func (ni *NetBoxInventory) AddDevice(newDevice *objects.Device) (*objects.Device
 	return ni.DevicesIndexByNameAndSiteId[newDevice.Name][newDevice.Site.Id], nil
 }
 
+func (ni *NetBoxInventory) AddVlanGroup(newVlanGroup *objects.VlanGroup) (*objects.VlanGroup, error) {
+	newVlanGroup.Tags = append(newVlanGroup.Tags, ni.SsotTag)
+	if _, ok := ni.VlanGroupsIndexByName[newVlanGroup.Name]; ok {
+		// Remove id from orphan manager, because it still exists in the sources
+		delete(ni.OrphanManager["/api/ipam/vlan-groups/"], ni.VlanGroupsIndexByName[newVlanGroup.Name].Id)
+		diffMap, err := utils.JsonDiffMapExceptId(newVlanGroup, ni.VlanGroupsIndexByName[newVlanGroup.Name])
+		if err != nil {
+			return nil, err
+		}
+		if len(diffMap) > 0 {
+			ni.Logger.Debug("VlanGroup ", newVlanGroup.Name, " already exists in Netbox but is out of date. Patching it...")
+			pachedVlanGroup, err := ni.NetboxApi.PatchVlanGroup(diffMap, ni.VlanGroupsIndexByName[newVlanGroup.Name].Id)
+			if err != nil {
+				return nil, err
+			}
+			ni.VlanGroupsIndexByName[newVlanGroup.Name] = pachedVlanGroup
+		} else {
+			ni.Logger.Debug("Vlan ", newVlanGroup.Name, " already exists in Netbox and is up to date...")
+		}
+	} else {
+		ni.Logger.Debug("Vlan ", newVlanGroup.Name, " does not exist in Netbox. Creating it...")
+		newVlan, err := ni.NetboxApi.CreateVlanGroup(newVlanGroup)
+		if err != nil {
+			return nil, err
+		}
+		ni.VlanGroupsIndexByName[newVlan.Name] = newVlan
+	}
+	return ni.VlanGroupsIndexByName[newVlanGroup.Name], nil
+}
+
 func (ni *NetBoxInventory) AddVlan(newVlan *objects.Vlan) (*objects.Vlan, error) {
 	newVlan.Tags = append(newVlan.Tags, ni.SsotTag)
-	if _, ok := ni.VlansIndexByName[newVlan.Name]; ok {
+	if _, ok := ni.VlansIndexByVlanGroupIdAndVid[newVlan.Group.Id][newVlan.Vid]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
-		delete(ni.OrphanManager["/api/ipam/vlans/"], ni.VlansIndexByName[newVlan.Name].Id)
-		diffMap, err := utils.JsonDiffMapExceptId(newVlan, ni.VlansIndexByName[newVlan.Name])
+		delete(ni.OrphanManager["/api/ipam/vlans/"], ni.VlansIndexByVlanGroupIdAndVid[newVlan.Group.Id][newVlan.Vid].Id)
+		diffMap, err := utils.JsonDiffMapExceptId(newVlan, ni.VlansIndexByVlanGroupIdAndVid[newVlan.Group.Id][newVlan.Vid])
 		if err != nil {
 			return nil, err
 		}
 		if len(diffMap) > 0 {
 			ni.Logger.Debug("Vlan ", newVlan.Name, " already exists in Netbox but is out of date. Patching it...")
-			patchedVlan, err := ni.NetboxApi.PatchVlan(diffMap, ni.VlansIndexByName[newVlan.Name].Id)
+			patchedVlan, err := ni.NetboxApi.PatchVlan(diffMap, ni.VlansIndexByVlanGroupIdAndVid[newVlan.Group.Id][newVlan.Vid].Id)
 			if err != nil {
 				return nil, err
 			}
-			ni.VlansIndexByName[newVlan.Name] = patchedVlan
+			ni.VlansIndexByVlanGroupIdAndVid[newVlan.Group.Id][newVlan.Vid] = patchedVlan
 		} else {
 			ni.Logger.Debug("Vlan ", newVlan.Name, " already exists in Netbox and is up to date...")
 		}
@@ -339,9 +369,9 @@ func (ni *NetBoxInventory) AddVlan(newVlan *objects.Vlan) (*objects.Vlan, error)
 		if err != nil {
 			return nil, err
 		}
-		ni.VlansIndexByName[newVlan.Name] = newVlan
+		ni.VlansIndexByVlanGroupIdAndVid[newVlan.Group.Id][newVlan.Vid] = newVlan
 	}
-	return ni.VlansIndexByName[newVlan.Name], nil
+	return ni.VlansIndexByVlanGroupIdAndVid[newVlan.Group.Id][newVlan.Vid], nil
 }
 
 func (ni *NetBoxInventory) AddInterface(newInterface *objects.Interface) (*objects.Interface, error) {

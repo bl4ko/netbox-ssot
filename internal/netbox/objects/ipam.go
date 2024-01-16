@@ -60,6 +60,22 @@ func (ip IPAddress) String() string {
 	return fmt.Sprintf("IPAddress{Id: %d, Address: %s, Status: %s, DNSName: %s}", ip.Id, ip.Address, ip.Status, ip.DNSName)
 }
 
+type VlanGroup struct {
+	NetboxObject
+	// Name of the VlanGroup. This field is required.
+	Name string `json:"name,omitempty"`
+	// Slug of the VlanGroup. This field is required.
+	Slug string `json:"slug,omitempty"`
+	// MinVid is the minimal VID that can be assigned in this group. This field is required (default 1)
+	MinVid int `json:"min_vid,omitempty"`
+	// MaxVid is the maximal VID that can be assigned in this group. This field is required (default 4094)
+	MaxVid int `json:"max_vid,omitempty"`
+}
+
+func (vg VlanGroup) String() string {
+	return fmt.Sprintf("VlanGroup{Name: %s, MinVid: %d, MaxVid: %d}", vg.Name, vg.MinVid, vg.MaxVid)
+}
+
 type VlanStatus struct {
 	Choice
 }
@@ -76,6 +92,8 @@ type Vlan struct {
 	Name string `json:"name,omitempty"`
 	// VID of the VLAN. This field is required.
 	Vid int `json:"vid,omitempty"`
+	// VlanGroup that this vlan belongs to.
+	Group *VlanGroup `json:"group,omitempty"`
 	// Status of the VLAN. This field is required. Default is "active".
 	Status *VlanStatus `json:"status,omitempty"`
 	// Tenant that this VLAN belongs to.

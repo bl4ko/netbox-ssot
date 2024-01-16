@@ -1,6 +1,8 @@
 package inventory
 
 import (
+	"fmt"
+
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 )
 
@@ -327,6 +329,45 @@ func (ni *NetBoxInventory) InitInterfaces() error {
 	return nil
 }
 
+// Inits default VlanGroup, which is required to group all Vlans that are not part of other
+// vlangroups into it. Each vlan is indexed by their (vlanGroup, vid).
+func (ni *NetBoxInventory) InitDefaultVlanGroup() error {
+	_, err := ni.AddVlanGroup(&objects.VlanGroup{
+		NetboxObject: objects.NetboxObject{
+			Tags:        ni.Tags,
+			Description: "Default netbox-ssot VlanGroup for all vlans that are not part of any other vlanGroup. This group is required for netbox-ssot vlan index to work.",
+		},
+		Name:   "Default netbox-ssot vlan group",
+		MinVid: 1,
+		MaxVid: 4094,
+	})
+	if err != nil {
+		return fmt.Errorf("init default vlan group: %s", err)
+	}
+	return nil
+}
+
+// Collects all vlans from Netbox API and stores them to local inventory
+func (ni *NetBoxInventory) InitVlanGroups() error {
+	nbVlanGroups, err := ni.NetboxApi.GetAllVlanGroups()
+	if err != nil {
+		return err
+	}
+
+	// Initialize internal index of vlans by name
+	ni.VlanGroupsIndexByName = make(map[string]*objects.VlanGroup)
+	// Add VlanGroups to orphan manager
+	ni.OrphanManager["/api/ipam/vlan-groups/"] = make(map[int]bool, 0)
+
+	for _, vlanGroup := range nbVlanGroups {
+		ni.VlanGroupsIndexByName[vlanGroup.Name] = vlanGroup
+		ni.OrphanManager["/api/ipam/vlan-groups/"][vlanGroup.Id] = true
+	}
+
+	ni.Logger.Debug("Successfully collected vlans from Netbox: ", ni.VlanGroupsIndexByName)
+	return nil
+}
+
 // Collects all vlans from Netbox API and stores them to local inventory
 func (ni *NetBoxInventory) InitVlans() error {
 	nbVlans, err := ni.NetboxApi.GetAllVlans()
@@ -334,17 +375,26 @@ func (ni *NetBoxInventory) InitVlans() error {
 		return err
 	}
 
-	// Initialize internal index of vlans by name
-	ni.VlansIndexByName = make(map[string]*objects.Vlan)
+	// Initialize internal index of vlans by VlanGroupId and Vid
+	ni.VlansIndexByVlanGroupIdAndVid = make(map[int]map[int]*objects.Vlan)
 	// Add vlans to orphan manager
 	ni.OrphanManager["/api/ipam/vlans/"] = make(map[int]bool, 0)
 
 	for _, vlan := range nbVlans {
-		ni.VlansIndexByName[vlan.Name] = vlan
+		if vlan.Group == nil {
+			// Update all existing vlans with default vlanGroup. This only happens
+			// when there are predefined vlans in netbox.
+			vlan.Group = ni.VlanGroupsIndexByName["Default netbox-ssot vlan group"] // This should not fail, because InitDefaultVlanGroup executes before InitVlans
+			vlan, err = ni.AddVlan(vlan)
+			if err != nil {
+				return err
+			}
+		}
+		ni.VlansIndexByVlanGroupIdAndVid[vlan.Group.Id][vlan.Vid] = vlan
 		ni.OrphanManager["/api/ipam/vlans/"][vlan.Id] = true
 	}
 
-	ni.Logger.Debug("Successfully collected vlans from Netbox: ", ni.VlansIndexByName)
+	ni.Logger.Debug("Successfully collected vlans from Netbox: ", ni.VlansIndexByVlanGroupIdAndVid)
 	return nil
 }
 

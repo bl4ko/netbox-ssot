@@ -32,8 +32,10 @@ type NetBoxInventory struct {
 	// DevicesIndexByNameAndSiteId is a map of all devices in the Netbox's inventory, indexed by their name, and
 	// site ID (This is because, netbox constraints: https://github.com/netbox-community/netbox/blob/3d941411d438f77b66d2036edf690c14b459af58/netbox/dcim/models/devices.py#L775)
 	DevicesIndexByNameAndSiteId map[string]map[int]*objects.Device
-	// VlansIndexByName is a map of all vlans in the Netbox's inventory, indexed by their name
-	VlansIndexByName map[string]*objects.Vlan
+	// VlanGroupsIndexByName is a map of all VlanGroups in the Netbox's inventory, indexed by their name
+	VlanGroupsIndexByName map[string]*objects.VlanGroup
+	// VlansIndexByVlanGruoupIdAndVid is a map of all vlans in the Netbox's inventory, indexed by their VlanGroup and vid.
+	VlansIndexByVlanGroupIdAndVid map[int]map[int]*objects.Vlan
 	// ClusterGroupsIndexByName is a map of all cluster groups in the Netbox's inventory, indexed by their name
 	ClusterGroupsIndexByName map[string]*objects.ClusterGroup
 	// ClusterTypesIndexByName is a map of all cluster types in the Netbox's inventory, indexed by their name
@@ -101,6 +103,8 @@ func (netboxInventory *NetBoxInventory) Init() error {
 		netboxInventory.InitDevices,
 		netboxInventory.InitInterfaces,
 		netboxInventory.InitIPAddresses,
+		netboxInventory.InitDefaultVlanGroup,
+		netboxInventory.InitVlanGroups,
 		netboxInventory.InitVlans,
 		netboxInventory.InitDeviceRoles,
 		netboxInventory.InitServerDeviceRole,
