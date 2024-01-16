@@ -55,15 +55,14 @@ func (o *OVirtSource) syncClusters(nbi *inventory.NetBoxInventory) error {
 			o.Logger.Warning("description for oVirt cluster ", clusterName, " is empty.")
 		}
 		var clusterGroup *objects.ClusterGroup
+		var clusterGroupName string
 		if _, ok := o.DataCenters[cluster.MustDataCenter().MustId()]; ok {
-
+			clusterGroupName = o.DataCenters[cluster.MustDataCenter().MustId()].MustName()
 		} else {
 			o.Logger.Warning("failed to get datacenter for oVirt cluster ", clusterName)
 		}
-		if dataCenter, ok := cluster.DataCenter(); ok {
-			if dataCenterName, ok := dataCenter.Name(); ok {
-				clusterGroup = nbi.ClusterGroupsIndexByName[dataCenterName]
-			}
+		if clusterGroupName != "" {
+			clusterGroup = nbi.ClusterGroupsIndexByName[clusterGroupName]
 		}
 		var clusterSite *objects.Site
 		if o.ClusterSiteRelations != nil {
@@ -515,10 +514,11 @@ func (o *OVirtSource) syncVms(nbi *inventory.NetBoxInventory) error {
 
 		// VM's Host Device (server)
 		var vmHostDevice *objects.Device
-		host, exists := vm.Host()
-		if exists {
-			if _, ok := o.Hosts[host.MustId()]; ok {
-				vmHostDevice = nbi.DevicesIndexByUuid[o.Hosts[host.MustId()].MustHardwareInformation().MustUuid()]
+		if host, exists := vm.Host(); exists {
+			if oHost, ok := o.Hosts[host.MustId()]; ok {
+				if oHostName, ok := oHost.Name(); ok {
+					vmHostDevice = nbi.DevicesIndexByNameAndSiteId[oHostName][vmSite.Id]
+				}
 			}
 		}
 

@@ -106,17 +106,20 @@ func (nbi *NetBoxInventory) InitDevices() error {
 	if err != nil {
 		return err
 	}
-	// Initialize internal index of devices by UUID
-	nbi.DevicesIndexByUuid = make(map[string]*objects.Device)
+	// Initialize internal index of devices by Name and SiteId
+	nbi.DevicesIndexByNameAndSiteId = make(map[string]map[int]*objects.Device)
 	// OrphanManager takes care of all devices created by netbox-ssot
 	nbi.OrphanManager["/api/dcim/devices/"] = make(map[int]bool, 0)
 
 	for _, device := range nbDevices {
-		nbi.DevicesIndexByUuid[device.AssetTag] = device
+		if nbi.DevicesIndexByNameAndSiteId[device.Name] == nil {
+			nbi.DevicesIndexByNameAndSiteId[device.Name] = make(map[int]*objects.Device)
+		}
+		nbi.DevicesIndexByNameAndSiteId[device.Name][device.Site.Id] = device
 		nbi.OrphanManager["/api/dcim/devices/"][device.Id] = true
 	}
 
-	nbi.Logger.Debug("Successfully collected devices from Netbox: ", nbi.DevicesIndexByUuid)
+	nbi.Logger.Debug("Successfully collected devices from Netbox: ", nbi.DevicesIndexByNameAndSiteId)
 	return nil
 }
 

@@ -113,7 +113,7 @@ func (vc *VmwareSource) InitClusters(ctx context.Context, containerView *view.Co
 
 func (vc *VmwareSource) InitHosts(ctx context.Context, containerView *view.ContainerView) error {
 	var hosts []mo.HostSystem
-	err := containerView.Retrieve(ctx, []string{"HostSystem"}, []string{"name", "summary.host", "summary.hardware", "summary.runtime", "vm", "config.network"}, &hosts)
+	err := containerView.Retrieve(ctx, []string{"HostSystem"}, []string{"name", "summary.host", "summary.hardware", "summary.runtime", "summary.config", "vm", "config.network"}, &hosts)
 	if err != nil {
 		return fmt.Errorf("failed retrieving hosts: %s", err)
 	}
@@ -127,6 +127,7 @@ func (vc *VmwareSource) InitHosts(ctx context.Context, containerView *view.Conta
 
 		// Add network data which is received from hosts
 		// Iterate over hosts virtual switches, needed to enrich data on physical interfaces
+		vc.Networks.HostVirtualSwitches[host.Name] = make(map[string]*HostVirtualSwitchData)
 		for _, vswitch := range host.Config.Network.Vswitch {
 			if vswitch.Name != "" {
 				vc.Networks.HostVirtualSwitches[host.Name][vswitch.Name] = &HostVirtualSwitchData{
@@ -137,10 +138,10 @@ func (vc *VmwareSource) InitHosts(ctx context.Context, containerView *view.Conta
 		}
 		// Iterate over hosts proxy switches, needed to enrich data on physical interfaces
 		// Also stores mtu data which is used for VM interfaces
-		hostProxyswitchData := make(map[string]map[string]*HostProxySwitchData)
+		vc.Networks.HostProxySwitches[host.Name] = make(map[string]*HostProxySwitchData)
 		for _, pswitch := range host.Config.Network.ProxySwitch {
 			if pswitch.DvsUuid != "" {
-				hostProxyswitchData[host.Name][pswitch.DvsUuid] = &HostProxySwitchData{
+				vc.Networks.HostProxySwitches[host.Name][pswitch.DvsUuid] = &HostProxySwitchData{
 					mtu:   int(pswitch.Mtu),
 					pnics: pswitch.Pnic,
 					name:  pswitch.DvsName,
@@ -148,6 +149,7 @@ func (vc *VmwareSource) InitHosts(ctx context.Context, containerView *view.Conta
 			}
 		}
 		// Iterate over hosts port groups, needed to enrich data on physical interfaces
+		vc.Networks.HostPortgroups[host.Name] = make(map[string]*HostPortgroupData)
 		for _, pgroup := range host.Config.Network.Portgroup {
 			if pgroup.Spec.Name != "" {
 				nic_order := pgroup.ComputedPolicy.NicTeaming.NicOrder

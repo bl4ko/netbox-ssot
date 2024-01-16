@@ -8,7 +8,6 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
-	ovirtsdk4 "github.com/ovirt/go-ovirt"
 	"github.com/vmware/govmomi/vim25/mo"
 )
 
@@ -36,17 +35,17 @@ func (vc *VmwareSource) syncClusters(nbi *inventory.NetBoxInventory) error {
 		NetboxObject: objects.NetboxObject{
 			Tags: vc.SourceTags,
 		},
-		Name: "vmware",
-		Slug: "vmware",
+		Name: "Vmware ESXi",
+		Slug: utils.Slugify("Vmware ESXi"),
 	}
 	clusterType, err := nbi.AddClusterType(clusterType)
 	if err != nil {
 		return fmt.Errorf("failed to add vmware ClusterType: %v", err)
 	}
 	// Then sync oVirt Clusters as NetBoxClusters
-	for clusterId, cluster := range vc.Clusters {
+	for clusterId := range vc.Clusters {
 
-		clusterName := cluster.Name
+		clusterName := clusterId
 
 		var clusterGroup *objects.ClusterGroup
 		datacenterId := vc.Cluster2Datacenter[clusterId]
@@ -149,6 +148,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetBoxInventory) error {
 			if serialInfoTypes[infoType] {
 				if info.IdentifierValue != "" {
 					hostSerialNumber = info.IdentifierValue
+					break
 				}
 			}
 		}
@@ -168,6 +168,9 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetBoxInventory) error {
 
 		var hostDeviceType *objects.DeviceType
 		hostDeviceType, err = nbi.AddDeviceType(&objects.DeviceType{
+			NetboxObject: objects.NetboxObject{
+				Tags: vc.SourceTags,
+			},
 			Manufacturer: hostManufacturer,
 			Model:        hostModel,
 			Slug:         utils.Slugify(hostModel),
@@ -620,141 +623,139 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetBoxInventory) error {
 }
 
 // Syncs VM's interfaces to Netbox
-func (vc *VmwareSource) syncVmInterfaces(nbi *inventory.NetBoxInventory, ovirtVm *ovirtsdk4.Vm, netboxVm *objects.VM) error {
-	// 	var vmPrimaryIpv4 *objects.IPAddress
-	// 	var vmPrimaryIpv6 *objects.IPAddress
-	// 	if reportedDevices, exist := ovirtVm.ReportedDevices(); exist {
-	// 		for _, reportedDevice := range reportedDevices.Slice() {
-	// 			if reportedDeviceType, exist := reportedDevice.Type(); exist {
-	// 				if reportedDeviceType == "network" {
-	// 					// We add interface to the list
-	// 					var vmInterface *objects.VMInterface
-	// 					var err error
-	// 					if reportedDeviceName, exists := reportedDevice.Name(); exists {
-	// 						vmInterface, err = nbi.AddVMInterface(&objects.VMInterface{
-	// 							NetboxObject: objects.NetboxObject{
-	// 								Tags:        vc.SourceTags,
-	// 								Description: reportedDevice.MustDescription(),
-	// 							},
-	// 							VM:         netboxVm,
-	// 							Name:       reportedDeviceName,
-	// 							MACAddress: strings.ToUpper(reportedDevice.MustMac().MustAddress()),
-	// 						})
-	// 						if err != nil {
-	// 							return fmt.Errorf("failed to sync oVirt vm's interface %s: %v", reportedDeviceName, err)
-	// 						}
-	// 					} else {
-	// 						vc.Logger.Warning("name for oVirt vm's reported device is empty. Skipping...")
-	// 						continue
-	// 					}
+// func (vc *VmwareSource) syncVmInterfaces(nbi *inventory.NetBoxInventory, ovirtVm *ovirtsdk4.Vm, netboxVm *objects.VM) error {
+// 	// 	var vmPrimaryIpv4 *objects.IPAddress
+// 	// 	var vmPrimaryIpv6 *objects.IPAddress
+// 	// 	if reportedDevices, exist := ovirtVm.ReportedDevices(); exist {
+// 	// 		for _, reportedDevice := range reportedDevices.Slice() {
+// 	// 			if reportedDeviceType, exist := reportedDevice.Type(); exist {
+// 	// 				if reportedDeviceType == "network" {
+// 	// 					// We add interface to the list
+// 	// 					var vmInterface *objects.VMInterface
+// 	// 					var err error
+// 	// 					if reportedDeviceName, exists := reportedDevice.Name(); exists {
+// 	// 						vmInterface, err = nbi.AddVMInterface(&objects.VMInterface{
+// 	// 							NetboxObject: objects.NetboxObject{
+// 	// 								Tags:        vc.SourceTags,
+// 	// 								Description: reportedDevice.MustDescription(),
+// 	// 							},
+// 	// 							VM:         netboxVm,
+// 	// 							Name:       reportedDeviceName,
+// 	// 							MACAddress: strings.ToUpper(reportedDevice.MustMac().MustAddress()),
+// 	// 						})
+// 	// 						if err != nil {
+// 	// 							return fmt.Errorf("failed to sync oVirt vm's interface %s: %v", reportedDeviceName, err)
+// 	// 						}
+// 	// 					} else {
+// 	// 						vc.Logger.Warning("name for oVirt vm's reported device is empty. Skipping...")
+// 	// 						continue
+// 	// 					}
 
-	// 					if reportedDeviceIps, exist := reportedDevice.Ips(); exist {
-	// 						for _, ip := range reportedDeviceIps.Slice() {
-	// 							if ipAddress, exists := ip.Address(); exists {
-	// 								if ipVersion, exists := ip.Version(); exists {
+// 	// 					if reportedDeviceIps, exist := reportedDevice.Ips(); exist {
+// 	// 						for _, ip := range reportedDeviceIps.Slice() {
+// 	// 							if ipAddress, exists := ip.Address(); exists {
+// 	// 								if ipVersion, exists := ip.Version(); exists {
 
-	// 									// Filter IPs, we won't sync IPs from specific interfaces
-	// 									// like docker, flannel, calico, etc. interfaces
-	// 									valid, err := utils.IsVMInterfaceNameValid(vmInterface.Name)
-	// 									if err != nil {
-	// 										return fmt.Errorf("failed to match oVirt vm's interface %s to a Netbox interface filter: %v", vmInterface.Name, err)
-	// 									}
-	// 									if !valid {
-	// 										continue
-	// 									}
+// 	// 									// Filter IPs, we won't sync IPs from specific interfaces
+// 	// 									// like docker, flannel, calico, etc. interfaces
+// 	// 									valid, err := utils.IsVMInterfaceNameValid(vmInterface.Name)
+// 	// 									if err != nil {
+// 	// 										return fmt.Errorf("failed to match oVirt vm's interface %s to a Netbox interface filter: %v", vmInterface.Name, err)
+// 	// 									}
+// 	// 									if !valid {
+// 	// 										continue
+// 	// 									}
 
-	// 									// Try to do reverse lookup of IP to get DNS name
-	// 									hostname := utils.ReverseLookup(ipAddress)
+// 	// 									// Try to do reverse lookup of IP to get DNS name
+// 	// 									hostname := utils.ReverseLookup(ipAddress)
 
-	// 									// Set default mask
-	// 									var ipMask string
-	// 									if netMask, exists := ip.Netmask(); exists {
-	// 										ipMask = fmt.Sprintf("/%s", netMask)
-	// 									} else {
-	// 										switch ipVersion {
-	// 										case "v4":
-	// 											ipMask = "/32"
-	// 										case "v6":
-	// 											ipMask = "/128"
-	// 										}
-	// 									}
+// 	// 									// Set default mask
+// 	// 									var ipMask string
+// 	// 									if netMask, exists := ip.Netmask(); exists {
+// 	// 										ipMask = fmt.Sprintf("/%s", netMask)
+// 	// 									} else {
+// 	// 										switch ipVersion {
+// 	// 										case "v4":
+// 	// 											ipMask = "/32"
+// 	// 										case "v6":
+// 	// 											ipMask = "/128"
+// 	// 										}
+// 	// 									}
 
-	// 									ipAddress, err := nbi.AddIPAddress(&objects.IPAddress{
-	// 										NetboxObject: objects.NetboxObject{
-	// 											Tags: vc.SourceTags,
-	// 										},
-	// 										Address:            ipAddress + ipMask,
-	// 										Tenant:             netboxVm.Tenant,
-	// 										Status:             &objects.IPAddressStatusActive,
-	// 										DNSName:            hostname,
-	// 										AssignedObjectType: objects.AssignedObjectTypeVMInterface,
-	// 										AssignedObjectId:   vmInterface.Id,
-	// 									})
+// 	// 									ipAddress, err := nbi.AddIPAddress(&objects.IPAddress{
+// 	// 										NetboxObject: objects.NetboxObject{
+// 	// 											Tags: vc.SourceTags,
+// 	// 										},
+// 	// 										Address:            ipAddress + ipMask,
+// 	// 										Tenant:             netboxVm.Tenant,
+// 	// 										Status:             &objects.IPAddressStatusActive,
+// 	// 										DNSName:            hostname,
+// 	// 										AssignedObjectType: objects.AssignedObjectTypeVMInterface,
+// 	// 										AssignedObjectId:   vmInterface.Id,
+// 	// 									})
 
-	// 									if err != nil {
-	// 										// TODO: return should be here, commented just for now
-	// 										// return fmt.Errorf("failed to sync oVirt vm's interface %s ip %s: %v", vmInterface, ip.MustAddress(), err)
-	// 										vc.Logger.Error(fmt.Sprintf("failed to sync oVirt vm's interface %s ip %s: %v", vmInterface, ip.MustAddress(), err))
+// 	// 									if err != nil {
+// 	// 										// TODO: return should be here, commented just for now
+// 	// 										// return fmt.Errorf("failed to sync oVirt vm's interface %s ip %s: %v", vmInterface, ip.MustAddress(), err)
+// 	// 										vc.Logger.Error(fmt.Sprintf("failed to sync oVirt vm's interface %s ip %s: %v", vmInterface, ip.MustAddress(), err))
 
-	// 									}
+// 	// 									}
 
-	// 									// TODO: criteria to determine if reported device is primary IP
-	// 									switch ipVersion {
-	// 									case "v4":
-	// 										if vmPrimaryIpv4 == nil {
-	// 											vmPrimaryIpv4 = ipAddress
-	// 										}
-	// 									case "v6":
-	// 										if vmPrimaryIpv6 == nil {
-	// 											vmPrimaryIpv6 = ipAddress
-	// 										}
-	// 									}
-	// 								}
-	// 							}
-	// 						}
-	// 					}
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// 	// Update netboxVM with primary IPs
-	// 	// TODO: determine which ip is primary ipv4 and which is primary ipv6
-	// 	// TODO: then assign them to netboxVM
-	// 	// if vmPrimaryIpv4 != nil && (netboxVm.PrimaryIPv4 == nil || vmPrimaryIpv4.Address != netboxVm.PrimaryIPv4.Address) {
-	// 	// 	netboxVm.PrimaryIPv4 = vmPrimaryIpv4
-	// 	// 	if _, err := nbi.AddVM(netboxVm); err != nil {
-	// 	// 		return fmt.Errorf("failed to sync oVirt vm's primary ipv4: %v", err)
-	// 	// 	}
-	// 	// }
-	// 	// if vmPrimaryIpv6 != nil && (netboxVm.PrimaryIPv6 == nil || vmPrimaryIpv6.Address != netboxVm.PrimaryIPv6.Address) {
-	// 	// 	netboxVm.PrimaryIPv6 = vmPrimaryIpv6
-	// 	// 	if _, err := nbi.AddVM(netboxVm); err != nil {
-	// 	// 		return fmt.Errorf("failed to sync oVirt vm's primary ipv6: %v", err)
-	// 	// 	}
-	// 	// }
+// 	// 									// TODO: criteria to determine if reported device is primary IP
+// 	// 									switch ipVersion {
+// 	// 									case "v4":
+// 	// 										if vmPrimaryIpv4 == nil {
+// 	// 											vmPrimaryIpv4 = ipAddress
+// 	// 										}
+// 	// 									case "v6":
+// 	// 										if vmPrimaryIpv6 == nil {
+// 	// 											vmPrimaryIpv6 = ipAddress
+// 	// 										}
+// 	// 									}
+// 	// 								}
+// 	// 							}
+// 	// 						}
+// 	// 					}
+// 	// 				}
+// 	// 			}
+// 	// 		}
+// 	// 	}
+// 	// 	// Update netboxVM with primary IPs
+// 	// 	// TODO: determine which ip is primary ipv4 and which is primary ipv6
+// 	// 	// TODO: then assign them to netboxVM
+// 	// 	// if vmPrimaryIpv4 != nil && (netboxVm.PrimaryIPv4 == nil || vmPrimaryIpv4.Address != netboxVm.PrimaryIPv4.Address) {
+// 	// 	// 	netboxVm.PrimaryIPv4 = vmPrimaryIpv4
+// 	// 	// 	if _, err := nbi.AddVM(netboxVm); err != nil {
+// 	// 	// 		return fmt.Errorf("failed to sync oVirt vm's primary ipv4: %v", err)
+// 	// 	// 	}
+// 	// 	// }
+// 	// 	// if vmPrimaryIpv6 != nil && (netboxVm.PrimaryIPv6 == nil || vmPrimaryIpv6.Address != netboxVm.PrimaryIPv6.Address) {
+// 	// 	// 	netboxVm.PrimaryIPv6 = vmPrimaryIpv6
+// 	// 	// 	if _, err := nbi.AddVM(netboxVm); err != nil {
+// 	// 	// 		return fmt.Errorf("failed to sync oVirt vm's primary ipv6: %v", err)
+// 	// 	// 	}
+// 	// 	// }
 
-	return nil
-}
+// 	return nil
+// }
 
-func (vc *VmwareSource) syncVlans(nbi *inventory.NetBoxInventory) error {
-	// for _, dvpg := range vc.DistributedVirtualPortgrups {
-	// 	if dvsPortSetting, ok := dvpg.Config.DefaultPortConfig.(*types.VMwareDVSPortSetting); ok {
-	// 		// VLAN information is part of the VLAN configuration
-	// 		if vlanSpec, ok := dvsPortSetting.Vlan.(*types.VmwareDistributedVirtualSwitchVlanIdSpec); ok {
-	// 			vlan := &objects.Vlan{
-	// 				NetboxObject: objects.NetboxObject{
-	// 					Tags: vc.SourceTags,
-	// 				},
-	// 				Name:   dvpg.Config.Name,
-	// 				Vid:    int(vlanSpec.VlanId),
-	// 				Status: &objects.VlanStatusActive, // TODO
-	// 			}
-	// 			nbi.AddVlan(vlan)
-	// 		}
-	// 		// else {
-	// 		// TODO Handle other types like trunking, private VLAN, etc., if necessary
-	// 		// }
-	// 	}
-	// }
+func (vc *VmwareSource) syncNetworks(nbi *inventory.NetBoxInventory) error {
+	vc.Logger.Info("Syncing networks...")
+	for _, dvpg := range vc.Networks.DistributedVirtualPortgroups {
+		// TODO: currently we are syncing only vlans
+		if len(dvpg.VlanIds) == 1 && len(dvpg.VlanIdRanges) == 0 {
+			_, err := nbi.AddVlan(&objects.Vlan{
+				NetboxObject: objects.NetboxObject{
+					Tags: vc.SourceTags,
+				},
+				Name:   dvpg.Name,
+				Vid:    dvpg.VlanIds[0],
+				Status: &objects.VlanStatusActive,
+			})
+			if err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }

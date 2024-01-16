@@ -108,6 +108,10 @@ type DeviceType struct {
 	Slug string `json:"slug,omitempty"`
 }
 
+func (dt DeviceType) String() string {
+	return fmt.Sprintf("DeviceType{Manufacturer: %s, Model: %s}", dt.Manufacturer.Name, dt.Model)
+}
+
 // DeviceRole represents the functional role of a device.
 // For example, a device may play the role of a router, a switch, a firewall, etc.
 type DeviceRole struct {
@@ -209,6 +213,10 @@ type Device struct {
 
 	// CustomFields is a dictionary of custom fields defined for the device type. map[customFieldName]: valueStr
 	CustomFields map[string]string `json:"custom_fields,omitempty"`
+}
+
+func (d Device) String() string {
+	return fmt.Sprintf("Device{Name: %s, DeviceType: %s, AssetTag: %s}", d.Name, d.DeviceType, d.AssetTag)
 }
 
 type InterfaceType struct {

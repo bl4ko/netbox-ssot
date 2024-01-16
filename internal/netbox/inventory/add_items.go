@@ -283,20 +283,20 @@ func (ni *NetBoxInventory) AddPlatform(newPlatform *objects.Platform) (*objects.
 
 func (ni *NetBoxInventory) AddDevice(newDevice *objects.Device) (*objects.Device, error) {
 	newDevice.Tags = append(newDevice.Tags, ni.SsotTag)
-	if _, ok := ni.DevicesIndexByUuid[newDevice.AssetTag]; ok {
+	if _, ok := ni.DevicesIndexByNameAndSiteId[newDevice.Name][newDevice.Site.Id]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
-		delete(ni.OrphanManager["/api/dcim/devices/"], ni.DevicesIndexByUuid[newDevice.AssetTag].Id)
-		diffMap, err := utils.JsonDiffMapExceptId(newDevice, ni.DevicesIndexByUuid[newDevice.AssetTag])
+		delete(ni.OrphanManager["/api/dcim/devices/"], ni.DevicesIndexByNameAndSiteId[newDevice.Name][newDevice.Site.Id].Id)
+		diffMap, err := utils.JsonDiffMapExceptId(newDevice, ni.DevicesIndexByNameAndSiteId[newDevice.Name][newDevice.Site.Id])
 		if err != nil {
 			return nil, err
 		}
 		if len(diffMap) > 0 {
 			ni.Logger.Debug("Device ", newDevice.Name, " already exists in Netbox but is out of date. Patching it...")
-			patchedDevice, err := ni.NetboxApi.PatchDevice(diffMap, ni.DevicesIndexByUuid[newDevice.AssetTag].Id)
+			patchedDevice, err := ni.NetboxApi.PatchDevice(diffMap, ni.DevicesIndexByNameAndSiteId[newDevice.Name][newDevice.Site.Id].Id)
 			if err != nil {
 				return nil, err
 			}
-			ni.DevicesIndexByUuid[newDevice.AssetTag] = patchedDevice
+			ni.DevicesIndexByNameAndSiteId[newDevice.Name][newDevice.Site.Id] = patchedDevice
 		} else {
 			ni.Logger.Debug("Device ", newDevice.Name, " already exists in Netbox and is up to date...")
 		}
@@ -306,9 +306,9 @@ func (ni *NetBoxInventory) AddDevice(newDevice *objects.Device) (*objects.Device
 		if err != nil {
 			return nil, err
 		}
-		ni.DevicesIndexByUuid[newDevice.AssetTag] = newDevice
+		ni.DevicesIndexByNameAndSiteId[newDevice.Name][newDevice.Site.Id] = newDevice
 	}
-	return ni.DevicesIndexByUuid[newDevice.AssetTag], nil
+	return ni.DevicesIndexByNameAndSiteId[newDevice.Name][newDevice.Site.Id], nil
 }
 
 func (ni *NetBoxInventory) AddVlan(newVlan *objects.Vlan) (*objects.Vlan, error) {

@@ -6,6 +6,7 @@ import (
 	"net/url"
 
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 	"github.com/vmware/govmomi"
@@ -14,37 +15,6 @@ import (
 	"github.com/vmware/govmomi/vim25"
 	"github.com/vmware/govmomi/vim25/mo"
 )
-
-type DistributedPortgroupData struct {
-	Name         string
-	VlanIds      []int
-	VlanIdRanges []string
-	Private      bool
-}
-
-type HostVirtualSwitchData struct {
-	mtu   int
-	pnics []string
-}
-
-type HostProxySwitchData struct {
-	name  string
-	mtu   int
-	pnics []string
-}
-
-type HostPortgroupData struct {
-	vlanId  int
-	vswitch string
-	nics    []string
-}
-
-type NetworkData struct {
-	DistributedVirtualPortgroups map[string]*DistributedPortgroupData         // Portgroup.key -> PortgroupData
-	HostVirtualSwitches          map[string]map[string]*HostVirtualSwitchData // hostName -> VSwitchName-> VSwitchData
-	HostProxySwitches            map[string]map[string]*HostProxySwitchData   // hostName -> PSwitchName ->
-	HostPortgroups               map[string]map[string]*HostPortgroupData     // hostname -> Portgroup.Spec.Name -> HostPortgroupDAta
-}
 
 // VmwareSource represents an vsphere source
 type VmwareSource struct {
@@ -67,6 +37,38 @@ type VmwareSource struct {
 	ClusterTenantRelations map[string]string
 	HostTenantRelations    map[string]string
 	VmTenantRelations      map[string]string
+}
+
+type NetworkData struct {
+	DistributedVirtualPortgroups map[string]*DistributedPortgroupData         // Portgroup.key -> PortgroupData
+	HostVirtualSwitches          map[string]map[string]*HostVirtualSwitchData // hostName -> VSwitchName-> VSwitchData
+	HostProxySwitches            map[string]map[string]*HostProxySwitchData   // hostName -> PSwitchName ->
+	HostPortgroups               map[string]map[string]*HostPortgroupData     // hostname -> Portgroup.Spec.Name -> HostPortgroupDAta
+}
+
+type DistributedPortgroupData struct {
+	Name         string
+	VlanIds      []int
+	VlanIdRanges []string
+	Private      bool
+	Tenant       *objects.Tenant
+}
+
+type HostVirtualSwitchData struct {
+	mtu   int
+	pnics []string
+}
+
+type HostProxySwitchData struct {
+	name  string
+	mtu   int
+	pnics []string
+}
+
+type HostPortgroupData struct {
+	vlanId  int
+	vswitch string
+	nics    []string
 }
 
 func (vc *VmwareSource) Init() error {
@@ -144,7 +146,7 @@ func (vc *VmwareSource) Init() error {
 		}
 	}
 
-	vc.Logger.Debug("Successfully initialized objects from source.")
+	vc.Logger.Debug("Successfully initialized objects from source ", vc.CommonConfig.SourceConfig.Name, ".")
 
 	err = conn.Logout(ctx)
 	if err != nil {
@@ -159,6 +161,7 @@ func (vc *VmwareSource) Init() error {
 // Function that syncs all data from oVirt to Netbox
 func (vc *VmwareSource) Sync(nbi *inventory.NetBoxInventory) error {
 	syncFunctions := []func(*inventory.NetBoxInventory) error{
+		vc.syncNetworks,
 		vc.syncDatacenters,
 		vc.syncClusters,
 		vc.syncHosts,

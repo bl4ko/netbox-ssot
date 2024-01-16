@@ -29,8 +29,9 @@ type NetBoxInventory struct {
 	TenantsIndexByName map[string]*objects.Tenant
 	// DeviceTypesIndexByModel is a map of all device types in the Netbox's inventory, indexed by their model
 	DeviceTypesIndexByModel map[string]*objects.DeviceType
-	// DevicesIndexByUuid is a map of all devices in the Netbox's inventory, indexed by uuid (unique identifier)
-	DevicesIndexByUuid map[string]*objects.Device
+	// DevicesIndexByNameAndSiteId is a map of all devices in the Netbox's inventory, indexed by their name, and
+	// site ID (This is because, netbox constraints: https://github.com/netbox-community/netbox/blob/3d941411d438f77b66d2036edf690c14b459af58/netbox/dcim/models/devices.py#L775)
+	DevicesIndexByNameAndSiteId map[string]map[int]*objects.Device
 	// VlansIndexByName is a map of all vlans in the Netbox's inventory, indexed by their name
 	VlansIndexByName map[string]*objects.Vlan
 	// ClusterGroupsIndexByName is a map of all cluster groups in the Netbox's inventory, indexed by their name
