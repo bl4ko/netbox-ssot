@@ -306,6 +306,9 @@ func (ni *NetBoxInventory) AddDevice(newDevice *objects.Device) (*objects.Device
 		if err != nil {
 			return nil, err
 		}
+		if ni.DevicesIndexByNameAndSiteId[newDevice.Name] == nil {
+			ni.DevicesIndexByNameAndSiteId[newDevice.Name] = make(map[int]*objects.Device)
+		}
 		ni.DevicesIndexByNameAndSiteId[newDevice.Name][newDevice.Site.Id] = newDevice
 	}
 	return ni.DevicesIndexByNameAndSiteId[newDevice.Name][newDevice.Site.Id], nil

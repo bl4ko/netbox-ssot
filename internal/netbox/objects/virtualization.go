@@ -19,6 +19,10 @@ type ClusterType struct {
 	Slug string `json:"slug,omitempty"`
 }
 
+func (ct ClusterType) String() string {
+	return fmt.Sprintf("ClusterType{Name: %s}", ct.Name)
+}
+
 type ClusterStatus struct {
 	Choice
 }

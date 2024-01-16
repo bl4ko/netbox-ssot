@@ -41,6 +41,10 @@ type Platform struct {
 	Manufacturer *Manufacturer `json:"manufacturer,omitempty"`
 }
 
+func (p Platform) String() string {
+	return fmt.Sprintf("Platform{Name: %s, Manufacturer: %s}", p.Name, p.Manufacturer)
+}
+
 type Region struct {
 	NetboxObject
 	// Name is the name of the region. This field is required.

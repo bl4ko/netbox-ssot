@@ -137,7 +137,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetBoxInventory) error {
 		hostModel := host.Summary.Hardware.Model
 
 		var hostSerialNumber string
-		// find serial number from  host summary.hardware.OtherIdentifyingInfo
+		// find serial number from  host summary.hardware.OtherIdentifyingInfo (vmware specific logic)
 		serialInfoTypes := map[string]bool{
 			"EnclosureSerialNumberTag": true,
 			"ServiceTag":               true,
@@ -259,7 +259,6 @@ func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetBoxInventory, vcH
 		pnicLinkSpeed := pnic.LinkSpeed.SpeedMb
 		var pnicMode *objects.InterfaceMode
 		var pnicMtu int
-		var taggedVlanList []*objects.Vlan // when mode="tagged"
 		if pnicLinkSpeed == 0 {
 			pnicLinkSpeed = pnic.Spec.LinkSpeed.SpeedMb
 			if pnicLinkSpeed == 0 {
@@ -267,7 +266,7 @@ func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetBoxInventory, vcH
 			}
 		}
 		var pnicDescription string
-		if pnicLinkSpeed > 1000 {
+		if pnicLinkSpeed >= 1000 {
 			pnicDescription = fmt.Sprintf("%dGB/s", pnicLinkSpeed/1000)
 		} else {
 			pnicDescription = fmt.Sprintf("%dMB/s", pnicLinkSpeed)
@@ -303,6 +302,7 @@ func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetBoxInventory, vcH
 		}
 
 		// Determine interface mode for non VM traffic NIC, from vlans data
+		var taggedVlanList []*objects.Vlan // when mode="tagged"
 		if len(pnicVlans) > 0 {
 			vlanIdSet := map[int]bool{} // set of vlans
 			for _, pnicVlan := range pnicVlans {
@@ -325,6 +325,8 @@ func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetBoxInventory, vcH
 				}
 			}
 		}
+
+		// Add taggedVlans
 
 		// After collecting all of the data add interface to nbi
 		_, err := nbi.AddInterface(&objects.Interface{
