@@ -6,6 +6,24 @@ import (
 	ovirtsdk4 "github.com/ovirt/go-ovirt"
 )
 
+// Fetches networks from ovirt api and stores them to local object.
+func (o *OVirtSource) InitNetworks(conn *ovirtsdk4.Connection) error {
+	networksResponse, err := conn.SystemService().NetworksService().List().Send()
+	if err != nil {
+		return fmt.Errorf("init oVirt networks: %v", err)
+	}
+	o.Networks = make(map[string]*ovirtsdk4.Network)
+	if networks, ok := networksResponse.Networks(); ok {
+		for _, network := range networks.Slice() {
+			o.Networks[network.MustId()] = network
+		}
+		o.Logger.Debug("Successfully initialized oVirt disks: ", o.Disks)
+	} else {
+		o.Logger.Warning("Error initializing oVirt disks")
+	}
+	return nil
+}
+
 func (o *OVirtSource) InitDisks(conn *ovirtsdk4.Connection) error {
 	// Get the disks
 	disksResponse, err := conn.SystemService().DisksService().List().Send()

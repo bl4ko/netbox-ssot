@@ -337,7 +337,7 @@ func (ni *NetBoxInventory) InitDefaultVlanGroup() error {
 			Tags:        ni.Tags,
 			Description: "Default netbox-ssot VlanGroup for all vlans that are not part of any other vlanGroup. This group is required for netbox-ssot vlan index to work.",
 		},
-		Name:   "Default netbox-ssot vlan group",
+		Name:   objects.DefaultVlanGroupName,
 		MinVid: 1,
 		MaxVid: 4094,
 	})
@@ -384,7 +384,7 @@ func (ni *NetBoxInventory) InitVlans() error {
 		if vlan.Group == nil {
 			// Update all existing vlans with default vlanGroup. This only happens
 			// when there are predefined vlans in netbox.
-			vlan.Group = ni.VlanGroupsIndexByName["Default netbox-ssot vlan group"] // This should not fail, because InitDefaultVlanGroup executes before InitVlans
+			vlan.Group = ni.VlanGroupsIndexByName[objects.DefaultVlanGroupName] // This should not fail, because InitDefaultVlanGroup executes before InitVlans
 			vlan, err = ni.AddVlan(vlan)
 			if err != nil {
 				return err

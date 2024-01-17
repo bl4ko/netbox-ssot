@@ -19,12 +19,14 @@ type OVirtSource struct {
 	Clusters    map[string]*ovirtsdk4.Cluster
 	Hosts       map[string]*ovirtsdk4.Host
 	Vms         map[string]*ovirtsdk4.Vm
+	Networks    map[string]*ovirtsdk4.Network
 
 	HostSiteRelations      map[string]string
 	ClusterSiteRelations   map[string]string
 	ClusterTenantRelations map[string]string
 	HostTenantRelations    map[string]string
 	VmTenantRelations      map[string]string
+	VlanGroupRelations     map[string]string
 }
 
 func (o *OVirtSource) Init() error {
@@ -40,6 +42,8 @@ func (o *OVirtSource) Init() error {
 	o.Logger.Debug("HostTenantRelations: ", o.HostTenantRelations)
 	o.VmTenantRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.VmTenantRelations)
 	o.Logger.Debug("VmTenantRelations: ", o.VmTenantRelations)
+	o.VlanGroupRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.VlanGroupRelations)
+	o.Logger.Debug("VlanGroupRelations: ", o.VlanGroupRelations)
 
 	// Initialize the connection
 	o.Logger.Debug("Initializing oVirt source ", o.SourceConfig.Name)
@@ -58,6 +62,7 @@ func (o *OVirtSource) Init() error {
 
 	// Initialise items to local storage
 	initFunctions := []func(*ovirtsdk4.Connection) error{
+		o.InitNetworks,
 		o.InitDisks,
 		o.InitDataCenters,
 		o.InitClusters,
@@ -77,6 +82,7 @@ func (o *OVirtSource) Init() error {
 // Function that syncs all data from oVirt to Netbox
 func (o *OVirtSource) Sync(nbi *inventory.NetBoxInventory) error {
 	syncFunctions := []func(*inventory.NetBoxInventory) error{
+		o.syncNetworks,
 		o.syncDatacenters,
 		o.syncClusters,
 		o.syncHosts,

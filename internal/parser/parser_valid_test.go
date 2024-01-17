@@ -178,7 +178,7 @@ func TestValidConfig(t *testing.T) {
 				},
 				ValidateCert: false,
 				Tag:          "Source: prodolvm", // Default
-				TagColor:     "07426b",           // Default
+				TagColor:     "aa1409",           // Default
 				ClusterSiteRelations: []string{
 					"Cluster_NYC = New York",
 					"Cluster_FFM.* = Frankfurt",

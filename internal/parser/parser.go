@@ -74,10 +74,11 @@ type SourceConfig struct {
 	ClusterTenantRelations []string   `yaml:"clusterTenantRelations"`
 	HostTenantRelations    []string   `yaml:"hostTenantRelations"`
 	VmTenantRelations      []string   `yaml:"vmTenantRelations"`
+	VlanGroupRelations     []string   `yaml:"vlanGroupRelations"`
 }
 
 func (s SourceConfig) String() string {
-	return fmt.Sprintf("SourceConfig{Name: %s, Type: %s, HTTPScheme: %s, Hostname: %s, Port: %d, Username: %s, Password: %s, PermittedSubnets: %v, ValidateCert: %t, Tag: %s, TagColor: %s, HostSiteRelations: %v, ClusterSiteRelations: %v, clusterTenantRelations: %v, HostTenantRelations: %v, VmTenantRelations %v}", s.Name, s.Type, s.HTTPScheme, s.Hostname, s.Port, s.Username, s.Password, s.PermittedSubnets, s.ValidateCert, s.Tag, s.TagColor, s.HostSiteRelations, s.ClusterSiteRelations, s.ClusterTenantRelations, s.HostTenantRelations, s.VmTenantRelations)
+	return fmt.Sprintf("SourceConfig{Name: %s, Type: %s, HTTPScheme: %s, Hostname: %s, Port: %d, Username: %s, Password: %s, PermittedSubnets: %v, ValidateCert: %t, Tag: %s, TagColor: %s, HostSiteRelations: %v, ClusterSiteRelations: %v, clusterTenantRelations: %v, HostTenantRelations: %v, VmTenantRelations %v, VlanGroupRelations: %v}", s.Name, s.Type, s.HTTPScheme, s.Hostname, s.Port, s.Username, s.Password, s.PermittedSubnets, s.ValidateCert, s.Tag, s.TagColor, s.HostSiteRelations, s.ClusterSiteRelations, s.ClusterTenantRelations, s.HostTenantRelations, s.VmTenantRelations, s.VlanGroupRelations)
 }
 
 // Validates the user's config for limits and required fields
@@ -150,7 +151,7 @@ func validateSourceConfig(config *Config) error {
 		externalSource := &config.Sources[i]
 		externalSourceStr := "source[" + externalSource.Name + "]."
 		if externalSource.Name == "" {
-			return errors.New(externalSourceStr + "name cannot be empty")
+			return fmt.Errorf("%s: name cannot be empty", externalSourceStr)
 		}
 		if externalSource.HTTPScheme == "" {
 			externalSource.HTTPScheme = "https"
@@ -158,18 +159,18 @@ func validateSourceConfig(config *Config) error {
 			return errors.New(externalSourceStr + "httpScheme must be either http or https. Is " + string(externalSource.HTTPScheme))
 		}
 		if externalSource.Hostname == "" {
-			return errors.New(externalSourceStr + "hostname cannot be empty")
+			return fmt.Errorf("%s: hostname cannot be empty", externalSourceStr)
 		}
 		if externalSource.Port == 0 {
 			externalSource.Port = 443
 		} else if externalSource.Port < 0 || externalSource.Port > 65535 {
-			return errors.New(externalSourceStr + "port must be between 0 and 65535. Is " + fmt.Sprintf("%d", externalSource.Port))
+			return fmt.Errorf("%s: port must be between 0 and 65535. Is %d", externalSourceStr, externalSource.Port)
 		}
 		if externalSource.Username == "" {
-			return errors.New(externalSourceStr + "username cannot be empty")
+			return fmt.Errorf("%s: username cannot be empty", externalSourceStr)
 		}
 		if externalSource.Password == "" {
-			return errors.New(externalSourceStr + "password cannot be empty")
+			return fmt.Errorf("%s: password cannot be empty", externalSourceStr)
 		}
 		if externalSource.Tag == "" {
 			externalSource.Tag = fmt.Sprintf("Source: %s", externalSource.Name)
@@ -181,36 +182,42 @@ func validateSourceConfig(config *Config) error {
 		case Ovirt:
 		case Vmware:
 		default:
-			return errors.New(externalSourceStr + "type is not valid")
+			return fmt.Errorf("%stype is not valid", externalSourceStr)
 		}
 		if len(externalSource.HostSiteRelations) > 0 {
 			err := utils.ValidateRegexRelations(externalSource.HostSiteRelations)
 			if err != nil {
-				return errors.New(externalSourceStr + "hostSiteRelations: " + err.Error())
+				return fmt.Errorf("%shostSiteRelations: %s", externalSourceStr, err)
 			}
 		}
 		if len(externalSource.ClusterSiteRelations) > 0 {
 			err := utils.ValidateRegexRelations(externalSource.ClusterSiteRelations)
 			if err != nil {
-				return errors.New(externalSourceStr + "clusterSiteRelations: " + err.Error())
+				return fmt.Errorf("%sclusterSiteRelations: %s", externalSourceStr, err)
 			}
 		}
 		if len(externalSource.ClusterTenantRelations) > 0 {
 			err := utils.ValidateRegexRelations(externalSource.ClusterTenantRelations)
 			if err != nil {
-				return errors.New(externalSourceStr + "clusterTenantRelations: " + err.Error())
+				return fmt.Errorf("%sclusterTenantRelations: %s", externalSourceStr, err)
 			}
 		}
 		if len(externalSource.HostTenantRelations) > 0 {
 			err := utils.ValidateRegexRelations(externalSource.HostTenantRelations)
 			if err != nil {
-				return errors.New(externalSourceStr + "hostTenantRelations: " + err.Error())
+				return fmt.Errorf("%shostTenantRelations: %s", externalSourceStr, err)
 			}
 		}
 		if len(externalSource.VmTenantRelations) > 0 {
 			err := utils.ValidateRegexRelations(externalSource.VmTenantRelations)
 			if err != nil {
-				return errors.New(externalSourceStr + "vmTenantRelations: " + err.Error())
+				return fmt.Errorf("%svmTenantRelations: %s", externalSourceStr, err)
+			}
+		}
+		if len(externalSource.VlanGroupRelations) > 0 {
+			err := utils.ValidateRegexRelations(externalSource.VlanGroupRelations)
+			if err != nil {
+				return fmt.Errorf("%svlanGroupRelations: %v", externalSourceStr, err)
 			}
 		}
 	}

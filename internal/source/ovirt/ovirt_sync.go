@@ -6,9 +6,46 @@ import (
 
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/source/common"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 	ovirtsdk4 "github.com/ovirt/go-ovirt"
 )
+
+// Synces networks received from oVirt API to the netbox.
+func (o *OVirtSource) syncNetworks(nbi *inventory.NetBoxInventory) error {
+	for _, network := range o.Networks {
+		name, exists := network.Name()
+		if !exists {
+			return fmt.Errorf("network %v has no name!", network)
+		}
+		description, _ := network.Description()
+		// TODO: handle other networks
+		if networkVlan, exists := network.Vlan(); exists {
+			// VLAN group relation
+			vlanGroup, err := common.MatchVlanToGroup(nbi, name, o.VlanGroupRelations)
+			if err != nil {
+				return err
+			}
+			if networkVlanId, exists := networkVlan.Id(); exists {
+				_, err := nbi.AddVlan(&objects.Vlan{
+					NetboxObject: objects.NetboxObject{
+						Description: description,
+						Tags:        o.SourceTags,
+					},
+					Name:     name,
+					Group:    vlanGroup,
+					Vid:      int(networkVlanId),
+					Status:   &objects.VlanStatusActive,
+					Comments: network.MustComment(),
+				})
+				if err != nil {
+					return fmt.Errorf("adding vlan: %v", err)
+				}
+			}
+		}
+	}
+	return nil
+}
 
 func (o *OVirtSource) syncDatacenters(nbi *inventory.NetBoxInventory) error {
 	// First sync oVirt DataCenters as NetBoxClusterGroups
