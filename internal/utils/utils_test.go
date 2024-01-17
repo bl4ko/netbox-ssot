@@ -100,3 +100,50 @@ func TestFilterVMInterfaceNames(t *testing.T) {
 		})
 	}
 }
+
+func TestMaskToBits(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected int
+		err      bool
+	}{
+		{
+			name:     "Valid mask 255.255.255.128",
+			input:    "255.255.255.128",
+			expected: 25,
+			err:      false,
+		},
+		{
+			name:     "Valid mask 255.255.255.0",
+			input:    "255.255.255.0",
+			expected: 24,
+			err:      false,
+		},
+		{
+			name:     "Invalid mask",
+			input:    "255.255.255.256",
+			expected: 0,
+			err:      true,
+		},
+		{
+			name:     "Empty mask",
+			input:    "",
+			expected: 0,
+			err:      true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			bits, err := MaskToBits(tt.input)
+			if (err != nil) != tt.err {
+				t.Errorf("maskToBits() error = %v, wantErr %v", err, tt.err)
+				return
+			}
+			if bits != tt.expected {
+				t.Errorf("maskToBits() = %v, want %v", bits, tt.expected)
+			}
+		})
+	}
+}

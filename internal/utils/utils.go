@@ -113,3 +113,14 @@ func IsVMInterfaceNameValid(vmIfaceName string) (bool, error) {
 
 	return true, nil
 }
+
+// Function that converts string representation of ipv4 mask (e.g. 255.255.255.128) to
+// bit representation (e.g. 25)
+func MaskToBits(mask string) (int, error) {
+	ipMask := net.IPMask(net.ParseIP(mask).To4())
+	if ipMask == nil {
+		return 0, fmt.Errorf("invalid mask: %s", mask)
+	}
+	ones, _ := ipMask.Size()
+	return ones, nil
+}

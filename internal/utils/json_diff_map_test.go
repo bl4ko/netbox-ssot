@@ -465,7 +465,7 @@ func TestJsonDiffMapComplex2(t *testing.T) {
 	}
 }
 
-func TestJsonDiffMapWithChoiceAttr(t *testing.T) {
+func TestJsonDiffMapWithChoiceAttr1(t *testing.T) {
 	newObj := &objects.Device{
 		Name:   "Test device",
 		Status: &objects.DeviceStatusActive,
@@ -486,6 +486,33 @@ func TestJsonDiffMapWithChoiceAttr(t *testing.T) {
 		"description": "",
 		"tags":        []interface{}{},
 		"status":      "active",
+	}
+
+	respDiffMap, err := JsonDiffMapExceptId(newObj, existingObj)
+	if err != nil {
+		t.Errorf("JsonDiffMapExceptId() error = %v", err)
+	}
+	if !reflect.DeepEqual(respDiffMap, expectedDiffMap) {
+		t.Errorf("JsonDiffMapExceptId() = %v, want %v", respDiffMap, expectedDiffMap)
+	}
+	// Also ensure that the diff is a valid JSON
+	_, err = json.Marshal(respDiffMap)
+	if err != nil {
+		t.Errorf("JsonDiffMapExceptId() error = %v", err)
+	}
+}
+
+func TestJsonDiffMapWithChoiceAttr2(t *testing.T) {
+	newObj := &objects.Device{
+		Name:   "Test device",
+		Status: &objects.DeviceStatusActive,
+	}
+
+	existingObj := &objects.Device{
+		Name: "Test device",
+	}
+	expectedDiffMap := map[string]interface{}{
+		"status": "active",
 	}
 
 	respDiffMap, err := JsonDiffMapExceptId(newObj, existingObj)

@@ -220,6 +220,14 @@ func addStructDiff(newObj reflect.Value, existingObj reflect.Value, jsonTag stri
 		return nil
 	}
 
+	// We check if struct is a objects.Choice (special netbox struct)
+	if isChoiceEmbedded(newObj) {
+		if !existingObj.IsValid() || newObj.Interface() != existingObj.Interface() {
+			diffMap[jsonTag] = choiceValue(newObj)
+		}
+		return nil
+	}
+
 	// We use ids for comparison between structs, because for patching objects, all we need is id of attribute
 	idField := newObj.FieldByName("Id")
 
