@@ -16,7 +16,7 @@ func (o *OVirtSource) syncNetworks(nbi *inventory.NetBoxInventory) error {
 	for _, network := range o.Networks {
 		name, exists := network.Name()
 		if !exists {
-			return fmt.Errorf("network %v has no name!", network)
+			return fmt.Errorf("network %v has no name", network)
 		}
 		description, _ := network.Description()
 		// TODO: handle other networks
@@ -158,41 +158,16 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetBoxInventory) error {
 		}
 		hostCluster := nbi.ClustersIndexByName[o.Clusters[host.MustCluster().MustId()].MustName()]
 
-		var hostDescription string
-		description, exists := host.Description()
-		if exists {
-			hostDescription = description
+		hostSite, err := common.MatchHostToSite(nbi, hostName, o.HostSiteRelations)
+		if err != nil {
+			return fmt.Errorf("hostSite: %s", err)
 		}
-
-		var hostSite *objects.Site
-		if o.HostSiteRelations != nil {
-			match, err := utils.MatchStringToValue(hostName, o.HostSiteRelations)
-			if err != nil {
-				return fmt.Errorf("error occurred when matching oVirt host %s to a Netbox site: %v", hostName, err)
-			}
-			if match != "" {
-				if _, ok := nbi.SitesIndexByName[match]; !ok {
-					return fmt.Errorf("failed to match oVirt host %s to a Netbox site: %v. Site with this name doesn't exist", hostName, match)
-				}
-				hostSite = nbi.SitesIndexByName[match]
-			}
-		}
-		var hostTenant *objects.Tenant
-		if o.HostTenantRelations != nil {
-			match, err := utils.MatchStringToValue(hostName, o.HostTenantRelations)
-			if err != nil {
-				return fmt.Errorf("error occurred when matching oVirt host %s to a Netbox tenant: %v", hostName, err)
-			}
-			if match != "" {
-				if _, ok := nbi.TenantsIndexByName[match]; !ok {
-					return fmt.Errorf("failed to match oVirt host %s to a Netbox tenant: %v. Tenant with this name doesn't exist", hostName, match)
-				}
-				hostTenant = nbi.TenantsIndexByName[match]
-			}
+		hostTenant, err := common.MatchHostToTenant(nbi, hostName, o.HostTenantRelations)
+		if err != nil {
+			return fmt.Errorf("hostTenant: %s", err)
 		}
 
 		var hostSerialNumber, manufacturerName, hostAssetTag, hostModel string
-		var err error
 		hwInfo, exists := host.HardwareInformation()
 		if exists {
 			hostAssetTag, exists = hwInfo.Uuid()
@@ -290,7 +265,7 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetBoxInventory) error {
 		mem /= (1024 * 1024 * 1024) // Value is in Bytes, we convert to GB
 
 		nbHost := &objects.Device{
-			NetboxObject: objects.NetboxObject{Description: hostDescription, Tags: o.SourceTags},
+			NetboxObject: objects.NetboxObject{Description: host.MustDescription(), Tags: o.SourceTags},
 			Name:         hostName,
 			Status:       hostStatus,
 			Platform:     hostPlatform,

@@ -7,9 +7,36 @@ import (
 
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/source/common"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 	"github.com/vmware/govmomi/vim25/mo"
 )
+
+func (vc *VmwareSource) syncNetworks(nbi *inventory.NetBoxInventory) error {
+	vc.Logger.Info("Syncing networks...")
+	for _, dvpg := range vc.Networks.DistributedVirtualPortgroups {
+		// TODO: currently we are syncing only vlans
+		vlanGroup, err := common.MatchVlanToGroup(nbi, dvpg.Name, vc.VlanGroupRelations)
+		if err != nil {
+			return fmt.Errorf("vlanGroup: %s", err)
+		}
+		if len(dvpg.VlanIds) == 1 && len(dvpg.VlanIdRanges) == 0 {
+			_, err := nbi.AddVlan(&objects.Vlan{
+				NetboxObject: objects.NetboxObject{
+					Tags: vc.SourceTags,
+				},
+				Name:   dvpg.Name,
+				Group:  vlanGroup,
+				Vid:    dvpg.VlanIds[0],
+				Status: &objects.VlanStatusActive,
+			})
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
 
 func (vc *VmwareSource) syncDatacenters(nbi *inventory.NetBoxInventory) error {
 	for _, dc := range vc.DataCenters {
@@ -102,37 +129,18 @@ func (vc *VmwareSource) syncClusters(nbi *inventory.NetBoxInventory) error {
 // custom role Server
 func (vc *VmwareSource) syncHosts(nbi *inventory.NetBoxInventory) error {
 	for hostId, host := range vc.Hosts {
+		var err error
 		hostName := host.Name
 		hostCluster := nbi.ClustersIndexByName[vc.Clusters[vc.Host2Cluster[hostId]].Name]
 
-		var hostSite *objects.Site
-		if vc.HostSiteRelations != nil {
-			match, err := utils.MatchStringToValue(hostName, vc.HostSiteRelations)
-			if err != nil {
-				return fmt.Errorf("error occurred when matching vmware host %s to a Netbox site: %v", hostName, err)
-			}
-			if match != "" {
-				if _, ok := nbi.SitesIndexByName[match]; !ok {
-					return fmt.Errorf("failed to match vmware host %s to a Netbox site: %v. Site with this name doesn't exist", hostName, match)
-				}
-				hostSite = nbi.SitesIndexByName[match]
-			}
+		hostSite, err := common.MatchHostToSite(nbi, hostName, vc.HostSiteRelations)
+		if err != nil {
+			return fmt.Errorf("hostSite: %s", err)
 		}
-		var hostTenant *objects.Tenant
-		if vc.HostTenantRelations != nil {
-			match, err := utils.MatchStringToValue(hostName, vc.HostTenantRelations)
-			if err != nil {
-				return fmt.Errorf("error occurred when matching vmware host %s to a Netbox tenant: %v", hostName, err)
-			}
-			if match != "" {
-				if _, ok := nbi.TenantsIndexByName[match]; !ok {
-					return fmt.Errorf("failed to match vmware host %s to a Netbox tenant: %v. Tenant with this name doesn't exist", hostName, match)
-				}
-				hostTenant = nbi.TenantsIndexByName[match]
-			}
+		hostTenant, err := common.MatchHostToTenant(nbi, hostName, vc.HostTenantRelations)
+		if err != nil {
+			return fmt.Errorf("hostTenant: %s", err)
 		}
-
-		var err error
 		hostAssetTag := host.Summary.Hardware.Uuid
 		hostModel := host.Summary.Hardware.Model
 
@@ -740,24 +748,3 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetBoxInventory) error {
 
 // 	return nil
 // }
-
-func (vc *VmwareSource) syncNetworks(nbi *inventory.NetBoxInventory) error {
-	vc.Logger.Info("Syncing networks...")
-	for _, dvpg := range vc.Networks.DistributedVirtualPortgroups {
-		// TODO: currently we are syncing only vlans
-		if len(dvpg.VlanIds) == 1 && len(dvpg.VlanIdRanges) == 0 {
-			_, err := nbi.AddVlan(&objects.Vlan{
-				NetboxObject: objects.NetboxObject{
-					Tags: vc.SourceTags,
-				},
-				Name:   dvpg.Name,
-				Vid:    dvpg.VlanIds[0],
-				Status: &objects.VlanStatusActive,
-			})
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}

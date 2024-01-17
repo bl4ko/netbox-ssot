@@ -37,6 +37,7 @@ type VmwareSource struct {
 	ClusterTenantRelations map[string]string
 	HostTenantRelations    map[string]string
 	VmTenantRelations      map[string]string
+	VlanGroupRelations     map[string]string
 }
 
 type NetworkData struct {
@@ -84,6 +85,8 @@ func (vc *VmwareSource) Init() error {
 	vc.Logger.Debug("HostTenantRelations: ", vc.HostTenantRelations)
 	vc.VmTenantRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.VmTenantRelations)
 	vc.Logger.Debug("VmTenantRelations: ", vc.VmTenantRelations)
+	vc.VlanGroupRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.VlanGroupRelations)
+	vc.Logger.Debug("VlanGroupRelations: ", vc.VlanGroupRelations)
 
 	// Initialize the connection
 	vc.Logger.Debug("Initializing oVirt source ", vc.SourceConfig.Name)
