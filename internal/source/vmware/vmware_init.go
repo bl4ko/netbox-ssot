@@ -18,6 +18,7 @@ func (vc *VmwareSource) InitNetworks(ctx context.Context, containerView *view.Co
 	}
 	vc.Networks = NetworkData{
 		DistributedVirtualPortgroups: make(map[string]*DistributedPortgroupData),
+		Vid2Name:                     make(map[int]string),
 		HostVirtualSwitches:          make(map[string]map[string]*HostVirtualSwitchData),
 		HostProxySwitches:            make(map[string]map[string]*HostProxySwitchData),
 		HostPortgroups:               make(map[string]map[string]*HostPortgroupData),
@@ -55,6 +56,13 @@ func (vc *VmwareSource) InitNetworks(ctx context.Context, containerView *view.Co
 			vlanIds = append(vlanIds, int(v.VlanId))
 		default:
 			return fmt.Errorf("uknown vlan info spec %T", v)
+		}
+
+		for _, vid := range vlanIds {
+			if vid == 0 || vid == 4095 {
+				continue
+			}
+			vc.Networks.Vid2Name[vid] = dvpg.Config.Name
 		}
 
 		vc.Networks.DistributedVirtualPortgroups[dvpg.Config.Key] = &DistributedPortgroupData{

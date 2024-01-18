@@ -13,7 +13,7 @@ import (
 
 // Synces networks received from oVirt API to the netbox.
 func (o *OVirtSource) syncNetworks(nbi *inventory.NetBoxInventory) error {
-	for _, network := range o.Networks {
+	for _, network := range o.Networks.OVirtNetworks {
 		name, exists := network.Name()
 		if !exists {
 			return fmt.Errorf("network %v has no name", network)
@@ -248,6 +248,11 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetBoxInventory) error {
 			return fmt.Errorf("failed adding oVirt Platform %v with error: %s", hostPlatform, err)
 		}
 
+		var hostDescription string
+		if description, exists := host.Description(); exists {
+			hostDescription = description
+		}
+
 		var hostComment string
 		if comment, exists := host.Comment(); exists {
 			hostComment = comment
@@ -265,7 +270,7 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetBoxInventory) error {
 		mem /= (1024 * 1024 * 1024) // Value is in Bytes, we convert to GB
 
 		nbHost := &objects.Device{
-			NetboxObject: objects.NetboxObject{Description: host.MustDescription(), Tags: o.SourceTags},
+			NetboxObject: objects.NetboxObject{Description: hostDescription, Tags: o.SourceTags},
 			Name:         hostName,
 			Status:       hostStatus,
 			Platform:     hostPlatform,
@@ -341,7 +346,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 				}
 			}
 
-			// bridged, exists := nic.Bridged()
+			// bridged, exists := nic.Bridged() // TODO: bridged interface
 			// if exists {
 			// 	if bridged {
 			// 		// This interface is bridged
@@ -377,7 +382,6 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 			}
 
 			var nicVlan *objects.Vlan
-			var err error
 			vlan, exists := nic.Vlan()
 			if exists {
 				vlanId, exists := vlan.Id()
@@ -388,14 +392,19 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 					} else {
 						vlanStatus = &objects.VlanStatusReserved
 					}
+					vlanName := o.Networks.Vid2Name[int(vlanId)]
+					vlanGroup, err := common.MatchVlanToGroup(nbi, vlanName, o.VlanGroupRelations)
+					if err != nil {
+						return err
+					}
 					nicVlan, err = nbi.AddVlan(&objects.Vlan{
 						NetboxObject: objects.NetboxObject{
 							Tags: o.SourceTags,
 						},
-						Name:   fmt.Sprintf("VLAN-%d", vlanId),
+						Name:   vlanName,
 						Vid:    int(vlanId),
+						Group:  vlanGroup,
 						Status: vlanStatus,
-						Tenant: nbHost.Tenant,
 					})
 					if err != nil {
 						return fmt.Errorf("failed to add oVirt vlan %s with error: %v", nicName, err)
@@ -474,7 +483,8 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 				delete(processedNicsIds, child)
 			}
 		}
-		// Now we check if there are any nics that were not processed
+
+		// Fourth loop we check if there are any nics that were not processed
 		for nicId := range processedNicsIds {
 			_, err := nbi.AddInterface(hostInterfaces[nicId])
 			if err != nil {

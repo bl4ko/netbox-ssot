@@ -42,6 +42,7 @@ type VmwareSource struct {
 
 type NetworkData struct {
 	DistributedVirtualPortgroups map[string]*DistributedPortgroupData         // Portgroup.key -> PortgroupData
+	Vid2Name                     map[int]string                               // Helper map, for quickyly obtaining name of the vid
 	HostVirtualSwitches          map[string]map[string]*HostVirtualSwitchData // hostName -> VSwitchName-> VSwitchData
 	HostProxySwitches            map[string]map[string]*HostProxySwitchData   // hostName -> PSwitchName ->
 	HostPortgroups               map[string]map[string]*HostPortgroupData     // hostname -> Portgroup.Spec.Name -> HostPortgroupDAta

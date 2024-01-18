@@ -19,7 +19,7 @@ type OVirtSource struct {
 	Clusters    map[string]*ovirtsdk4.Cluster
 	Hosts       map[string]*ovirtsdk4.Host
 	Vms         map[string]*ovirtsdk4.Vm
-	Networks    map[string]*ovirtsdk4.Network
+	Networks    *NetworkData
 
 	HostSiteRelations      map[string]string
 	ClusterSiteRelations   map[string]string
@@ -27,6 +27,11 @@ type OVirtSource struct {
 	HostTenantRelations    map[string]string
 	VmTenantRelations      map[string]string
 	VlanGroupRelations     map[string]string
+}
+
+type NetworkData struct {
+	OVirtNetworks map[string]*ovirtsdk4.Network
+	Vid2Name      map[int]string
 }
 
 func (o *OVirtSource) Init() error {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
 // Collect all tags from Netbox API and store them in the NetBoxInventory
@@ -233,11 +234,11 @@ func (nbi *NetBoxInventory) InitClusterGroups() error {
 	// Initialize internal index of cluster groups by name
 	nbi.ClusterGroupsIndexByName = make(map[string]*objects.ClusterGroup)
 	// OrphanManager takes care of all cluster groups created by netbox-ssot
-	nbi.OrphanManager["/api/virtualization/clusters/"] = make(map[int]bool, 0)
+	nbi.OrphanManager["/api/virtualization/cluster-groups/"] = make(map[int]bool, 0)
 
 	for _, clusterGroup := range nbClusters {
 		nbi.ClusterGroupsIndexByName[clusterGroup.Name] = clusterGroup
-		nbi.OrphanManager["/api/virtualization/clusters/"][clusterGroup.Id] = true
+		nbi.OrphanManager["/api/virtualization/cluster-groups/"][clusterGroup.Id] = true
 	}
 	nbi.Logger.Debug("Successfully collected cluster groups from Netbox: ", nbi.ClusterGroupsIndexByName)
 	return nil
@@ -334,10 +335,11 @@ func (ni *NetBoxInventory) InitInterfaces() error {
 func (ni *NetBoxInventory) InitDefaultVlanGroup() error {
 	_, err := ni.AddVlanGroup(&objects.VlanGroup{
 		NetboxObject: objects.NetboxObject{
-			Tags:        ni.Tags,
+			Tags:        []*objects.Tag{ni.SsotTag},
 			Description: "Default netbox-ssot VlanGroup for all vlans that are not part of any other vlanGroup. This group is required for netbox-ssot vlan index to work.",
 		},
 		Name:   objects.DefaultVlanGroupName,
+		Slug:   utils.Slugify(objects.DefaultVlanGroupName),
 		MinVid: 1,
 		MaxVid: 4094,
 	})
@@ -389,6 +391,9 @@ func (ni *NetBoxInventory) InitVlans() error {
 			if err != nil {
 				return err
 			}
+		}
+		if ni.VlansIndexByVlanGroupIdAndVid[vlan.Group.Id] == nil {
+			ni.VlansIndexByVlanGroupIdAndVid[vlan.Group.Id] = make(map[int]*objects.Vlan)
 		}
 		ni.VlansIndexByVlanGroupIdAndVid[vlan.Group.Id][vlan.Vid] = vlan
 		ni.OrphanManager["/api/ipam/vlans/"][vlan.Id] = true

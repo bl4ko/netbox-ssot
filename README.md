@@ -1,10 +1,15 @@
 # Netbox-SSOT
 
 Netbox-ssot is a tool to keep Netbox in sync with external data sources. 
+
 Currently the supported external data sources types are:
 
 - `ovirt`
+- `vmware`
 
+
+> This plugin operates only with objects that have `netbox-ssot` Tag assigned to them.
+> So if you want your existing objects to be managed by it, you have to assigne them `netbox-ssot`  Tag.
 
 
 ## Configuration

@@ -369,6 +369,9 @@ func (ni *NetBoxInventory) AddVlan(newVlan *objects.Vlan) (*objects.Vlan, error)
 		if err != nil {
 			return nil, err
 		}
+		if ni.VlansIndexByVlanGroupIdAndVid[newVlan.Group.Id] == nil {
+			ni.VlansIndexByVlanGroupIdAndVid[newVlan.Group.Id] = make(map[int]*objects.Vlan)
+		}
 		ni.VlansIndexByVlanGroupIdAndVid[newVlan.Group.Id][newVlan.Vid] = newVlan
 	}
 	return ni.VlansIndexByVlanGroupIdAndVid[newVlan.Group.Id][newVlan.Vid], nil
@@ -398,6 +401,9 @@ func (ni *NetBoxInventory) AddInterface(newInterface *objects.Interface) (*objec
 		newInterface, err := ni.NetboxApi.CreateInterface(newInterface)
 		if err != nil {
 			return nil, err
+		}
+		if ni.InterfacesIndexByDeviceIdAndName[newInterface.Device.Id] == nil {
+			ni.InterfacesIndexByDeviceIdAndName[newInterface.Device.Id] = make(map[string]*objects.Interface)
 		}
 		ni.InterfacesIndexByDeviceIdAndName[newInterface.Device.Id][newInterface.Name] = newInterface
 	}

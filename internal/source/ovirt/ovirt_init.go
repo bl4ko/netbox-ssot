@@ -12,14 +12,22 @@ func (o *OVirtSource) InitNetworks(conn *ovirtsdk4.Connection) error {
 	if err != nil {
 		return fmt.Errorf("init oVirt networks: %v", err)
 	}
-	o.Networks = make(map[string]*ovirtsdk4.Network)
+	o.Networks = &NetworkData{
+		OVirtNetworks: make(map[string]*ovirtsdk4.Network),
+		Vid2Name:      make(map[int]string),
+	}
 	if networks, ok := networksResponse.Networks(); ok {
 		for _, network := range networks.Slice() {
-			o.Networks[network.MustId()] = network
+			o.Networks.OVirtNetworks[network.MustId()] = network
+			if vlan, exists := network.Vlan(); exists {
+				if vlanId, exists := vlan.Id(); exists {
+					o.Networks.Vid2Name[int(vlanId)] = network.MustName()
+				}
+			}
 		}
-		o.Logger.Debug("Successfully initialized oVirt disks: ", o.Disks)
+		o.Logger.Debug("Successfully initialized oVirt networks: ", o.Networks)
 	} else {
-		o.Logger.Warning("Error initializing oVirt disks")
+		o.Logger.Warning("Error initializing oVirt networks")
 	}
 	return nil
 }

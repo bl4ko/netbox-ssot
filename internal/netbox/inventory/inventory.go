@@ -69,6 +69,17 @@ type NetBoxInventory struct {
 	// because they are not available in the sources anymore
 	OrphanManager map[string]map[int]bool
 
+	// OrphanObjectPriority is a map that stores priorites for each object. This is necessary
+	// because map order is undetermenistic and if we delete dependent object first we will
+	// get the dependency error.
+	//
+	// {
+	//   0: "/api/extras/tags/"
+	//   1: "/api/extras/custom-fields/"
+	//
+	// }
+	OrphanObjectPriority map[int]string
+
 	// Tag used by netbox-ssot to mark devices that are managed by it
 	SsotTag *objects.Tag
 }
@@ -82,7 +93,24 @@ func (nbi NetBoxInventory) String() string {
 // It takes a logger and a NetboxConfig as parameters, and returns a pointer to the newly created NetBoxInventory.
 // The logger is used for logging messages, and the NetboxConfig is used to configure the NetBoxInventory.
 func NewNetboxInventory(logger *logger.Logger, nbConfig *parser.NetboxConfig) *NetBoxInventory {
-	nbi := &NetBoxInventory{Logger: logger, NetboxConfig: nbConfig, OrphanManager: make(map[string]map[int]bool)}
+	// Starts with 0 for easier integration with for loops
+	orphanObjectPriority := map[int]string{
+		0:  "/api/ipam/vlan-groups/",
+		1:  "/api/ipam/vlans/",
+		2:  "/api/ipam/ip-addresses/",
+		3:  "/api/dcim/interfaces/",
+		4:  "/api/virtualization/interfaces/",
+		5:  "/api/vritualization/virtual-machines/",
+		6:  "/api/dcim/devices/",
+		7:  "/api/dcim/platforms/",
+		8:  "/api/dcim/manufacturers",
+		9:  "/api/dcim/device-types/",
+		10: "/api/dcim-device-roles/",
+		11: "/api/virtualization/clusters/",
+		12: "/api/virtualization/cluster-types/",
+		13: "/api/virtualization/cluster-groups/",
+	}
+	nbi := &NetBoxInventory{Logger: logger, NetboxConfig: nbConfig, OrphanManager: make(map[string]map[int]bool), OrphanObjectPriority: orphanObjectPriority}
 	return nbi
 }
 
@@ -103,8 +131,8 @@ func (netboxInventory *NetBoxInventory) Init() error {
 		netboxInventory.InitDevices,
 		netboxInventory.InitInterfaces,
 		netboxInventory.InitIPAddresses,
-		netboxInventory.InitDefaultVlanGroup,
 		netboxInventory.InitVlanGroups,
+		netboxInventory.InitDefaultVlanGroup,
 		netboxInventory.InitVlans,
 		netboxInventory.InitDeviceRoles,
 		netboxInventory.InitServerDeviceRole,
