@@ -34,7 +34,7 @@ type NetBoxInventory struct {
 	DevicesIndexByNameAndSiteId map[string]map[int]*objects.Device
 	// VlanGroupsIndexByName is a map of all VlanGroups in the Netbox's inventory, indexed by their name
 	VlanGroupsIndexByName map[string]*objects.VlanGroup
-	// VlansIndexByVlanGruoupIdAndVid is a map of all vlans in the Netbox's inventory, indexed by their VlanGroup and vid.
+	// VlansIndexByVlanGroupIdAndVid is a map of all vlans in the Netbox's inventory, indexed by their VlanGroup and vid.
 	VlansIndexByVlanGroupIdAndVid map[int]map[int]*objects.Vlan
 	// ClusterGroupsIndexByName is a map of all cluster groups in the Netbox's inventory, indexed by their name
 	ClusterGroupsIndexByName map[string]*objects.ClusterGroup
@@ -69,8 +69,8 @@ type NetBoxInventory struct {
 	// because they are not available in the sources anymore
 	OrphanManager map[string]map[int]bool
 
-	// OrphanObjectPriority is a map that stores priorites for each object. This is necessary
-	// because map order is undetermenistic and if we delete dependent object first we will
+	// OrphanObjectPriority is a map that stores priorities for each object. This is necessary
+	// because map order is non deterministic and if we delete dependent object first we will
 	// get the dependency error.
 	//
 	// {
@@ -100,7 +100,7 @@ func NewNetboxInventory(logger *logger.Logger, nbConfig *parser.NetboxConfig) *N
 		2:  "/api/ipam/ip-addresses/",
 		3:  "/api/dcim/interfaces/",
 		4:  "/api/virtualization/interfaces/",
-		5:  "/api/vritualization/virtual-machines/",
+		5:  "/api/virtualization/virtual-machines/",
 		6:  "/api/dcim/devices/",
 		7:  "/api/dcim/platforms/",
 		8:  "/api/dcim/manufacturers",

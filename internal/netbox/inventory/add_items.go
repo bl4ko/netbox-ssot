@@ -325,11 +325,11 @@ func (ni *NetBoxInventory) AddVlanGroup(newVlanGroup *objects.VlanGroup) (*objec
 		}
 		if len(diffMap) > 0 {
 			ni.Logger.Debug("VlanGroup ", newVlanGroup.Name, " already exists in Netbox but is out of date. Patching it...")
-			pachedVlanGroup, err := ni.NetboxApi.PatchVlanGroup(diffMap, ni.VlanGroupsIndexByName[newVlanGroup.Name].Id)
+			patchedVlanGroup, err := ni.NetboxApi.PatchVlanGroup(diffMap, ni.VlanGroupsIndexByName[newVlanGroup.Name].Id)
 			if err != nil {
 				return nil, err
 			}
-			ni.VlanGroupsIndexByName[newVlanGroup.Name] = pachedVlanGroup
+			ni.VlanGroupsIndexByName[newVlanGroup.Name] = patchedVlanGroup
 		} else {
 			ni.Logger.Debug("Vlan ", newVlanGroup.Name, " already exists in Netbox and is up to date...")
 		}

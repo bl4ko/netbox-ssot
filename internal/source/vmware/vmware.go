@@ -27,7 +27,7 @@ type VmwareSource struct {
 	Networks    NetworkData
 
 	// Relations between objects "object_id": "object_id"
-	Cluster2Datacenter map[string]string // CluserKey -> DatacenterKey
+	Cluster2Datacenter map[string]string // ClusterKey -> DatacenterKey
 	Host2Cluster       map[string]string // HostKey -> ClusterKey
 	Vm2Host            map[string]string // VmKey ->  HostKey
 
@@ -42,7 +42,7 @@ type VmwareSource struct {
 
 type NetworkData struct {
 	DistributedVirtualPortgroups map[string]*DistributedPortgroupData         // Portgroup.key -> PortgroupData
-	Vid2Name                     map[int]string                               // Helper map, for quickyly obtaining name of the vid
+	Vid2Name                     map[int]string                               // Helper map, for quickly obtaining name of the vid
 	HostVirtualSwitches          map[string]map[string]*HostVirtualSwitchData // hostName -> VSwitchName-> VSwitchData
 	HostProxySwitches            map[string]map[string]*HostProxySwitchData   // hostName -> PSwitchName ->
 	HostPortgroups               map[string]map[string]*HostPortgroupData     // hostname -> Portgroup.Spec.Name -> HostPortgroupData
@@ -134,7 +134,7 @@ func (vc *VmwareSource) Init() error {
 	// the tree to get this relation.
 	vc.CreateClusterDataCenterRelation(ctx, conn.Client)
 
-	// Initialise items to local storage
+	// Initialize items to local storage
 	initFunctions := []func(context.Context, *view.ContainerView) error{
 		vc.InitNetworks,
 		vc.InitDisks,
@@ -154,7 +154,7 @@ func (vc *VmwareSource) Init() error {
 
 	err = conn.Logout(ctx)
 	if err != nil {
-		return fmt.Errorf("error occured when ending vmware connection to host %s: %s", vc.SourceConfig.Hostname, err)
+		return fmt.Errorf("error occurred when ending vmware connection to host %s: %s", vc.SourceConfig.Hostname, err)
 	}
 
 	vc.Logger.Debug("Successfully closed connection to vmware host: ", vc.SourceConfig.Hostname)

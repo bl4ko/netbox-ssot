@@ -11,7 +11,7 @@ import (
 	ovirtsdk4 "github.com/ovirt/go-ovirt"
 )
 
-// Synces networks received from oVirt API to the netbox.
+// Syncs networks received from oVirt API to the netbox.
 func (o *OVirtSource) syncNetworks(nbi *inventory.NetBoxInventory) error {
 	for _, network := range o.Networks.OVirtNetworks {
 		name, exists := network.Name()

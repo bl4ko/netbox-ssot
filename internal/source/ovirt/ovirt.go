@@ -65,7 +65,7 @@ func (o *OVirtSource) Init() error {
 	}
 	defer conn.Close()
 
-	// Initialise items to local storage
+	// Initialize items to local storage
 	initFunctions := []func(*ovirtsdk4.Connection) error{
 		o.InitNetworks,
 		o.InitDisks,

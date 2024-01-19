@@ -249,7 +249,7 @@ func (vc *VmwareSource) syncHostNics(nbi *inventory.NetBoxInventory, vcHost mo.H
 	// Sync host's physical interfaces
 	err := vc.syncHostPhysicalNics(nbi, vcHost, nbHost)
 	if err != nil {
-		return fmt.Errorf("physicial interfaces sync: %s", err)
+		return fmt.Errorf("physical interfaces sync: %s", err)
 	}
 
 	// Sync host's virtual interfaces
@@ -372,7 +372,7 @@ func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetBoxInventory, vcH
 }
 
 func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetBoxInventory, vcHost mo.HostSystem, nbHost *objects.Device) error {
-	// Collect data over all virtual itnerfaces
+	// Collect data over all virtual interfaces
 	for _, vnic := range vcHost.Config.Network.Vnic {
 		vnicName := vnic.Device
 		vnicPortgroupData, vnicPortgroupDataOk := vc.Networks.HostPortgroups[vcHost.Name][vnic.Portgroup]
