@@ -192,10 +192,10 @@ type Device struct {
 	// Platform of the device (e.g. Cisco IOS, Dell OS9, etc.).
 	Platform *Platform `json:"platform,omitempty"`
 
-	// Primary IPv4
-
-	// Primary IPv6
-	// Out-of-band IP
+	// PrimaryIPv4 is the primary IPv4 address assigned to the server.
+	PrimaryIPv4 *IPAddress `json:"primary_ip4,omitempty"`
+	// PrimaryIPv6 is the primary IPv6 address assigned to the server.
+	PrimaryIPv6 *IPAddress `json:"primary_ip6,omitempty"`
 
 	// Virtualization
 	// Cluster is the cluster to which the device belongs. (e.g. VMWare server belonging to a specific cluster).

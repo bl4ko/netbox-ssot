@@ -19,23 +19,23 @@ import (
 // VmwareSource represents an vsphere source
 type VmwareSource struct {
 	common.CommonConfig
-	Disks       map[string]*mo.Datastore
-	DataCenters map[string]*mo.Datacenter
-	Clusters    map[string]*mo.ClusterComputeResource
-	Hosts       map[string]*mo.HostSystem
-	Vms         map[string]*mo.VirtualMachine
+	Disks       map[string]mo.Datastore
+	DataCenters map[string]mo.Datacenter
+	Clusters    map[string]mo.ClusterComputeResource
+	Hosts       map[string]mo.HostSystem
+	Vms         map[string]mo.VirtualMachine
 	Networks    NetworkData
 
 	// Relations between objects "object_id": "object_id"
-	Cluster2Datacenter map[string]string
-	Host2Cluster       map[string]string
-	Vm2Host            map[string]string
+	Cluster2Datacenter map[string]string // CluserKey -> DatacenterKey
+	Host2Cluster       map[string]string // HostKey -> ClusterKey
+	Vm2Host            map[string]string // VmKey ->  HostKey
 
 	// Netbox relations
-	HostSiteRelations      map[string]string
 	ClusterSiteRelations   map[string]string
 	ClusterTenantRelations map[string]string
 	HostTenantRelations    map[string]string
+	HostSiteRelations      map[string]string
 	VmTenantRelations      map[string]string
 	VlanGroupRelations     map[string]string
 }
@@ -45,7 +45,7 @@ type NetworkData struct {
 	Vid2Name                     map[int]string                               // Helper map, for quickyly obtaining name of the vid
 	HostVirtualSwitches          map[string]map[string]*HostVirtualSwitchData // hostName -> VSwitchName-> VSwitchData
 	HostProxySwitches            map[string]map[string]*HostProxySwitchData   // hostName -> PSwitchName ->
-	HostPortgroups               map[string]map[string]*HostPortgroupData     // hostname -> Portgroup.Spec.Name -> HostPortgroupDAta
+	HostPortgroups               map[string]map[string]*HostPortgroupData     // hostname -> Portgroup.Spec.Name -> HostPortgroupData
 }
 
 type DistributedPortgroupData struct {

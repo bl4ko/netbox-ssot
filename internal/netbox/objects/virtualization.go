@@ -113,7 +113,7 @@ type VMInterfaceMode struct {
 var (
 	VMInterfaceModeAccess    = VMInterfaceMode{Choice{Value: "access", Label: "Access"}}
 	VMInterfaceModeTagged    = VMInterfaceMode{Choice{Value: "tagged", Label: "Tagged"}}
-	VmInterfaceModeTaggedAll = VMInterfaceMode{Choice{Value: "tagged-all", Label: "Tagged All"}}
+	VMInterfaceModeTaggedAll = VMInterfaceMode{Choice{Value: "tagged-all", Label: "Tagged All"}}
 )
 
 type VMInterface struct {
@@ -126,12 +126,18 @@ type VMInterface struct {
 	MACAddress string `json:"mac_address,omitempty"`
 	// MTU of the interface.
 	MTU int `json:"mtu,omitempty"`
+	// Enabled is true if interface is enabled, false otherwise.
+	Enabled bool `json:"enabled,omitempty"`
 	// Related parent interface of this interface.
 	ParentInterface *VMInterface `json:"parent,omitempty"`
 	// Related bridged interface
 	BridgedInterface *VMInterface `json:"bridge,omitempty"`
 	// 802.1Q VLAN Tagging Mode
 	Mode *VMInterfaceMode `json:"mode,omitempty"`
+	// When Mode=VMInterfaceModeTagged: TaggedVlans is a list of all the VLANs that are tagged on the inteface.
+	TaggedVlans []*Vlan `json:"tagged_vlans,omitempty"`
+	// When mode=VMInterfaceModeAccess: UntaggedVlan is the VLAN that is untagged on the interface.
+	UntaggedVlan *Vlan `json:"untagged_vlan,omitempty"`
 }
 
 func (vmi VMInterface) String() string {

@@ -147,3 +147,120 @@ func TestMaskToBits(t *testing.T) {
 		})
 	}
 }
+
+func TestGetIPVersion(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected int
+	}{
+		{
+			name:     "Valid IPv4",
+			input:    "192.168.1.1",
+			expected: 4,
+		},
+		{
+			name:     "Valid IPv6",
+			input:    "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
+			expected: 6,
+		},
+		{
+			name:     "Invalid IP",
+			input:    "invalid",
+			expected: 0,
+		},
+		{
+			name:     "Empty IP",
+			input:    "",
+			expected: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			version := GetIPVersion(tt.input)
+			if version != tt.expected {
+				t.Errorf("GetIPVersion() = %v, want %v", version, tt.expected)
+			}
+		})
+	}
+}
+
+func TestSubnetContainsIpAddress(t *testing.T) {
+	tests := []struct {
+		name      string
+		ipAddress string
+		subnet    string
+		expected  bool
+	}{
+		{
+			name:      "IP in Subnet",
+			ipAddress: "172.31.4.129",
+			subnet:    "172.31.4.145/25",
+			expected:  true,
+		},
+		{
+			name:      "IP not in Subnet",
+			ipAddress: "192.168.1.1",
+			subnet:    "172.31.4.145/25",
+			expected:  false,
+		},
+		{
+			name:      "Invalid IP Address",
+			ipAddress: "invalid",
+			subnet:    "172.31.4.145/25",
+			expected:  false,
+		},
+		{
+			name:      "Invalid Subnet",
+			ipAddress: "172.31.4.129",
+			subnet:    "invalid",
+			expected:  false,
+		},
+		{
+			name:      "Empty IP Address",
+			ipAddress: "",
+			subnet:    "172.31.4.145/25",
+			expected:  false,
+		},
+		{
+			name:      "Empty Subnet",
+			ipAddress: "172.31.4.129",
+			subnet:    "",
+			expected:  false,
+		},
+		{
+			name:      "IPv6 IP in Subnet",
+			ipAddress: "2001:db8::1",
+			subnet:    "2001:db8::/32",
+			expected:  true,
+		},
+		{
+			name:      "IPv6 IP not in Subnet",
+			ipAddress: "2001:db8::1",
+			subnet:    "2001:db7::/32",
+			expected:  false,
+		},
+		{
+			name:      "Invalid IPv6 Address",
+			ipAddress: "2001:db8::zzz",
+			subnet:    "2001:db8::/32",
+			expected:  false,
+		},
+		{
+			name:      "Invalid IPv6 CIDR",
+			ipAddress: "2001:db8::1",
+			subnet:    "2001:db8::zzz/32",
+			expected:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := SubnetContainsIpAddress(tt.ipAddress, tt.subnet)
+			if result != tt.expected {
+				t.Errorf("SubnetContainsIpAddress() = %v, want %v", result, tt.expected)
+			}
+		})
+	}
+}

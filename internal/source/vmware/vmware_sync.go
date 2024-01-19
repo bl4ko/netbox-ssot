@@ -3,6 +3,7 @@ package vmware
 import (
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
@@ -10,6 +11,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 	"github.com/vmware/govmomi/vim25/mo"
+	"github.com/vmware/govmomi/vim25/types"
 )
 
 func (vc *VmwareSource) syncNetworks(nbi *inventory.NetBoxInventory) error {
@@ -242,7 +244,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetBoxInventory) error {
 	return nil
 }
 
-func (vc *VmwareSource) syncHostNics(nbi *inventory.NetBoxInventory, vcHost *mo.HostSystem, nbHost *objects.Device) error {
+func (vc *VmwareSource) syncHostNics(nbi *inventory.NetBoxInventory, vcHost mo.HostSystem, nbHost *objects.Device) error {
 
 	// Sync host's physical interfaces
 	err := vc.syncHostPhysicalNics(nbi, vcHost, nbHost)
@@ -259,7 +261,7 @@ func (vc *VmwareSource) syncHostNics(nbi *inventory.NetBoxInventory, vcHost *mo.
 	return nil
 }
 
-func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetBoxInventory, vcHost *mo.HostSystem, nbHost *objects.Device) error {
+func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetBoxInventory, vcHost mo.HostSystem, nbHost *objects.Device) error {
 
 	// Collect data from physical interfaces
 	for _, pnic := range vcHost.Config.Network.Pnic {
@@ -369,7 +371,7 @@ func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetBoxInventory, vcH
 	return nil
 }
 
-func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetBoxInventory, vcHost *mo.HostSystem, nbHost *objects.Device) error {
+func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetBoxInventory, vcHost mo.HostSystem, nbHost *objects.Device) error {
 	// Collect data over all virtual itnerfaces
 	for _, vnic := range vcHost.Config.Network.Vnic {
 		vnicName := vnic.Device
@@ -514,267 +516,345 @@ func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetBoxInventory, vcHo
 }
 
 func (vc *VmwareSource) syncVms(nbi *inventory.NetBoxInventory) error {
-	// for vmId, vm := range vc.Vms {
-	// 	// VM name, which is used as unique identifier for VMs in Netbox
-	// 	vmName, exists := vm.Name()
-	// 	if !exists {
-	// 		vc.Logger.Warning("name for oVirt vm with id ", vmId, " is empty. VM has to have unique name to be synced to netbox. Skipping...")
-	// 	}
+	for vmKey, vm := range vc.Vms {
+		// Check if vm is a template, we don't add templates into netbox.
+		if vm.Config != nil {
+			if vm.Config.Template {
+				continue
+			}
+		}
 
-	// 	// VM's Cluster
-	// 	var vmCluster *objects.Cluster
-	// 	cluster, exists := vm.Cluster()
-	// 	if exists {
-	// 		if _, ok := vc.Clusters[cluster.MustId()]; ok {
-	// 			vmCluster = nbi.ClustersIndexByName[vc.Clusters[cluster.MustId()].MustName()]
-	// 		}
-	// 	}
+		vmName := vm.Name
+		vmHostName := vc.Hosts[vc.Vm2Host[vmKey]].Name
 
-	// 	// Get VM's site,tenant and platform from cluster
-	// 	var vmTenantGroup *objects.TenantGroup
-	// 	var vmTenant *objects.Tenant
-	// 	var vmSite *objects.Site
-	// 	if vmCluster != nil {
-	// 		vmTenantGroup = vmCluster.TenantGroup
-	// 		vmTenant = vmCluster.Tenant
-	// 		vmSite = vmCluster.Site
-	// 	}
+		// TODO: with custom field uuid: vmUuid
+		// vmUuid := vm.Config.Uuid
 
-	// 	// VM's Status
-	// 	var vmStatus *objects.VMStatus
-	// 	status, exists := vm.Status()
-	// 	if exists {
-	// 		switch status {
-	// 		case ovirtsdk4.VMSTATUS_UP:
-	// 			vmStatus = &objects.VMStatusActive
-	// 		default:
-	// 			vmStatus = &objects.VMStatusOffline
-	// 		}
-	// 	}
+		// Tenant is received from VmTenantRelations
+		vmTenant, err := common.MatchVmToTenant(nbi, vmName, vc.VmTenantRelations)
+		if err != nil {
+			return fmt.Errorf("vm's Tenant: %s", err)
+		}
 
-	// 	// VM's Host Device (server)
-	// 	var vmHostDevice *objects.Device
-	// 	host, exists := vm.Host()
-	// 	if exists {
-	// 		if _, ok := vc.Hosts[host.MustId()]; ok {
-	// 			vmHostDevice = nbi.DevicesIndexByUuid[vc.Hosts[host.MustId()].MustHardwareInformation().MustUuid()]
-	// 		}
-	// 	}
+		// Site is the same as the Host
+		vmSite, err := common.MatchHostToSite(nbi, vmHostName, vc.HostSiteRelations)
+		if err != nil {
+			return fmt.Errorf("vm's Site: %s", err)
+		}
+		vmHost := nbi.DevicesIndexByNameAndSiteId[vmHostName][vmSite.Id]
 
-	// 	// vmVCPUs
-	// 	var vmVCPUs float32
-	// 	if cpuData, exists := vm.Cpu(); exists {
-	// 		if cpuTopology, exists := cpuData.Topology(); exists {
-	// 			if cores, exists := cpuTopology.Cores(); exists {
-	// 				vmVCPUs = float32(cores)
-	// 			}
-	// 		}
-	// 	}
+		// Cluster of the vm is same as the host
+		vmCluster := vmHost.Cluster
 
-	// 	// Memory
-	// 	var vmMemorySizeBytes int64
-	// 	if memory, exists := vm.Memory(); exists {
-	// 		vmMemorySizeBytes = memory
-	// 	}
+		// VM status
+		vmStatus := &objects.VMStatusOffline
+		vmPowerState := vm.Runtime.PowerState
+		if vmPowerState == types.VirtualMachinePowerStatePoweredOn {
+			vmStatus = &objects.VMStatusActive
+		}
 
-	// 	// Disks
-	// 	var vmDiskSizeBytes int64
-	// 	if diskAttachment, exists := vm.DiskAttachments(); exists {
-	// 		for _, diskAttachment := range diskAttachment.Slice() {
-	// 			if ovirtDisk, exists := diskAttachment.Disk(); exists {
-	// 				disk := vc.Disks[ovirtDisk.MustId()]
-	// 				if provisionedDiskSize, exists := disk.ProvisionedSize(); exists {
-	// 					vmDiskSizeBytes += provisionedDiskSize
-	// 				}
-	// 			}
-	// 		}
-	// 	}
+		// vmVCPUs
+		vmVCPUs := vm.Config.Hardware.NumCPU
 
-	// 	// VM's comments
-	// 	var vmComments string
-	// 	if comments, exists := vm.Comment(); exists {
-	// 		vmComments = comments
-	// 	}
+		// vmMemory
+		vmMemory := vm.Config.Hardware.MemoryMB
 
-	// 	// VM's Platform
-	// 	var vmPlatform *objects.Platform
-	// 	vmOsType := "Generic OS"
-	// 	vmOsVersion := "Generic Version"
-	// 	if guestOs, exists := vm.GuestOperatingSystem(); exists {
-	// 		if guestOsType, exists := guestOs.Distribution(); exists {
-	// 			vmOsType = guestOsType
-	// 		}
-	// 		if guestOsKernel, exists := guestOs.Kernel(); exists {
-	// 			if guestOsVersion, exists := guestOsKernel.Version(); exists {
-	// 				if osFullVersion, exists := guestOsVersion.FullVersion(); exists {
-	// 					vmOsVersion = osFullVersion
-	// 				}
-	// 			}
-	// 		}
-	// 	} else {
-	// 		if os, exists := vm.Os(); exists {
-	// 			if ovirtOsType, exists := os.Type(); exists {
-	// 				vmOsType = ovirtOsType
-	// 			}
-	// 			if ovirtOsVersion, exists := os.Version(); exists {
-	// 				if osFullVersion, exists := ovirtOsVersion.FullVersion(); exists {
-	// 					vmOsVersion = osFullVersion
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// 	platformName := utils.GeneratePlatformName(vmOsType, vmOsVersion)
-	// 	vmPlatform, err := nbi.AddPlatform(&objects.Platform{
-	// 		Name: platformName,
-	// 		Slug: utils.Slugify(platformName),
-	// 	})
-	// 	if err != nil {
-	// 		return fmt.Errorf("failed adding oVirt vm's Platform %v with error: %s", vmPlatform, err)
-	// 	}
+		// DisksSize
+		vmDiskSizeB := int64(0)
+		for _, hwDevice := range vm.Config.Hardware.Device {
+			if disk, ok := hwDevice.(*types.VirtualDisk); ok {
+				vmDiskSizeB += disk.CapacityInBytes
+			}
+		}
 
-	// 	newVM, err := nbi.AddVM(&objects.VM{
-	// 		NetboxObject: objects.NetboxObject{
-	// 			Tags: vc.SourceTags,
-	// 		},
-	// 		Name:        vmName,
-	// 		Cluster:     vmCluster,
-	// 		Site:        vmSite,
-	// 		Tenant:      vmTenant,
-	// 		TenantGroup: vmTenantGroup,
-	// 		Status:      vmStatus,
-	// 		Host:        vmHostDevice,
-	// 		Platform:    vmPlatform,
-	// 		Comments:    vmComments,
-	// 		VCPUs:       vmVCPUs,
-	// 		Memory:      int(vmMemorySizeBytes / 1024 / 1024),      // MBs
-	// 		Disk:        int(vmDiskSizeBytes / 1024 / 1024 / 1024), // GBs
-	// 	})
-	// 	if err != nil {
-	// 		return fmt.Errorf("failed to sync oVirt vm: %v", err)
-	// 	}
+		// vmPlatform
+		vmPlatformName := vm.Config.GuestFullName
+		if vmPlatformName == "" {
+			vmPlatformName = vm.Guest.GuestFullName
+		}
+		if vmPlatformName == "" {
+			vmPlatformName = utils.GeneratePlatformName("Generic OS", "Generic Version")
+		}
+		vmPlatform, err := nbi.AddPlatform(&objects.Platform{
+			Name: vmPlatformName,
+			Slug: utils.Slugify(vmPlatformName),
+		})
+		if err != nil {
+			return fmt.Errorf("failed adding oVirt vm's Platform %v with error: %s", vmPlatform, err)
+		}
 
-	// 	err = vc.syncVmInterfaces(nbi, vm, newVM)
-	// 	if err != nil {
-	// 		return fmt.Errorf("failed to sync oVirt vm's interfaces: %v", err)
-	// 	}
-	// }
+		newVM, err := nbi.AddVM(&objects.VM{
+			NetboxObject: objects.NetboxObject{
+				Tags: vc.SourceTags,
+			},
+			Name:     vmName,
+			Cluster:  vmCluster,
+			Site:     vmSite,
+			Tenant:   vmTenant,
+			Status:   vmStatus,
+			Host:     vmHost,
+			Platform: vmPlatform,
+			VCPUs:    float32(vmVCPUs),
+			Memory:   int(vmMemory),                         // MBs
+			Disk:     int(vmDiskSizeB / 1024 / 1024 / 1024), // GBs
+		})
+		if err != nil {
+			return fmt.Errorf("failed to sync oVirt vm: %v", err)
+		}
 
+		err = vc.syncVmInterfaces(nbi, vm, newVM)
+		if err != nil {
+			return fmt.Errorf("failed to sync oVirt vm's interfaces: %v", err)
+		}
+	}
 	return nil
 }
 
 // Syncs VM's interfaces to Netbox
-// func (vc *VmwareSource) syncVmInterfaces(nbi *inventory.NetBoxInventory, ovirtVm *ovirtsdk4.Vm, netboxVm *objects.VM) error {
-// 	// 	var vmPrimaryIpv4 *objects.IPAddress
-// 	// 	var vmPrimaryIpv6 *objects.IPAddress
-// 	// 	if reportedDevices, exist := ovirtVm.ReportedDevices(); exist {
-// 	// 		for _, reportedDevice := range reportedDevices.Slice() {
-// 	// 			if reportedDeviceType, exist := reportedDevice.Type(); exist {
-// 	// 				if reportedDeviceType == "network" {
-// 	// 					// We add interface to the list
-// 	// 					var vmInterface *objects.VMInterface
-// 	// 					var err error
-// 	// 					if reportedDeviceName, exists := reportedDevice.Name(); exists {
-// 	// 						vmInterface, err = nbi.AddVMInterface(&objects.VMInterface{
-// 	// 							NetboxObject: objects.NetboxObject{
-// 	// 								Tags:        vc.SourceTags,
-// 	// 								Description: reportedDevice.MustDescription(),
-// 	// 							},
-// 	// 							VM:         netboxVm,
-// 	// 							Name:       reportedDeviceName,
-// 	// 							MACAddress: strings.ToUpper(reportedDevice.MustMac().MustAddress()),
-// 	// 						})
-// 	// 						if err != nil {
-// 	// 							return fmt.Errorf("failed to sync oVirt vm's interface %s: %v", reportedDeviceName, err)
-// 	// 						}
-// 	// 					} else {
-// 	// 						vc.Logger.Warning("name for oVirt vm's reported device is empty. Skipping...")
-// 	// 						continue
-// 	// 					}
+func (vc *VmwareSource) syncVmInterfaces(nbi *inventory.NetBoxInventory, vmwareVm mo.VirtualMachine, netboxVm *objects.VM) error {
+	var vmPrimaryIpv4 *objects.IPAddress
+	var vmPrimaryIpv6 *objects.IPAddress
+	var vmDefaultGatewayIpv4 string
+	var vmDefaultGatewayIpv6 string
 
-// 	// 					if reportedDeviceIps, exist := reportedDevice.Ips(); exist {
-// 	// 						for _, ip := range reportedDeviceIps.Slice() {
-// 	// 							if ipAddress, exists := ip.Address(); exists {
-// 	// 								if ipVersion, exists := ip.Version(); exists {
+	// From vm's routing determine the default interface
+	if len(vmwareVm.Guest.IpStack) > 0 {
+		for _, route := range vmwareVm.Guest.IpStack[0].IpRouteConfig.IpRoute {
+			if route.PrefixLength == 0 {
+				ipAddress := route.Network
+				if ipAddress == "" {
+					continue
+				}
+				gatewayIpAddress := route.Gateway.IpAddress
+				if gatewayIpAddress == "" {
+					continue
+				}
 
-// 	// 									// Filter IPs, we won't sync IPs from specific interfaces
-// 	// 									// like docker, flannel, calico, etc. interfaces
-// 	// 									valid, err := utils.IsVMInterfaceNameValid(vmInterface.Name)
-// 	// 									if err != nil {
-// 	// 										return fmt.Errorf("failed to match oVirt vm's interface %s to a Netbox interface filter: %v", vmInterface.Name, err)
-// 	// 									}
-// 	// 									if !valid {
-// 	// 										continue
-// 	// 									}
+				// Get version from ipAddress (v4 or v6)
+				ipVersion := utils.GetIPVersion(ipAddress)
+				if ipVersion == 4 {
+					vmDefaultGatewayIpv4 = gatewayIpAddress
+				} else if ipVersion == 6 {
+					vmDefaultGatewayIpv6 = gatewayIpAddress
+				}
+			}
+		}
+	}
 
-// 	// 									// Try to do reverse lookup of IP to get DNS name
-// 	// 									hostname := utils.ReverseLookup(ipAddress)
+	nicIps := map[string][]string{}
 
-// 	// 									// Set default mask
-// 	// 									var ipMask string
-// 	// 									if netMask, exists := ip.Netmask(); exists {
-// 	// 										ipMask = fmt.Sprintf("/%s", netMask)
-// 	// 									} else {
-// 	// 										switch ipVersion {
-// 	// 										case "v4":
-// 	// 											ipMask = "/32"
-// 	// 										case "v6":
-// 	// 											ipMask = "/128"
-// 	// 										}
-// 	// 									}
+	for _, vmDevice := range vmwareVm.Config.Hardware.Device {
+		// TODO: Refactor this to avoid hardcoded typecasting. Ensure all types
+		// that compose VirtualEthernetCard are properly handled.
+		var vmEthernetCard *types.VirtualEthernetCard
+		switch v := vmDevice.(type) {
+		case *types.VirtualPCNet32:
+			vmEthernetCard = &v.VirtualEthernetCard
+		case *types.VirtualVmxnet3:
+			vmEthernetCard = &v.VirtualEthernetCard
+		case *types.VirtualVmxnet2:
+			vmEthernetCard = &v.VirtualEthernetCard
+		case *types.VirtualVmxnet:
+			vmEthernetCard = &v.VirtualEthernetCard
+		case *types.VirtualE1000e:
+			vmEthernetCard = &v.VirtualEthernetCard
+		case *types.VirtualE1000:
+			vmEthernetCard = &v.VirtualEthernetCard
+		case *types.VirtualSriovEthernetCard:
+			vmEthernetCard = &v.VirtualEthernetCard
+		case *types.VirtualEthernetCard:
+			vmEthernetCard = v
+		default:
+			continue
+		}
 
-// 	// 									ipAddress, err := nbi.AddIPAddress(&objects.IPAddress{
-// 	// 										NetboxObject: objects.NetboxObject{
-// 	// 											Tags: vc.SourceTags,
-// 	// 										},
-// 	// 										Address:            ipAddress + ipMask,
-// 	// 										Tenant:             netboxVm.Tenant,
-// 	// 										Status:             &objects.IPAddressStatusActive,
-// 	// 										DNSName:            hostname,
-// 	// 										AssignedObjectType: objects.AssignedObjectTypeVMInterface,
-// 	// 										AssignedObjectId:   vmInterface.Id,
-// 	// 									})
+		if vmEthernetCard != nil {
+			intMac := vmEthernetCard.MacAddress
+			intConnected := vmEthernetCard.Connectable.Connected
+			intDeviceBackingInfo := vmEthernetCard.Backing
+			intDeviceInfo := vmEthernetCard.DeviceInfo
+			var intMtu int
+			var intNetworkName string
+			var intNetworkPrivate bool
+			var intMode *objects.VMInterfaceMode
+			intNetworkVlanIds := []int{}
+			intNetworkVlanIdRanges := []string{}
 
-// 	// 									if err != nil {
-// 	// 										// TODO: return should be here, commented just for now
-// 	// 										// return fmt.Errorf("failed to sync oVirt vm's interface %s ip %s: %v", vmInterface, ip.MustAddress(), err)
-// 	// 										vc.Logger.Error(fmt.Sprintf("failed to sync oVirt vm's interface %s ip %s: %v", vmInterface, ip.MustAddress(), err))
+			// Get info from local vSwitches if possible, else from DistributedPortGroup
+			if backingInfo, ok := intDeviceBackingInfo.(*types.VirtualEthernetCardNetworkBackingInfo); ok {
+				intNetworkName = backingInfo.DeviceName
+				intHostPgroup := vc.Networks.HostPortgroups[netboxVm.Host.Name][intNetworkName]
 
-// 	// 									}
+				if intHostPgroup != nil {
+					intNetworkVlanIds = []int{intHostPgroup.vlanId}
+					intNetworkVlanIdRanges = []string{strconv.Itoa(intHostPgroup.vlanId)}
+					intVswitchName := intHostPgroup.vswitch
+					intVswitchData := vc.Networks.HostVirtualSwitches[netboxVm.Host.Name][intVswitchName]
+					if intVswitchData != nil {
+						intMtu = intVswitchData.mtu
+					}
 
-// 	// 									// TODO: criteria to determine if reported device is primary IP
-// 	// 									switch ipVersion {
-// 	// 									case "v4":
-// 	// 										if vmPrimaryIpv4 == nil {
-// 	// 											vmPrimaryIpv4 = ipAddress
-// 	// 										}
-// 	// 									case "v6":
-// 	// 										if vmPrimaryIpv6 == nil {
-// 	// 											vmPrimaryIpv6 = ipAddress
-// 	// 										}
-// 	// 									}
-// 	// 								}
-// 	// 							}
-// 	// 						}
-// 	// 					}
-// 	// 				}
-// 	// 			}
-// 	// 		}
-// 	// 	}
-// 	// 	// Update netboxVM with primary IPs
-// 	// 	// TODO: determine which ip is primary ipv4 and which is primary ipv6
-// 	// 	// TODO: then assign them to netboxVM
-// 	// 	// if vmPrimaryIpv4 != nil && (netboxVm.PrimaryIPv4 == nil || vmPrimaryIpv4.Address != netboxVm.PrimaryIPv4.Address) {
-// 	// 	// 	netboxVm.PrimaryIPv4 = vmPrimaryIpv4
-// 	// 	// 	if _, err := nbi.AddVM(netboxVm); err != nil {
-// 	// 	// 		return fmt.Errorf("failed to sync oVirt vm's primary ipv4: %v", err)
-// 	// 	// 	}
-// 	// 	// }
-// 	// 	// if vmPrimaryIpv6 != nil && (netboxVm.PrimaryIPv6 == nil || vmPrimaryIpv6.Address != netboxVm.PrimaryIPv6.Address) {
-// 	// 	// 	netboxVm.PrimaryIPv6 = vmPrimaryIpv6
-// 	// 	// 	if _, err := nbi.AddVM(netboxVm); err != nil {
-// 	// 	// 		return fmt.Errorf("failed to sync oVirt vm's primary ipv6: %v", err)
-// 	// 	// 	}
-// 	// 	// }
+				}
+			} else if backingInfo, ok := intDeviceBackingInfo.(*types.VirtualEthernetCardDistributedVirtualPortBackingInfo); ok {
+				dvsPortgroupKey := backingInfo.Port.PortgroupKey
+				intPortgroupData := vc.Networks.DistributedVirtualPortgroups[dvsPortgroupKey]
 
-// 	return nil
-// }
+				if intPortgroupData != nil {
+					intNetworkName = intPortgroupData.Name
+					intNetworkVlanIds = intPortgroupData.VlanIds
+					intNetworkVlanIdRanges = intPortgroupData.VlanIdRanges
+					if len(intNetworkVlanIdRanges) == 0 {
+						intNetworkVlanIdRanges = []string{strconv.Itoa(intNetworkVlanIds[0])}
+					}
+					intNetworkPrivate = intPortgroupData.Private
+				}
+
+				intDvswitchUuid := backingInfo.Port.SwitchUuid
+				intDvswitchData := vc.Networks.HostProxySwitches[netboxVm.Host.Name][intDvswitchUuid]
+
+				if intDvswitchData != nil {
+					intMtu = intDvswitchData.mtu
+				}
+			}
+
+			var vlanDescription string
+			intLabel := intDeviceInfo.GetDescription().Label
+			splitStr := strings.Split(intLabel, " ")
+			intName := fmt.Sprintf("vNic %s", splitStr[len(splitStr)-1])
+			intFullName := intName
+			if intNetworkName != "" {
+				intFullName = fmt.Sprintf("%s (%s)", intFullName, intNetworkName)
+			}
+			intDescription := intLabel
+			if len(intNetworkVlanIds) > 0 {
+				if len(intNetworkVlanIds) == 1 && intNetworkVlanIds[0] == 4095 {
+					vlanDescription = "all vlans"
+					intMode = &objects.VMInterfaceModeTaggedAll
+				} else {
+					vlanDescription = fmt.Sprintf("vlan ID: %s", strings.Join(intNetworkVlanIdRanges, ", "))
+					if len(intNetworkVlanIds) == 1 {
+						intMode = &objects.VMInterfaceModeAccess
+					} else {
+						intMode = &objects.VMInterfaceModeTagged
+					}
+				}
+
+				if intNetworkPrivate {
+					vlanDescription += "(private)"
+				}
+				intDescription = fmt.Sprintf("%s (%s)", intDescription, vlanDescription)
+			}
+			// Find corresponding guest NIC and get IP addresses and connected status
+			for _, guestNic := range vmwareVm.Guest.Net {
+				if intMac != guestNic.MacAddress {
+					continue
+				}
+				intConnected = guestNic.Connected
+
+				if _, ok := nicIps[intFullName]; !ok {
+					nicIps[intFullName] = []string{}
+				}
+
+				if guestNic.IpConfig != nil {
+					for _, intIp := range guestNic.IpConfig.IpAddress {
+						intIpAddress := fmt.Sprintf("%s/%d", intIp.IpAddress, intIp.PrefixLength)
+						nicIps[intFullName] = append(nicIps[intFullName], intIpAddress)
+
+						// Check if primary gateways are in the subnet of this IP address
+						// if it matches IP gets chosen as primary ip
+						if vmDefaultGatewayIpv4 != "" && utils.SubnetContainsIpAddress(vmDefaultGatewayIpv4, intIpAddress) {
+							ipDns := utils.ReverseLookup(intIp.IpAddress)
+							vmPrimaryIpv4 = &objects.IPAddress{
+								NetboxObject: objects.NetboxObject{
+									Tags: vc.SourceTags,
+								},
+								Address: intIpAddress,
+								Status:  &objects.IPAddressStatusActive,
+								DNSName: ipDns,
+							}
+						}
+						if vmDefaultGatewayIpv6 != "" && utils.SubnetContainsIpAddress(vmDefaultGatewayIpv6, intIpAddress) {
+							ipDns := utils.ReverseLookup(intIp.IpAddress)
+							vmPrimaryIpv6 = &objects.IPAddress{
+								NetboxObject: objects.NetboxObject{
+									Tags: vc.SourceTags,
+								},
+								Address: intIpAddress,
+								Status:  &objects.IPAddressStatusActive,
+								DNSName: ipDns,
+							}
+						}
+					}
+				}
+			}
+			var intUntaggedVlan *objects.Vlan
+			var intTaggedVlanList []*objects.Vlan
+			if len(intNetworkVlanIds) > 0 && intMode != &objects.VMInterfaceModeTaggedAll {
+				if len(intNetworkVlanIds) == 1 && intNetworkVlanIds[0] != 0 {
+					vidId := intNetworkVlanIds[0]
+					nicUntaggedVlanGroup, err := common.MatchVlanToGroup(nbi, vc.Networks.Vid2Name[vidId], vc.VlanGroupRelations)
+					if err != nil {
+						return fmt.Errorf("vlan group: %s", err)
+					}
+					intUntaggedVlan = nbi.VlansIndexByVlanGroupIdAndVid[nicUntaggedVlanGroup.Id][vidId]
+				} else {
+					intTaggedVlanList = []*objects.Vlan{}
+					for _, intNetworkVlanId := range intNetworkVlanIds {
+						if intNetworkVlanId == 0 {
+							continue
+						}
+						// nicTaggedVlanList = append(nicTaggedVlanList, nbi.get[intNetworkVlanId])
+					}
+				}
+			}
+			nbVmInterface, err := nbi.AddVMInterface(&objects.VMInterface{
+				NetboxObject: objects.NetboxObject{
+					Tags:        vc.SourceTags,
+					Description: intDescription,
+				},
+				VM:           netboxVm,
+				Name:         intFullName,
+				MACAddress:   strings.ToUpper(intMac),
+				MTU:          intMtu,
+				Mode:         intMode,
+				Enabled:      intConnected,
+				TaggedVlans:  intTaggedVlanList,
+				UntaggedVlan: intUntaggedVlan,
+			})
+			if err != nil {
+				return fmt.Errorf("adding VmInterface: %s", err)
+			}
+
+			// Add primary IPs to the netbox
+			if vmPrimaryIpv4 != nil {
+				vmPrimaryIpv4.AssignedObjectType = objects.AssignedObjectTypeVMInterface
+				vmPrimaryIpv4.AssignedObjectId = nbVmInterface.Id
+				vmPrimaryIpv4, err = nbi.AddIPAddress(vmPrimaryIpv4)
+				if err != nil {
+					return fmt.Errorf("adding vm's primary ipv4: %s", err)
+				}
+			}
+			if vmPrimaryIpv6 != nil {
+				vmPrimaryIpv6.AssignedObjectType = objects.AssignedObjectTypeVMInterface
+				vmPrimaryIpv6.AssignedObjectId = nbVmInterface.Id
+				vmPrimaryIpv6, err = nbi.AddIPAddress(vmPrimaryIpv6)
+				if err != nil {
+					return fmt.Errorf("adding vm's primary ipv6: %s", err)
+				}
+			}
+
+			// Update the vms with primary addresses
+			if vmPrimaryIpv4 != nil && (netboxVm.PrimaryIPv4 == nil || vmPrimaryIpv4.Address != netboxVm.PrimaryIPv4.Address) {
+				// Shallow copy netboxVm to newNetboxVM
+				newNetboxVm := *netboxVm
+				newNetboxVm.PrimaryIPv4 = vmPrimaryIpv4
+				_, err = nbi.AddVM(&newNetboxVm)
+				if err != nil {
+					return fmt.Errorf("adding vm: %s", err)
+				}
+			}
+		}
+	}
+
+	return nil
+}

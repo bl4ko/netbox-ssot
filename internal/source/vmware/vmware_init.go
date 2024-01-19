@@ -82,9 +82,9 @@ func (vc *VmwareSource) InitDisks(ctx context.Context, containerView *view.Conta
 	if err != nil {
 		return fmt.Errorf("failed retrieving disks: %s", err)
 	}
-	vc.Disks = make(map[string]*mo.Datastore, len(disks))
+	vc.Disks = make(map[string]mo.Datastore, len(disks))
 	for _, disk := range disks {
-		vc.Disks[disk.Self.Value] = &disk
+		vc.Disks[disk.Self.Value] = disk
 	}
 	return nil
 }
@@ -95,9 +95,9 @@ func (vc *VmwareSource) InitDataCenters(ctx context.Context, containerView *view
 	if err != nil {
 		return fmt.Errorf("failed retrieving datacenters: %s", err)
 	}
-	vc.DataCenters = make(map[string]*mo.Datacenter, len(datacenters))
+	vc.DataCenters = make(map[string]mo.Datacenter, len(datacenters))
 	for _, datacenter := range datacenters {
-		vc.DataCenters[datacenter.Self.Value] = &datacenter
+		vc.DataCenters[datacenter.Self.Value] = datacenter
 	}
 	return nil
 }
@@ -109,9 +109,9 @@ func (vc *VmwareSource) InitClusters(ctx context.Context, containerView *view.Co
 		return fmt.Errorf("failed retrieving clusters: %s", err)
 	}
 	vc.Host2Cluster = make(map[string]string)
-	vc.Clusters = make(map[string]*mo.ClusterComputeResource, len(clusters))
+	vc.Clusters = make(map[string]mo.ClusterComputeResource, len(clusters))
 	for _, cluster := range clusters {
-		vc.Clusters[cluster.Self.Value] = &cluster
+		vc.Clusters[cluster.Self.Value] = cluster
 		for _, host := range cluster.Host {
 			vc.Host2Cluster[host.Value] = cluster.Self.Value
 		}
@@ -126,9 +126,9 @@ func (vc *VmwareSource) InitHosts(ctx context.Context, containerView *view.Conta
 		return fmt.Errorf("failed retrieving hosts: %s", err)
 	}
 	vc.Vm2Host = make(map[string]string)
-	vc.Hosts = make(map[string]*mo.HostSystem, len(hosts))
+	vc.Hosts = make(map[string]mo.HostSystem, len(hosts))
 	for _, host := range hosts {
-		vc.Hosts[host.Self.Value] = &host
+		vc.Hosts[host.Self.Value] = host
 		for _, vm := range host.Vm {
 			vc.Vm2Host[vm.Value] = host.Self.Value
 		}
@@ -181,13 +181,13 @@ func (vc *VmwareSource) InitHosts(ctx context.Context, containerView *view.Conta
 
 func (vc *VmwareSource) InitVms(ctx context.Context, containerView *view.ContainerView) error {
 	var vms []mo.VirtualMachine
-	err := containerView.Retrieve(ctx, []string{"VirtualMachine"}, []string{"summary", "name", "guest.net"}, &vms)
+	err := containerView.Retrieve(ctx, []string{"VirtualMachine"}, []string{"summary", "name", "runtime", "guest", "config.hardware", "config.guestFullName"}, &vms)
 	if err != nil {
 		return fmt.Errorf("failed retrieving vms: %s", err)
 	}
-	vc.Vms = make(map[string]*mo.VirtualMachine, len(vms))
+	vc.Vms = make(map[string]mo.VirtualMachine, len(vms))
 	for _, vm := range vms {
-		vc.Vms[vm.Self.Value] = &vm
+		vc.Vms[vm.Self.Value] = vm
 	}
 	return nil
 }

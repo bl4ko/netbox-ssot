@@ -124,3 +124,32 @@ func MaskToBits(mask string) (int, error) {
 	ones, _ := ipMask.Size()
 	return ones, nil
 }
+
+// GetIPVersion returns the version of the IP address.
+// It returns 4 for IPv4, 6 for IPv6, and 0 if the IP address is invalid.
+func GetIPVersion(ipAddress string) int {
+	ip := net.ParseIP(ipAddress)
+	if ip == nil {
+		return 0
+	}
+	if ip.To4() != nil {
+		return 4
+	}
+	return 6
+}
+
+// Function that checks if given IP address is part of the
+// given subnet.
+// e.g. ipAddress "172.31.4.129" and subnet "172.31.4.145/25"
+// Return true
+func SubnetContainsIpAddress(ipAddress string, subnet string) bool {
+	ip := net.ParseIP(ipAddress)
+	if ip == nil {
+		return false
+	}
+	_, ipnet, err := net.ParseCIDR(subnet)
+	if err != nil {
+		return false
+	}
+	return ipnet.Contains(ip)
+}
