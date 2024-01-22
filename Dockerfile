@@ -1,4 +1,4 @@
-FROM golang:1.21.4 as builder
+FROM --platform=$BUILDPLATFORM golang:1.21.4 as builder
 
 WORKDIR /app
 
@@ -10,7 +10,7 @@ COPY ./internal ./internal
 
 COPY ./cmd ./cmd
 
-RUN go build -o ./cmd/netbox-ssot/main ./cmd/netbox-ssot/main.go 
+RUN CGO_ENABLED=0 GOOS=${TARGET_OS} GOARCH=${TARGETARCH} go build  -o ./cmd/netbox-ssot/main ./cmd/netbox-ssot/main.go 
 
 FROM alpine:latest 
 

@@ -9,7 +9,7 @@ Currently the supported external data sources types are:
 
 
 > This plugin operates only with objects that have `netbox-ssot` Tag assigned to them.
-> So if you want your existing objects to be managed by it, you have to assigne them `netbox-ssot`  Tag.
+> So if you want your existing objects to be managed by it, you have to assign them `netbox-ssot`  Tag.
 
 
 ## Configuration
@@ -26,16 +26,17 @@ Example config can be found in [example section](#example-config)
 
 ### Netbox
 
-| Parameter             | Description                                             | Type   | Possible values | Default       | Required |
-| --------------------- | ------------------------------------------------------- | ------ | --------------- | ------------- | -------- |
-| `netbox.apiToken`     | apiToken to access netbox                               | str    | Any valid token | ""            | Yes      |
-| `netbox.hostname`     | Netbox hostname (e.g `netbox.example.com`)              | str    | Valid hostname  | ""            | Yes      |
-| `netbox.port`         | Netbox port                                             | int    | 0-65536         | 443           | No       |
-| `netbox.HTTPScheme`   | Netbox API HTTP scheme                                  | str    | http, https     | https         | No       |
-| `netbox.validateCert` | Validate Netbox's TLS certificate                       | bool   | true, false     | false         | No       |
-| `netbox.timeout`      | Max netbox API call length in seconds                   | int    | >=0             | 30            | No       |
-| `netbox.tag`          | Tag to be applied to all objects managed by netbox-ssot | string | any             | "netbox-ssot" | No       |
-| `netbox.tagColor`     | TagColor for the netbox-ssot tag.                       | string | any             | "07426b"      | No       |
+| Parameter              | Description                                                                                                | Type   | Possible values | Default       | Required |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------- | ------ | --------------- | ------------- | -------- |
+| `netbox.apiToken`      | apiToken to access netbox                                                                                  | str    | Any valid token | ""            | Yes      |
+| `netbox.hostname`      | Netbox hostname (e.g `netbox.example.com`)                                                                 | str    | Valid hostname  | ""            | Yes      |
+| `netbox.port`          | Netbox port                                                                                                | int    | 0-65536         | 443           | No       |
+| `netbox.HTTPScheme`    | Netbox API HTTP scheme                                                                                     | str    | http, https     | https         | No       |
+| `netbox.validateCert`  | Validate Netbox's TLS certificate                                                                          | bool   | true, false     | false         | No       |
+| `netbox.timeout`       | Max netbox API call length in seconds                                                                      | int    | >=0             | 30            | No       |
+| `netbox.removeOrphans` | Remove all objects tagged with **netbox-ssot** which, were not found on the sources, during this iteration | bool   | true, false     | true          | No       |
+| `netbox.tag`           | Tag to be applied to all objects managed by netbox-ssot                                                    | string | any             | "netbox-ssot" | No       |
+| `netbox.tagColor`      | TagColor for the netbox-ssot tag.                                                                          | string | any             | "07426b"      | No       |
 
 ### Source
 
@@ -72,9 +73,6 @@ netbox:
   apiToken: "" # Netbox API Token
   hostname: "netbox.example.com" # Netbox FQDN
   port: 443
-  validateCert: true # Validate Netbox TLS certificate
-  clientCert: "" # Path to client certificate
-  clientCertKey: "" # Path to client certificate key
   timeout: 30 # API call timeout in seconds
 
 source:
@@ -84,11 +82,26 @@ source:
     port: 443
     username: "admin" # Username of the source account "admin"
     password: "topsecret" # Password of the source account "secretpass"
-    validateCert: false # Enforce TLS certificate validation bool
 ```
 
-## Usage
+## Deployment
+
+### Via docker
 
 ```bash
-docker run -v /path/to/config.yaml:/app/config.yaml netbox-ssot
+docker run -v /path/to/config.yaml:/app/config.yaml ghcr.io/bl4ko/netbox-ssot
+```
+
+### Via k8s
+
+Create k8s secret from self defined config.yaml:
+
+```yaml
+kubectl create secret generic netbox-ssot-secret --from-file=config.yaml
+```
+
+Apply [cronjob](cronjob.yaml) with custom settings:
+
+```yaml
+kubectl apply -f cronjob.yaml
 ```

@@ -8,8 +8,6 @@ import (
 )
 
 func (api *NetboxAPI) BulkDeleteObjects(objectPath string, idSet map[int]bool) error {
-	api.Logger.Debug("Deleting objects with path ", objectPath, " from Netbox with ids: ", idSet)
-
 	// Netbox API supports only JSON request body in the following format:
 	// [ {"id": 1}, {"id": 2}, {"id": 3} ]
 	netboxFormatIds := make([]map[string]int, 0)

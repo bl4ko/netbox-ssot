@@ -1,0 +1,23 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: netbox-ssot
+spec:
+  schedule: "*/20 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: netbox-ssot
+            image: ghcr.io/bl4ko/netbox-ssot:latest
+            imagePullPolicy: Always
+            volumeMounts:
+            - name: netbox-ssot-secret
+              mountPath: /app/config.yaml
+              subPath: config.yaml
+          volumes:
+          - name: netbox-ssot-secret
+            secret:
+              secretName: netbox-ssot-secret
+          restartPolicy: OnFailure
