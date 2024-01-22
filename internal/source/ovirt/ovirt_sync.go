@@ -21,8 +21,13 @@ func (o *OVirtSource) syncNetworks(nbi *inventory.NetBoxInventory) error {
 		description, _ := network.Description()
 		// TODO: handle other networks
 		if networkVlan, exists := network.Vlan(); exists {
-			// VLAN group relation
+			// Get vlanGroup from relation
 			vlanGroup, err := common.MatchVlanToGroup(nbi, name, o.VlanGroupRelations)
+			if err != nil {
+				return err
+			}
+			// Get tenant from relation
+			vlanTenant, err := common.MatchVlanToTenant(nbi, name, o.VlanTenantRelations)
 			if err != nil {
 				return err
 			}
@@ -36,6 +41,7 @@ func (o *OVirtSource) syncNetworks(nbi *inventory.NetBoxInventory) error {
 					Group:    vlanGroup,
 					Vid:      int(networkVlanId),
 					Status:   &objects.VlanStatusActive,
+					Tenant:   vlanTenant,
 					Comments: network.MustComment(),
 				})
 				if err != nil {
@@ -390,29 +396,14 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 			if exists {
 				vlanId, exists := vlan.Id()
 				if exists {
-					var vlanStatus *objects.VlanStatus
-					if nicEnabled {
-						vlanStatus = &objects.VlanStatusActive
-					} else {
-						vlanStatus = &objects.VlanStatusReserved
-					}
 					vlanName := o.Networks.Vid2Name[int(vlanId)]
+					// Get vlanGroup from relation
 					vlanGroup, err := common.MatchVlanToGroup(nbi, vlanName, o.VlanGroupRelations)
 					if err != nil {
 						return err
 					}
-					nicVlan, err = nbi.AddVlan(&objects.Vlan{
-						NetboxObject: objects.NetboxObject{
-							Tags: o.SourceTags,
-						},
-						Name:   vlanName,
-						Vid:    int(vlanId),
-						Group:  vlanGroup,
-						Status: vlanStatus,
-					})
-					if err != nil {
-						return fmt.Errorf("failed to add oVirt vlan %s with error: %v", nicName, err)
-					}
+					// Get vlan from inventory
+					nicVlan = nbi.VlansIndexByVlanGroupIdAndVid[vlanGroup.Id][int(vlanId)]
 				}
 			}
 

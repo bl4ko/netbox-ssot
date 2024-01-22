@@ -30,6 +30,28 @@ func MatchVlanToGroup(nbi *inventory.NetBoxInventory, vlanName string, regexRela
 	return nbi.VlanGroupsIndexByName[objects.DefaultVlanGroupName], nil
 }
 
+// Function that matches vlanName to tenant using vlanTenantRelations regex relations map.
+//
+// In case there is no match or vlanTenantRelations is nil, it will return nil.
+func MatchVlanToTenant(nbi *inventory.NetBoxInventory, vlanName string, vlanTenantRelations map[string]string) (*objects.Tenant, error) {
+	if vlanTenantRelations == nil {
+		return nil, nil
+	}
+	tenantName, err := utils.MatchStringToValue(vlanName, vlanTenantRelations)
+	if err != nil {
+		return nil, fmt.Errorf("matching host to site: %s", err)
+	}
+	if tenantName != "" {
+		tenant, ok := nbi.TenantsIndexByName[tenantName]
+		if !ok {
+			return nil, fmt.Errorf("site with name %s doesn't exist", tenantName)
+		}
+		return tenant, nil
+	}
+
+	return nil, nil
+}
+
 // Function that matches Host from hostName to Site using hostSiteRelations.
 //
 // In case that there is not match or hostSiteRelations is nil, it will return nil.

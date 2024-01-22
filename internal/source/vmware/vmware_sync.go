@@ -18,9 +18,15 @@ func (vc *VmwareSource) syncNetworks(nbi *inventory.NetBoxInventory) error {
 	vc.Logger.Info("Syncing networks...")
 	for _, dvpg := range vc.Networks.DistributedVirtualPortgroups {
 		// TODO: currently we are syncing only vlans
+		// Get vlanGroup from relations
 		vlanGroup, err := common.MatchVlanToGroup(nbi, dvpg.Name, vc.VlanGroupRelations)
 		if err != nil {
 			return fmt.Errorf("vlanGroup: %s", err)
+		}
+		// Get tenant from relations
+		vlanTenant, err := common.MatchVlanToTenant(nbi, dvpg.Name, vc.VlanTenantRelations)
+		if err != nil {
+			return fmt.Errorf("vlanTenant: %s", err)
 		}
 		if len(dvpg.VlanIds) == 1 && len(dvpg.VlanIdRanges) == 0 {
 			_, err := nbi.AddVlan(&objects.Vlan{
@@ -31,6 +37,7 @@ func (vc *VmwareSource) syncNetworks(nbi *inventory.NetBoxInventory) error {
 				Group:  vlanGroup,
 				Vid:    dvpg.VlanIds[0],
 				Status: &objects.VlanStatusActive,
+				Tenant: vlanTenant,
 			})
 			if err != nil {
 				return err

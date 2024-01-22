@@ -58,27 +58,30 @@ const (
 )
 
 type SourceConfig struct {
-	Name                   string     `yaml:"name"`
-	Type                   SourceType `yaml:"type"`
-	HTTPScheme             HTTPScheme `yaml:"httpScheme"`
-	Hostname               string     `yaml:"hostname"`
-	Port                   int        `yaml:"port"`
-	Username               string     `yaml:"username"`
-	Password               string     `yaml:"password"`
-	PermittedSubnets       []string   `yaml:"permittedSubnets"`
-	ValidateCert           bool       `yaml:"validateCert"`
-	Tag                    string     `yaml:"tag"`
-	TagColor               string     `yaml:"tagColor"`
-	HostSiteRelations      []string   `yaml:"hostSiteRelations"`
-	ClusterSiteRelations   []string   `yaml:"clusterSiteRelations"`
-	ClusterTenantRelations []string   `yaml:"clusterTenantRelations"`
-	HostTenantRelations    []string   `yaml:"hostTenantRelations"`
-	VmTenantRelations      []string   `yaml:"vmTenantRelations"`
-	VlanGroupRelations     []string   `yaml:"vlanGroupRelations"`
+	Name             string     `yaml:"name"`
+	Type             SourceType `yaml:"type"`
+	HTTPScheme       HTTPScheme `yaml:"httpScheme"`
+	Hostname         string     `yaml:"hostname"`
+	Port             int        `yaml:"port"`
+	Username         string     `yaml:"username"`
+	Password         string     `yaml:"password"`
+	PermittedSubnets []string   `yaml:"permittedSubnets"`
+	ValidateCert     bool       `yaml:"validateCert"`
+	Tag              string     `yaml:"tag"`
+	TagColor         string     `yaml:"tagColor"`
+
+	// Relations
+	HostSiteRelations      []string `yaml:"hostSiteRelations"`
+	ClusterSiteRelations   []string `yaml:"clusterSiteRelations"`
+	ClusterTenantRelations []string `yaml:"clusterTenantRelations"`
+	HostTenantRelations    []string `yaml:"hostTenantRelations"`
+	VmTenantRelations      []string `yaml:"vmTenantRelations"`
+	VlanGroupRelations     []string `yaml:"vlanGroupRelations"`
+	VlanTenantRelations    []string `yaml:"vlanTenantRelations"`
 }
 
 func (s SourceConfig) String() string {
-	return fmt.Sprintf("SourceConfig{Name: %s, Type: %s, HTTPScheme: %s, Hostname: %s, Port: %d, Username: %s, Password: %s, PermittedSubnets: %v, ValidateCert: %t, Tag: %s, TagColor: %s, HostSiteRelations: %v, ClusterSiteRelations: %v, clusterTenantRelations: %v, HostTenantRelations: %v, VmTenantRelations %v, VlanGroupRelations: %v}", s.Name, s.Type, s.HTTPScheme, s.Hostname, s.Port, s.Username, s.Password, s.PermittedSubnets, s.ValidateCert, s.Tag, s.TagColor, s.HostSiteRelations, s.ClusterSiteRelations, s.ClusterTenantRelations, s.HostTenantRelations, s.VmTenantRelations, s.VlanGroupRelations)
+	return fmt.Sprintf("SourceConfig{Name: %s, Type: %s, HTTPScheme: %s, Hostname: %s, Port: %d, Username: %s, Password: %s, PermittedSubnets: %v, ValidateCert: %t, Tag: %s, TagColor: %s, HostSiteRelations: %v, ClusterSiteRelations: %v, clusterTenantRelations: %v, HostTenantRelations: %v, VmTenantRelations %v, VlanGroupRelations: %v, VlanTenantRelations: %v}", s.Name, s.Type, s.HTTPScheme, s.Hostname, s.Port, s.Username, s.Password, s.PermittedSubnets, s.ValidateCert, s.Tag, s.TagColor, s.HostSiteRelations, s.ClusterSiteRelations, s.ClusterTenantRelations, s.HostTenantRelations, s.VmTenantRelations, s.VlanGroupRelations, s.VlanTenantRelations)
 }
 
 // Validates the user's config for limits and required fields
@@ -218,6 +221,12 @@ func validateSourceConfig(config *Config) error {
 			err := utils.ValidateRegexRelations(externalSource.VlanGroupRelations)
 			if err != nil {
 				return fmt.Errorf("%svlanGroupRelations: %v", externalSourceStr, err)
+			}
+		}
+		if len(externalSource.VlanTenantRelations) > 0 {
+			err := utils.ValidateRegexRelations((externalSource.VlanTenantRelations))
+			if err != nil {
+				return fmt.Errorf("%svlanTenantRelations: %v", externalSourceStr, err)
 			}
 		}
 	}

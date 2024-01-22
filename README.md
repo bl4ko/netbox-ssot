@@ -58,6 +58,7 @@ Example config can be found in [example section](#example-config)
 | `source.hostTenantRelations`    | Regex relations in format `regex = tenantName`, that map each host that satisifes regex to tenant    | []string     | any             | []                      | no       |
 | `source.vmTenantRelations`      | Regex relations in format `regex = tenantName`, that map each vm that satisifes regex to tenant      | []string     | any             | []                      | no       |
 | `source.vlanGroupRelations`     | Regex relations in format `regex = vlanGroup`, that map each vlan that satisifes regex to vlanGroup  | []string     | any             | []                      | no       |
+| `source.vlanTenantRelations`    | Regex relations in format `regex = tenantName`, that map each vlan that satisfies regex to tenant    | []string     | any             | []                      | no       |  |
 
 
 ### Example config
