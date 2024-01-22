@@ -476,6 +476,7 @@ func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetBoxInventory, vcHo
 			return err
 		}
 
+		var ipv4Address *objects.IPAddress
 		// Get IPv4 address for this vnic. TODO: filter
 		ipv4_address := vnic.Spec.Ip.IpAddress
 		ipv4_mask_bits, err := utils.MaskToBits(vnic.Spec.Ip.SubnetMask)
@@ -483,7 +484,7 @@ func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetBoxInventory, vcHo
 			return fmt.Errorf("mask to bits: %s", err)
 		}
 		ipv4_dns := utils.ReverseLookup(ipv4_address)
-		_, err = nbi.AddIPAddress(&objects.IPAddress{
+		ipv4Address, err = nbi.AddIPAddress(&objects.IPAddress{
 			NetboxObject: objects.NetboxObject{
 				Tags: vc.SourceTags,
 			},
@@ -498,12 +499,13 @@ func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetBoxInventory, vcHo
 			return err
 		}
 
+		var ipv6Address *objects.IPAddress
 		if vnic.Spec.Ip.IpV6Config != nil {
 			for _, ipv6_entry := range vnic.Spec.Ip.IpV6Config.IpV6Address {
 				ipv6_address := ipv6_entry.IpAddress
 				ipv6_mask := ipv6_entry.PrefixLength
 				// TODO: Filter out ipv6 addresses
-				_, err = nbi.AddIPAddress(&objects.IPAddress{
+				ipv6Address, err = nbi.AddIPAddress(&objects.IPAddress{
 					NetboxObject: objects.NetboxObject{
 						Tags: vc.SourceTags,
 					},
@@ -516,6 +518,26 @@ func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetBoxInventory, vcHo
 				if err != nil {
 					return err
 				}
+			}
+		}
+
+		// Update host's primary ipv4: TODO, determine if primary or not
+		if nbHost.PrimaryIPv4 == nil && ipv4Address != nil {
+			newNbHost := *nbHost
+			newNbHost.PrimaryIPv4 = ipv4Address
+			nbHost, err = nbi.AddDevice(&newNbHost)
+			if err != nil {
+				return fmt.Errorf("new Host's primaryIpv4: %s", err)
+			}
+		}
+
+		// Update host's primary ipv4: TODO, determine if primary or not
+		if nbHost.PrimaryIPv6 == nil && ipv6Address != nil {
+			newNbHost := *nbHost
+			newNbHost.PrimaryIPv6 = ipv6Address
+			nbHost, err = nbi.AddDevice(&newNbHost)
+			if err != nil {
+				return fmt.Errorf("new Host's primaryIpv6: %s", err)
 			}
 		}
 	}
