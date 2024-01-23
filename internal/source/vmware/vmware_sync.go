@@ -78,7 +78,7 @@ func (vc *VmwareSource) syncClusters(nbi *inventory.NetBoxInventory) error {
 	if err != nil {
 		return fmt.Errorf("failed to add vmware ClusterType: %v", err)
 	}
-	// Then sync oVirt Clusters as NetBoxClusters
+	// Then sync vmware Clusters as NetBoxClusters
 	for clusterId, cluster := range vc.Clusters {
 
 		clusterName := cluster.Name
@@ -134,7 +134,7 @@ func (vc *VmwareSource) syncClusters(nbi *inventory.NetBoxInventory) error {
 	return nil
 }
 
-// Host in oVirt is a represented as device in netbox with a
+// Host in vmware is a represented as device in netbox with a
 // custom role Server
 func (vc *VmwareSource) syncHosts(nbi *inventory.NetBoxInventory) error {
 	for hostId, host := range vc.Hosts {
@@ -180,7 +180,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetBoxInventory) error {
 			Slug: utils.Slugify(manufacturerName),
 		})
 		if err != nil {
-			return fmt.Errorf("failed adding oVirt Manufacturer %v with error: %s", hostManufacturer, err)
+			return fmt.Errorf("failed adding vmware Manufacturer %v with error: %s", hostManufacturer, err)
 		}
 
 		var hostDeviceType *objects.DeviceType
@@ -193,7 +193,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetBoxInventory) error {
 			Slug:         utils.Slugify(hostModel),
 		})
 		if err != nil {
-			return fmt.Errorf("failed adding oVirt DeviceType %v with error: %s", hostDeviceType, err)
+			return fmt.Errorf("failed adding vmware DeviceType %v with error: %s", hostDeviceType, err)
 		}
 
 		var hostStatus *objects.DeviceStatus
@@ -213,7 +213,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetBoxInventory) error {
 			Slug: utils.Slugify(platformName),
 		})
 		if err != nil {
-			return fmt.Errorf("failed adding oVirt Platform %v with error: %s", hostPlatform, err)
+			return fmt.Errorf("failed adding vmware Platform %v with error: %s", hostPlatform, err)
 		}
 
 		hostCpuCores := host.Summary.Hardware.NumCpuCores
@@ -315,46 +315,67 @@ func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetBoxInventory, vcH
 		}
 
 		// Check vlans on this pnic
-		pnicVlans := []*objects.Vlan{}
+		vlanIdMap := map[int]*objects.Vlan{} // set of vlans
 		for portgroupName, portgroupData := range vc.Networks.HostPortgroups[nbHost.Name] {
 			if slices.Contains(portgroupData.nics, pnicName) {
-				pnicVlans = append(pnicVlans, &objects.Vlan{
-					Name: portgroupName,
-					Vid:  portgroupData.vlanId,
-				})
+				if portgroupData.vlanId == 0 || portgroupData.vlanId > 4094 {
+					vlanIdMap[portgroupData.vlanId] = &objects.Vlan{Vid: portgroupData.vlanId}
+					continue
+				}
+				// Check if vlan with this vid already exists, else create it
+				if vlanName, ok := vc.Networks.Vid2Name[portgroupData.vlanId]; ok {
+					vlanGroup, err := common.MatchVlanToGroup(nbi, vlanName, vc.VlanGroupRelations)
+					if err != nil {
+						return fmt.Errorf("vlanGroup: %s", err)
+					}
+					vlanIdMap[portgroupData.vlanId] = nbi.VlansIndexByVlanGroupIdAndVid[vlanGroup.Id][portgroupData.vlanId]
+				} else {
+					vlanGroup, err := common.MatchVlanToGroup(nbi, portgroupName, vc.VlanGroupRelations)
+					if err != nil {
+						return fmt.Errorf("vlanGroup: %s", err)
+					}
+					var newVlan *objects.Vlan
+					var ok bool
+					newVlan, ok = nbi.VlansIndexByVlanGroupIdAndVid[vlanGroup.Id][portgroupData.vlanId]
+					if !ok {
+						newVlan, err = nbi.AddVlan(&objects.Vlan{
+							NetboxObject: objects.NetboxObject{
+								Tags: vc.SourceTags,
+							},
+							Status: &objects.VlanStatusActive,
+							Name:   fmt.Sprintf("VLAN%d_%s", portgroupData.vlanId, portgroupName),
+							Vid:    portgroupData.vlanId,
+							Group:  vlanGroup,
+						})
+						if err != nil {
+							return fmt.Errorf("new vlan: %s", err)
+						}
+					}
+					vlanIdMap[portgroupData.vlanId] = newVlan
+				}
 			}
 		}
 
 		// Determine interface mode for non VM traffic NIC, from vlans data
 		var taggedVlanList []*objects.Vlan // when mode="tagged"
-		if len(pnicVlans) > 0 {
-			vlanIdSet := map[int]bool{} // set of vlans
-			for _, pnicVlan := range pnicVlans {
-				vlanIdSet[pnicVlan.Vid] = true
-			}
-			if len(vlanIdSet) == 1 && vlanIdSet[0] {
+		if len(vlanIdMap) > 0 {
+			if len(vlanIdMap) == 1 && vlanIdMap[0] != nil {
 				pnicMode = &objects.InterfaceModeAccess
-			} else if vlanIdSet[4095] {
+			} else if vlanIdMap[4095] != nil {
 				pnicMode = &objects.InterfaceModeTaggedAll
 			} else {
 				pnicMode = &objects.InterfaceModeTagged
 			}
 			taggedVlanList = []*objects.Vlan{}
 			if pnicMode == &objects.InterfaceModeTagged {
-				for vid := range vlanIdSet {
+				for vid, vlan := range vlanIdMap {
 					if vid == 0 {
 						continue
 					}
-					vlanGroup, err := common.MatchVlanToGroup(nbi, vc.Networks.Vid2Name[vid], vc.VlanGroupRelations)
-					if err != nil {
-						return fmt.Errorf("vlanGroup: %s", err)
-					}
-					taggedVlanList = append(taggedVlanList, nbi.VlansIndexByVlanGroupIdAndVid[vlanGroup.Id][vid])
+					taggedVlanList = append(taggedVlanList, vlan)
 				}
 			}
 		}
-
-		// Add taggedVlans
 
 		// After collecting all of the data add interface to nbi
 		_, err := nbi.AddInterface(&objects.Interface{
@@ -609,7 +630,7 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetBoxInventory) error {
 			Slug: utils.Slugify(vmPlatformName),
 		})
 		if err != nil {
-			return fmt.Errorf("failed adding oVirt vm's Platform %v with error: %s", vmPlatform, err)
+			return fmt.Errorf("failed adding vmware vm's Platform %v with error: %s", vmPlatform, err)
 		}
 
 		newVM, err := nbi.AddVM(&objects.VM{
@@ -628,12 +649,12 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetBoxInventory) error {
 			Disk:     int(vmDiskSizeB / 1024 / 1024 / 1024), // GBs
 		})
 		if err != nil {
-			return fmt.Errorf("failed to sync oVirt vm: %v", err)
+			return fmt.Errorf("failed to sync vmware vm: %v", err)
 		}
 
 		err = vc.syncVmInterfaces(nbi, vm, newVM)
 		if err != nil {
-			return fmt.Errorf("failed to sync oVirt vm's interfaces: %v", err)
+			return fmt.Errorf("failed to sync vmware vm's interfaces: %v", err)
 		}
 	}
 	return nil

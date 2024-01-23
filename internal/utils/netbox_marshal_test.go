@@ -157,3 +157,29 @@ func TestNetboxJsonMarshalWithChoiceAttr(t *testing.T) {
 		t.Errorf("NetboxMarshal() = %s\nwant %s", string(responseJson), string(expectedJson))
 	}
 }
+
+// func TestNetboxJsonMarshalComplex(t *testing.T) {
+// 	testDevice := objects.Interface{
+// 		NetboxObject: objects.NetboxObject{
+// 			Tags: []*objects.Tag{
+// 				&objects.Tag{
+// 					Id: 4,
+// 				},
+// 				&objects.Tag{
+// 					Id: 22,
+// 				},
+// 				&objects.Tag{
+// 					Id: 14,
+// 				},
+// 			},
+// 			Description: "10GB/s pNIC (vSwitch0)",
+// 		},
+// 		Name:   "vmnic0",
+// 		Status: true,
+// 		Type:   &objects.OtherInterfaceType,
+// 		Speed:  10000,
+// 		MTU:    1500,
+// 		Mode:   &objects.InterfaceModeTagged,
+// 		TaggedVlans: ,
+// 	}
+// }
