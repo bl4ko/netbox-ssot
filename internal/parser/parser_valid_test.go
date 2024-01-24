@@ -138,14 +138,15 @@ func TestValidConfig(t *testing.T) {
 			Dest:  "test",
 		},
 		Netbox: &NetboxConfig{
-			ApiToken:     "netbox-token",
-			Hostname:     "netbox.example.com",
-			HTTPScheme:   "https",
-			Port:         666,
-			ValidateCert: false,         // Default
-			Timeout:      30,            // Default
-			Tag:          "netbox-ssot", // Default
-			TagColor:     "00add8",      // Default
+			ApiToken:      "netbox-token",
+			Hostname:      "netbox.example.com",
+			HTTPScheme:    "https",
+			Port:          666,
+			ValidateCert:  false,         // Default
+			Timeout:       30,            // Default
+			Tag:           "netbox-ssot", // Default
+			TagColor:      "00add8",      // Default
+			RemoveOrphans: true,          // Default
 		},
 		Sources: []SourceConfig{
 			{

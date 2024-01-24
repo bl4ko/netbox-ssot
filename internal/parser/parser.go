@@ -39,15 +39,16 @@ type NetboxConfig struct {
 	Hostname string `yaml:"hostname"`
 	Port     int    `yaml:"port"`
 	// Can be http or https (default)
-	HTTPScheme   HTTPScheme `yaml:"httpScheme"`
-	ValidateCert bool       `yaml:"validateCert"`
-	Timeout      int        `yaml:"timeout"`
-	Tag          string     `yaml:"tag"`
-	TagColor     string     `yaml:"tagColor"`
+	HTTPScheme    HTTPScheme `yaml:"httpScheme"`
+	ValidateCert  bool       `yaml:"validateCert"`
+	Timeout       int        `yaml:"timeout"`
+	Tag           string     `yaml:"tag"`
+	TagColor      string     `yaml:"tagColor"`
+	RemoveOrphans bool       `yaml:"removeOrphans"`
 }
 
 func (n NetboxConfig) String() string {
-	return fmt.Sprintf("NetboxConfig{ApiToken: %s, Hostname: %s, Port: %d, HTTPScheme: %s, ValidateCert: %t, Timeout: %d, Tag: %s, TagColor: %s}", n.ApiToken, n.Hostname, n.Port, n.HTTPScheme, n.ValidateCert, n.Timeout, n.Tag, n.TagColor)
+	return fmt.Sprintf("NetboxConfig{ApiToken: %s, Hostname: %s, Port: %d, HTTPScheme: %s, ValidateCert: %t, Timeout: %d, Tag: %s, TagColor: %s, RemoveOrphans: %t}", n.ApiToken, n.Hostname, n.Port, n.HTTPScheme, n.ValidateCert, n.Timeout, n.Tag, n.TagColor, n.RemoveOrphans)
 }
 
 type SourceType string
@@ -248,9 +249,10 @@ func ParseConfig(filename string) (*Config, error) {
 			Dest:  "",
 		},
 		Netbox: &NetboxConfig{
-			HTTPScheme: "https",
-			Port:       443,
-			Timeout:    30,
+			HTTPScheme:    "https",
+			Port:          443,
+			Timeout:       30,
+			RemoveOrphans: true,
 		},
 		Sources: []SourceConfig{},
 	}

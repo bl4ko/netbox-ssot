@@ -22,63 +22,75 @@ func main() {
 		return
 	}
 	// Initialize Logger
-	logger, err := logger.New(config.Logger.Dest, config.Logger.Level)
+	mainLogger, err := logger.New(config.Logger.Dest, config.Logger.Level, "main")
 	if err != nil {
 		fmt.Println("Logger:", err)
 		return
 	}
-	logger.Debug("Parsed Logger config: ", config.Logger)
-	logger.Debug("Parsed Netbox config: ", config.Netbox)
-	logger.Debug("Parsed Source config: ", config.Sources)
+	mainLogger.Debug("Parsed Logger config: ", config.Logger)
+	mainLogger.Debug("Parsed Netbox config: ", config.Netbox)
+	mainLogger.Debug("Parsed Source config: ", config.Sources)
 
-	netboxInventory := inventory.NewNetboxInventory(logger, config.Netbox)
-	logger.Debug("Netbox inventory: ", netboxInventory)
+	inventoryLogger, err := logger.New(config.Logger.Dest, config.Logger.Level, "netboxInventory")
+	if err != nil {
+		mainLogger.Errorf("inventoryLogger: %s", err)
+	}
+	netboxInventory := inventory.NewNetboxInventory(inventoryLogger, config.Netbox)
+	mainLogger.Debug("Netbox inventory: ", netboxInventory)
 	err = netboxInventory.Init()
 	if err != nil {
-		logger.Error(err)
+		mainLogger.Error(err)
 		return
 	}
-	logger.Debug("Netbox inventory initialized: ", netboxInventory)
+	mainLogger.Debug("Netbox inventory initialized: ", netboxInventory)
 
 	// Go through all sources and sync data
 	for _, sourceConfig := range config.Sources {
-		logger.Info("Processing source ", sourceConfig.Name, "...")
+		mainLogger.Info("Processing source ", sourceConfig.Name, "...")
 
 		// Source initialization
-		logger.Info("Creating new source...")
-		source, err := source.NewSource(&sourceConfig, logger, netboxInventory)
+		mainLogger.Info("Creating new source...")
+		sourceLogger, err := logger.New(config.Logger.Dest, config.Logger.Level, sourceConfig.Name)
 		if err != nil {
-			logger.Error(err)
+			mainLogger.Errorf("source logger: %s", err)
+		}
+		source, err := source.NewSource(&sourceConfig, sourceLogger, netboxInventory)
+		if err != nil {
+			sourceLogger.Error(err)
 			return
 		}
-		logger.Info("Source initialized successfully: ", source)
+		mainLogger.Info("Source initialized successfully: ", source)
 		err = source.Init()
 		if err != nil {
-			logger.Error(err)
+			sourceLogger.Error(err)
 			return
 		}
 
 		// Source synchronization
-		logger.Info("Syncing source...")
+		sourceLogger.Info("Syncing source...")
 		err = source.Sync(netboxInventory)
 		if err != nil {
-			logger.Error(err)
+			sourceLogger.Error(err)
 			return
 		}
 
-		logger.Info("Source ", sourceConfig.Name, " synced successfully")
+		sourceLogger.Info("\u2713 Source synced successfully")
 	}
 
 	// Orphan manager cleanup
-	logger.Info("Cleaning up orphaned objects...")
-	err = netboxInventory.DeleteOrphans()
-	if err != nil {
-		logger.Error(err)
-		return
+	if config.Netbox.RemoveOrphans {
+		mainLogger.Info("Cleaning up orphaned objects...")
+		err = netboxInventory.DeleteOrphans()
+		if err != nil {
+			mainLogger.Error(err)
+			return
+		}
+	} else {
+		mainLogger.Info("Skipping removing orphaned objects...")
 	}
 
 	duration := time.Since(startTime)
 	minutes := int(duration.Minutes())
 	seconds := int(duration.Seconds()) % 60
-	logger.Infof("Syncing took %d min %d sec in total", minutes, seconds)
+	mainLogger.Infof("Syncing took %d min %d sec in total", minutes, seconds)
 }
