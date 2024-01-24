@@ -10,6 +10,7 @@ CPAK
 datacenter
 Datacenters
 dcim
+Debugf
 diskattachments
 DSFP
 dvpg
@@ -26,6 +27,8 @@ gpon
 HOSTSTATUS
 hsrp
 Hynix
+iface
+Infof
 Inspur
 intf
 ipam
@@ -63,10 +66,12 @@ testolvm
 TWDM
 VCPUs
 Virt
+vlangroups
 vminterface
 VMSTATUS
 vnic
 VRRP
+Warningf
 XENPAK
 XGPON
 XGSPON

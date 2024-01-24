@@ -17,34 +17,6 @@ type TagResponse struct {
 	Results  []objects.Tag `json:"results,omitempty"`
 }
 
-// GET /api/extras/tags/?limit=0
-func (api *NetboxAPI) GetAllTags() ([]*objects.Tag, error) {
-	api.Logger.Debug("Getting all tags from Netbox")
-
-	response, err := api.doRequest(MethodGet, "/api/extras/tags/?limit=0", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d. Error %s", response.StatusCode, response.Body)
-	}
-
-	var tagResponse TagResponse
-	err = json.Unmarshal(response.Body, &tagResponse)
-	if err != nil {
-		return nil, err
-	}
-
-	tags := make([]*objects.Tag, len(tagResponse.Results))
-	for i := range tagResponse.Results {
-		tags[i] = &tagResponse.Results[i]
-	}
-	api.Logger.Debug("Tags: ", tagResponse.Results)
-
-	return tags, nil
-}
-
 // GET /api/extras/tags?name={tag_name}
 func (api *NetboxAPI) GetTagByName(name string) (*objects.Tag, error) {
 	api.Logger.Debug("Getting tag by name from Netbox")
@@ -163,41 +135,6 @@ func (api *NetboxAPI) PatchTag(diffMap map[string]interface{}, tagId int) (*obje
 
 	api.Logger.Debug("Patched tag: ", tagResponse)
 	return &tagResponse, nil
-}
-
-type CustomFieldResponse struct {
-	Count    int                   `json:"count,omitempty"`
-	Next     *string               `json:"next,omitempty"`
-	Previous *string               `json:"previous,omitempty"`
-	Results  []objects.CustomField `json:"results,omitempty"`
-}
-
-// GET /api/extras/custom-fields/?limit=0
-func (api *NetboxAPI) GetAllCustomFields() ([]*objects.CustomField, error) {
-	api.Logger.Debug("Getting all custom fields from Netbox")
-
-	response, err := api.doRequest(MethodGet, "/api/extras/custom-fields/?limit=0", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d. Error %s", response.StatusCode, response.Body)
-	}
-
-	var customFieldResponse CustomFieldResponse
-	err = json.Unmarshal(response.Body, &customFieldResponse)
-	if err != nil {
-		return nil, err
-	}
-
-	customFields := make([]*objects.CustomField, len(customFieldResponse.Results))
-	for i := range customFieldResponse.Results {
-		customFields[i] = &customFieldResponse.Results[i]
-	}
-	api.Logger.Debug("Custom fields: ", customFieldResponse.Results)
-
-	return customFields, nil
 }
 
 // PATCH /api/extras/custom-fields/{custom_field_id}/ -d '{...}'

@@ -4,16 +4,20 @@ import (
 	"fmt"
 
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/service"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
 // Collect all tags from Netbox API and store them in the NetBoxInventory
 func (nbi *NetBoxInventory) InitTags() error {
-	nbTags, err := nbi.NetboxApi.GetAllTags()
+	nbTags, err := service.GetAll[objects.Tag](nbi.NetboxApi, "/api/extras/tags/", "")
 	if err != nil {
 		return err
 	}
-	nbi.Tags = nbTags
+	nbi.Tags = make([]*objects.Tag, len(nbTags))
+	for i := range nbTags {
+		nbi.Tags[i] = &nbTags[i]
+	}
 	nbi.Logger.Debug("Successfully collected tags from Netbox: ", nbi.Tags)
 
 	// Custom tag for all netbox objects
@@ -35,13 +39,14 @@ func (nbi *NetBoxInventory) InitTags() error {
 
 // Collects all tenants from Netbox API and store them in the NetBoxInventory
 func (nbi *NetBoxInventory) InitTenants() error {
-	nbTenants, err := nbi.NetboxApi.GetAllTenants()
+	nbTenants, err := service.GetAll[objects.Tenant](nbi.NetboxApi, "/api/tenancy/tenants/", "")
 	if err != nil {
 		return err
 	}
 	// We also create an index of tenants by name for easier access
 	nbi.TenantsIndexByName = make(map[string]*objects.Tenant)
-	for _, tenant := range nbTenants {
+	for i := range nbTenants {
+		tenant := &nbTenants[i]
 		nbi.TenantsIndexByName[tenant.Name] = tenant
 	}
 	nbi.Logger.Debug("Successfully collected tenants from Netbox: ", nbi.TenantsIndexByName)
@@ -50,13 +55,14 @@ func (nbi *NetBoxInventory) InitTenants() error {
 
 // Collects all sites from Netbox API and store them in the NetBoxInventory
 func (nbi *NetBoxInventory) InitSites() error {
-	nbSites, err := nbi.NetboxApi.GetAllSites()
+	nbSites, err := service.GetAll[objects.Site](nbi.NetboxApi, "/api/dcim/sites/", "")
 	if err != nil {
 		return err
 	}
 	// We also create an index of sites by name for easier access
 	nbi.SitesIndexByName = make(map[string]*objects.Site)
-	for _, site := range nbSites {
+	for i := range nbSites {
+		site := &nbSites[i]
 		nbi.SitesIndexByName[site.Name] = site
 	}
 	nbi.Logger.Debug("Successfully collected sites from Netbox: ", nbi.SitesIndexByName)
@@ -65,7 +71,7 @@ func (nbi *NetBoxInventory) InitSites() error {
 
 // Collects all manufacturers from Netbox API and store them in NetBoxInventory
 func (nbi *NetBoxInventory) InitManufacturers() error {
-	nbManufacturers, err := nbi.NetboxApi.GetAllManufacturers()
+	nbManufacturers, err := service.GetAll[objects.Manufacturer](nbi.NetboxApi, "/api/dcim/manufacturers/", "")
 	if err != nil {
 		return err
 	}
@@ -74,7 +80,8 @@ func (nbi *NetBoxInventory) InitManufacturers() error {
 	// OrphanManager takes care of all manufacturers created by netbox-ssot
 	nbi.OrphanManager["/api/dcim/manufacturers/"] = make(map[int]bool, 0)
 
-	for _, manufacturer := range nbManufacturers {
+	for i := range nbManufacturers {
+		manufacturer := &nbManufacturers[i] // for-range pointers same variable
 		nbi.ManufacturersIndexByName[manufacturer.Name] = manufacturer
 		nbi.OrphanManager["/api/dcim/manufacturers/"][manufacturer.Id] = true
 	}
@@ -85,7 +92,7 @@ func (nbi *NetBoxInventory) InitManufacturers() error {
 
 // Collects all platforms from Netbox API and store them in the NetBoxInventory
 func (nbi *NetBoxInventory) InitPlatforms() error {
-	nbPlatforms, err := nbi.NetboxApi.GetAllPlatforms()
+	nbPlatforms, err := service.GetAll[objects.Platform](nbi.NetboxApi, "/api/dcim/platforms/", "")
 	if err != nil {
 		return err
 	}
@@ -94,8 +101,8 @@ func (nbi *NetBoxInventory) InitPlatforms() error {
 	// OrphanManager takes care of all platforms created by netbox-ssot
 	nbi.OrphanManager["/api/dcim/platforms/"] = make(map[int]bool, 0)
 
-	for _, platform := range nbPlatforms {
-		nbi.PlatformsIndexByName[platform.Name] = platform
+	for i, platform := range nbPlatforms {
+		nbi.PlatformsIndexByName[platform.Name] = &nbPlatforms[i]
 		nbi.OrphanManager["/api/dcim/platforms/"][platform.Id] = true
 	}
 
@@ -105,20 +112,20 @@ func (nbi *NetBoxInventory) InitPlatforms() error {
 
 // Collect all devices from Netbox API and store them in the NetBoxInventory.
 func (nbi *NetBoxInventory) InitDevices() error {
-	nbDevices, err := nbi.NetboxApi.GetAllDevices()
+	nbDevices, err := service.GetAll[objects.Device](nbi.NetboxApi, "/api/dcim/devices/", "&tag=netbox-ssot")
 	if err != nil {
 		return err
 	}
 	// Initialize internal index of devices by Name and SiteId
 	nbi.DevicesIndexByNameAndSiteId = make(map[string]map[int]*objects.Device)
 	// OrphanManager takes care of all devices created by netbox-ssot
-	nbi.OrphanManager["/api/dcim/devices/"] = make(map[int]bool, 0)
+	nbi.OrphanManager["/api/dcim/devices/"] = make(map[int]bool)
 
-	for _, device := range nbDevices {
+	for i, device := range nbDevices {
 		if nbi.DevicesIndexByNameAndSiteId[device.Name] == nil {
 			nbi.DevicesIndexByNameAndSiteId[device.Name] = make(map[int]*objects.Device)
 		}
-		nbi.DevicesIndexByNameAndSiteId[device.Name][device.Site.Id] = device
+		nbi.DevicesIndexByNameAndSiteId[device.Name][device.Site.Id] = &nbDevices[i]
 		nbi.OrphanManager["/api/dcim/devices/"][device.Id] = true
 	}
 
@@ -129,7 +136,7 @@ func (nbi *NetBoxInventory) InitDevices() error {
 // Collects all deviceRoles from Netbox API and store them in the
 // NetBoxInventory
 func (nbi *NetBoxInventory) InitDeviceRoles() error {
-	nbDeviceRoles, err := nbi.NetboxApi.GetAllDeviceRoles()
+	nbDeviceRoles, err := service.GetAll[objects.DeviceRole](nbi.NetboxApi, "/api/dcim/device-roles/", "")
 	if err != nil {
 		return err
 	}
@@ -138,7 +145,8 @@ func (nbi *NetBoxInventory) InitDeviceRoles() error {
 	// OrphanManager takes care of all device roles created by netbox-ssot
 	nbi.OrphanManager["/api/dcim/device-roles/"] = make(map[int]bool, 0)
 
-	for _, deviceRole := range nbDeviceRoles {
+	for i := range nbDeviceRoles {
+		deviceRole := &nbDeviceRoles[i]
 		nbi.DeviceRolesIndexByName[deviceRole.Name] = deviceRole
 		nbi.OrphanManager["/api/dcim/device-roles/"][deviceRole.Id] = true
 	}
@@ -157,13 +165,14 @@ func (nbi *NetBoxInventory) InitServerDeviceRole() error {
 }
 
 func (nbi *NetBoxInventory) InitCustomFields() error {
-	customFields, err := nbi.NetboxApi.GetAllCustomFields()
+	customFields, err := service.GetAll[objects.CustomField](nbi.NetboxApi, "/api/extras/custom-fields/", "")
 	if err != nil {
 		return err
 	}
 	// Initialize internal index of custom fields by name
-	nbi.CustomFieldsIndexByName = make(map[string]*objects.CustomField)
-	for _, customField := range customFields {
+	nbi.CustomFieldsIndexByName = make(map[string]*objects.CustomField, len(customFields))
+	for i := range customFields {
+		customField := &customFields[i]
 		nbi.CustomFieldsIndexByName[customField.Name] = customField
 	}
 	nbi.Logger.Debug("Successfully collected custom fields from Netbox: ", nbi.CustomFieldsIndexByName)
@@ -227,7 +236,7 @@ func (netboxInventory *NetBoxInventory) InitSsotCustomFields() error {
 
 // Collects all nbClusters from Netbox API and stores them in the NetBoxInventory
 func (nbi *NetBoxInventory) InitClusterGroups() error {
-	nbClusters, err := nbi.NetboxApi.GetAllClusterGroups()
+	nbClusterGroups, err := service.GetAll[objects.ClusterGroup](nbi.NetboxApi, "/api/virtualization/cluster-groups/", "&tag=netbox-ssot")
 	if err != nil {
 		return err
 	}
@@ -236,7 +245,8 @@ func (nbi *NetBoxInventory) InitClusterGroups() error {
 	// OrphanManager takes care of all cluster groups created by netbox-ssot
 	nbi.OrphanManager["/api/virtualization/cluster-groups/"] = make(map[int]bool, 0)
 
-	for _, clusterGroup := range nbClusters {
+	for i := range nbClusterGroups {
+		clusterGroup := &nbClusterGroups[i]
 		nbi.ClusterGroupsIndexByName[clusterGroup.Name] = clusterGroup
 		nbi.OrphanManager["/api/virtualization/cluster-groups/"][clusterGroup.Id] = true
 	}
@@ -246,7 +256,7 @@ func (nbi *NetBoxInventory) InitClusterGroups() error {
 
 // Collects all ClusterTypes from Netbox API and stores them in the NetBoxInventory
 func (nbi *NetBoxInventory) InitClusterTypes() error {
-	nbClusterTypes, err := nbi.NetboxApi.GetAllClusterTypes()
+	nbClusterTypes, err := service.GetAll[objects.ClusterType](nbi.NetboxApi, "/api/virtualization/cluster-types", "&tag=netbox-ssot")
 	if err != nil {
 		return err
 	}
@@ -256,7 +266,8 @@ func (nbi *NetBoxInventory) InitClusterTypes() error {
 	// OrphanManager takes care of all cluster types created by netbox-ssot
 	nbi.OrphanManager["/api/virtualization/cluster-types/"] = make(map[int]bool, 0)
 
-	for _, clusterType := range nbClusterTypes {
+	for i := range nbClusterTypes {
+		clusterType := &nbClusterTypes[i]
 		nbi.ClusterTypesIndexByName[clusterType.Name] = clusterType
 		nbi.OrphanManager["/api/virtualization/cluster-types/"][clusterType.Id] = true
 	}
@@ -267,7 +278,7 @@ func (nbi *NetBoxInventory) InitClusterTypes() error {
 
 // Collects all clusters from Netbox API and stores them to local inventory
 func (nbi *NetBoxInventory) InitClusters() error {
-	nbClusters, err := nbi.NetboxApi.GetAllClusters()
+	nbClusters, err := service.GetAll[objects.Cluster](nbi.NetboxApi, "/api/virtualization/clusters/", "&tag=netbox-ssot")
 	if err != nil {
 		return err
 	}
@@ -277,7 +288,8 @@ func (nbi *NetBoxInventory) InitClusters() error {
 	// OrphanManager takes care of all clusters created by netbox-ssot
 	nbi.OrphanManager["/api/virtualization/clusters/"] = make(map[int]bool, 0)
 
-	for _, cluster := range nbClusters {
+	for i := range nbClusters {
+		cluster := &nbClusters[i]
 		nbi.ClustersIndexByName[cluster.Name] = cluster
 		nbi.OrphanManager["/api/virtualization/clusters/"][cluster.Id] = true
 	}
@@ -287,7 +299,7 @@ func (nbi *NetBoxInventory) InitClusters() error {
 }
 
 func (ni *NetBoxInventory) InitDeviceTypes() error {
-	nbDeviceTypes, err := ni.NetboxApi.GetAllDeviceTypes()
+	nbDeviceTypes, err := service.GetAll[objects.DeviceType](ni.NetboxApi, "/api/dcim/device-types/", "&tag=netbox-ssot")
 	if err != nil {
 		return err
 	}
@@ -297,7 +309,8 @@ func (ni *NetBoxInventory) InitDeviceTypes() error {
 	// OrphanManager takes care of all device types created by netbox-ssot
 	ni.OrphanManager["/api/dcim/device-types/"] = make(map[int]bool, 0)
 
-	for _, deviceType := range nbDeviceTypes {
+	for i := range nbDeviceTypes {
+		deviceType := &nbDeviceTypes[i]
 		ni.DeviceTypesIndexByModel[deviceType.Model] = deviceType
 		ni.OrphanManager["/api/dcim/device-types/"][deviceType.Id] = true
 	}
@@ -308,7 +321,7 @@ func (ni *NetBoxInventory) InitDeviceTypes() error {
 
 // Collects all interfaces from Netbox API and stores them to local inventory
 func (ni *NetBoxInventory) InitInterfaces() error {
-	nbInterfaces, err := ni.NetboxApi.GetAllInterfaces()
+	nbInterfaces, err := service.GetAll[objects.Interface](ni.NetboxApi, "/api/dcim/interfaces/", "&tag=netbox-ssot")
 	if err != nil {
 		return err
 	}
@@ -318,7 +331,8 @@ func (ni *NetBoxInventory) InitInterfaces() error {
 	// OrphanManager takes care of all interfaces created by netbox-ssot
 	ni.OrphanManager["/api/dcim/interfaces/"] = make(map[int]bool, 0)
 
-	for _, intf := range nbInterfaces {
+	for i := range nbInterfaces {
+		intf := &nbInterfaces[i]
 		if ni.InterfacesIndexByDeviceIdAndName[intf.Device.Id] == nil {
 			ni.InterfacesIndexByDeviceIdAndName[intf.Device.Id] = make(map[string]*objects.Interface)
 		}
@@ -351,7 +365,7 @@ func (ni *NetBoxInventory) InitDefaultVlanGroup() error {
 
 // Collects all vlans from Netbox API and stores them to local inventory
 func (ni *NetBoxInventory) InitVlanGroups() error {
-	nbVlanGroups, err := ni.NetboxApi.GetAllVlanGroups()
+	nbVlanGroups, err := service.GetAll[objects.VlanGroup](ni.NetboxApi, "/api/ipam/vlan-groups/", "&tag=netbox-ssot")
 	if err != nil {
 		return err
 	}
@@ -361,7 +375,8 @@ func (ni *NetBoxInventory) InitVlanGroups() error {
 	// Add VlanGroups to orphan manager
 	ni.OrphanManager["/api/ipam/vlan-groups/"] = make(map[int]bool, 0)
 
-	for _, vlanGroup := range nbVlanGroups {
+	for i := range nbVlanGroups {
+		vlanGroup := &nbVlanGroups[i]
 		ni.VlanGroupsIndexByName[vlanGroup.Name] = vlanGroup
 		ni.OrphanManager["/api/ipam/vlan-groups/"][vlanGroup.Id] = true
 	}
@@ -372,7 +387,7 @@ func (ni *NetBoxInventory) InitVlanGroups() error {
 
 // Collects all vlans from Netbox API and stores them to local inventory
 func (ni *NetBoxInventory) InitVlans() error {
-	nbVlans, err := ni.NetboxApi.GetAllVlans()
+	nbVlans, err := service.GetAll[objects.Vlan](ni.NetboxApi, "/api/ipam/vlans/", "&tag=netbox-ssot")
 	if err != nil {
 		return err
 	}
@@ -382,7 +397,8 @@ func (ni *NetBoxInventory) InitVlans() error {
 	// Add vlans to orphan manager
 	ni.OrphanManager["/api/ipam/vlans/"] = make(map[int]bool, 0)
 
-	for _, vlan := range nbVlans {
+	for i := range nbVlans {
+		vlan := &nbVlans[i]
 		if vlan.Group == nil {
 			// Update all existing vlans with default vlanGroup. This only happens
 			// when there are predefined vlans in netbox.
@@ -405,7 +421,7 @@ func (ni *NetBoxInventory) InitVlans() error {
 
 // Collects all vms from Netbox API and stores them to local inventory
 func (ni *NetBoxInventory) InitVMs() error {
-	nbVMs, err := ni.NetboxApi.GetAllVMs()
+	nbVMs, err := service.GetAll[objects.VM](ni.NetboxApi, "/api/virtualization/virtual-machines/", "&tag=netbox-ssot")
 	if err != nil {
 		return err
 	}
@@ -415,7 +431,8 @@ func (ni *NetBoxInventory) InitVMs() error {
 	// Add VMs to orphan manager
 	ni.OrphanManager["/api/virtualization/virtual-machines/"] = make(map[int]bool, 0)
 
-	for _, vm := range nbVMs {
+	for i := range nbVMs {
+		vm := &nbVMs[i]
 		ni.VMsIndexByName[vm.Name] = vm
 		ni.OrphanManager["/api/virtualization/virtual-machines/"][vm.Id] = true
 	}
@@ -426,17 +443,18 @@ func (ni *NetBoxInventory) InitVMs() error {
 
 // Collects all VMInterfaces from Netbox API and stores them to local inventory
 func (ni *NetBoxInventory) InitVMInterfaces() error {
-	nbVMInterfaces, err := ni.NetboxApi.GetAllVMInterfaces()
+	nbVMInterfaces, err := service.GetAll[objects.VMInterface](ni.NetboxApi, "/api/virtualization/interfaces/", "&tag=netbox-ssot")
 	if err != nil {
-		return err
+		return fmt.Errorf("Init vm interfaces: %s", err)
 	}
 
 	// Initialize internal index of VM interfaces by VM id and name
 	ni.VMInterfacesIndexByVMIdAndName = make(map[int]map[string]*objects.VMInterface)
 	// Add VMInterfaces to orphan manager
-	ni.OrphanManager["/api/virtualization/interfaces/"] = make(map[int]bool, 0)
+	ni.OrphanManager["/api/virtualization/interfaces/"] = make(map[int]bool)
 
-	for _, vmIntf := range nbVMInterfaces {
+	for i := range nbVMInterfaces {
+		vmIntf := &nbVMInterfaces[i]
 		if ni.VMInterfacesIndexByVMIdAndName[vmIntf.VM.Id] == nil {
 			ni.VMInterfacesIndexByVMIdAndName[vmIntf.VM.Id] = make(map[string]*objects.VMInterface)
 		}
@@ -449,22 +467,23 @@ func (ni *NetBoxInventory) InitVMInterfaces() error {
 }
 
 // Collects all IP addresses from Netbox API and stores them to local inventory
-func (ni *NetBoxInventory) InitIPAddresses() error {
-	ipAddresses, err := ni.NetboxApi.GetAllIPAddresses()
+func (nbi *NetBoxInventory) InitIPAddresses() error {
+	ipAddresses, err := service.GetAll[objects.IPAddress](nbi.NetboxApi, "/api/ipam/ip-addresses/", "&tag=netbox-ssot")
 	if err != nil {
 		return err
 	}
 
 	// Initializes internal index of IP addresses by address
-	ni.IPAdressesIndexByAddress = make(map[string]*objects.IPAddress)
+	nbi.IPAdressesIndexByAddress = make(map[string]*objects.IPAddress)
 	// Add IP addresses to orphan manager
-	ni.OrphanManager["/api/ipam/ip-addresses/"] = make(map[int]bool, 0)
+	nbi.OrphanManager["/api/ipam/ip-addresses/"] = make(map[int]bool, 0)
 
-	for _, ipAddr := range ipAddresses {
-		ni.IPAdressesIndexByAddress[ipAddr.Address] = ipAddr
-		ni.OrphanManager["/api/ipam/ip-addresses/"][ipAddr.Id] = true
+	for i := range ipAddresses {
+		ipAddr := &ipAddresses[i]
+		nbi.IPAdressesIndexByAddress[ipAddr.Address] = ipAddr
+		nbi.OrphanManager["/api/ipam/ip-addresses/"][ipAddr.Id] = true
 	}
 
-	ni.Logger.Debug("Successfully collected IP addresses from Netbox: ", ni.IPAdressesIndexByAddress)
+	nbi.Logger.Debug("Successfully collected IP addresses from Netbox: ", nbi.IPAdressesIndexByAddress)
 	return nil
 }

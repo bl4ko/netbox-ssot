@@ -44,12 +44,28 @@ func (l *Logger) Debug(v ...interface{}) error {
 	return nil
 }
 
+// Debugf logs a formatted debug message.
+func (l *Logger) Debugf(format string, v ...interface{}) error {
+	if l.logLevel <= DEBUG {
+		return l.Output(2, fmt.Sprintf("DEBUG: %s", fmt.Sprintf(format, v...)))
+	}
+	return nil
+}
+
 func (l *Logger) Info(v ...interface{}) error {
 	if l.logLevel <= INFO {
 		err := l.Output(2, fmt.Sprintf("INFO: %s", fmt.Sprint(v...)))
 		if err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+// Infof logs a formatted info message.
+func (l *Logger) Infof(format string, v ...interface{}) error {
+	if l.logLevel <= INFO {
+		return l.Output(2, fmt.Sprintf("INFO: %s", fmt.Sprintf(format, v...)))
 	}
 	return nil
 }
@@ -64,12 +80,28 @@ func (l *Logger) Warning(v ...interface{}) error {
 	return nil
 }
 
+// Warningf logs a formatted warning message.
+func (l *Logger) Warningf(format string, v ...interface{}) error {
+	if l.logLevel <= WARNING {
+		return l.Output(2, fmt.Sprintf("WARNING: %s", fmt.Sprintf(format, v...)))
+	}
+	return nil
+}
+
 func (l *Logger) Error(v ...interface{}) error {
 	if l.logLevel <= ERROR {
 		err := l.Output(2, fmt.Sprintf("ERROR: %s", fmt.Sprint(v...)))
 		if err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+// Errorf logs a formatted error message.
+func (l *Logger) Errorf(format string, v ...interface{}) error {
+	if l.logLevel <= ERROR {
+		return l.Output(2, fmt.Sprintf("ERROR: %s", fmt.Sprintf(format, v...)))
 	}
 	return nil
 }

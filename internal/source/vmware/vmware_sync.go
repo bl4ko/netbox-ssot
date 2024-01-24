@@ -185,9 +185,6 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetBoxInventory) error {
 
 		var hostDeviceType *objects.DeviceType
 		hostDeviceType, err = nbi.AddDeviceType(&objects.DeviceType{
-			NetboxObject: objects.NetboxObject{
-				Tags: vc.SourceTags,
-			},
 			Manufacturer: hostManufacturer,
 			Model:        hostModel,
 			Slug:         utils.Slugify(hostModel),

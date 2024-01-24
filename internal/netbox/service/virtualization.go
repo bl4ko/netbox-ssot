@@ -10,41 +10,6 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
-type ClusterTypeResponse struct {
-	Count    int                   `json:"count"`
-	Next     *string               `json:"next"`
-	Previous *string               `json:"previous"`
-	Results  []objects.ClusterType `json:"results"`
-}
-
-// GET /api/virtualization/cluster-types/?limit=0&tag=netbox-ssot
-func (api *NetboxAPI) GetAllClusterTypes() ([]*objects.ClusterType, error) {
-	api.Logger.Debug("Getting all cluster types from Netbox")
-
-	response, err := api.doRequest(MethodGet, "/api/virtualization/cluster-types/?limit=0&tag=netbox-ssot", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d. Error %s", response.StatusCode, response.Body)
-	}
-
-	var clusterTypeResponse ClusterTypeResponse
-	err = json.Unmarshal(response.Body, &clusterTypeResponse)
-	if err != nil {
-		return nil, err
-	}
-
-	clusterTypes := make([]*objects.ClusterType, len(clusterTypeResponse.Results))
-	for i := range clusterTypeResponse.Results {
-		clusterTypes[i] = &clusterTypeResponse.Results[i]
-	}
-	api.Logger.Debug("Cluster types: ", clusterTypeResponse.Results)
-
-	return clusterTypes, nil
-}
-
 // PATCH /api/virtualization/cluster-types/{id}/ -d '{"name": "new_name", ...}'
 func (api *NetboxAPI) PatchClusterType(diffMap map[string]interface{}, clusterTypeId int) (*objects.ClusterType, error) {
 	api.Logger.Debug("Patching cluster type with id ", clusterTypeId, "with data: ", diffMap)
@@ -104,40 +69,6 @@ func (api *NetboxAPI) CreateClusterType(clusterType *objects.ClusterType) (*obje
 	return &createdClusterType, nil
 }
 
-type ClusterGroupResponse struct {
-	Count    int                    `json:"count"`
-	Next     *string                `json:"next"`
-	Previous *string                `json:"previous"`
-	Results  []objects.ClusterGroup `json:"results"`
-}
-
-// GET /api/virtualization/cluster-groups/?limit=0&tag=netbox-ssot
-func (api *NetboxAPI) GetAllClusterGroups() ([]*objects.ClusterGroup, error) {
-	api.Logger.Debug("Getting all cluster groups from Netbox")
-
-	response, err := api.doRequest(MethodGet, "/api/virtualization/cluster-groups/?limit=0&tag=netbox-ssot", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d. Error %s", response.StatusCode, response.Body)
-	}
-
-	var clusterGroupResponse ClusterGroupResponse
-	err = json.Unmarshal(response.Body, &clusterGroupResponse)
-	if err != nil {
-		return nil, err
-	}
-
-	clusterGroups := make([]*objects.ClusterGroup, len(clusterGroupResponse.Results))
-	for i := range clusterGroupResponse.Results {
-		clusterGroups[i] = &clusterGroupResponse.Results[i]
-	}
-	api.Logger.Debug("Cluster groups: ", clusterGroupResponse.Results)
-	return clusterGroups, nil
-}
-
 // POST /api/virtualization/cluster-groups/
 func (api *NetboxAPI) CreateClusterGroup(clusterGroup *objects.ClusterGroup) (*objects.ClusterGroup, error) {
 	api.Logger.Debug("Creating cluster group in Netbox")
@@ -194,42 +125,6 @@ func (api *NetboxAPI) PatchClusterGroup(diffMap map[string]interface{}, clusterG
 	api.Logger.Debug("Successfully patched ClusterGroup: ", patchedClusterGroup.Name, " with patchData: ", diffMap)
 
 	return &patchedClusterGroup, nil
-}
-
-type ClustersResponse struct {
-	Count    int               `json:"count"`
-	Next     *string           `json:"next"`
-	Previous *string           `json:"previous"`
-	Results  []objects.Cluster `json:"results"`
-}
-
-// GET /api/vritualization/clusters/?limit=0&tag=netbox-ssot
-func (api *NetboxAPI) GetAllClusters() ([]*objects.Cluster, error) {
-	api.Logger.Debug("Getting all clusters from Netbox")
-
-	response, err := api.doRequest(MethodGet, "/api/virtualization/clusters/?limit=0&tag=netbox-ssot", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d. Error %s", response.StatusCode, response.Body)
-	}
-
-	var clustersResponse ClustersResponse
-	err = json.Unmarshal(response.Body, &clustersResponse)
-	if err != nil {
-		return nil, err
-	}
-
-	clusters := make([]*objects.Cluster, len(clustersResponse.Results))
-	for i := range clustersResponse.Results {
-		clusters[i] = &clustersResponse.Results[i]
-	}
-
-	api.Logger.Debug("Clusters: ", clustersResponse.Results)
-
-	return clusters, nil
 }
 
 // PATCH /api/virtualization/clusters/{id}/ -d '{"name": "new_name", ...}'
@@ -293,42 +188,6 @@ func (api *NetboxAPI) CreateCluster(cluster *objects.Cluster) (*objects.Cluster,
 	return &createdCluster, nil
 }
 
-type VMResponse struct {
-	Count    int          `json:"count"`
-	Next     *string      `json:"next"`
-	Previous *string      `json:"previous"`
-	Results  []objects.VM `json:"results"`
-}
-
-// GET /api/virtualization/virtual-machines/?limit=0&tag=netbox-ssot
-func (api *NetboxAPI) GetAllVMs() ([]*objects.VM, error) {
-	api.Logger.Debug("Getting all virtual machines from Netbox")
-
-	response, err := api.doRequest(MethodGet, "/api/virtualization/virtual-machines/?limit=0&tag=netbox-ssot", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d. Error %s", response.StatusCode, response.Body)
-	}
-
-	var vmResponse VMResponse
-	err = json.Unmarshal(response.Body, &vmResponse)
-	if err != nil {
-		return nil, err
-	}
-
-	vms := make([]*objects.VM, len(vmResponse.Results))
-	for i := range vmResponse.Results {
-		vms[i] = &vmResponse.Results[i]
-	}
-
-	api.Logger.Debug("Successfully received virtual machines: ", vmResponse.Results)
-
-	return vms, nil
-}
-
 // PATH /api/virtualization/virtual-machines/{id}/ -d '{"name": "new_name", ...}'
 func (api *NetboxAPI) PatchVM(diffMap map[string]interface{}, vmId int) (*objects.VM, error) {
 	api.Logger.Debug("Patching VM with id ", vmId, " with data: ", diffMap)
@@ -385,42 +244,6 @@ func (api *NetboxAPI) CreateVM(vm *objects.VM) (*objects.VM, error) {
 	api.Logger.Debug("Successfully created VM: ", createdVM)
 
 	return &createdVM, nil
-}
-
-type VMInterfaceResponse struct {
-	Count    int                   `json:"count"`
-	Next     *string               `json:"next"`
-	Previous *string               `json:"previous"`
-	Results  []objects.VMInterface `json:"results"`
-}
-
-// GET /api/virtualization/interfaces/?limit=0&tag=netbox-ssot
-func (api *NetboxAPI) GetAllVMInterfaces() ([]*objects.VMInterface, error) {
-	api.Logger.Debug("Getting all VM interfaces from Netbox")
-
-	response, err := api.doRequest(MethodGet, "/api/virtualization/interfaces/?limit=0&tag=netbox-ssot", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code %d: %s", response.StatusCode, response.Body)
-	}
-
-	var vmInterfaceResponse VMInterfaceResponse
-	err = json.Unmarshal(response.Body, &vmInterfaceResponse)
-	if err != nil {
-		return nil, err
-	}
-
-	vmInterfaces := make([]*objects.VMInterface, len(vmInterfaceResponse.Results))
-	for i := range vmInterfaceResponse.Results {
-		vmInterfaces[i] = &vmInterfaceResponse.Results[i]
-	}
-
-	api.Logger.Debug("Successfully received VM interfaces: ", vmInterfaceResponse.Results)
-
-	return vmInterfaces, nil
 }
 
 // PATCH /api/virtualization/interfaces/{id}/ -d '{"name": "new_name", ...}'
