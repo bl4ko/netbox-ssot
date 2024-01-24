@@ -15,7 +15,6 @@ import (
 )
 
 func (vc *VmwareSource) syncNetworks(nbi *inventory.NetBoxInventory) error {
-	vc.Logger.Info("Syncing networks...")
 	for _, dvpg := range vc.Networks.DistributedVirtualPortgroups {
 		// TODO: currently we are syncing only vlans
 		// Get vlanGroup from relations

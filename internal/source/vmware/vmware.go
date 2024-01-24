@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"time"
 
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
@@ -137,7 +138,7 @@ func (vc *VmwareSource) Init() error {
 	// the tree to get this relation.
 	vc.CreateClusterDataCenterRelation(ctx, conn.Client)
 
-	// Initialize items to local storage
+	// Initialize items from vsphere API to local storage
 	initFunctions := []func(context.Context, *view.ContainerView) error{
 		vc.InitNetworks,
 		vc.InitDisks,
@@ -148,12 +149,13 @@ func (vc *VmwareSource) Init() error {
 	}
 
 	for _, initFunc := range initFunctions {
+		startTime := time.Now()
 		if err := initFunc(ctx, containerView); err != nil {
 			return fmt.Errorf("vmware initialization failure: %v", err)
 		}
+		duration := time.Since(startTime)
+		vc.Logger.Infof("Successfully initialized %s in %f seconds", utils.ExtractFunctionName(initFunc), duration.Seconds())
 	}
-
-	vc.Logger.Debug("Successfully initialized objects from source ", vc.CommonConfig.SourceConfig.Name, ".")
 
 	err = conn.Logout(ctx)
 	if err != nil {
@@ -175,10 +177,13 @@ func (vc *VmwareSource) Sync(nbi *inventory.NetBoxInventory) error {
 		vc.syncVms,
 	}
 	for _, syncFunc := range syncFunctions {
+		startTime := time.Now()
 		err := syncFunc(nbi)
 		if err != nil {
 			return err
 		}
+		duration := time.Since(startTime)
+		vc.Logger.Infof("Successfully synced %s in %f seconds", utils.ExtractFunctionName(syncFunc), duration.Seconds())
 	}
 	return nil
 }

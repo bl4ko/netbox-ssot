@@ -106,8 +106,8 @@ func validateConfig(config *Config) error {
 }
 
 func validateLoggerConfig(config *Config) error {
-	if config.Logger.Level < 0 || config.Logger.Level > 4 {
-		return errors.New("logger.level: must be between 0 and 4")
+	if config.Logger.Level < 0 || config.Logger.Level > 3 {
+		return errors.New("logger.level: must be between 0 and 3")
 	}
 	return nil
 }

@@ -2,11 +2,13 @@ package inventory
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/bl4ko/netbox-ssot/internal/logger"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/service"
 	"github.com/bl4ko/netbox-ssot/internal/parser"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
 // NetBoxInventory is a singleton class to manage a inventory of NetBoxObject objects
@@ -115,40 +117,43 @@ func NewNetboxInventory(logger *logger.Logger, nbConfig *parser.NetboxConfig) *N
 }
 
 // Init function that initializes the NetBoxInventory object with objects from Netbox
-func (netboxInventory *NetBoxInventory) Init() error {
-	baseURL := fmt.Sprintf("%s://%s:%d", netboxInventory.NetboxConfig.HTTPScheme, netboxInventory.NetboxConfig.Hostname, netboxInventory.NetboxConfig.Port)
+func (nbi *NetBoxInventory) Init() error {
+	baseURL := fmt.Sprintf("%s://%s:%d", nbi.NetboxConfig.HTTPScheme, nbi.NetboxConfig.Hostname, nbi.NetboxConfig.Port)
 
-	netboxInventory.Logger.Debug("Initializing Netbox API with baseURL: ", baseURL)
-	netboxInventory.NetboxApi = service.NewNetBoxAPI(netboxInventory.Logger, baseURL, netboxInventory.NetboxConfig.ApiToken, netboxInventory.NetboxConfig.ValidateCert, netboxInventory.NetboxConfig.Timeout)
+	nbi.Logger.Debug("Initializing Netbox API with baseURL: ", baseURL)
+	nbi.NetboxApi = service.NewNetBoxAPI(nbi.Logger, baseURL, nbi.NetboxConfig.ApiToken, nbi.NetboxConfig.ValidateCert, nbi.NetboxConfig.Timeout)
 
 	// order matters. TODO: use parallelization in the future, on the init functions that can be parallelized
 	initFunctions := []func() error{
-		netboxInventory.InitTags,
-		netboxInventory.InitTenants,
-		netboxInventory.InitSites,
-		netboxInventory.InitManufacturers,
-		netboxInventory.InitPlatforms,
-		netboxInventory.InitDevices,
-		netboxInventory.InitInterfaces,
-		netboxInventory.InitIPAddresses,
-		netboxInventory.InitVlanGroups,
-		netboxInventory.InitDefaultVlanGroup,
-		netboxInventory.InitVlans,
-		netboxInventory.InitDeviceRoles,
-		netboxInventory.InitServerDeviceRole,
-		netboxInventory.InitDeviceTypes,
-		netboxInventory.InitCustomFields,
-		netboxInventory.InitSsotCustomFields,
-		netboxInventory.InitClusterGroups,
-		netboxInventory.InitClusterTypes,
-		netboxInventory.InitClusters,
-		netboxInventory.InitVMs,
-		netboxInventory.InitVMInterfaces,
+		nbi.InitTags,
+		nbi.InitTenants,
+		nbi.InitSites,
+		nbi.InitManufacturers,
+		nbi.InitPlatforms,
+		nbi.InitDevices,
+		nbi.InitInterfaces,
+		nbi.InitIPAddresses,
+		nbi.InitVlanGroups,
+		nbi.InitDefaultVlanGroup,
+		nbi.InitVlans,
+		nbi.InitDeviceRoles,
+		nbi.InitServerDeviceRole,
+		nbi.InitDeviceTypes,
+		nbi.InitCustomFields,
+		nbi.InitSsotCustomFields,
+		nbi.InitClusterGroups,
+		nbi.InitClusterTypes,
+		nbi.InitClusters,
+		nbi.InitVMs,
+		nbi.InitVMInterfaces,
 	}
 	for _, initFunc := range initFunctions {
+		startTime := time.Now()
 		if err := initFunc(); err != nil {
 			return err
 		}
+		duration := time.Since(startTime)
+		nbi.Logger.Infof("Successfully initialized %s in %f seconds", utils.ExtractFunctionName(initFunc), duration.Seconds())
 	}
 
 	return nil

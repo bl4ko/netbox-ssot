@@ -79,9 +79,12 @@ func (o *OVirtSource) Init() error {
 	}
 
 	for _, initFunc := range initFunctions {
+		startTime := time.Now()
 		if err := initFunc(conn); err != nil {
 			return fmt.Errorf("failed to initialize oVirt %s: %v", strings.TrimPrefix(fmt.Sprintf("%T", initFunc), "*source.OVirtSource.Init"), err)
 		}
+		duration := time.Since(startTime)
+		o.Logger.Infof("Successfully initialized %s in %f seconds", utils.ExtractFunctionName(initFunc), duration.Seconds())
 	}
 
 	return nil
@@ -97,10 +100,13 @@ func (o *OVirtSource) Sync(nbi *inventory.NetBoxInventory) error {
 		o.syncVms,
 	}
 	for _, syncFunc := range syncFunctions {
+		startTime := time.Now()
 		err := syncFunc(nbi)
 		if err != nil {
 			return err
 		}
+		duration := time.Since(startTime)
+		o.Logger.Infof("Successfully synced %s in %f seconds", utils.ExtractFunctionName(syncFunc), duration.Seconds())
 	}
 	return nil
 }

@@ -3,7 +3,9 @@ package utils
 import (
 	"fmt"
 	"net"
+	"reflect"
 	"regexp"
+	"runtime"
 	"strings"
 )
 
@@ -152,4 +154,17 @@ func SubnetContainsIpAddress(ipAddress string, subnet string) bool {
 		return false
 	}
 	return ipnet.Contains(ip)
+}
+
+// ExtractFunctionName attempts to extract the name of a function regardless of its signature.
+// Note: This function sacrifices type safety and assumes the caller ensures the correct usage.
+func ExtractFunctionName(i interface{}) string {
+	// Ensure the provided interface is actually a function
+	if reflect.TypeOf(i).Kind() != reflect.Func {
+		panic("Argument to extractFunctionName is not a function!")
+	}
+
+	fullFuncName := runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
+	funcNameParts := strings.Split(fullFuncName, ".")
+	return funcNameParts[len(funcNameParts)-1]
 }
