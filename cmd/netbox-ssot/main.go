@@ -11,10 +11,10 @@ import (
 )
 
 func main() {
-	starttime := time.Now()
+	startTime := time.Now()
 
 	// Parse configuration
-	fmt.Printf("Netbox-SSOT has started at %s\n", starttime.Format(time.RFC3339))
+	fmt.Printf("Netbox-SSOT has started at %s\n", startTime.Format(time.RFC3339))
 
 	config, err := parser.ParseConfig("config.yaml")
 	if err != nil {
@@ -76,4 +76,9 @@ func main() {
 		logger.Error(err)
 		return
 	}
+
+	duration := time.Since(startTime)
+	minutes := int(duration.Minutes())
+	seconds := int(duration.Seconds()) % 60
+	logger.Infof("Syncing took %d min %d sec in total", minutes, seconds)
 }
