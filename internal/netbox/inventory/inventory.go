@@ -21,6 +21,12 @@ type NetBoxInventory struct {
 	NetboxApi *service.NetboxAPI
 	// Tags is a list of all tags in the netbox inventory
 	Tags []*objects.Tag
+	// ContactGroupsIndexByName is a map of all contact groups indexed by their names.
+	ContactGroupsIndexByName map[string]*objects.ContactGroup
+	// ContactRolesIndexByName is a map of all contact roles indexed by their names.
+	ContactRolesIndexByName map[string]*objects.ContactRole
+	// ContactsIndexByName is a map of all contacts in the Netbox's inventory, indexed by their names
+	ContactsIndexByName map[string]*objects.Contact
 	// SitesIndexByName is a map of all sites in the Netbox's inventory, indexed by their name
 	SitesIndexByName map[string]*objects.Site
 	// ManufacturersIndexByName is a map of all manufacturers in the Netbox's inventory, indexed by their name
@@ -126,6 +132,10 @@ func (nbi *NetBoxInventory) Init() error {
 	// order matters. TODO: use parallelization in the future, on the init functions that can be parallelized
 	initFunctions := []func() error{
 		nbi.InitTags,
+		nbi.InitContactGroups,
+		nbi.InitContactRoles,
+		nbi.InitAdminContactRole,
+		nbi.InitContacts,
 		nbi.InitTenants,
 		nbi.InitSites,
 		nbi.InitManufacturers,
@@ -150,7 +160,7 @@ func (nbi *NetBoxInventory) Init() error {
 	for _, initFunc := range initFunctions {
 		startTime := time.Now()
 		if err := initFunc(); err != nil {
-			return err
+			return fmt.Errorf("%s: %s", err, utils.ExtractFunctionName(initFunc))
 		}
 		duration := time.Since(startTime)
 		nbi.Logger.Infof("Successfully initialized %s in %f seconds", utils.ExtractFunctionName(initFunc), duration.Seconds())

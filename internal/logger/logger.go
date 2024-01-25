@@ -57,7 +57,7 @@ func (l *Logger) Debugf(format string, v ...interface{}) error {
 
 func (l *Logger) Info(v ...interface{}) error {
 	if l.level <= INFO {
-		err := l.Output(2, fmt.Sprintf("INFO (%s): %s", l.name, fmt.Sprint(v...)))
+		err := l.Output(2, fmt.Sprintf("INFO  (%s): %s", l.name, fmt.Sprint(v...)))
 		if err != nil {
 			return err
 		}
@@ -68,7 +68,7 @@ func (l *Logger) Info(v ...interface{}) error {
 // Infof logs a formatted info message.
 func (l *Logger) Infof(format string, v ...interface{}) error {
 	if l.level <= INFO {
-		return l.Output(2, fmt.Sprintf("INFO (%s): %s", l.name, fmt.Sprintf(format, v...)))
+		return l.Output(2, fmt.Sprintf("INFO  (%s): %s", l.name, fmt.Sprintf(format, v...)))
 	}
 	return nil
 }
