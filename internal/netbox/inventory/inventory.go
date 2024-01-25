@@ -67,9 +67,9 @@ type NetBoxInventory struct {
 	// Orphan manager is a map of objectAPIPath to a set of managed ids for that object type.
 	//
 	// {
-	//		"/api/dcim/devices/": {22: true, 3: true, ...},
+	//		service.DeviceApiPath: {22: true, 3: true, ...},
 	//		"/api/dcim/interface/": {15: true, 36: true, ...},
-	//  	"/api/virtualization/clusters/": {121: true, 122: true, ...},
+	//  	service.Clusters: {121: true, 122: true, ...},
 	//  	"...": [...]
 	// }
 	//
@@ -82,7 +82,7 @@ type NetBoxInventory struct {
 	// get the dependency error.
 	//
 	// {
-	//   0: "/api/extras/tags/"
+	//   0: service.TagApiPath
 	//   1: "/api/extras/custom-fields/"
 	//
 	// }
@@ -103,20 +103,21 @@ func (nbi NetBoxInventory) String() string {
 func NewNetboxInventory(logger *logger.Logger, nbConfig *parser.NetboxConfig) *NetBoxInventory {
 	// Starts with 0 for easier integration with for loops
 	orphanObjectPriority := map[int]string{
-		0:  "/api/ipam/vlan-groups/",
-		1:  "/api/ipam/vlans/",
-		2:  "/api/ipam/ip-addresses/",
-		3:  "/api/dcim/interfaces/",
-		4:  "/api/virtualization/interfaces/",
-		5:  "/api/virtualization/virtual-machines/",
-		6:  "/api/dcim/devices/",
-		7:  "/api/dcim/platforms/",
-		8:  "/api/dcim/manufacturers",
-		9:  "/api/dcim/device-types/",
-		10: "/api/dcim-device-roles/",
-		11: "/api/virtualization/clusters/",
-		12: "/api/virtualization/cluster-types/",
-		13: "/api/virtualization/cluster-groups/",
+		0:  service.VlanGroupApiPath,
+		1:  service.VlanApiPath,
+		2:  service.IpAddressApiPath,
+		3:  service.InterfaceApiPath,
+		4:  service.VMInterfaceApiPath,
+		5:  service.VirtualMachineApiPath,
+		6:  service.DeviceApiPath,
+		7:  service.PlatformApiPath,
+		8:  service.ManufacturerApiPath,
+		9:  service.DeviceTypeApiPath,
+		10: service.DeviceRoleApiPath,
+		11: service.ClusterApiPath,
+		12: service.ClusterTypeApiPath,
+		13: service.ClusterGroupApiPath,
+		14: service.ContactApiPath,
 	}
 	nbi := &NetBoxInventory{Logger: logger, NetboxConfig: nbConfig, OrphanManager: make(map[string]map[int]bool), OrphanObjectPriority: orphanObjectPriority}
 	return nbi

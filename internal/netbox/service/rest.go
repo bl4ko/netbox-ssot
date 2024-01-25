@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"reflect"
 
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
@@ -17,17 +19,42 @@ type Response[T any] struct {
 	Results  []T     `json:"results"`
 }
 
+var type2path = map[reflect.Type]string{
+	reflect.TypeOf((*objects.VlanGroup)(nil)).Elem():    VlanGroupApiPath,
+	reflect.TypeOf((*objects.Vlan)(nil)).Elem():         VlanApiPath,
+	reflect.TypeOf((*objects.IPAddress)(nil)).Elem():    IpAddressApiPath,
+	reflect.TypeOf((*objects.ClusterType)(nil)).Elem():  ClusterTypeApiPath,
+	reflect.TypeOf((*objects.ClusterGroup)(nil)).Elem(): ClusterGroupApiPath,
+	reflect.TypeOf((*objects.Cluster)(nil)).Elem():      ClusterApiPath,
+	reflect.TypeOf((*objects.VM)(nil)).Elem():           VirtualMachineApiPath,
+	reflect.TypeOf((*objects.VMInterface)(nil)).Elem():  VMInterfaceApiPath,
+	reflect.TypeOf((*objects.Device)(nil)).Elem():       DeviceApiPath,
+	reflect.TypeOf((*objects.DeviceRole)(nil)).Elem():   DeviceRoleApiPath,
+	reflect.TypeOf((*objects.DeviceType)(nil)).Elem():   DeviceTypeApiPath,
+	reflect.TypeOf((*objects.Interface)(nil)).Elem():    InterfaceApiPath,
+	reflect.TypeOf((*objects.Site)(nil)).Elem():         SiteApiPath,
+	reflect.TypeOf((*objects.Manufacturer)(nil)).Elem(): ManufacturerApiPath,
+	reflect.TypeOf((*objects.Platform)(nil)).Elem():     PlatformApiPath,
+	reflect.TypeOf((*objects.Tenant)(nil)).Elem():       TenantApiPath,
+	reflect.TypeOf((*objects.ContactGroup)(nil)).Elem(): ContactGroupApiPath,
+	reflect.TypeOf((*objects.ContactRole)(nil)).Elem():  ContactRoleApiPath,
+	reflect.TypeOf((*objects.Contact)(nil)).Elem():      ContactApiPath,
+	reflect.TypeOf((*objects.CustomField)(nil)).Elem():  CustomFieldApiPath,
+	reflect.TypeOf((*objects.Tag)(nil)).Elem():          TagApiPath,
+}
+
 // GetAll queries all objects of type T from Netbox's API.
 // It is querying objects via pagination of limit=100.
 //
-// extraParams in a format of: &extraParam1=...&extraParam2=...
-func GetAll[T any](api *NetboxAPI, path string, extraParams string) ([]T, error) {
+// extraParams in a string format of: &extraParam1=...&extraParam2=...
+func GetAll[T any](api *NetboxAPI, extraParams string) ([]T, error) {
 	var allResults []T
+	var dummy T // Dummy variable for extracting type of generic
+	path := type2path[reflect.TypeOf(dummy)]
 	limit := 100
 	offset := 0
 
-	var zeroValueT T
-	api.Logger.Debugf("Getting all %T from Netbox", zeroValueT)
+	api.Logger.Debugf("Getting all %T from Netbox", dummy)
 
 	for {
 		queryPath := fmt.Sprintf("%s?limit=%d&offset=%d%s", path, limit, offset, extraParams)
@@ -54,16 +81,18 @@ func GetAll[T any](api *NetboxAPI, path string, extraParams string) ([]T, error)
 		offset += limit
 	}
 
-	api.Logger.Debugf("Successfully received all %T: %v", zeroValueT, allResults)
+	api.Logger.Debugf("Successfully received all %T: %v", dummy, allResults)
 
 	return allResults, nil
 }
 
 // Patch func patches the object of type T, with the given api path and body.
 // Path of the object (must contain the id), for example /api/dcim/devices/1/
-func Patch[T any](api *NetboxAPI, path string, body map[string]interface{}) (*T, error) {
-	var zeroValueT T // dummy variable for printf
-	api.Logger.Debugf("Patching %T with path %s with data: %v", zeroValueT, path, body)
+func Patch[T any](api *NetboxAPI, objectId int, body map[string]interface{}) (*T, error) {
+	var dummy T // dummy variable for printf
+	path := type2path[reflect.TypeOf(dummy)]
+	path = fmt.Sprintf("%s%d/", path, objectId)
+	api.Logger.Debugf("Patching %T with path %s with data: %v", dummy, path, body)
 
 	requestBody, err := json.Marshal(body)
 	if err != nil {
@@ -86,14 +115,15 @@ func Patch[T any](api *NetboxAPI, path string, body map[string]interface{}) (*T,
 		return nil, err
 	}
 
-	api.Logger.Debugf("Successfully patched %T: %v", zeroValueT, objectResponse)
+	api.Logger.Debugf("Successfully patched %T: %v", dummy, objectResponse)
 	return &objectResponse, nil
 }
 
 // Create func creates the new NetboxObject of type T, with the given api path and body.
-func Create[T any](api *NetboxAPI, path string, object *T) (*T, error) {
-	var zeroValueT T // dummy variable for printf
-	api.Logger.Debugf("Creating %T with path %s with data: %v", zeroValueT, path, object)
+func Create[T any](api *NetboxAPI, object *T) (*T, error) {
+	var dummy T // dummy variable for printf
+	path := type2path[reflect.TypeOf(dummy)]
+	api.Logger.Debugf("Creating %T with path %s with data: %v", dummy, path, object)
 
 	requestBody, err := utils.NetboxJsonMarshal(object)
 	if err != nil {
@@ -116,7 +146,7 @@ func Create[T any](api *NetboxAPI, path string, object *T) (*T, error) {
 		return nil, err
 	}
 
-	api.Logger.Debugf("Successfully created %T: %v", zeroValueT, objectResponse)
+	api.Logger.Debugf("Successfully created %T: %v", dummy, objectResponse)
 	return &objectResponse, nil
 }
 

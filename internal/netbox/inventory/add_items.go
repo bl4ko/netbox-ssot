@@ -1,7 +1,6 @@
 package inventory
 
 import (
-	"fmt"
 	"slices"
 
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
@@ -16,7 +15,7 @@ func (nbi *NetBoxInventory) AddTag(newTag *objects.Tag) (*objects.Tag, error) {
 	})
 	if existingTagIndex == -1 {
 		nbi.Logger.Debug("Tag ", newTag.Name, " does not exist in Netbox. Creating it...")
-		createdTag, err := service.Create[objects.Tag](nbi.NetboxApi, fmt.Sprintf("/api/extras/tags/%d/", nbi.Tags[existingTagIndex].Id), newTag)
+		createdTag, err := service.Create[objects.Tag](nbi.NetboxApi, newTag)
 		if err != nil {
 			return nil, err
 		}
@@ -24,20 +23,20 @@ func (nbi *NetBoxInventory) AddTag(newTag *objects.Tag) (*objects.Tag, error) {
 		return createdTag, nil
 	} else {
 		nbi.Logger.Debug("Tag ", newTag.Name, " already exists in Netbox...")
-		existingTag := nbi.Tags[existingTagIndex]
-		diffMap, err := utils.JsonDiffMapExceptId(newTag, existingTag)
+		oldTag := nbi.Tags[existingTagIndex]
+		diffMap, err := utils.JsonDiffMapExceptId(newTag, oldTag)
 		if err != nil {
 			return nil, err
 		}
 		if len(diffMap) > 0 {
-			patchedTag, err := service.Patch[objects.Tag](nbi.NetboxApi, fmt.Sprintf("/api/extras/tags/%d/", existingTag.Id), diffMap)
+			patchedTag, err := service.Patch[objects.Tag](nbi.NetboxApi, oldTag.Id, diffMap)
 			if err != nil {
 				return nil, err
 			}
 			nbi.Tags[existingTagIndex] = patchedTag
 			return patchedTag, nil
 		} else {
-			return existingTag, nil
+			return oldTag, nil
 		}
 	}
 }
@@ -46,14 +45,14 @@ func (nbi *NetBoxInventory) AddTag(newTag *objects.Tag) (*objects.Tag, error) {
 func (nbi *NetBoxInventory) AddContactRole(newContactRole *objects.ContactRole) error {
 	newContactRole.NetboxObject.Tags = []*objects.Tag{nbi.SsotTag}
 	if _, ok := nbi.ContactRolesIndexByName[newContactRole.Name]; ok {
-		existingContactRole := nbi.ContactRolesIndexByName[newContactRole.Name]
-		diffMap, err := utils.JsonDiffMapExceptId(newContactRole, existingContactRole)
+		oldContactRole := nbi.ContactRolesIndexByName[newContactRole.Name]
+		diffMap, err := utils.JsonDiffMapExceptId(newContactRole, oldContactRole)
 		if err != nil {
 			return err
 		}
 		if len(diffMap) > 0 {
 			nbi.Logger.Debug("Contact role ", newContactRole.Name, " already exists in Netbox but is out of date. Patching it... ")
-			patchedContactRole, err := service.Patch[objects.ContactRole](nbi.NetboxApi, fmt.Sprintf("/api/tenancy/contact-roles/%d/", existingContactRole.Id), diffMap)
+			patchedContactRole, err := service.Patch[objects.ContactRole](nbi.NetboxApi, oldContactRole.Id, diffMap)
 			if err != nil {
 				return err
 			}
@@ -63,7 +62,7 @@ func (nbi *NetBoxInventory) AddContactRole(newContactRole *objects.ContactRole) 
 		}
 	} else {
 		nbi.Logger.Debug("Contact role ", newContactRole.Name, " does not exist in Netbox. Creating it...")
-		newContactRole, err := service.Create[objects.ContactRole](nbi.NetboxApi, "/api/tenancy/contact-roles/", newContactRole)
+		newContactRole, err := service.Create[objects.ContactRole](nbi.NetboxApi, newContactRole)
 		if err != nil {
 			return err
 		}
@@ -75,14 +74,14 @@ func (nbi *NetBoxInventory) AddContactRole(newContactRole *objects.ContactRole) 
 // AddContactGroup adds contact group to the local netbox inventory.
 func (nbi *NetBoxInventory) AddContactGroup(newContactGroup *objects.ContactGroup) error {
 	if _, ok := nbi.ContactGroupsIndexByName[newContactGroup.Name]; ok {
-		existingContactGroup := nbi.ContactGroupsIndexByName[newContactGroup.Name]
-		diffMap, err := utils.JsonDiffMapExceptId(newContactGroup, existingContactGroup)
+		oldContactGroup := nbi.ContactGroupsIndexByName[newContactGroup.Name]
+		diffMap, err := utils.JsonDiffMapExceptId(newContactGroup, oldContactGroup)
 		if err != nil {
 			return err
 		}
 		if len(diffMap) > 0 {
 			nbi.Logger.Debug("Contact group ", newContactGroup.Name, " already exists in Netbox but is out of date. Patching it... ")
-			patchedContactGroup, err := service.Patch[objects.ContactGroup](nbi.NetboxApi, fmt.Sprintf("/api/tenancy/contact-groups/%d/", existingContactGroup.Id), diffMap)
+			patchedContactGroup, err := service.Patch[objects.ContactGroup](nbi.NetboxApi, oldContactGroup.Id, diffMap)
 			if err != nil {
 				return err
 			}
@@ -92,7 +91,7 @@ func (nbi *NetBoxInventory) AddContactGroup(newContactGroup *objects.ContactGrou
 		}
 	} else {
 		nbi.Logger.Debug("Contact group ", newContactGroup.Name, " does not exist in Netbox. Creating it...")
-		newContactGroup, err := service.Create[objects.ContactGroup](nbi.NetboxApi, "/api/tenancy/contact-groups/", newContactGroup)
+		newContactGroup, err := service.Create[objects.ContactGroup](nbi.NetboxApi, newContactGroup)
 		if err != nil {
 			return err
 		}
@@ -104,15 +103,15 @@ func (nbi *NetBoxInventory) AddContactGroup(newContactGroup *objects.ContactGrou
 // AddContact adds a contact to the local netbox inventory.
 func (nbi *NetBoxInventory) AddContact(newContact *objects.Contact) error {
 	if _, ok := nbi.ContactsIndexByName[newContact.Name]; ok {
-		existingContact := nbi.ContactsIndexByName[newContact.Name]
-		delete(nbi.OrphanManager["/api/tenancy/contacts/"], existingContact.Id)
-		diffMap, err := utils.JsonDiffMapExceptId(newContact, existingContact)
+		oldContact := nbi.ContactsIndexByName[newContact.Name]
+		delete(nbi.OrphanManager[service.ContactApiPath], oldContact.Id)
+		diffMap, err := utils.JsonDiffMapExceptId(newContact, oldContact)
 		if err != nil {
 			return err
 		}
 		if len(diffMap) > 0 {
 			nbi.Logger.Debug("Contact ", newContact.Name, " already exists in Netbox but is out of date. Patching it... ")
-			patchedContact, err := service.Patch[objects.Contact](nbi.NetboxApi, fmt.Sprintf("/api/tenancy/contacts/%d/", existingContact.Id), diffMap)
+			patchedContact, err := service.Patch[objects.Contact](nbi.NetboxApi, oldContact.Id, diffMap)
 			if err != nil {
 				return err
 			}
@@ -122,7 +121,7 @@ func (nbi *NetBoxInventory) AddContact(newContact *objects.Contact) error {
 		}
 	} else {
 		nbi.Logger.Debug("Contact ", newContact.Name, " does not exist in Netbox. Creating it...")
-		newContact, err := service.Create[objects.Contact](nbi.NetboxApi, "/api/tenancy/contacts/", newContact)
+		newContact, err := service.Create[objects.Contact](nbi.NetboxApi, newContact)
 		if err != nil {
 			return err
 		}
@@ -133,14 +132,14 @@ func (nbi *NetBoxInventory) AddContact(newContact *objects.Contact) error {
 
 func (nbi *NetBoxInventory) AddCustomField(newCf *objects.CustomField) error {
 	if _, ok := nbi.CustomFieldsIndexByName[newCf.Name]; ok {
-		existingCf := nbi.CustomFieldsIndexByName[newCf.Name]
-		diffMap, err := utils.JsonDiffMapExceptId(newCf, existingCf)
+		oldCustomField := nbi.CustomFieldsIndexByName[newCf.Name]
+		diffMap, err := utils.JsonDiffMapExceptId(newCf, oldCustomField)
 		if err != nil {
 			return err
 		}
 		if len(diffMap) > 0 {
 			nbi.Logger.Debug("Custom field ", newCf.Name, " already exists in Netbox but is out of date. Patching it... ")
-			patchedCf, err := service.Patch[objects.CustomField](nbi.NetboxApi, fmt.Sprintf("/api/extras/custom-fields/%d/", existingCf.Id), diffMap)
+			patchedCf, err := service.Patch[objects.CustomField](nbi.NetboxApi, oldCustomField.Id, diffMap)
 			if err != nil {
 				return err
 			}
@@ -150,7 +149,7 @@ func (nbi *NetBoxInventory) AddCustomField(newCf *objects.CustomField) error {
 		}
 	} else {
 		nbi.Logger.Debug("Custom field ", newCf.Name, " does not exist in Netbox. Creating it...")
-		newCf, err := service.Create[objects.CustomField](nbi.NetboxApi, "/api/extras/custom-fields/", newCf)
+		newCf, err := service.Create[objects.CustomField](nbi.NetboxApi, newCf)
 		if err != nil {
 			return err
 		}
@@ -163,14 +162,15 @@ func (nbi *NetBoxInventory) AddClusterGroup(newCg *objects.ClusterGroup) (*objec
 	newCg.Tags = append(newCg.Tags, nbi.SsotTag)
 	if _, ok := nbi.ClusterGroupsIndexByName[newCg.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
-		delete(nbi.OrphanManager["/api/virtualization/cluster-groups/"], nbi.ClusterGroupsIndexByName[newCg.Name].Id)
-		diffMap, err := utils.JsonDiffMapExceptId(newCg, nbi.ClusterGroupsIndexByName[newCg.Name])
+		oldCg := nbi.ClusterGroupsIndexByName[newCg.Name]
+		delete(nbi.OrphanManager[service.ClusterGroupApiPath], oldCg.Id)
+		diffMap, err := utils.JsonDiffMapExceptId(newCg, oldCg)
 		if err != nil {
 			return nil, err
 		}
 		if len(diffMap) > 0 {
 			nbi.Logger.Debug("Cluster group ", newCg.Name, " already exists in Netbox but is out of date. Patching it...")
-			patchedCg, err := service.Patch[objects.ClusterGroup](nbi.NetboxApi, fmt.Sprintf("/api/virtualization/cluster-groups/%d/", nbi.ClusterGroupsIndexByName[newCg.Name].Id), diffMap)
+			patchedCg, err := service.Patch[objects.ClusterGroup](nbi.NetboxApi, oldCg.Id, diffMap)
 			if err != nil {
 				return nil, err
 			}
@@ -180,7 +180,7 @@ func (nbi *NetBoxInventory) AddClusterGroup(newCg *objects.ClusterGroup) (*objec
 		}
 	} else {
 		nbi.Logger.Debug("Cluster group ", newCg.Name, " does not exist in Netbox. Creating it...")
-		newCg, err := service.Create[objects.ClusterGroup](nbi.NetboxApi, "/api/virtualization/cluster-groups/", newCg)
+		newCg, err := service.Create[objects.ClusterGroup](nbi.NetboxApi, newCg)
 		if err != nil {
 			return nil, err
 		}
@@ -195,14 +195,14 @@ func (nbi *NetBoxInventory) AddClusterType(newClusterType *objects.ClusterType) 
 	if _, ok := nbi.ClusterTypesIndexByName[newClusterType.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
 		oldClusterType := nbi.ClusterTypesIndexByName[newClusterType.Name]
-		delete(nbi.OrphanManager["/api/virtualization/cluster-types/"], nbi.ClusterTypesIndexByName[newClusterType.Name].Id)
-		diffMap, err := utils.JsonDiffMapExceptId(newClusterType, nbi.ClusterTypesIndexByName[newClusterType.Name])
+		delete(nbi.OrphanManager[service.ClusterTypeApiPath], oldClusterType.Id)
+		diffMap, err := utils.JsonDiffMapExceptId(newClusterType, oldClusterType)
 		if err != nil {
 			return nil, err
 		}
 		if len(diffMap) > 0 {
 			nbi.Logger.Debug("Cluster type ", newClusterType.Name, " already exists in Netbox but is out of date. Patching it...")
-			patchedClusterType, err := service.Patch[objects.ClusterType](nbi.NetboxApi, fmt.Sprintf("/api/virtualization/cluster-types/%d/", oldClusterType.Id), diffMap)
+			patchedClusterType, err := service.Patch[objects.ClusterType](nbi.NetboxApi, oldClusterType.Id, diffMap)
 			if err != nil {
 				return nil, err
 			}
@@ -215,7 +215,7 @@ func (nbi *NetBoxInventory) AddClusterType(newClusterType *objects.ClusterType) 
 		}
 	} else {
 		nbi.Logger.Debug("Cluster type ", newClusterType.Name, " does not exist in Netbox. Creating it...")
-		newClusterType, err := service.Create[objects.ClusterType](nbi.NetboxApi, "/api/virtualization/cluster-types/", newClusterType)
+		newClusterType, err := service.Create[objects.ClusterType](nbi.NetboxApi, newClusterType)
 		if err != nil {
 			return nil, err
 		}
@@ -229,14 +229,14 @@ func (nbi *NetBoxInventory) AddCluster(newCluster *objects.Cluster) error {
 	if _, ok := nbi.ClustersIndexByName[newCluster.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
 		oldCluster := nbi.ClustersIndexByName[newCluster.Name]
-		delete(nbi.OrphanManager["/api/virtualization/clusters/"], oldCluster.Id)
+		delete(nbi.OrphanManager[service.ClusterApiPath], oldCluster.Id)
 		diffMap, err := utils.JsonDiffMapExceptId(newCluster, oldCluster)
 		if err != nil {
 			return err
 		}
 		if len(diffMap) > 0 {
 			nbi.Logger.Debug("Cluster ", newCluster.Name, " already exists in Netbox but is out of date. Patching it...")
-			patchedCluster, err := service.Patch[objects.Cluster](nbi.NetboxApi, fmt.Sprintf("/api/virtualization/clusters/%d/", oldCluster.Id), diffMap)
+			patchedCluster, err := service.Patch[objects.Cluster](nbi.NetboxApi, oldCluster.Id, diffMap)
 			if err != nil {
 				return err
 			}
@@ -246,7 +246,7 @@ func (nbi *NetBoxInventory) AddCluster(newCluster *objects.Cluster) error {
 		}
 	} else {
 		nbi.Logger.Debug("Cluster ", newCluster.Name, " does not exist in Netbox. Creating it...")
-		newCluster, err := service.Create[objects.Cluster](nbi.NetboxApi, "/api/virtualization/clusters/", newCluster)
+		newCluster, err := service.Create[objects.Cluster](nbi.NetboxApi, newCluster)
 		if err != nil {
 			return err
 		}
@@ -260,14 +260,14 @@ func (nbi *NetBoxInventory) AddDeviceRole(newDeviceRole *objects.DeviceRole) err
 	if _, ok := nbi.DeviceRolesIndexByName[newDeviceRole.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
 		oldDeviceRole := nbi.DeviceRolesIndexByName[newDeviceRole.Name]
-		delete(nbi.OrphanManager["/api/dcim/device-roles/"], nbi.DeviceRolesIndexByName[newDeviceRole.Name].Id)
+		delete(nbi.OrphanManager[service.DeviceRoleApiPath], nbi.DeviceRolesIndexByName[newDeviceRole.Name].Id)
 		diffMap, err := utils.JsonDiffMapExceptId(newDeviceRole, oldDeviceRole)
 		if err != nil {
 			return err
 		}
 		if len(diffMap) > 0 {
 			nbi.Logger.Debug("Device role ", newDeviceRole.Name, " already exists in Netbox but is out of date. Patching it...")
-			patchedDeviceRole, err := service.Patch[objects.DeviceRole](nbi.NetboxApi, fmt.Sprintf("/api/dcim/device-roles/%d/", oldDeviceRole.Id), diffMap)
+			patchedDeviceRole, err := service.Patch[objects.DeviceRole](nbi.NetboxApi, oldDeviceRole.Id, diffMap)
 			if err != nil {
 				return err
 			}
@@ -277,7 +277,7 @@ func (nbi *NetBoxInventory) AddDeviceRole(newDeviceRole *objects.DeviceRole) err
 		}
 	} else {
 		nbi.Logger.Debug("Device role ", newDeviceRole.Name, " does not exist in Netbox. Creating it...")
-		newDeviceRole, err := service.Create[objects.DeviceRole](nbi.NetboxApi, "/api/dcim/device-roles/", newDeviceRole)
+		newDeviceRole, err := service.Create[objects.DeviceRole](nbi.NetboxApi, newDeviceRole)
 		if err != nil {
 			return err
 		}
@@ -291,14 +291,14 @@ func (nbi *NetBoxInventory) AddManufacturer(newManufacturer *objects.Manufacture
 	if _, ok := nbi.ManufacturersIndexByName[newManufacturer.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
 		oldManufacturer := nbi.ManufacturersIndexByName[newManufacturer.Name]
-		delete(nbi.OrphanManager["/api/dcim/manufacturers/"], oldManufacturer.Id)
+		delete(nbi.OrphanManager[service.ManufacturerApiPath], oldManufacturer.Id)
 		diffMap, err := utils.JsonDiffMapExceptId(newManufacturer, oldManufacturer)
 		if err != nil {
 			return nil, err
 		}
 		if len(diffMap) > 0 {
 			nbi.Logger.Debug("Manufacturer ", newManufacturer.Name, " already exists in Netbox but is out of date. Patching it...")
-			patchedManufacturer, err := service.Patch[objects.Manufacturer](nbi.NetboxApi, fmt.Sprintf("/api/dcim/manufacturers/%d/", oldManufacturer.Id), diffMap)
+			patchedManufacturer, err := service.Patch[objects.Manufacturer](nbi.NetboxApi, oldManufacturer.Id, diffMap)
 			if err != nil {
 				return nil, err
 			}
@@ -308,7 +308,7 @@ func (nbi *NetBoxInventory) AddManufacturer(newManufacturer *objects.Manufacture
 		}
 	} else {
 		nbi.Logger.Debug("Manufacturer ", newManufacturer.Name, " does not exist in Netbox. Creating it...")
-		newManufacturer, err := service.Create[objects.Manufacturer](nbi.NetboxApi, "/api/dcim/manufacturers/", newManufacturer)
+		newManufacturer, err := service.Create[objects.Manufacturer](nbi.NetboxApi, newManufacturer)
 		if err != nil {
 			return nil, err
 		}
@@ -322,14 +322,14 @@ func (nbi *NetBoxInventory) AddDeviceType(newDeviceType *objects.DeviceType) (*o
 	if _, ok := nbi.DeviceTypesIndexByModel[newDeviceType.Model]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
 		oldDeviceType := nbi.DeviceTypesIndexByModel[newDeviceType.Model]
-		delete(nbi.OrphanManager["/api/dcim/device-types/"], oldDeviceType.Id)
+		delete(nbi.OrphanManager[service.DeviceTypeApiPath], oldDeviceType.Id)
 		diffMap, err := utils.JsonDiffMapExceptId(newDeviceType, oldDeviceType)
 		if err != nil {
 			return nil, err
 		}
 		if len(diffMap) > 0 {
 			nbi.Logger.Debug("Device type ", newDeviceType.Model, " already exists in Netbox but is out of date. Patching it...")
-			patchedDeviceType, err := service.Patch[objects.DeviceType](nbi.NetboxApi, fmt.Sprintf("/api/dcim/device-types/%d/", oldDeviceType.Id), diffMap)
+			patchedDeviceType, err := service.Patch[objects.DeviceType](nbi.NetboxApi, oldDeviceType.Id, diffMap)
 			if err != nil {
 				return nil, err
 			}
@@ -339,7 +339,7 @@ func (nbi *NetBoxInventory) AddDeviceType(newDeviceType *objects.DeviceType) (*o
 		}
 	} else {
 		nbi.Logger.Debug("Device type ", newDeviceType.Model, " does not exist in Netbox. Creating it...")
-		newDeviceType, err := service.Create[objects.DeviceType](nbi.NetboxApi, "/api/dcim/device-types/", newDeviceType)
+		newDeviceType, err := service.Create[objects.DeviceType](nbi.NetboxApi, newDeviceType)
 		if err != nil {
 			return nil, err
 		}
@@ -352,15 +352,15 @@ func (nbi *NetBoxInventory) AddPlatform(newPlatform *objects.Platform) (*objects
 	newPlatform.Tags = append(newPlatform.Tags, nbi.SsotTag)
 	if _, ok := nbi.PlatformsIndexByName[newPlatform.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
-		delete(nbi.OrphanManager["/api/dcim/platforms/"], nbi.PlatformsIndexByName[newPlatform.Name].Id)
-		diffMap, err := utils.JsonDiffMapExceptId(newPlatform, nbi.PlatformsIndexByName[newPlatform.Name])
 		oldPlatform := nbi.PlatformsIndexByName[newPlatform.Name]
+		delete(nbi.OrphanManager[service.PlatformApiPath], oldPlatform.Id)
+		diffMap, err := utils.JsonDiffMapExceptId(newPlatform, oldPlatform)
 		if err != nil {
 			return nil, err
 		}
 		if len(diffMap) > 0 {
 			nbi.Logger.Debug("Platform ", newPlatform.Name, " already exists in Netbox but is out of date. Patching it...")
-			patchedPlatform, err := service.Patch[objects.Platform](nbi.NetboxApi, fmt.Sprintf("/api/dcim/platforms/%d/", oldPlatform.Id), diffMap)
+			patchedPlatform, err := service.Patch[objects.Platform](nbi.NetboxApi, oldPlatform.Id, diffMap)
 			if err != nil {
 				return nil, err
 			}
@@ -370,7 +370,7 @@ func (nbi *NetBoxInventory) AddPlatform(newPlatform *objects.Platform) (*objects
 		}
 	} else {
 		nbi.Logger.Debug("Platform ", newPlatform.Name, " does not exist in Netbox. Creating it...")
-		newPlatform, err := service.Create[objects.Platform](nbi.NetboxApi, "/api/dcim/platforms/", newPlatform)
+		newPlatform, err := service.Create[objects.Platform](nbi.NetboxApi, newPlatform)
 		if err != nil {
 			return nil, err
 		}
@@ -383,15 +383,14 @@ func (nbi *NetBoxInventory) AddDevice(newDevice *objects.Device) (*objects.Devic
 	newDevice.Tags = append(newDevice.Tags, nbi.SsotTag)
 	if _, ok := nbi.DevicesIndexByNameAndSiteId[newDevice.Name][newDevice.Site.Id]; ok {
 		oldDevice := nbi.DevicesIndexByNameAndSiteId[newDevice.Name][newDevice.Site.Id]
-		// Remove id from orphan manager, because it still exists in the sources
-		delete(nbi.OrphanManager["/api/dcim/devices/"], nbi.DevicesIndexByNameAndSiteId[newDevice.Name][newDevice.Site.Id].Id)
-		diffMap, err := utils.JsonDiffMapExceptId(newDevice, nbi.DevicesIndexByNameAndSiteId[newDevice.Name][newDevice.Site.Id])
+		delete(nbi.OrphanManager[service.DeviceApiPath], oldDevice.Id)
+		diffMap, err := utils.JsonDiffMapExceptId(newDevice, oldDevice)
 		if err != nil {
 			return nil, err
 		}
 		if len(diffMap) > 0 {
 			nbi.Logger.Debug("Device ", newDevice.Name, " already exists in Netbox but is out of date. Patching it...")
-			patchedDevice, err := service.Patch[objects.Device](nbi.NetboxApi, fmt.Sprintf("/api/dcim/devices/%d/", oldDevice.Id), diffMap)
+			patchedDevice, err := service.Patch[objects.Device](nbi.NetboxApi, oldDevice.Id, diffMap)
 			if err != nil {
 				return nil, err
 			}
@@ -401,7 +400,7 @@ func (nbi *NetBoxInventory) AddDevice(newDevice *objects.Device) (*objects.Devic
 		}
 	} else {
 		nbi.Logger.Debug("Device ", newDevice.Name, " does not exist in Netbox. Creating it...")
-		newDevice, err := service.Create[objects.Device](nbi.NetboxApi, "/api/dcim/devices/", newDevice)
+		newDevice, err := service.Create[objects.Device](nbi.NetboxApi, newDevice)
 		if err != nil {
 			return nil, err
 		}
@@ -418,14 +417,14 @@ func (nbi *NetBoxInventory) AddVlanGroup(newVlanGroup *objects.VlanGroup) (*obje
 	if _, ok := nbi.VlanGroupsIndexByName[newVlanGroup.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
 		oldVlanGroup := nbi.VlanGroupsIndexByName[newVlanGroup.Name]
-		delete(nbi.OrphanManager["/api/ipam/vlan-groups/"], oldVlanGroup.Id)
+		delete(nbi.OrphanManager[service.VlanGroupApiPath], oldVlanGroup.Id)
 		diffMap, err := utils.JsonDiffMapExceptId(newVlanGroup, oldVlanGroup)
 		if err != nil {
 			return nil, err
 		}
 		if len(diffMap) > 0 {
 			nbi.Logger.Debug("VlanGroup ", newVlanGroup.Name, " already exists in Netbox but is out of date. Patching it...")
-			patchedVlanGroup, err := service.Patch[objects.VlanGroup](nbi.NetboxApi, fmt.Sprintf("/api/ipam/vlan-groups/%d/", oldVlanGroup.Id), diffMap)
+			patchedVlanGroup, err := service.Patch[objects.VlanGroup](nbi.NetboxApi, oldVlanGroup.Id, diffMap)
 			if err != nil {
 				return nil, err
 			}
@@ -435,7 +434,7 @@ func (nbi *NetBoxInventory) AddVlanGroup(newVlanGroup *objects.VlanGroup) (*obje
 		}
 	} else {
 		nbi.Logger.Debug("Vlan ", newVlanGroup.Name, " does not exist in Netbox. Creating it...")
-		newVlan, err := service.Create[objects.VlanGroup](nbi.NetboxApi, "/api/ipam/vlan-groups/", newVlanGroup)
+		newVlan, err := service.Create[objects.VlanGroup](nbi.NetboxApi, newVlanGroup)
 		if err != nil {
 			return nil, err
 		}
@@ -449,14 +448,14 @@ func (nbi *NetBoxInventory) AddVlan(newVlan *objects.Vlan) (*objects.Vlan, error
 	if _, ok := nbi.VlansIndexByVlanGroupIdAndVid[newVlan.Group.Id][newVlan.Vid]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
 		oldVlan := nbi.VlansIndexByVlanGroupIdAndVid[newVlan.Group.Id][newVlan.Vid]
-		delete(nbi.OrphanManager["/api/ipam/vlans/"], nbi.VlansIndexByVlanGroupIdAndVid[newVlan.Group.Id][newVlan.Vid].Id)
-		diffMap, err := utils.JsonDiffMapExceptId(newVlan, nbi.VlansIndexByVlanGroupIdAndVid[newVlan.Group.Id][newVlan.Vid])
+		delete(nbi.OrphanManager[service.VlanApiPath], oldVlan.Id)
+		diffMap, err := utils.JsonDiffMapExceptId(newVlan, oldVlan)
 		if err != nil {
 			return nil, err
 		}
 		if len(diffMap) > 0 {
 			nbi.Logger.Debug("Vlan ", newVlan.Name, " already exists in Netbox but is out of date. Patching it...")
-			patchedVlan, err := service.Patch[objects.Vlan](nbi.NetboxApi, fmt.Sprintf("/api/ipam/vlans/%d/", oldVlan.Id), diffMap)
+			patchedVlan, err := service.Patch[objects.Vlan](nbi.NetboxApi, oldVlan.Id, diffMap)
 			if err != nil {
 				return nil, err
 			}
@@ -466,7 +465,7 @@ func (nbi *NetBoxInventory) AddVlan(newVlan *objects.Vlan) (*objects.Vlan, error
 		}
 	} else {
 		nbi.Logger.Debug("Vlan ", newVlan.Name, " does not exist in Netbox. Creating it...")
-		newVlan, err := service.Create[objects.Vlan](nbi.NetboxApi, "/api/ipam/vlans/", newVlan)
+		newVlan, err := service.Create[objects.Vlan](nbi.NetboxApi, newVlan)
 		if err != nil {
 			return nil, err
 		}
@@ -482,7 +481,7 @@ func (nbi *NetBoxInventory) AddInterface(newInterface *objects.Interface) (*obje
 	newInterface.Tags = append(newInterface.Tags, nbi.SsotTag)
 	if _, ok := nbi.InterfacesIndexByDeviceIdAndName[newInterface.Device.Id][newInterface.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
-		delete(nbi.OrphanManager["/api/dcim/interfaces/"], nbi.InterfacesIndexByDeviceIdAndName[newInterface.Device.Id][newInterface.Name].Id)
+		delete(nbi.OrphanManager[service.InterfaceApiPath], nbi.InterfacesIndexByDeviceIdAndName[newInterface.Device.Id][newInterface.Name].Id)
 		diffMap, err := utils.JsonDiffMapExceptId(newInterface, nbi.InterfacesIndexByDeviceIdAndName[newInterface.Device.Id][newInterface.Name])
 		oldIntf := nbi.InterfacesIndexByDeviceIdAndName[newInterface.Device.Id][newInterface.Name]
 		if err != nil {
@@ -490,7 +489,7 @@ func (nbi *NetBoxInventory) AddInterface(newInterface *objects.Interface) (*obje
 		}
 		if len(diffMap) > 0 {
 			nbi.Logger.Debug("Interface ", newInterface.Name, " already exists in Netbox but is out of date. Patching it...")
-			patchedInterface, err := service.Patch[objects.Interface](nbi.NetboxApi, fmt.Sprintf("/api/dcim/interfaces/%d/", oldIntf.Id), diffMap)
+			patchedInterface, err := service.Patch[objects.Interface](nbi.NetboxApi, oldIntf.Id, diffMap)
 			if err != nil {
 				return nil, err
 			}
@@ -500,7 +499,7 @@ func (nbi *NetBoxInventory) AddInterface(newInterface *objects.Interface) (*obje
 		}
 	} else {
 		nbi.Logger.Debug("Interface ", newInterface.Name, " does not exist in Netbox. Creating it...")
-		newInterface, err := service.Create[objects.Interface](nbi.NetboxApi, "/api/dcim/interfaces/", newInterface)
+		newInterface, err := service.Create[objects.Interface](nbi.NetboxApi, newInterface)
 		if err != nil {
 			return nil, err
 		}
@@ -516,7 +515,7 @@ func (nbi *NetBoxInventory) AddVM(newVm *objects.VM) (*objects.VM, error) {
 	newVm.Tags = append(newVm.Tags, nbi.SsotTag)
 	if _, ok := nbi.VMsIndexByName[newVm.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
-		delete(nbi.OrphanManager["/api/virtualization/virtual-machines/"], nbi.VMsIndexByName[newVm.Name].Id)
+		delete(nbi.OrphanManager[service.VirtualMachineApiPath], nbi.VMsIndexByName[newVm.Name].Id)
 		diffMap, err := utils.JsonDiffMapExceptId(newVm, nbi.VMsIndexByName[newVm.Name])
 		oldVm := nbi.VMsIndexByName[newVm.Name]
 		if err != nil {
@@ -524,7 +523,7 @@ func (nbi *NetBoxInventory) AddVM(newVm *objects.VM) (*objects.VM, error) {
 		}
 		if len(diffMap) > 0 {
 			nbi.Logger.Debug("VM ", newVm.Name, " already exists in Netbox but is out of date. Patching it...")
-			patchedVm, err := service.Patch[objects.VM](nbi.NetboxApi, fmt.Sprintf("/api/virtualization/virtual-machines/%d/", oldVm.Id), diffMap)
+			patchedVm, err := service.Patch[objects.VM](nbi.NetboxApi, oldVm.Id, diffMap)
 			if err != nil {
 				return nil, err
 			}
@@ -534,7 +533,7 @@ func (nbi *NetBoxInventory) AddVM(newVm *objects.VM) (*objects.VM, error) {
 		}
 	} else {
 		nbi.Logger.Debug("VM ", newVm.Name, " does not exist in Netbox. Creating it...")
-		newVm, err := service.Create[objects.VM](nbi.NetboxApi, "/api/virtualization/virtual-machines/", newVm)
+		newVm, err := service.Create[objects.VM](nbi.NetboxApi, newVm)
 		if err != nil {
 			return nil, err
 		}
@@ -548,7 +547,7 @@ func (nbi *NetBoxInventory) AddVMInterface(newVMInterface *objects.VMInterface) 
 	newVMInterface.Tags = append(newVMInterface.Tags, nbi.SsotTag)
 	if _, ok := nbi.VMInterfacesIndexByVMIdAndName[newVMInterface.VM.Id][newVMInterface.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
-		delete(nbi.OrphanManager["/api/virtualization/interfaces/"], nbi.VMInterfacesIndexByVMIdAndName[newVMInterface.VM.Id][newVMInterface.Name].Id)
+		delete(nbi.OrphanManager[service.VMInterfaceApiPath], nbi.VMInterfacesIndexByVMIdAndName[newVMInterface.VM.Id][newVMInterface.Name].Id)
 		diffMap, err := utils.JsonDiffMapExceptId(newVMInterface, nbi.VMInterfacesIndexByVMIdAndName[newVMInterface.VM.Id][newVMInterface.Name])
 		oldVmIntf := nbi.VMInterfacesIndexByVMIdAndName[newVMInterface.VM.Id][newVMInterface.Name]
 		if err != nil {
@@ -556,7 +555,7 @@ func (nbi *NetBoxInventory) AddVMInterface(newVMInterface *objects.VMInterface) 
 		}
 		if len(diffMap) > 0 {
 			nbi.Logger.Debug("VM interface ", newVMInterface.Name, " already exists in Netbox but is out of date. Patching it...")
-			patchedVMInterface, err := service.Patch[objects.VMInterface](nbi.NetboxApi, fmt.Sprintf("/api/virtualization/interfaces/%d/", oldVmIntf.Id), diffMap)
+			patchedVMInterface, err := service.Patch[objects.VMInterface](nbi.NetboxApi, oldVmIntf.Id, diffMap)
 			if err != nil {
 				return nil, err
 			}
@@ -566,7 +565,7 @@ func (nbi *NetBoxInventory) AddVMInterface(newVMInterface *objects.VMInterface) 
 		}
 	} else {
 		nbi.Logger.Debug("VM interface ", newVMInterface.Name, " does not exist in Netbox. Creating it...")
-		newVMInterface, err := service.Create[objects.VMInterface](nbi.NetboxApi, "/api/virtualization/interfaces/", newVMInterface)
+		newVMInterface, err := service.Create[objects.VMInterface](nbi.NetboxApi, newVMInterface)
 		if err != nil {
 			return nil, err
 		}
@@ -582,7 +581,7 @@ func (nbi *NetBoxInventory) AddIPAddress(newIPAddress *objects.IPAddress) (*obje
 	newIPAddress.Tags = append(newIPAddress.Tags, nbi.SsotTag)
 	if _, ok := nbi.IPAdressesIndexByAddress[newIPAddress.Address]; ok {
 		// Delete id from orphan manager, because it still exists in the sources
-		delete(nbi.OrphanManager["/api/ipam/ip-addresses/"], nbi.IPAdressesIndexByAddress[newIPAddress.Address].Id)
+		delete(nbi.OrphanManager[service.IpAddressApiPath], nbi.IPAdressesIndexByAddress[newIPAddress.Address].Id)
 		diffMap, err := utils.JsonDiffMapExceptId(newIPAddress, nbi.IPAdressesIndexByAddress[newIPAddress.Address])
 		oldIpAddress := nbi.IPAdressesIndexByAddress[newIPAddress.Address]
 		if err != nil {
@@ -590,7 +589,7 @@ func (nbi *NetBoxInventory) AddIPAddress(newIPAddress *objects.IPAddress) (*obje
 		}
 		if len(diffMap) > 0 {
 			nbi.Logger.Debug("IP address ", newIPAddress.Address, " already exists in Netbox but is out of date. Patching it...")
-			patchedIPAddress, err := service.Patch[objects.IPAddress](nbi.NetboxApi, fmt.Sprintf("/api/ipam/ip-addresses/%d/", oldIpAddress.Id), diffMap)
+			patchedIPAddress, err := service.Patch[objects.IPAddress](nbi.NetboxApi, oldIpAddress.Id, diffMap)
 			if err != nil {
 				return nil, err
 			}
@@ -600,7 +599,7 @@ func (nbi *NetBoxInventory) AddIPAddress(newIPAddress *objects.IPAddress) (*obje
 		}
 	} else {
 		nbi.Logger.Debug("IP address ", newIPAddress.Address, " does not exist in Netbox. Creating it...")
-		newIPAddress, err := service.Create[objects.IPAddress](nbi.NetboxApi, "/api/ipam/ip-addresses/", newIPAddress)
+		newIPAddress, err := service.Create[objects.IPAddress](nbi.NetboxApi, newIPAddress)
 		if err != nil {
 			return nil, err
 		}

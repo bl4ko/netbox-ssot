@@ -150,17 +150,17 @@ func validateNetboxConfig(config *Config) error {
 }
 
 func validateSourceConfig(config *Config) error {
-	// Valicate Sources
+	// Validate Sources
 	for i := range config.Sources {
 		externalSource := &config.Sources[i]
-		externalSourceStr := "source[" + externalSource.Name + "]."
+		externalSourceStr := "source[" + externalSource.Name + "]"
 		if externalSource.Name == "" {
 			return fmt.Errorf("%s: name cannot be empty", externalSourceStr)
 		}
 		if externalSource.HTTPScheme == "" {
 			externalSource.HTTPScheme = "https"
 		} else if externalSource.HTTPScheme != HTTP && externalSource.HTTPScheme != HTTPS {
-			return errors.New(externalSourceStr + "httpScheme must be either http or https. Is " + string(externalSource.HTTPScheme))
+			return fmt.Errorf("%s.httpScheme must be either http or https. Is %s", externalSourceStr, string(externalSource.HTTPScheme))
 		}
 		if externalSource.Hostname == "" {
 			return fmt.Errorf("%s: hostname cannot be empty", externalSourceStr)
@@ -186,48 +186,48 @@ func validateSourceConfig(config *Config) error {
 		case Ovirt:
 		case Vmware:
 		default:
-			return fmt.Errorf("%stype is not valid", externalSourceStr)
+			return fmt.Errorf("%s.type is not valid", externalSourceStr)
 		}
 		if len(externalSource.HostSiteRelations) > 0 {
 			err := utils.ValidateRegexRelations(externalSource.HostSiteRelations)
 			if err != nil {
-				return fmt.Errorf("%shostSiteRelations: %s", externalSourceStr, err)
+				return fmt.Errorf("%s.hostSiteRelations: %s", externalSourceStr, err)
 			}
 		}
 		if len(externalSource.ClusterSiteRelations) > 0 {
 			err := utils.ValidateRegexRelations(externalSource.ClusterSiteRelations)
 			if err != nil {
-				return fmt.Errorf("%sclusterSiteRelations: %s", externalSourceStr, err)
+				return fmt.Errorf("%s.clusterSiteRelations: %s", externalSourceStr, err)
 			}
 		}
 		if len(externalSource.ClusterTenantRelations) > 0 {
 			err := utils.ValidateRegexRelations(externalSource.ClusterTenantRelations)
 			if err != nil {
-				return fmt.Errorf("%sclusterTenantRelations: %s", externalSourceStr, err)
+				return fmt.Errorf("%s.clusterTenantRelations: %s", externalSourceStr, err)
 			}
 		}
 		if len(externalSource.HostTenantRelations) > 0 {
 			err := utils.ValidateRegexRelations(externalSource.HostTenantRelations)
 			if err != nil {
-				return fmt.Errorf("%shostTenantRelations: %s", externalSourceStr, err)
+				return fmt.Errorf("%s.hostTenantRelations: %s", externalSourceStr, err)
 			}
 		}
 		if len(externalSource.VmTenantRelations) > 0 {
 			err := utils.ValidateRegexRelations(externalSource.VmTenantRelations)
 			if err != nil {
-				return fmt.Errorf("%svmTenantRelations: %s", externalSourceStr, err)
+				return fmt.Errorf("%s.vmTenantRelations: %s", externalSourceStr, err)
 			}
 		}
 		if len(externalSource.VlanGroupRelations) > 0 {
 			err := utils.ValidateRegexRelations(externalSource.VlanGroupRelations)
 			if err != nil {
-				return fmt.Errorf("%svlanGroupRelations: %v", externalSourceStr, err)
+				return fmt.Errorf("%s.vlanGroupRelations: %v", externalSourceStr, err)
 			}
 		}
 		if len(externalSource.VlanTenantRelations) > 0 {
 			err := utils.ValidateRegexRelations((externalSource.VlanTenantRelations))
 			if err != nil {
-				return fmt.Errorf("%svlanTenantRelations: %v", externalSourceStr, err)
+				return fmt.Errorf("%s.vlanTenantRelations: %v", externalSourceStr, err)
 			}
 		}
 	}
