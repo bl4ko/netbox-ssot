@@ -8,10 +8,6 @@ Currently the supported external data sources types are:
 - `vmware`
 
 
-> This plugin operates only with objects that have `netbox-ssot` Tag assigned to them.
-> So if you want your existing objects to be managed by it, you have to assign them `netbox-ssot`  Tag.
-
-
 ## Configuration
 
 Example config can be found in [example section](#example-config)

@@ -3,10 +3,11 @@ package service
 // Here all mappings are defined so we don't hardcode api paths of objects
 // in our code.
 const (
-	ContactGroupApiPath = "/api/tenancy/contact-groups/"
-	ContactRoleApiPath  = "/api/tenancy/contact-roles/"
-	ContactApiPath      = "/api/tenancy/contacts/"
-	TenantApiPath       = "/api/tenancy/tenants/"
+	ContactGroupApiPath      = "/api/tenancy/contact-groups/"
+	ContactRoleApiPath       = "/api/tenancy/contact-roles/"
+	ContactApiPath           = "/api/tenancy/contacts/"
+	TenantApiPath            = "/api/tenancy/tenants/"
+	ContactAssignmentApiPath = "/api/tenancy/contact-assignments/"
 
 	VlanGroupApiPath = "/api/ipam/vlan-groups/"
 	VlanApiPath      = "/api/ipam/vlans/"

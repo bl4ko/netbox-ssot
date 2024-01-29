@@ -71,3 +71,33 @@ type Contact struct {
 func (c Contact) String() string {
 	return fmt.Sprintf("Contact{Name: %s}", c.Name)
 }
+
+type ContactAssignmentPriority struct {
+	Choice
+}
+
+// https://github.com/netbox-community/netbox/blob/487f1ccfde26ef3c1f8a28089826acc0cd6fadb2/netbox/tenancy/choices.py#L10
+var (
+	ContactAssignmentPriorityPrimary   = ContactAssignmentPriority{Choice{Value: "primary", Label: "Primary"}}
+	ContactAssignmentPrioritySecondary = ContactAssignmentPriority{Choice{Value: "secondary", Label: "Secondary"}}
+	ContactAssignmentPriorityTertiary  = ContactAssignmentPriority{Choice{Value: "tertiary", Label: "Tertiary"}}
+	ContactAssignmentPriorityInactive  = ContactAssignmentPriority{Choice{Value: "inactive", Label: "Inactive"}}
+)
+
+type ContactAssignment struct {
+	NetboxObject
+	// Content type (e.g. virtualization.virtual_machine). This field is necessary
+	ContentType string `json:"content_type,omitempty"`
+	// Id of the dependent object. This field is necessary
+	ObjectId int `json:"object_id,omitempty"`
+	// Contact for this assignment. This field is necessary
+	Contact *Contact `json:"contact,omitempty"`
+	// Role of the Contact assignment. This field is necessary
+	Role *ContactRole `json:"role,omitempty"`
+	// Priority of the Contact Assignment
+	Priority *ContactAssignmentPriority `json:"priority,omitempty"`
+}
+
+func (ca ContactAssignment) String() string {
+	return fmt.Sprintf("ContactAssignment{ContentType: %s, ObjectId: %d, Contact: %v, Role: %v}", ca.ContentType, ca.ObjectId, ca.Contact, ca.Role)
+}

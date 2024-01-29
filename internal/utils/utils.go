@@ -168,3 +168,5 @@ func ExtractFunctionName(i interface{}) string {
 	funcNameParts := strings.Split(fullFuncName, ".")
 	return funcNameParts[len(funcNameParts)-1]
 }
+
+// Netbox description field

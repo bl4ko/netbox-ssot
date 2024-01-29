@@ -27,6 +27,8 @@ type NetBoxInventory struct {
 	ContactRolesIndexByName map[string]*objects.ContactRole
 	// ContactsIndexByName is a map of all contacts in the Netbox's inventory, indexed by their names
 	ContactsIndexByName map[string]*objects.Contact
+	// ContactAssignmentsIndexByContentTypeAndObjectIdAndContactIdAndRoleId is a map of all contact assignments indexed by their content type, object id, contact id and role id.
+	ContactAssignmentsIndexByContentTypeAndObjectIdAndContactIdAndRoleId map[string]map[int]map[int]map[int]*objects.ContactAssignment
 	// SitesIndexByName is a map of all sites in the Netbox's inventory, indexed by their name
 	SitesIndexByName map[string]*objects.Site
 	// ManufacturersIndexByName is a map of all manufacturers in the Netbox's inventory, indexed by their name
@@ -111,13 +113,14 @@ func NewNetboxInventory(logger *logger.Logger, nbConfig *parser.NetboxConfig) *N
 		5:  service.VirtualMachineApiPath,
 		6:  service.DeviceApiPath,
 		7:  service.PlatformApiPath,
-		8:  service.ManufacturerApiPath,
-		9:  service.DeviceTypeApiPath,
+		8:  service.DeviceTypeApiPath,
+		9:  service.ManufacturerApiPath,
 		10: service.DeviceRoleApiPath,
 		11: service.ClusterApiPath,
 		12: service.ClusterTypeApiPath,
 		13: service.ClusterGroupApiPath,
 		14: service.ContactApiPath,
+		15: service.ContactAssignmentApiPath,
 	}
 	nbi := &NetBoxInventory{Logger: logger, NetboxConfig: nbConfig, OrphanManager: make(map[string]map[int]bool), OrphanObjectPriority: orphanObjectPriority}
 	return nbi
@@ -137,6 +140,7 @@ func (nbi *NetBoxInventory) Init() error {
 		nbi.InitContactRoles,
 		nbi.InitAdminContactRole,
 		nbi.InitContacts,
+		nbi.InitContactAssignments,
 		nbi.InitTenants,
 		nbi.InitSites,
 		nbi.InitManufacturers,

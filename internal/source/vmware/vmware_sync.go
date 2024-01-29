@@ -629,9 +629,35 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetBoxInventory) error {
 			return fmt.Errorf("failed adding vmware vm's Platform %v with error: %s", vmPlatform, err)
 		}
 
+		// Extract additional info from CustomFields
+		var vmOwners []string
+		var vmDescription string
+		const adminCustomFieldKeyId = 201       // TODO: don't hardcode, find constant in sdk
+		const descriptionCustomFieldKeyId = 202 // TODO: don't hardcode, find constant in sdk
+		if len(vm.Summary.CustomValue) > 0 {
+			for _, field := range vm.Summary.CustomValue {
+				field := field.(*types.CustomFieldStringValue)
+				if field.Key == adminCustomFieldKeyId {
+					vmOwners = strings.Split(field.Value, ",")
+				}
+				if field.Key == descriptionCustomFieldKeyId {
+					vmDescription = field.Value
+				}
+			}
+		}
+
+		// netbox description has constraint <= len(200 characters)
+		// In this case we make a comment
+		var vmComments string
+		if len(vmDescription) >= 200 {
+			vmDescription = "See comments."
+			vmComments = vmDescription
+		}
+
 		newVM, err := nbi.AddVM(&objects.VM{
 			NetboxObject: objects.NetboxObject{
-				Tags: vc.SourceTags,
+				Tags:        vc.SourceTags,
+				Description: vmDescription,
 			},
 			Name:     vmName,
 			Cluster:  vmCluster,
@@ -643,11 +669,38 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetBoxInventory) error {
 			VCPUs:    float32(vmVCPUs),
 			Memory:   int(vmMemory),                         // MBs
 			Disk:     int(vmDiskSizeB / 1024 / 1024 / 1024), // GBs
+			Comments: vmComments,
 		})
+
 		if err != nil {
 			return fmt.Errorf("failed to sync vmware vm: %v", err)
 		}
 
+		// If vm owner name was found we also add contact assignment to the vm
+		for _, vmOwnerName := range vmOwners {
+			vmOwnerName = strings.TrimSpace(vmOwnerName)
+			if vmOwnerName != "" {
+				contact, err := nbi.AddContact(
+					&objects.Contact{
+						Name: vmOwnerName,
+					},
+				)
+				if err != nil {
+					return fmt.Errorf("creating vm contact: %s", err)
+				}
+				_, err = nbi.AddContactAssignment(&objects.ContactAssignment{
+					ContentType: "virtualization.virtualmachine",
+					ObjectId:    newVM.Id,
+					Contact:     contact,
+					Role:        nbi.ContactRolesIndexByName[objects.AdminContactRoleName],
+				})
+				if err != nil {
+					return fmt.Errorf("add contact assignment for vm: %s", err)
+				}
+			}
+		}
+
+		// Sync vm interfaces
 		err = vc.syncVmInterfaces(nbi, vm, newVM)
 		if err != nil {
 			return fmt.Errorf("failed to sync vmware vm's interfaces: %v", err)

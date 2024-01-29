@@ -1,6 +1,7 @@
 package inventory
 
 import (
+	"fmt"
 	"slices"
 
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
@@ -42,19 +43,19 @@ func (nbi *NetBoxInventory) AddTag(newTag *objects.Tag) (*objects.Tag, error) {
 }
 
 // AddContactRole adds the newContactRole to the local netbox inventory.
-func (nbi *NetBoxInventory) AddContactRole(newContactRole *objects.ContactRole) error {
+func (nbi *NetBoxInventory) AddContactRole(newContactRole *objects.ContactRole) (*objects.ContactRole, error) {
 	newContactRole.NetboxObject.Tags = []*objects.Tag{nbi.SsotTag}
 	if _, ok := nbi.ContactRolesIndexByName[newContactRole.Name]; ok {
 		oldContactRole := nbi.ContactRolesIndexByName[newContactRole.Name]
 		diffMap, err := utils.JsonDiffMapExceptId(newContactRole, oldContactRole)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if len(diffMap) > 0 {
 			nbi.Logger.Debug("Contact role ", newContactRole.Name, " already exists in Netbox but is out of date. Patching it... ")
 			patchedContactRole, err := service.Patch[objects.ContactRole](nbi.NetboxApi, oldContactRole.Id, diffMap)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			nbi.ContactRolesIndexByName[newContactRole.Name] = patchedContactRole
 		} else {
@@ -64,26 +65,26 @@ func (nbi *NetBoxInventory) AddContactRole(newContactRole *objects.ContactRole) 
 		nbi.Logger.Debug("Contact role ", newContactRole.Name, " does not exist in Netbox. Creating it...")
 		newContactRole, err := service.Create[objects.ContactRole](nbi.NetboxApi, newContactRole)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		nbi.ContactRolesIndexByName[newContactRole.Name] = newContactRole
 	}
-	return nil
+	return nbi.ContactRolesIndexByName[newContactRole.Name], nil
 }
 
 // AddContactGroup adds contact group to the local netbox inventory.
-func (nbi *NetBoxInventory) AddContactGroup(newContactGroup *objects.ContactGroup) error {
+func (nbi *NetBoxInventory) AddContactGroup(newContactGroup *objects.ContactGroup) (*objects.ContactGroup, error) {
 	if _, ok := nbi.ContactGroupsIndexByName[newContactGroup.Name]; ok {
 		oldContactGroup := nbi.ContactGroupsIndexByName[newContactGroup.Name]
 		diffMap, err := utils.JsonDiffMapExceptId(newContactGroup, oldContactGroup)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if len(diffMap) > 0 {
 			nbi.Logger.Debug("Contact group ", newContactGroup.Name, " already exists in Netbox but is out of date. Patching it... ")
 			patchedContactGroup, err := service.Patch[objects.ContactGroup](nbi.NetboxApi, oldContactGroup.Id, diffMap)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			nbi.ContactGroupsIndexByName[newContactGroup.Name] = patchedContactGroup
 		} else {
@@ -93,27 +94,28 @@ func (nbi *NetBoxInventory) AddContactGroup(newContactGroup *objects.ContactGrou
 		nbi.Logger.Debug("Contact group ", newContactGroup.Name, " does not exist in Netbox. Creating it...")
 		newContactGroup, err := service.Create[objects.ContactGroup](nbi.NetboxApi, newContactGroup)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		nbi.ContactGroupsIndexByName[newContactGroup.Name] = newContactGroup
 	}
-	return nil
+	return nbi.ContactGroupsIndexByName[newContactGroup.Name], nil
 }
 
 // AddContact adds a contact to the local netbox inventory.
-func (nbi *NetBoxInventory) AddContact(newContact *objects.Contact) error {
+func (nbi *NetBoxInventory) AddContact(newContact *objects.Contact) (*objects.Contact, error) {
+	newContact.Tags = append(newContact.Tags, nbi.SsotTag)
 	if _, ok := nbi.ContactsIndexByName[newContact.Name]; ok {
 		oldContact := nbi.ContactsIndexByName[newContact.Name]
 		delete(nbi.OrphanManager[service.ContactApiPath], oldContact.Id)
 		diffMap, err := utils.JsonDiffMapExceptId(newContact, oldContact)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if len(diffMap) > 0 {
 			nbi.Logger.Debug("Contact ", newContact.Name, " already exists in Netbox but is out of date. Patching it... ")
 			patchedContact, err := service.Patch[objects.Contact](nbi.NetboxApi, oldContact.Id, diffMap)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			nbi.ContactsIndexByName[newContact.Name] = patchedContact
 		} else {
@@ -121,13 +123,56 @@ func (nbi *NetBoxInventory) AddContact(newContact *objects.Contact) error {
 		}
 	} else {
 		nbi.Logger.Debug("Contact ", newContact.Name, " does not exist in Netbox. Creating it...")
-		newContact, err := service.Create[objects.Contact](nbi.NetboxApi, newContact)
+		createdContact, err := service.Create[objects.Contact](nbi.NetboxApi, newContact)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		nbi.ContactsIndexByName[newContact.Name] = newContact
+		nbi.ContactsIndexByName[newContact.Name] = createdContact
 	}
-	return nil
+	return nbi.ContactsIndexByName[newContact.Name], nil
+}
+
+// AddContact assignment adds a contact assignment to the local netbox inventory.
+// TODO: Make index check less code and more universal, checking each level is ugly
+func (nbi *NetBoxInventory) AddContactAssignment(newCA *objects.ContactAssignment) (*objects.ContactAssignment, error) {
+	fmt.Printf("AddContactAssignment: ContentType: %s, ObjectId: %d, ContactId: %d, RoleId: %d\n", newCA.ContentType, newCA.ObjectId, newCA.Contact.Id, newCA.Role.Id)
+
+	if nbi.ContactAssignmentsIndexByContentTypeAndObjectIdAndContactIdAndRoleId[newCA.ContentType] == nil {
+		nbi.ContactAssignmentsIndexByContentTypeAndObjectIdAndContactIdAndRoleId[newCA.ContentType] = make(map[int]map[int]map[int]*objects.ContactAssignment)
+	}
+	if nbi.ContactAssignmentsIndexByContentTypeAndObjectIdAndContactIdAndRoleId[newCA.ContentType][newCA.ObjectId] == nil {
+		nbi.ContactAssignmentsIndexByContentTypeAndObjectIdAndContactIdAndRoleId[newCA.ContentType][newCA.ObjectId] = make(map[int]map[int]*objects.ContactAssignment)
+	}
+	if nbi.ContactAssignmentsIndexByContentTypeAndObjectIdAndContactIdAndRoleId[newCA.ContentType][newCA.ObjectId][newCA.Contact.Id] == nil {
+		nbi.ContactAssignmentsIndexByContentTypeAndObjectIdAndContactIdAndRoleId[newCA.ContentType][newCA.ObjectId][newCA.Contact.Id] = make(map[int]*objects.ContactAssignment)
+	}
+	newCA.Tags = append(newCA.Tags, nbi.SsotTag)
+	if _, ok := nbi.ContactAssignmentsIndexByContentTypeAndObjectIdAndContactIdAndRoleId[newCA.ContentType][newCA.ObjectId][newCA.Contact.Id][newCA.Role.Id]; ok {
+		oldContact := nbi.ContactAssignmentsIndexByContentTypeAndObjectIdAndContactIdAndRoleId[newCA.ContentType][newCA.ObjectId][newCA.Contact.Id][newCA.Role.Id]
+		delete(nbi.OrphanManager[service.ContactApiPath], oldContact.Id)
+		diffMap, err := utils.JsonDiffMapExceptId(newCA, oldContact)
+		if err != nil {
+			return nil, err
+		}
+		if len(diffMap) > 0 {
+			nbi.Logger.Debug("ContactAssignment ", newCA.Id, " already exists in Netbox but is out of date. Patching it... ")
+			patchedCA, err := service.Patch[objects.ContactAssignment](nbi.NetboxApi, oldContact.Id, diffMap)
+			if err != nil {
+				return nil, err
+			}
+			nbi.ContactAssignmentsIndexByContentTypeAndObjectIdAndContactIdAndRoleId[newCA.ContentType][newCA.ObjectId][newCA.Contact.Id][newCA.Role.Id] = patchedCA
+		} else {
+			nbi.Logger.Debug("ContactAssignment ", newCA.Id, " already exists in Netbox and is up to date...")
+		}
+	} else {
+		nbi.Logger.Debugf("ContactAssignment %s does not exist in Netbox. Creating it...", newCA)
+		newCA, err := service.Create[objects.ContactAssignment](nbi.NetboxApi, newCA)
+		if err != nil {
+			return nil, err
+		}
+		nbi.ContactAssignmentsIndexByContentTypeAndObjectIdAndContactIdAndRoleId[newCA.ContentType][newCA.ObjectId][newCA.Contact.Id][newCA.Role.Id] = newCA
+	}
+	return nbi.ContactAssignmentsIndexByContentTypeAndObjectIdAndContactIdAndRoleId[newCA.ContentType][newCA.ObjectId][newCA.Contact.Id][newCA.Role.Id], nil
 }
 
 func (nbi *NetBoxInventory) AddCustomField(newCf *objects.CustomField) error {

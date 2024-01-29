@@ -12,6 +12,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/find"
+	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/view"
 	"github.com/vmware/govmomi/vim25"
 	"github.com/vmware/govmomi/vim25/mo"
@@ -31,6 +32,9 @@ type VmwareSource struct {
 	Cluster2Datacenter map[string]string // ClusterKey -> DatacenterKey
 	Host2Cluster       map[string]string // HostKey -> ClusterKey
 	Vm2Host            map[string]string // VmKey ->  HostKey
+
+	// CustomField2Name is a map of custom field ids to their names
+	ClusterField2Name map[int32]string
 
 	// Netbox relations
 	ClusterSiteRelations   map[string]string
@@ -134,6 +138,11 @@ func (vc *VmwareSource) Init() error {
 
 	vc.Logger.Debug("Connection to vmware source ", vc.SourceConfig.Hostname, " established successfully")
 
+	// Create CustomFieldManager to map custom field ids to their names
+	// This is required to determine which custom field key is used for
+	// which custom field name (e.g.g 202 -> vm owner, 203 -> vm description...)
+	vc.CreateCustomFieldRelation(ctx, conn.Client)
+
 	// Find relation between datacenters and clusters. Currently we have to manually traverse
 	// the tree to get this relation.
 	vc.CreateClusterDataCenterRelation(ctx, conn.Client)
@@ -207,5 +216,24 @@ func (vc *VmwareSource) CreateClusterDataCenterRelation(ctx context.Context, cli
 			vc.Cluster2Datacenter[cluster.Reference().Value] = dc.Reference().Value
 		}
 	}
+	return nil
+}
+
+// Creates a map of custom field ids to their names
+func (vc *VmwareSource) CreateCustomFieldRelation(ctx context.Context, client *vim25.Client) error {
+	cfm, err := object.GetCustomFieldsManager(client)
+	if err != nil {
+		return fmt.Errorf("createCustomFieldRelation: %s", err)
+	}
+	fieldDefs, err := cfm.Field(ctx)
+	if err != nil {
+		return fmt.Errorf("createCustomFieldRelation fieldDefs: %s", err)
+	}
+
+	vc.ClusterField2Name = make(map[int32]string)
+	for _, field := range fieldDefs {
+		vc.ClusterField2Name[field.Key] = field.Name
+	}
+
 	return nil
 }
