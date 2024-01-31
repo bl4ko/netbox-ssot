@@ -493,6 +493,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 				if err != nil {
 					return fmt.Errorf("failed to add oVirt parent interface %s with error: %v", parentInterface.Name, err)
 				}
+				nicId2nbNic[parent] = parentInterface
 				delete(processedNicsIds, parent)
 			}
 			for _, child := range children {
@@ -509,10 +510,11 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 
 		// Fourth loop we check if there are any nics that were not processed
 		for nicId := range processedNicsIds {
-			_, err := nbi.AddInterface(nicId2nbNic[nicId])
+			nbNic, err := nbi.AddInterface(nicId2nbNic[nicId])
 			if err != nil {
 				return fmt.Errorf("failed to add oVirt interface %s with error: %v", nicId2nbNic[nicId].Name, err)
 			}
+			nicId2nbNic[nicId] = nbNic
 		}
 
 		// We check that host has correct primary ips based on nics data
