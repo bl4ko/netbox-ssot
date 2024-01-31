@@ -1,7 +1,6 @@
 package inventory
 
 import (
-	"fmt"
 	"slices"
 
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
@@ -135,8 +134,6 @@ func (nbi *NetBoxInventory) AddContact(newContact *objects.Contact) (*objects.Co
 // AddContact assignment adds a contact assignment to the local netbox inventory.
 // TODO: Make index check less code and more universal, checking each level is ugly
 func (nbi *NetBoxInventory) AddContactAssignment(newCA *objects.ContactAssignment) (*objects.ContactAssignment, error) {
-	fmt.Printf("AddContactAssignment: ContentType: %s, ObjectId: %d, ContactId: %d, RoleId: %d\n", newCA.ContentType, newCA.ObjectId, newCA.Contact.Id, newCA.Role.Id)
-
 	if nbi.ContactAssignmentsIndexByContentTypeAndObjectIdAndContactIdAndRoleId[newCA.ContentType] == nil {
 		nbi.ContactAssignmentsIndexByContentTypeAndObjectIdAndContactIdAndRoleId[newCA.ContentType] = make(map[int]map[int]map[int]*objects.ContactAssignment)
 	}

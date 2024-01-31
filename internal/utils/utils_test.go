@@ -264,3 +264,17 @@ func TestSubnetContainsIpAddress(t *testing.T) {
 		})
 	}
 }
+
+func TestConvertStringsToPairs(t *testing.T) {
+	input := []string{"key1=value1", "key2=value2", "key3=value3"}
+	output := ConvertStringsToPairs(input)
+	desiredOutput := map[string]string{
+		"key1": "value1",
+		"key2": "value2",
+		"key3": "value3",
+	}
+
+	if !reflect.DeepEqual(output, desiredOutput) {
+		t.Errorf("ConvertStringsToPairs() = %v, want %v", output, desiredOutput)
+	}
+}

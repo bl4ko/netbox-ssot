@@ -35,6 +35,7 @@ type NetworkData struct {
 	Vid2Name      map[int]string
 }
 
+// Function that initializes state from ovirt api to local storage
 func (o *OVirtSource) Init() error {
 	// Initialize regex relations
 	o.Logger.Debug("Initializing regex relations for oVirt source ", o.SourceConfig.Name)

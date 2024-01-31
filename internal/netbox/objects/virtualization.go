@@ -99,6 +99,9 @@ type VM struct {
 
 	// Additional Comments
 	Comments string `json:"comments,omitempty"`
+
+	// Custom fields
+	CustomFields map[string]string `json:"custom_fields,omitempty"`
 }
 
 func (vm VM) String() string {

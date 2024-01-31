@@ -36,26 +36,29 @@ Example config can be found in [example section](#example-config)
 
 ### Source
 
-| Parameter                       | Description                                                                                          | Type         | Possible values | Default                 | Required |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------ | --------------- | ----------------------- | -------- |
-| `source`                        | Array of data sources. Each data source requires its own config                                      | []SourceType | SourceType      | []                      | No       |
-| `source.name`                   | Name of the data source.                                                                             | str          | any             | ""                      | Yes      |
-| `source.type`                   | Data source type                                                                                     | str          | ovirt, vmware   | ""                      | Yes      |
-| `source.hostname`               | Hostname of the data source                                                                          | str          | any             | ""                      | Yes      |
-| `source.port`                   | Port of the data source                                                                              | int          | 0-65536         | 443                     | No       |
-| `source.username`               | Username of the data source account.                                                                 | str          | any             | ""                      | Yes      |
-| `source.password`               | Password of the data source account.                                                                 | str          | any             | ""                      | Yes      |
-| `source.validateCert`           | Enforce TLS certificate validation.                                                                  | bool         | true, false     | false                   | No       |
-| `source.permittedSubnets`       | Array of subnets permitted for the osurce. Format: CIDR notation                                     | []string     | any             | []                      | No       |
-| `source.tag`                    | Tag to be applied to all objects created by this source.                                             | string       | any             | "source-" + source.name | No       |
-| `source.tagColor`               | TagColor for the source tag.                                                                         | string       | any             | ovirt: "07426b"         | No       |
-| `source.hostSiteRelations`      | Regex relations in format `regex = siteName`, that map each host that satisifies regex to site       | []string     | any             | []                      | No       |
-| `source.clusterSiteRelations`   | Regex relations in format `regex = siteName`, that map each cluster that satisifes regex to site     | []string     | any             | []                      | No       |
-| `source.clusterTenantRelations` | Regex relations in format `regex = tenantName`, that map each cluster that satisifes regex to tenant | []string     | any             | []                      | no       |
-| `source.hostTenantRelations`    | Regex relations in format `regex = tenantName`, that map each host that satisifes regex to tenant    | []string     | any             | []                      | no       |
-| `source.vmTenantRelations`      | Regex relations in format `regex = tenantName`, that map each vm that satisifes regex to tenant      | []string     | any             | []                      | no       |
-| `source.vlanGroupRelations`     | Regex relations in format `regex = vlanGroup`, that map each vlan that satisifes regex to vlanGroup  | []string     | any             | []                      | no       |
-| `source.vlanTenantRelations`    | Regex relations in format `regex = tenantName`, that map each vlan that satisfies regex to tenant    | []string     | any             | []                      | no       |  |
+| Parameter                       | Description                                                                                                      | Type         | Possible values | Default                 | Required |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------ | --------------- | ----------------------- | -------- |
+| `source`                        | Array of data sources. Each data source requires its own config                                                  | []SourceType | SourceType      | []                      | No       |
+| `source.name`                   | Name of the data source.                                                                                         | str          | any             | ""                      | Yes      |
+| `source.type`                   | Data source type                                                                                                 | str          | ovirt, vmware   | ""                      | Yes      |
+| `source.hostname`               | Hostname of the data source                                                                                      | str          | any             | ""                      | Yes      |
+| `source.port`                   | Port of the data source                                                                                          | int          | 0-65536         | 443                     | No       |
+| `source.username`               | Username of the data source account.                                                                             | str          | any             | ""                      | Yes      |
+| `source.password`               | Password of the data source account.                                                                             | str          | any             | ""                      | Yes      |
+| `source.validateCert`           | Enforce TLS certificate validation.                                                                              | bool         | true, false     | false                   | No       |
+| `source.permittedSubnets`       | Array of subnets permitted for the osurce. Format: CIDR notation                                                 | []string     | any             | []                      | No       |
+| `source.tag`                    | Tag to be applied to all objects created by this source.                                                         | string       | any             | "source-" + source.name | No       |
+| `source.tagColor`               | TagColor for the source tag.                                                                                     | string       | any             | ovirt: "07426b"         | No       |
+| `source.hostSiteRelations`      | Regex relations in format `regex = siteName`, that map each host that satisfies regex to site                    | []string     | any             | []                      | No       |
+| `source.clusterSiteRelations`   | Regex relations in format `regex = siteName`, that map each cluster that satisfies regex to site                 | []string     | any             | []                      | No       |
+| `source.clusterTenantRelations` | Regex relations in format `regex = tenantName`, that map each cluster that satisfies regex to tenant             | []string     | any             | []                      | no       |
+| `source.hostTenantRelations`    | Regex relations in format `regex = tenantName`, that map each host that satisfies regex to tenant                | []string     | any             | []                      | no       |
+| `source.vmTenantRelations`      | Regex relations in format `regex = tenantName`, that map each vm that satisfies regex to tenant                  | []string     | any             | []                      | no       |
+| `source.vlanGroupRelations`     | Regex relations in format `regex = vlanGroup`, that map each vlan that satisfies regex to vlanGroup              | []string     | any             | []                      | no       |
+| `source.vlanTenantRelations`    | Regex relations in format `regex = tenantName`, that map each vlan that satisfies regex to tenant                | []string     | any             | []                      | no       |
+| `source.customFieldMappings`    | Mappings of format `customFieldName = option`. Currently supported options are `contact`, `owner`, `description` | []string     | any             | []                      | no       |
+
+#### Vcenter specific
 
 
 ### Example config
@@ -76,8 +79,12 @@ source:
     type: "ovirt"
     hostname: "ovirt.example.com"
     port: 443
-    username: "admin" # Username of the source account "admin"
-    password: "topsecret" # Password of the source account "secretpass"
+    username: "admin"
+    password: "topsecret"
+    customFieldMappings:
+      - "Contact = contact" # Vmware Field "Contact" will be mapped to Netbox Contact object
+      - "Owner = owner"
+      - "Comments = description"
 ```
 
 ## Deployment

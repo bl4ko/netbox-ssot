@@ -631,17 +631,38 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetBoxInventory) error {
 
 		// Extract additional info from CustomFields
 		var vmOwners []string
+		var vmOwnerEmails []string
 		var vmDescription string
-		const adminCustomFieldKeyId = 201       // TODO: don't hardcode, find constant in sdk
-		const descriptionCustomFieldKeyId = 202 // TODO: don't hardcode, find constant in sdk
+		vmCustomFields := map[string]string{}
 		if len(vm.Summary.CustomValue) > 0 {
 			for _, field := range vm.Summary.CustomValue {
 				field := field.(*types.CustomFieldStringValue)
-				if field.Key == adminCustomFieldKeyId {
-					vmOwners = strings.Split(field.Value, ",")
-				}
-				if field.Key == descriptionCustomFieldKeyId {
-					vmDescription = field.Value
+				fieldName := vc.CustomFieldId2Name[field.Key]
+
+				if mappedField, ok := vc.CustomFieldMappings[fieldName]; ok {
+					switch mappedField {
+					case "owner":
+						vmOwners = strings.Split(field.Value, ",")
+					case "email":
+						vmOwnerEmails = strings.Split(field.Value, ",")
+					case "description":
+						vmDescription = strings.TrimSpace(field.Value)
+					}
+				} else {
+					fieldName = utils.Alphanumeric(fieldName)
+					if _, ok := nbi.CustomFieldsIndexByName[fieldName]; !ok {
+						err := nbi.AddCustomField(&objects.CustomField{
+							Name:                  fieldName,
+							Type:                  objects.CustomFieldTypeText,
+							CustomFieldUIVisible:  &objects.CustomFieldUIVisibleIfSet,
+							CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
+							ContentTypes:          []string{"virtualization.virtualmachine"},
+						})
+						if err != nil {
+							return fmt.Errorf("vm's custom field %s: %s", fieldName, err)
+						}
+						vmCustomFields[fieldName] = field.Value
+					}
 				}
 			}
 		}
@@ -659,17 +680,18 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetBoxInventory) error {
 				Tags:        vc.SourceTags,
 				Description: vmDescription,
 			},
-			Name:     vmName,
-			Cluster:  vmCluster,
-			Site:     vmSite,
-			Tenant:   vmTenant,
-			Status:   vmStatus,
-			Host:     vmHost,
-			Platform: vmPlatform,
-			VCPUs:    float32(vmVCPUs),
-			Memory:   int(vmMemory),                         // MBs
-			Disk:     int(vmDiskSizeB / 1024 / 1024 / 1024), // GBs
-			Comments: vmComments,
+			Name:         vmName,
+			Cluster:      vmCluster,
+			Site:         vmSite,
+			Tenant:       vmTenant,
+			Status:       vmStatus,
+			Host:         vmHost,
+			Platform:     vmPlatform,
+			VCPUs:        float32(vmVCPUs),
+			Memory:       int(vmMemory),                         // MBs
+			Disk:         int(vmDiskSizeB / 1024 / 1024 / 1024), // GBs
+			Comments:     vmComments,
+			CustomFields: vmCustomFields,
 		})
 
 		if err != nil {
@@ -677,12 +699,28 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetBoxInventory) error {
 		}
 
 		// If vm owner name was found we also add contact assignment to the vm
-		for _, vmOwnerName := range vmOwners {
-			vmOwnerName = strings.TrimSpace(vmOwnerName)
+		var vmMailMapFallback bool
+		if len(vmOwners) > 0 && len(vmOwnerEmails) > 0 && len(vmOwners) != len(vmOwnerEmails) {
+			vc.Logger.Warningf("vm owner names and emails mismatch (len(vmOwnerEmails) != len(vmOwners), using fallback mechanism")
+			vmMailMapFallback = true
+		}
+		vmOwner2Email := utils.MatchNamesWithEmails(vmOwners, vmOwnerEmails, vc.Logger)
+		for i, vmOwnerName := range vmOwners {
 			if vmOwnerName != "" {
+				var vmOwnerEmail string
+				if len(vmOwnerEmails) > 0 {
+					if vmMailMapFallback {
+						if match, ok := vmOwner2Email[vmOwnerName]; ok {
+							vmOwnerEmail = match
+						}
+					} else {
+						vmOwnerEmail = vmOwnerEmails[i]
+					}
+				}
 				contact, err := nbi.AddContact(
 					&objects.Contact{
-						Name: vmOwnerName,
+						Name:  strings.TrimSpace(vmOwners[i]),
+						Email: vmOwnerEmail,
 					},
 				)
 				if err != nil {
@@ -930,7 +968,7 @@ func (vc *VmwareSource) syncVmInterfaces(nbi *inventory.NetBoxInventory, vmwareV
 				vmPrimaryIpv4.AssignedObjectId = nbVmInterface.Id
 				vmPrimaryIpv4, err = nbi.AddIPAddress(vmPrimaryIpv4)
 				if err != nil {
-					return fmt.Errorf("adding vm's primary ipv4: %s", err)
+					vc.Logger.Warningf("adding vm's primary ipv4: %s", err)
 				}
 			}
 			if vmPrimaryIpv6 != nil {
@@ -938,7 +976,7 @@ func (vc *VmwareSource) syncVmInterfaces(nbi *inventory.NetBoxInventory, vmwareV
 				vmPrimaryIpv6.AssignedObjectId = nbVmInterface.Id
 				vmPrimaryIpv6, err = nbi.AddIPAddress(vmPrimaryIpv6)
 				if err != nil {
-					return fmt.Errorf("adding vm's primary ipv6: %s", err)
+					vc.Logger.Warningf("adding vm's primary ipv6: %s", err)
 				}
 			}
 
@@ -949,7 +987,7 @@ func (vc *VmwareSource) syncVmInterfaces(nbi *inventory.NetBoxInventory, vmwareV
 				newNetboxVm.PrimaryIPv4 = vmPrimaryIpv4
 				_, err = nbi.AddVM(&newNetboxVm)
 				if err != nil {
-					return fmt.Errorf("adding vm: %s", err)
+					vc.Logger.Warningf("adding vm: %s", err)
 				}
 			}
 		}

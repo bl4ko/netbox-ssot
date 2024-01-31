@@ -34,7 +34,7 @@ type VmwareSource struct {
 	Vm2Host            map[string]string // VmKey ->  HostKey
 
 	// CustomField2Name is a map of custom field ids to their names
-	ClusterField2Name map[int32]string
+	CustomFieldId2Name map[int32]string
 
 	// Netbox relations
 	ClusterSiteRelations   map[string]string
@@ -44,6 +44,9 @@ type VmwareSource struct {
 	VmTenantRelations      map[string]string
 	VlanGroupRelations     map[string]string
 	VlanTenantRelations    map[string]string
+
+	// Mappings of custom fields to contacts
+	CustomFieldMappings map[string]string
 }
 
 type NetworkData struct {
@@ -96,6 +99,8 @@ func (vc *VmwareSource) Init() error {
 	vc.Logger.Debug("VlanGroupRelations: ", vc.VlanGroupRelations)
 	vc.VlanTenantRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.VlanTenantRelations)
 	vc.Logger.Debug("VlanTenantRelations: ", vc.VlanTenantRelations)
+	vc.CustomFieldMappings = utils.ConvertStringsToPairs(vc.SourceConfig.CustomFieldMappings)
+	vc.Logger.Debug("CustomFieldMappings: ", vc.CustomFieldMappings)
 
 	// Initialize the connection
 	vc.Logger.Debug("Initializing oVirt source ", vc.SourceConfig.Name)
@@ -230,9 +235,9 @@ func (vc *VmwareSource) CreateCustomFieldRelation(ctx context.Context, client *v
 		return fmt.Errorf("createCustomFieldRelation fieldDefs: %s", err)
 	}
 
-	vc.ClusterField2Name = make(map[int32]string)
+	vc.CustomFieldId2Name = make(map[int32]string)
 	for _, field := range fieldDefs {
-		vc.ClusterField2Name[field.Key] = field.Name
+		vc.CustomFieldId2Name[field.Key] = field.Name
 	}
 
 	return nil

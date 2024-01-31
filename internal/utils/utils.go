@@ -7,6 +7,11 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"unicode"
+
+	"github.com/bl4ko/netbox-ssot/internal/logger"
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
 )
 
 // Validates array of regex relations
@@ -64,6 +69,19 @@ func Slugify(name string) string {
 
 	// Remove characters except lowercase letters, numbers, underscores, hyphens
 	reg, _ := regexp.Compile("[^a-z0-9_-]+")
+	name = reg.ReplaceAllString(name, "")
+	return name
+}
+
+// Converts string name to its alphanumeric representation
+// with underscored only.
+func Alphanumeric(name string) string {
+	name = strings.TrimSpace(name)
+	name = strings.ToLower(name)
+	name = strings.ReplaceAll(name, " ", "_")
+
+	// Remove characters except lowercase letters, numbers, underscores
+	reg, _ := regexp.Compile("[^a-z0-9_]+")
 	name = reg.ReplaceAllString(name, "")
 	return name
 }
@@ -169,4 +187,53 @@ func ExtractFunctionName(i interface{}) string {
 	return funcNameParts[len(funcNameParts)-1]
 }
 
-// Netbox description field
+// Converts strings of format fieldName = value to map[fieldName] = value
+func ConvertStringsToPairs(input []string) map[string]string {
+	output := make(map[string]string, len(input))
+	for _, s := range input {
+		pair := strings.Split(s, "=")
+		output[strings.TrimSpace(pair[0])] = strings.TrimSpace(pair[1])
+	}
+	return output
+}
+
+// Function that removes diacritics and normalize strings
+func removeDiacritics(s string) string {
+	t := transform.Chain(norm.NFD, transform.RemoveFunc(isMn), norm.NFC)
+	result, _, _ := transform.String(t, s)
+	return result
+}
+
+func isMn(r rune) bool {
+	return unicode.Is(unicode.Mn, r) // Mn: non spacing marks
+}
+
+// Function that matches array of names to array of emails (which could be subset of it).
+// It returns a map of name -> email.
+//
+// E.g. names = ["John Doe", "Jane Doe"], emails = ["jane.doe@example"]
+// Output: map["Jane Doe"] = "jane.doe@example"
+func MatchNamesWithEmails(names []string, emails []string, logger *logger.Logger) map[string]string {
+	normalizedNames := make(map[string]string) // Map for easy lookup
+	for _, name := range names {
+		// Normalize name: remove diacritics, spaces, and convert to lowercase
+		normalized := strings.ReplaceAll(strings.ToLower(removeDiacritics(name)), " ", "")
+		normalizedNames[normalized] = name
+	}
+
+	matches := make(map[string]string)
+	for _, email := range emails {
+		username := strings.Split(strings.ToLower(email), "@")[0]
+		username = strings.ReplaceAll(username, ".", "") // Remove common separators
+		username = strings.ReplaceAll(username, "_", "")
+
+		// Try to find a match
+		if name, exists := normalizedNames[username]; exists {
+			matches[name] = email
+		} else {
+			// Handle no match or implement additional matching logic
+			logger.Warningf("No direct match found for email: %s\n", email)
+		}
+	}
+	return matches
+}

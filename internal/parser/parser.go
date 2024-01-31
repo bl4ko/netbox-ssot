@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 	"gopkg.in/yaml.v3"
 )
@@ -51,25 +52,18 @@ func (n NetboxConfig) String() string {
 	return fmt.Sprintf("NetboxConfig{ApiToken: %s, Hostname: %s, Port: %d, HTTPScheme: %s, ValidateCert: %t, Timeout: %d, Tag: %s, TagColor: %s, RemoveOrphans: %t}", n.ApiToken, n.Hostname, n.Port, n.HTTPScheme, n.ValidateCert, n.Timeout, n.Tag, n.TagColor, n.RemoveOrphans)
 }
 
-type SourceType string
-
-const (
-	Ovirt  SourceType = "ovirt"
-	Vmware SourceType = "vmware"
-)
-
 type SourceConfig struct {
-	Name             string     `yaml:"name"`
-	Type             SourceType `yaml:"type"`
-	HTTPScheme       HTTPScheme `yaml:"httpScheme"`
-	Hostname         string     `yaml:"hostname"`
-	Port             int        `yaml:"port"`
-	Username         string     `yaml:"username"`
-	Password         string     `yaml:"password"`
-	PermittedSubnets []string   `yaml:"permittedSubnets"`
-	ValidateCert     bool       `yaml:"validateCert"`
-	Tag              string     `yaml:"tag"`
-	TagColor         string     `yaml:"tagColor"`
+	Name             string               `yaml:"name"`
+	Type             constants.SourceType `yaml:"type"`
+	HTTPScheme       HTTPScheme           `yaml:"httpScheme"`
+	Hostname         string               `yaml:"hostname"`
+	Port             int                  `yaml:"port"`
+	Username         string               `yaml:"username"`
+	Password         string               `yaml:"password"`
+	PermittedSubnets []string             `yaml:"permittedSubnets"`
+	ValidateCert     bool                 `yaml:"validateCert"`
+	Tag              string               `yaml:"tag"`
+	TagColor         string               `yaml:"tagColor"`
 
 	// Relations
 	HostSiteRelations      []string `yaml:"hostSiteRelations"`
@@ -79,6 +73,9 @@ type SourceConfig struct {
 	VmTenantRelations      []string `yaml:"vmTenantRelations"`
 	VlanGroupRelations     []string `yaml:"vlanGroupRelations"`
 	VlanTenantRelations    []string `yaml:"vlanTenantRelations"`
+
+	// Vmware specific relations
+	CustomFieldMappings []string `yaml:"customFieldMappings"`
 }
 
 func (s SourceConfig) String() string {
@@ -180,11 +177,11 @@ func validateSourceConfig(config *Config) error {
 			externalSource.Tag = fmt.Sprintf("Source: %s", externalSource.Name)
 		}
 		if externalSource.TagColor == "" {
-			externalSource.TagColor = DefaultSourceToTagColorMap[externalSource.Type]
+			externalSource.TagColor = constants.DefaultSourceToTagColorMap[externalSource.Type]
 		}
 		switch externalSource.Type {
-		case Ovirt:
-		case Vmware:
+		case constants.Ovirt:
+		case constants.Vmware:
 		default:
 			return fmt.Errorf("%s.type is not valid", externalSourceStr)
 		}

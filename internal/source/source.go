@@ -4,6 +4,7 @@ package source
 import (
 	"fmt"
 
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/logger"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
@@ -29,7 +30,7 @@ func NewSource(config *parser.SourceConfig, logger *logger.Logger, netboxInvento
 	sourceTypeTag, err := netboxInventory.AddTag(&objects.Tag{
 		Name:        string(config.Type),
 		Slug:        utils.Slugify("type-" + string(config.Type)),
-		Color:       objects.Color(parser.SourceTypeToTagColorMap[config.Type]),
+		Color:       objects.Color(constants.SourceTypeToTagColorMap[config.Type]),
 		Description: fmt.Sprintf("Automatically created tag by netbox-ssot for source type %s", config.Type),
 	})
 	if err != nil {
@@ -40,10 +41,11 @@ func NewSource(config *parser.SourceConfig, logger *logger.Logger, netboxInvento
 		SourceConfig: config,
 		SourceTags:   []*objects.Tag{sourceTag, sourceTypeTag},
 	}
+
 	switch config.Type {
-	case "ovirt":
+	case constants.Ovirt:
 		return &ovirt.OVirtSource{CommonConfig: commonConfig}, nil
-	case "vmware":
+	case constants.Vmware:
 		return &vmware.VmwareSource{CommonConfig: commonConfig}, nil
 	default:
 		return nil, fmt.Errorf("unsupported source type: %s", config.Type)

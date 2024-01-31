@@ -1,6 +1,13 @@
-package parser
+package constants
 
 import "github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+
+type SourceType string
+
+const (
+	Ovirt  SourceType = "ovirt"
+	Vmware SourceType = "vmware"
+)
 
 // Default mappings of sources to colors (for tags)
 var DefaultSourceToTagColorMap = map[SourceType]string{
