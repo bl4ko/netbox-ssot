@@ -145,15 +145,15 @@ func (nbi *NetBoxInventory) AddContactAssignment(newCA *objects.ContactAssignmen
 	}
 	newCA.Tags = append(newCA.Tags, nbi.SsotTag)
 	if _, ok := nbi.ContactAssignmentsIndexByContentTypeAndObjectIdAndContactIdAndRoleId[newCA.ContentType][newCA.ObjectId][newCA.Contact.Id][newCA.Role.Id]; ok {
-		oldContact := nbi.ContactAssignmentsIndexByContentTypeAndObjectIdAndContactIdAndRoleId[newCA.ContentType][newCA.ObjectId][newCA.Contact.Id][newCA.Role.Id]
-		delete(nbi.OrphanManager[service.ContactApiPath], oldContact.Id)
-		diffMap, err := utils.JsonDiffMapExceptId(newCA, oldContact)
+		oldCA := nbi.ContactAssignmentsIndexByContentTypeAndObjectIdAndContactIdAndRoleId[newCA.ContentType][newCA.ObjectId][newCA.Contact.Id][newCA.Role.Id]
+		delete(nbi.OrphanManager[service.ContactAssignmentApiPath], oldCA.Id)
+		diffMap, err := utils.JsonDiffMapExceptId(newCA, oldCA)
 		if err != nil {
 			return nil, err
 		}
 		if len(diffMap) > 0 {
 			nbi.Logger.Debug("ContactAssignment ", newCA.Id, " already exists in Netbox but is out of date. Patching it... ")
-			patchedCA, err := service.Patch[objects.ContactAssignment](nbi.NetboxApi, oldContact.Id, diffMap)
+			patchedCA, err := service.Patch[objects.ContactAssignment](nbi.NetboxApi, oldCA.Id, diffMap)
 			if err != nil {
 				return nil, err
 			}
