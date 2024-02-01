@@ -5,6 +5,9 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
+	"runtime"
+	"time"
 )
 
 const (
@@ -34,12 +37,43 @@ func New(dest string, logLevel int, name string) (*Logger, error) {
 		}
 		output = file
 	}
-	return &Logger{log.New(output, "", log.LstdFlags), logLevel, name}, nil
+	return &Logger{log.New(output, "", log.LstdFlags|log.Lshortfile), logLevel, name}, nil
+}
+
+// TODO: custom output
+func (l *Logger) Output(calldepth int, s string) error {
+	// Get additional runtime information
+	_, file, line, ok := runtime.Caller(calldepth)
+	if !ok {
+		file = "???"
+		line = 0
+	} else {
+		file = filepath.Base(file)
+	}
+
+	// Prepare the log prefix manually to include the standard log flags
+
+	// time prefix for logs
+	now := time.Now()
+	timePrefix := now.Format("2006/01/02 15:04:05")
+
+	// file prefix for logs
+	filePrefix := fmt.Sprintf("%-20s", fmt.Sprintf("%s:%d", file, line))
+	if l.level > DEBUG {
+		filePrefix = ""
+	}
+
+	// Add your custom logging format
+	logMessage := fmt.Sprintf("%s %s%s", timePrefix, filePrefix, s)
+
+	// Print to the desired output
+	fmt.Println(logMessage)
+	return nil
 }
 
 func (l *Logger) Debug(v ...interface{}) error {
 	if l.level <= DEBUG {
-		err := l.Output(2, fmt.Sprintf("DEBUG (%s): %s", l.name, fmt.Sprint(v...)))
+		err := l.Output(2, fmt.Sprintf("%-7s (%s): %s", "DEBUG", l.name, fmt.Sprint(v...)))
 		if err != nil {
 			return err
 		}
@@ -50,14 +84,14 @@ func (l *Logger) Debug(v ...interface{}) error {
 // Debugf logs a formatted debug message.
 func (l *Logger) Debugf(format string, v ...interface{}) error {
 	if l.level <= DEBUG {
-		return l.Output(2, fmt.Sprintf("DEBUG (%s): %s", l.name, fmt.Sprintf(format, v...)))
+		return l.Output(2, fmt.Sprintf("%-7s (%s): %s", "DEBUG", l.name, fmt.Sprintf(format, v...)))
 	}
 	return nil
 }
 
 func (l *Logger) Info(v ...interface{}) error {
 	if l.level <= INFO {
-		err := l.Output(2, fmt.Sprintf("INFO  (%s): %s", l.name, fmt.Sprint(v...)))
+		err := l.Output(2, fmt.Sprintf("%-7s (%s): %s", "INFO", l.name, fmt.Sprint(v...)))
 		if err != nil {
 			return err
 		}
@@ -68,14 +102,14 @@ func (l *Logger) Info(v ...interface{}) error {
 // Infof logs a formatted info message.
 func (l *Logger) Infof(format string, v ...interface{}) error {
 	if l.level <= INFO {
-		return l.Output(2, fmt.Sprintf("INFO  (%s): %s", l.name, fmt.Sprintf(format, v...)))
+		return l.Output(2, fmt.Sprintf("%-7s (%s): %s", "INFO", l.name, fmt.Sprintf(format, v...)))
 	}
 	return nil
 }
 
 func (l *Logger) Warning(v ...interface{}) error {
 	if l.level <= WARNING {
-		err := l.Output(2, fmt.Sprintf("WARNING (%s): %s", l.name, fmt.Sprint(v...)))
+		err := l.Output(2, fmt.Sprintf("%-7s (%s): %s", "WARNING", l.name, fmt.Sprint(v...)))
 		if err != nil {
 			return err
 		}
@@ -86,14 +120,14 @@ func (l *Logger) Warning(v ...interface{}) error {
 // Warningf logs a formatted warning message.
 func (l *Logger) Warningf(format string, v ...interface{}) error {
 	if l.level <= WARNING {
-		return l.Output(2, fmt.Sprintf("WARNING (%s): %s", l.name, fmt.Sprintf(format, v...)))
+		return l.Output(2, fmt.Sprintf("%-7s (%s): %s", "WARNING", l.name, fmt.Sprintf(format, v...)))
 	}
 	return nil
 }
 
 func (l *Logger) Error(v ...interface{}) error {
 	if l.level <= ERROR {
-		err := l.Output(2, fmt.Sprintf("ERROR (%s): %s", l.name, fmt.Sprint(v...)))
+		err := l.Output(2, fmt.Sprintf("%-7s (%s): %s", "ERROR", l.name, fmt.Sprint(v...)))
 		if err != nil {
 			return err
 		}
@@ -104,7 +138,7 @@ func (l *Logger) Error(v ...interface{}) error {
 // Errorf logs a formatted error message.
 func (l *Logger) Errorf(format string, v ...interface{}) error {
 	if l.level <= ERROR {
-		return l.Output(2, fmt.Sprintf("ERROR (%s): %s", l.name, fmt.Sprintf(format, v...)))
+		return l.Output(2, fmt.Sprintf("%-7s (%s): %s", "ERROR", l.name, fmt.Sprintf(format, v...)))
 	}
 	return nil
 }
