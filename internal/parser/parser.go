@@ -182,6 +182,7 @@ func validateSourceConfig(config *Config) error {
 		switch externalSource.Type {
 		case constants.Ovirt:
 		case constants.Vmware:
+		case constants.Dnac:
 		default:
 			return fmt.Errorf("%s.type is not valid", externalSourceStr)
 		}

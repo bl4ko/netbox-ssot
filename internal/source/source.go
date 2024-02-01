@@ -10,6 +10,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/parser"
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
+	"github.com/bl4ko/netbox-ssot/internal/source/dnac"
 	"github.com/bl4ko/netbox-ssot/internal/source/ovirt"
 	"github.com/bl4ko/netbox-ssot/internal/source/vmware"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
@@ -47,6 +48,8 @@ func NewSource(config *parser.SourceConfig, logger *logger.Logger, netboxInvento
 		return &ovirt.OVirtSource{CommonConfig: commonConfig}, nil
 	case constants.Vmware:
 		return &vmware.VmwareSource{CommonConfig: commonConfig}, nil
+	case constants.Dnac:
+		return &dnac.DnacSource{CommonConfig: commonConfig}, nil
 	default:
 		return nil, fmt.Errorf("unsupported source type: %s", config.Type)
 	}

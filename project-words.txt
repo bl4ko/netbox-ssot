@@ -12,6 +12,7 @@ Datacenters
 dcim
 Debugf
 diskattachments
+Dnac
 DSFP
 dvpg
 dvpgs
