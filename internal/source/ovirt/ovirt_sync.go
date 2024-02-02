@@ -12,7 +12,7 @@ import (
 )
 
 // Syncs networks received from oVirt API to the netbox.
-func (o *OVirtSource) syncNetworks(nbi *inventory.NetBoxInventory) error {
+func (o *OVirtSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 	for _, network := range o.Networks.OVirtNetworks {
 		name, exists := network.Name()
 		if !exists {
@@ -53,7 +53,7 @@ func (o *OVirtSource) syncNetworks(nbi *inventory.NetBoxInventory) error {
 	return nil
 }
 
-func (o *OVirtSource) syncDatacenters(nbi *inventory.NetBoxInventory) error {
+func (o *OVirtSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
 	// First sync oVirt DataCenters as NetBoxClusterGroups
 	for _, datacenter := range o.DataCenters {
 		name, exists := datacenter.Name()
@@ -75,7 +75,7 @@ func (o *OVirtSource) syncDatacenters(nbi *inventory.NetBoxInventory) error {
 	return nil
 }
 
-func (o *OVirtSource) syncClusters(nbi *inventory.NetBoxInventory) error {
+func (o *OVirtSource) syncClusters(nbi *inventory.NetboxInventory) error {
 	clusterType := &objects.ClusterType{
 		NetboxObject: objects.NetboxObject{
 			Tags: o.SourceTags,
@@ -156,7 +156,7 @@ func (o *OVirtSource) syncClusters(nbi *inventory.NetBoxInventory) error {
 
 // Host in oVirt is a represented as device in netbox with a
 // custom role Server
-func (o *OVirtSource) syncHosts(nbi *inventory.NetBoxInventory) error {
+func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 	for hostId, host := range o.Hosts {
 		hostName, exists := host.Name()
 		if !exists {
@@ -308,7 +308,7 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetBoxInventory) error {
 	return nil
 }
 
-func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ovirtsdk4.Host, nbHost *objects.Device) error {
+func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ovirtsdk4.Host, nbHost *objects.Device) error {
 	if nics, exists := ovirtHost.Nics(); exists {
 		master2slave := make(map[string][]string) // masterId: [slaveId1, slaveId2, ...]
 		parent2child := make(map[string][]string) // parentId: [childId, ... ]
@@ -564,7 +564,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetBoxInventory, ovirtHost *ov
 	return nil
 }
 
-func (o *OVirtSource) syncVms(nbi *inventory.NetBoxInventory) error {
+func (o *OVirtSource) syncVms(nbi *inventory.NetboxInventory) error {
 	for vmId, vm := range o.Vms {
 		// VM name, which is used as unique identifier for VMs in Netbox
 		vmName, exists := vm.Name()
@@ -715,7 +715,7 @@ func (o *OVirtSource) syncVms(nbi *inventory.NetBoxInventory) error {
 }
 
 // Syncs VM's interfaces to Netbox
-func (o *OVirtSource) syncVmInterfaces(nbi *inventory.NetBoxInventory, ovirtVm *ovirtsdk4.Vm, netboxVm *objects.VM) error {
+func (o *OVirtSource) syncVmInterfaces(nbi *inventory.NetboxInventory, ovirtVm *ovirtsdk4.Vm, netboxVm *objects.VM) error {
 	var vmPrimaryIpv4 *objects.IPAddress
 	var vmPrimaryIpv6 *objects.IPAddress
 	if reportedDevices, exist := ovirtVm.ReportedDevices(); exist {

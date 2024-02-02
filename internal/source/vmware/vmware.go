@@ -195,8 +195,8 @@ func (vc *VmwareSource) Init() error {
 }
 
 // Function that syncs all data from oVirt to Netbox
-func (vc *VmwareSource) Sync(nbi *inventory.NetBoxInventory) error {
-	syncFunctions := []func(*inventory.NetBoxInventory) error{
+func (vc *VmwareSource) Sync(nbi *inventory.NetboxInventory) error {
+	syncFunctions := []func(*inventory.NetboxInventory) error{
 		vc.syncNetworks,
 		vc.syncDatacenters,
 		vc.syncClusters,

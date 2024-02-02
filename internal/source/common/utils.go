@@ -11,7 +11,7 @@ import (
 // Function that matches vlanName to vlanGroupName using regexRelationsMap.
 //
 // In case there is no match or regexRelations is nil, it will return default VlanGroup.
-func MatchVlanToGroup(nbi *inventory.NetBoxInventory, vlanName string, regexRelations map[string]string) (*objects.VlanGroup, error) {
+func MatchVlanToGroup(nbi *inventory.NetboxInventory, vlanName string, regexRelations map[string]string) (*objects.VlanGroup, error) {
 	if regexRelations == nil {
 		return nbi.VlanGroupsIndexByName[objects.DefaultVlanGroupName], nil
 	}
@@ -33,7 +33,7 @@ func MatchVlanToGroup(nbi *inventory.NetBoxInventory, vlanName string, regexRela
 // Function that matches vlanName to tenant using vlanTenantRelations regex relations map.
 //
 // In case there is no match or vlanTenantRelations is nil, it will return nil.
-func MatchVlanToTenant(nbi *inventory.NetBoxInventory, vlanName string, vlanTenantRelations map[string]string) (*objects.Tenant, error) {
+func MatchVlanToTenant(nbi *inventory.NetboxInventory, vlanName string, vlanTenantRelations map[string]string) (*objects.Tenant, error) {
 	if vlanTenantRelations == nil {
 		return nil, nil
 	}
@@ -55,7 +55,7 @@ func MatchVlanToTenant(nbi *inventory.NetBoxInventory, vlanName string, vlanTena
 // Function that matches Host from hostName to Site using hostSiteRelations.
 //
 // In case that there is not match or hostSiteRelations is nil, it will return nil.
-func MatchHostToSite(nbi *inventory.NetBoxInventory, hostName string, hostSiteRelations map[string]string) (*objects.Site, error) {
+func MatchHostToSite(nbi *inventory.NetboxInventory, hostName string, hostSiteRelations map[string]string) (*objects.Site, error) {
 	if hostSiteRelations == nil {
 		return nil, nil
 	}
@@ -76,7 +76,7 @@ func MatchHostToSite(nbi *inventory.NetBoxInventory, hostName string, hostSiteRe
 // Function that matches Host from hostName to Tenant using hostTenantRelations.
 //
 // In case that there is not match or hostTenantRelations is nil, it will return nil.
-func MatchHostToTenant(nbi *inventory.NetBoxInventory, hostName string, hostTenantRelations map[string]string) (*objects.Tenant, error) {
+func MatchHostToTenant(nbi *inventory.NetboxInventory, hostName string, hostTenantRelations map[string]string) (*objects.Tenant, error) {
 	if hostTenantRelations == nil {
 		return nil, nil
 	}
@@ -97,7 +97,7 @@ func MatchHostToTenant(nbi *inventory.NetBoxInventory, hostName string, hostTena
 // Function that matches Vm from vmName to Tenant using vmTenantRelations.
 //
 // In case that there is not match or hostTenantRelations is nil, it will return nil.
-func MatchVmToTenant(nbi *inventory.NetBoxInventory, vmName string, vmTenantRelations map[string]string) (*objects.Tenant, error) {
+func MatchVmToTenant(nbi *inventory.NetboxInventory, vmName string, vmTenantRelations map[string]string) (*objects.Tenant, error) {
 	if vmTenantRelations == nil {
 		return nil, nil
 	}

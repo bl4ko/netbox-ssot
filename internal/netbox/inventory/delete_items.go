@@ -1,6 +1,6 @@
 package inventory
 
-func (nbi *NetBoxInventory) DeleteOrphans() error {
+func (nbi *NetboxInventory) DeleteOrphans() error {
 	// Ensure OrphanObjectPriority and OrphanManager lengths are the same,
 	// if not, there are missing entries somewhere and need to be fixed.
 	if len(nbi.OrphanManager) != len(nbi.OrphanObjectPriority) {

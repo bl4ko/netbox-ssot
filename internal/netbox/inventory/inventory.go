@@ -11,8 +11,8 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
-// NetBoxInventory is a singleton class to manage a inventory of NetBoxObject objects
-type NetBoxInventory struct {
+// NetboxInventory is a singleton class to manage a inventory of NetBoxObject objects
+type NetboxInventory struct {
 	// Logger is the logger used for logging messages
 	Logger *logger.Logger
 	// NetboxConfig is the Netbox configuration
@@ -95,14 +95,14 @@ type NetBoxInventory struct {
 }
 
 // Func string representation
-func (nbi NetBoxInventory) String() string {
+func (nbi NetboxInventory) String() string {
 	return fmt.Sprintf("NetBoxInventory{Logger: %+v, NetboxConfig: %+v...}", nbi.Logger, nbi.NetboxConfig)
 }
 
 // NewNetboxInventory creates a new NetBoxInventory object.
 // It takes a logger and a NetboxConfig as parameters, and returns a pointer to the newly created NetBoxInventory.
 // The logger is used for logging messages, and the NetboxConfig is used to configure the NetBoxInventory.
-func NewNetboxInventory(logger *logger.Logger, nbConfig *parser.NetboxConfig) *NetBoxInventory {
+func NewNetboxInventory(logger *logger.Logger, nbConfig *parser.NetboxConfig) *NetboxInventory {
 	// Starts with 0 for easier integration with for loops
 	orphanObjectPriority := map[int]string{
 		0:  service.VlanGroupApiPath,
@@ -122,12 +122,12 @@ func NewNetboxInventory(logger *logger.Logger, nbConfig *parser.NetboxConfig) *N
 		14: service.ContactApiPath,
 		15: service.ContactAssignmentApiPath,
 	}
-	nbi := &NetBoxInventory{Logger: logger, NetboxConfig: nbConfig, OrphanManager: make(map[string]map[int]bool), OrphanObjectPriority: orphanObjectPriority}
+	nbi := &NetboxInventory{Logger: logger, NetboxConfig: nbConfig, OrphanManager: make(map[string]map[int]bool), OrphanObjectPriority: orphanObjectPriority}
 	return nbi
 }
 
 // Init function that initializes the NetBoxInventory object with objects from Netbox
-func (nbi *NetBoxInventory) Init() error {
+func (nbi *NetboxInventory) Init() error {
 	baseURL := fmt.Sprintf("%s://%s:%d", nbi.NetboxConfig.HTTPScheme, nbi.NetboxConfig.Hostname, nbi.NetboxConfig.Port)
 
 	nbi.Logger.Debug("Initializing Netbox API with baseURL: ", baseURL)

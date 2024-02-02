@@ -9,7 +9,7 @@ import (
 )
 
 // AddTag adds the newTag to the local netbox inventory.
-func (nbi *NetBoxInventory) AddTag(newTag *objects.Tag) (*objects.Tag, error) {
+func (nbi *NetboxInventory) AddTag(newTag *objects.Tag) (*objects.Tag, error) {
 	existingTagIndex := slices.IndexFunc(nbi.Tags, func(t *objects.Tag) bool {
 		return t.Name == newTag.Name
 	})
@@ -41,8 +41,38 @@ func (nbi *NetBoxInventory) AddTag(newTag *objects.Tag) (*objects.Tag, error) {
 	}
 }
 
+// AddContact adds a contact to the local netbox inventory.
+func (nbi *NetboxInventory) AddSite(newSite *objects.Site) (*objects.Site, error) {
+	newSite.Tags = append(newSite.Tags, nbi.SsotTag)
+	if _, ok := nbi.SitesIndexByName[newSite.Name]; ok {
+		oldSite := nbi.SitesIndexByName[newSite.Name]
+		diffMap, err := utils.JsonDiffMapExceptId(newSite, oldSite)
+		if err != nil {
+			return nil, err
+		}
+		if len(diffMap) > 0 {
+			nbi.Logger.Debug("Site ", newSite.Name, " already exists in Netbox but is out of date. Patching it... ")
+			patchedSite, err := service.Patch[objects.Site](nbi.NetboxApi, oldSite.Id, diffMap)
+			if err != nil {
+				return nil, err
+			}
+			nbi.SitesIndexByName[newSite.Name] = patchedSite
+		} else {
+			nbi.Logger.Debug("Site ", newSite.Name, " already exists in Netbox and is up to date...")
+		}
+	} else {
+		nbi.Logger.Debug("Site ", newSite.Name, " does not exist in Netbox. Creating it...")
+		createdContact, err := service.Create[objects.Site](nbi.NetboxApi, newSite)
+		if err != nil {
+			return nil, err
+		}
+		nbi.SitesIndexByName[newSite.Name] = createdContact
+	}
+	return nbi.SitesIndexByName[newSite.Name], nil
+}
+
 // AddContactRole adds the newContactRole to the local netbox inventory.
-func (nbi *NetBoxInventory) AddContactRole(newContactRole *objects.ContactRole) (*objects.ContactRole, error) {
+func (nbi *NetboxInventory) AddContactRole(newContactRole *objects.ContactRole) (*objects.ContactRole, error) {
 	newContactRole.NetboxObject.Tags = []*objects.Tag{nbi.SsotTag}
 	if _, ok := nbi.ContactRolesIndexByName[newContactRole.Name]; ok {
 		oldContactRole := nbi.ContactRolesIndexByName[newContactRole.Name]
@@ -72,7 +102,7 @@ func (nbi *NetBoxInventory) AddContactRole(newContactRole *objects.ContactRole) 
 }
 
 // AddContactGroup adds contact group to the local netbox inventory.
-func (nbi *NetBoxInventory) AddContactGroup(newContactGroup *objects.ContactGroup) (*objects.ContactGroup, error) {
+func (nbi *NetboxInventory) AddContactGroup(newContactGroup *objects.ContactGroup) (*objects.ContactGroup, error) {
 	if _, ok := nbi.ContactGroupsIndexByName[newContactGroup.Name]; ok {
 		oldContactGroup := nbi.ContactGroupsIndexByName[newContactGroup.Name]
 		diffMap, err := utils.JsonDiffMapExceptId(newContactGroup, oldContactGroup)
@@ -101,7 +131,7 @@ func (nbi *NetBoxInventory) AddContactGroup(newContactGroup *objects.ContactGrou
 }
 
 // AddContact adds a contact to the local netbox inventory.
-func (nbi *NetBoxInventory) AddContact(newContact *objects.Contact) (*objects.Contact, error) {
+func (nbi *NetboxInventory) AddContact(newContact *objects.Contact) (*objects.Contact, error) {
 	newContact.Tags = append(newContact.Tags, nbi.SsotTag)
 	if _, ok := nbi.ContactsIndexByName[newContact.Name]; ok {
 		oldContact := nbi.ContactsIndexByName[newContact.Name]
@@ -133,7 +163,7 @@ func (nbi *NetBoxInventory) AddContact(newContact *objects.Contact) (*objects.Co
 
 // AddContact assignment adds a contact assignment to the local netbox inventory.
 // TODO: Make index check less code and more universal, checking each level is ugly
-func (nbi *NetBoxInventory) AddContactAssignment(newCA *objects.ContactAssignment) (*objects.ContactAssignment, error) {
+func (nbi *NetboxInventory) AddContactAssignment(newCA *objects.ContactAssignment) (*objects.ContactAssignment, error) {
 	if nbi.ContactAssignmentsIndexByContentTypeAndObjectIdAndContactIdAndRoleId[newCA.ContentType] == nil {
 		nbi.ContactAssignmentsIndexByContentTypeAndObjectIdAndContactIdAndRoleId[newCA.ContentType] = make(map[int]map[int]map[int]*objects.ContactAssignment)
 	}
@@ -172,7 +202,7 @@ func (nbi *NetBoxInventory) AddContactAssignment(newCA *objects.ContactAssignmen
 	return nbi.ContactAssignmentsIndexByContentTypeAndObjectIdAndContactIdAndRoleId[newCA.ContentType][newCA.ObjectId][newCA.Contact.Id][newCA.Role.Id], nil
 }
 
-func (nbi *NetBoxInventory) AddCustomField(newCf *objects.CustomField) error {
+func (nbi *NetboxInventory) AddCustomField(newCf *objects.CustomField) error {
 	if _, ok := nbi.CustomFieldsIndexByName[newCf.Name]; ok {
 		oldCustomField := nbi.CustomFieldsIndexByName[newCf.Name]
 		diffMap, err := utils.JsonDiffMapExceptId(newCf, oldCustomField)
@@ -200,7 +230,7 @@ func (nbi *NetBoxInventory) AddCustomField(newCf *objects.CustomField) error {
 	return nil
 }
 
-func (nbi *NetBoxInventory) AddClusterGroup(newCg *objects.ClusterGroup) (*objects.ClusterGroup, error) {
+func (nbi *NetboxInventory) AddClusterGroup(newCg *objects.ClusterGroup) (*objects.ClusterGroup, error) {
 	newCg.Tags = append(newCg.Tags, nbi.SsotTag)
 	if _, ok := nbi.ClusterGroupsIndexByName[newCg.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
@@ -232,7 +262,7 @@ func (nbi *NetBoxInventory) AddClusterGroup(newCg *objects.ClusterGroup) (*objec
 	return nbi.ClusterGroupsIndexByName[newCg.Name], nil
 }
 
-func (nbi *NetBoxInventory) AddClusterType(newClusterType *objects.ClusterType) (*objects.ClusterType, error) {
+func (nbi *NetboxInventory) AddClusterType(newClusterType *objects.ClusterType) (*objects.ClusterType, error) {
 	newClusterType.Tags = append(newClusterType.Tags, nbi.SsotTag)
 	if _, ok := nbi.ClusterTypesIndexByName[newClusterType.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
@@ -266,7 +296,7 @@ func (nbi *NetBoxInventory) AddClusterType(newClusterType *objects.ClusterType) 
 	}
 }
 
-func (nbi *NetBoxInventory) AddCluster(newCluster *objects.Cluster) error {
+func (nbi *NetboxInventory) AddCluster(newCluster *objects.Cluster) error {
 	newCluster.Tags = append(newCluster.Tags, nbi.SsotTag)
 	if _, ok := nbi.ClustersIndexByName[newCluster.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
@@ -297,7 +327,7 @@ func (nbi *NetBoxInventory) AddCluster(newCluster *objects.Cluster) error {
 	return nil
 }
 
-func (nbi *NetBoxInventory) AddDeviceRole(newDeviceRole *objects.DeviceRole) error {
+func (nbi *NetboxInventory) AddDeviceRole(newDeviceRole *objects.DeviceRole) (*objects.DeviceRole, error) {
 	newDeviceRole.Tags = append(newDeviceRole.Tags, nbi.SsotTag)
 	if _, ok := nbi.DeviceRolesIndexByName[newDeviceRole.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
@@ -305,13 +335,13 @@ func (nbi *NetBoxInventory) AddDeviceRole(newDeviceRole *objects.DeviceRole) err
 		delete(nbi.OrphanManager[service.DeviceRoleApiPath], nbi.DeviceRolesIndexByName[newDeviceRole.Name].Id)
 		diffMap, err := utils.JsonDiffMapExceptId(newDeviceRole, oldDeviceRole)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if len(diffMap) > 0 {
 			nbi.Logger.Debug("Device role ", newDeviceRole.Name, " already exists in Netbox but is out of date. Patching it...")
 			patchedDeviceRole, err := service.Patch[objects.DeviceRole](nbi.NetboxApi, oldDeviceRole.Id, diffMap)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			nbi.DeviceRolesIndexByName[newDeviceRole.Name] = patchedDeviceRole
 		} else {
@@ -321,14 +351,14 @@ func (nbi *NetBoxInventory) AddDeviceRole(newDeviceRole *objects.DeviceRole) err
 		nbi.Logger.Debug("Device role ", newDeviceRole.Name, " does not exist in Netbox. Creating it...")
 		newDeviceRole, err := service.Create[objects.DeviceRole](nbi.NetboxApi, newDeviceRole)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		nbi.DeviceRolesIndexByName[newDeviceRole.Name] = newDeviceRole
 	}
-	return nil
+	return nbi.DeviceRolesIndexByName[newDeviceRole.Name], nil
 }
 
-func (nbi *NetBoxInventory) AddManufacturer(newManufacturer *objects.Manufacturer) (*objects.Manufacturer, error) {
+func (nbi *NetboxInventory) AddManufacturer(newManufacturer *objects.Manufacturer) (*objects.Manufacturer, error) {
 	newManufacturer.Tags = append(newManufacturer.Tags, nbi.SsotTag)
 	if _, ok := nbi.ManufacturersIndexByName[newManufacturer.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
@@ -359,7 +389,7 @@ func (nbi *NetBoxInventory) AddManufacturer(newManufacturer *objects.Manufacture
 	return nbi.ManufacturersIndexByName[newManufacturer.Name], nil
 }
 
-func (nbi *NetBoxInventory) AddDeviceType(newDeviceType *objects.DeviceType) (*objects.DeviceType, error) {
+func (nbi *NetboxInventory) AddDeviceType(newDeviceType *objects.DeviceType) (*objects.DeviceType, error) {
 	newDeviceType.Tags = append(newDeviceType.Tags, nbi.SsotTag)
 	if _, ok := nbi.DeviceTypesIndexByModel[newDeviceType.Model]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
@@ -390,7 +420,7 @@ func (nbi *NetBoxInventory) AddDeviceType(newDeviceType *objects.DeviceType) (*o
 	return nbi.DeviceTypesIndexByModel[newDeviceType.Model], nil
 }
 
-func (nbi *NetBoxInventory) AddPlatform(newPlatform *objects.Platform) (*objects.Platform, error) {
+func (nbi *NetboxInventory) AddPlatform(newPlatform *objects.Platform) (*objects.Platform, error) {
 	newPlatform.Tags = append(newPlatform.Tags, nbi.SsotTag)
 	if _, ok := nbi.PlatformsIndexByName[newPlatform.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
@@ -421,7 +451,7 @@ func (nbi *NetBoxInventory) AddPlatform(newPlatform *objects.Platform) (*objects
 	return nbi.PlatformsIndexByName[newPlatform.Name], nil
 }
 
-func (nbi *NetBoxInventory) AddDevice(newDevice *objects.Device) (*objects.Device, error) {
+func (nbi *NetboxInventory) AddDevice(newDevice *objects.Device) (*objects.Device, error) {
 	newDevice.Tags = append(newDevice.Tags, nbi.SsotTag)
 	if _, ok := nbi.DevicesIndexByNameAndSiteId[newDevice.Name][newDevice.Site.Id]; ok {
 		oldDevice := nbi.DevicesIndexByNameAndSiteId[newDevice.Name][newDevice.Site.Id]
@@ -454,7 +484,7 @@ func (nbi *NetBoxInventory) AddDevice(newDevice *objects.Device) (*objects.Devic
 	return nbi.DevicesIndexByNameAndSiteId[newDevice.Name][newDevice.Site.Id], nil
 }
 
-func (nbi *NetBoxInventory) AddVlanGroup(newVlanGroup *objects.VlanGroup) (*objects.VlanGroup, error) {
+func (nbi *NetboxInventory) AddVlanGroup(newVlanGroup *objects.VlanGroup) (*objects.VlanGroup, error) {
 	newVlanGroup.Tags = append(newVlanGroup.Tags, nbi.SsotTag)
 	if _, ok := nbi.VlanGroupsIndexByName[newVlanGroup.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
@@ -485,7 +515,7 @@ func (nbi *NetBoxInventory) AddVlanGroup(newVlanGroup *objects.VlanGroup) (*obje
 	return nbi.VlanGroupsIndexByName[newVlanGroup.Name], nil
 }
 
-func (nbi *NetBoxInventory) AddVlan(newVlan *objects.Vlan) (*objects.Vlan, error) {
+func (nbi *NetboxInventory) AddVlan(newVlan *objects.Vlan) (*objects.Vlan, error) {
 	newVlan.Tags = append(newVlan.Tags, nbi.SsotTag)
 	if _, ok := nbi.VlansIndexByVlanGroupIdAndVid[newVlan.Group.Id][newVlan.Vid]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
@@ -519,7 +549,7 @@ func (nbi *NetBoxInventory) AddVlan(newVlan *objects.Vlan) (*objects.Vlan, error
 	return nbi.VlansIndexByVlanGroupIdAndVid[newVlan.Group.Id][newVlan.Vid], nil
 }
 
-func (nbi *NetBoxInventory) AddInterface(newInterface *objects.Interface) (*objects.Interface, error) {
+func (nbi *NetboxInventory) AddInterface(newInterface *objects.Interface) (*objects.Interface, error) {
 	newInterface.Tags = append(newInterface.Tags, nbi.SsotTag)
 	if _, ok := nbi.InterfacesIndexByDeviceIdAndName[newInterface.Device.Id][newInterface.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
@@ -553,7 +583,7 @@ func (nbi *NetBoxInventory) AddInterface(newInterface *objects.Interface) (*obje
 	return nbi.InterfacesIndexByDeviceIdAndName[newInterface.Device.Id][newInterface.Name], nil
 }
 
-func (nbi *NetBoxInventory) AddVM(newVm *objects.VM) (*objects.VM, error) {
+func (nbi *NetboxInventory) AddVM(newVm *objects.VM) (*objects.VM, error) {
 	newVm.Tags = append(newVm.Tags, nbi.SsotTag)
 	if _, ok := nbi.VMsIndexByName[newVm.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
@@ -585,7 +615,7 @@ func (nbi *NetBoxInventory) AddVM(newVm *objects.VM) (*objects.VM, error) {
 	return nbi.VMsIndexByName[newVm.Name], nil
 }
 
-func (nbi *NetBoxInventory) AddVMInterface(newVMInterface *objects.VMInterface) (*objects.VMInterface, error) {
+func (nbi *NetboxInventory) AddVMInterface(newVMInterface *objects.VMInterface) (*objects.VMInterface, error) {
 	newVMInterface.Tags = append(newVMInterface.Tags, nbi.SsotTag)
 	if _, ok := nbi.VMInterfacesIndexByVMIdAndName[newVMInterface.VM.Id][newVMInterface.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
@@ -619,7 +649,7 @@ func (nbi *NetBoxInventory) AddVMInterface(newVMInterface *objects.VMInterface) 
 	return nbi.VMInterfacesIndexByVMIdAndName[newVMInterface.VM.Id][newVMInterface.Name], nil
 }
 
-func (nbi *NetBoxInventory) AddIPAddress(newIPAddress *objects.IPAddress) (*objects.IPAddress, error) {
+func (nbi *NetboxInventory) AddIPAddress(newIPAddress *objects.IPAddress) (*objects.IPAddress, error) {
 	newIPAddress.Tags = append(newIPAddress.Tags, nbi.SsotTag)
 	if _, ok := nbi.IPAdressesIndexByAddress[newIPAddress.Address]; ok {
 		// Delete id from orphan manager, because it still exists in the sources
@@ -646,6 +676,7 @@ func (nbi *NetBoxInventory) AddIPAddress(newIPAddress *objects.IPAddress) (*obje
 			return nil, err
 		}
 		nbi.IPAdressesIndexByAddress[newIPAddress.Address] = newIPAddress
+		return newIPAddress, nil
 	}
 	return nbi.IPAdressesIndexByAddress[newIPAddress.Address], nil
 }

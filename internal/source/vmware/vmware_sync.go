@@ -14,7 +14,7 @@ import (
 	"github.com/vmware/govmomi/vim25/types"
 )
 
-func (vc *VmwareSource) syncNetworks(nbi *inventory.NetBoxInventory) error {
+func (vc *VmwareSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 	for _, dvpg := range vc.Networks.DistributedVirtualPortgroups {
 		// TODO: currently we are syncing only vlans
 		// Get vlanGroup from relations
@@ -46,7 +46,7 @@ func (vc *VmwareSource) syncNetworks(nbi *inventory.NetBoxInventory) error {
 	return nil
 }
 
-func (vc *VmwareSource) syncDatacenters(nbi *inventory.NetBoxInventory) error {
+func (vc *VmwareSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
 	for _, dc := range vc.DataCenters {
 
 		nbClusterGroup := &objects.ClusterGroup{
@@ -65,7 +65,7 @@ func (vc *VmwareSource) syncDatacenters(nbi *inventory.NetBoxInventory) error {
 	return nil
 }
 
-func (vc *VmwareSource) syncClusters(nbi *inventory.NetBoxInventory) error {
+func (vc *VmwareSource) syncClusters(nbi *inventory.NetboxInventory) error {
 	clusterType := &objects.ClusterType{
 		NetboxObject: objects.NetboxObject{
 			Tags: vc.SourceTags,
@@ -135,7 +135,7 @@ func (vc *VmwareSource) syncClusters(nbi *inventory.NetBoxInventory) error {
 
 // Host in vmware is a represented as device in netbox with a
 // custom role Server
-func (vc *VmwareSource) syncHosts(nbi *inventory.NetBoxInventory) error {
+func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 	for hostId, host := range vc.Hosts {
 		var err error
 		hostName := host.Name
@@ -247,7 +247,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetBoxInventory) error {
 	return nil
 }
 
-func (vc *VmwareSource) syncHostNics(nbi *inventory.NetBoxInventory, vcHost mo.HostSystem, nbHost *objects.Device) error {
+func (vc *VmwareSource) syncHostNics(nbi *inventory.NetboxInventory, vcHost mo.HostSystem, nbHost *objects.Device) error {
 
 	// Sync host's physical interfaces
 	err := vc.syncHostPhysicalNics(nbi, vcHost, nbHost)
@@ -264,7 +264,7 @@ func (vc *VmwareSource) syncHostNics(nbi *inventory.NetBoxInventory, vcHost mo.H
 	return nil
 }
 
-func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetBoxInventory, vcHost mo.HostSystem, nbHost *objects.Device) error {
+func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetboxInventory, vcHost mo.HostSystem, nbHost *objects.Device) error {
 
 	// Collect data from physical interfaces
 	for _, pnic := range vcHost.Config.Network.Pnic {
@@ -395,7 +395,7 @@ func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetBoxInventory, vcH
 	return nil
 }
 
-func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetBoxInventory, vcHost mo.HostSystem, nbHost *objects.Device) error {
+func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetboxInventory, vcHost mo.HostSystem, nbHost *objects.Device) error {
 	// Collect data over all virtual interfaces
 	for _, vnic := range vcHost.Config.Network.Vnic {
 		vnicName := vnic.Device
@@ -561,7 +561,7 @@ func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetBoxInventory, vcHo
 	return nil
 }
 
-func (vc *VmwareSource) syncVms(nbi *inventory.NetBoxInventory) error {
+func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
 	for vmKey, vm := range vc.Vms {
 		// Check if vm is a template, we don't add templates into netbox.
 		if vm.Config != nil {
@@ -748,7 +748,7 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetBoxInventory) error {
 }
 
 // Syncs VM's interfaces to Netbox
-func (vc *VmwareSource) syncVmInterfaces(nbi *inventory.NetBoxInventory, vmwareVm mo.VirtualMachine, netboxVm *objects.VM) error {
+func (vc *VmwareSource) syncVmInterfaces(nbi *inventory.NetboxInventory, vmwareVm mo.VirtualMachine, netboxVm *objects.VM) error {
 	var vmPrimaryIpv4 *objects.IPAddress
 	var vmPrimaryIpv6 *objects.IPAddress
 	var vmDefaultGatewayIpv4 string

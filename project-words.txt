@@ -13,6 +13,7 @@ dcim
 Debugf
 diskattachments
 Dnac
+dnacenter
 DSFP
 dvpg
 dvpgs

@@ -12,7 +12,7 @@ type Source interface {
 	// Init initializes the source
 	Init() error
 	// Sync syncs the source to Netbox inventory
-	Sync(*inventory.NetBoxInventory) error
+	Sync(*inventory.NetboxInventory) error
 }
 
 // CommonConfig is a common configuration that all sources share

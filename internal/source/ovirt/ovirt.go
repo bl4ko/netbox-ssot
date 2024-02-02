@@ -92,8 +92,8 @@ func (o *OVirtSource) Init() error {
 }
 
 // Function that syncs all data from oVirt to Netbox
-func (o *OVirtSource) Sync(nbi *inventory.NetBoxInventory) error {
-	syncFunctions := []func(*inventory.NetBoxInventory) error{
+func (o *OVirtSource) Sync(nbi *inventory.NetboxInventory) error {
+	syncFunctions := []func(*inventory.NetboxInventory) error{
 		o.syncNetworks,
 		o.syncDatacenters,
 		o.syncClusters,

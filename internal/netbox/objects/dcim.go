@@ -28,6 +28,20 @@ type Site struct {
 	Slug string `json:"slug,omitempty"`
 	// Site status. This field is required.
 	Status *SiteStatus `json:"status,omitempty"`
+	// Tenant of the site
+	Tenant *Tenant `json:"tenant,omitempty"`
+
+	// Physical location of the building
+	PhysicalAddress string `json:"physical_address,omitempty"`
+
+	// Latitude of the site.
+	Latitude float64 `json:"latitude,omitempty"`
+	// Longitude of the site.
+	Longitude float64 `json:"longitude,omitempty"`
+}
+
+func (s Site) String() string {
+	return fmt.Sprintf("Site{Name: %s}", s.Name)
 }
 
 // Platform represents an operating system or other software platform which may be running on a device.
@@ -73,6 +87,10 @@ type Manufacturer struct {
 	Name string `json:"name,omitempty"`
 	// URL-friendly unique shorthand. This field is required.
 	Slug string `json:"slug,omitempty"`
+}
+
+func (m Manufacturer) String() string {
+	return fmt.Sprintf("Manufacturer{Name: %s}", m.Name)
 }
 
 var ManufacturerMap = map[string]string{
@@ -128,6 +146,10 @@ type DeviceRole struct {
 	Color Color `json:"color,omitempty"`
 	// VMRole is whether this device role is used to represent virtual machines.
 	VMRole bool `json:"vm_role,omitempty"`
+}
+
+func (dr DeviceRole) String() string {
+	return fmt.Sprintf("DeviceRole{Name: %s}", dr.Name)
 }
 
 // https://github.com/netbox-community/netbox/blob/b93735861d3bde0354c855a8bbd2a2311e8eb920/netbox/dcim/choices.py#L182

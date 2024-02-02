@@ -17,7 +17,7 @@ import (
 )
 
 // NewSource creates a Source from the given configuration
-func NewSource(config *parser.SourceConfig, logger *logger.Logger, netboxInventory *inventory.NetBoxInventory) (common.Source, error) {
+func NewSource(config *parser.SourceConfig, logger *logger.Logger, netboxInventory *inventory.NetboxInventory) (common.Source, error) {
 	// First we create default tags for the source
 	sourceTag, err := netboxInventory.AddTag(&objects.Tag{
 		Name:        config.Tag,
