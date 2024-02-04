@@ -70,6 +70,7 @@ testolvm
 TWDM
 VCPUs
 Virt
+virtualmachine
 vlangroups
 vminterface
 VMSTATUS

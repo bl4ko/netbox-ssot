@@ -42,6 +42,8 @@ type NetboxInventory struct {
 	// DevicesIndexByNameAndSiteId is a map of all devices in the Netbox's inventory, indexed by their name, and
 	// site ID (This is because, netbox constraints: https://github.com/netbox-community/netbox/blob/3d941411d438f77b66d2036edf690c14b459af58/netbox/dcim/models/devices.py#L775)
 	DevicesIndexByNameAndSiteId map[string]map[int]*objects.Device
+	// PrefixesIndexByPrefix is a map of all prefixes in the Netbox's inventory, indexed by their prefix
+	PrefixesIndexByPrefix map[string]*objects.Prefix
 	// VlanGroupsIndexByName is a map of all VlanGroups in the Netbox's inventory, indexed by their name
 	VlanGroupsIndexByName map[string]*objects.VlanGroup
 	// VlansIndexByVlanGroupIdAndVid is a map of all vlans in the Netbox's inventory, indexed by their VlanGroup and vid.
@@ -69,9 +71,9 @@ type NetboxInventory struct {
 	// Orphan manager is a map of objectAPIPath to a set of managed ids for that object type.
 	//
 	// {
-	//		service.DeviceApiPath: {22: true, 3: true, ...},
+	//		"/api/dcim/devices/": {22: true, 3: true, ...},
 	//		"/api/dcim/interface/": {15: true, 36: true, ...},
-	//  	service.Clusters: {121: true, 122: true, ...},
+	//  	"/api/virtualization/clusters/": {121: true, 122: true, ...},
 	//  	"...": [...]
 	// }
 	//
@@ -84,9 +86,9 @@ type NetboxInventory struct {
 	// get the dependency error.
 	//
 	// {
-	//   0: service.TagApiPath
-	//   1: "/api/extras/custom-fields/"
-	//
+	//   0: service.TagApiPath,
+	//   1: service.CustomFieldApiPath,
+	//   ...
 	// }
 	OrphanObjectPriority map[int]string
 
@@ -105,22 +107,23 @@ func (nbi NetboxInventory) String() string {
 func NewNetboxInventory(logger *logger.Logger, nbConfig *parser.NetboxConfig) *NetboxInventory {
 	// Starts with 0 for easier integration with for loops
 	orphanObjectPriority := map[int]string{
-		0:  service.VlanGroupApiPath,
-		1:  service.VlanApiPath,
-		2:  service.IpAddressApiPath,
-		3:  service.InterfaceApiPath,
-		4:  service.VMInterfaceApiPath,
-		5:  service.VirtualMachineApiPath,
-		6:  service.DeviceApiPath,
-		7:  service.PlatformApiPath,
-		8:  service.DeviceTypeApiPath,
-		9:  service.ManufacturerApiPath,
-		10: service.DeviceRoleApiPath,
-		11: service.ClusterApiPath,
-		12: service.ClusterTypeApiPath,
-		13: service.ClusterGroupApiPath,
-		14: service.ContactApiPath,
-		15: service.ContactAssignmentApiPath,
+		0:  service.VlanGroupsApiPath,
+		1:  service.PrefixesApiPath,
+		2:  service.VlansApiPath,
+		3:  service.IpAddressesApiPath,
+		4:  service.InterfacesApiPath,
+		5:  service.VMInterfacesApiPath,
+		6:  service.VirtualMachinesApiPath,
+		7:  service.DevicesApiPath,
+		8:  service.PlatformsApiPath,
+		9:  service.DeviceTypesApiPath,
+		10: service.ManufacturersApiPath,
+		11: service.DeviceRolesApiPath,
+		12: service.ClustersApiPath,
+		13: service.ClusterTypesApiPath,
+		14: service.ClusterGroupsApiPath,
+		15: service.ContactsApiPath,
+		16: service.ContactAssignmentsApiPath,
 	}
 	nbi := &NetboxInventory{Logger: logger, NetboxConfig: nbConfig, OrphanManager: make(map[string]map[int]bool), OrphanObjectPriority: orphanObjectPriority}
 	return nbi
@@ -150,6 +153,7 @@ func (nbi *NetboxInventory) Init() error {
 		nbi.InitIPAddresses,
 		nbi.InitVlanGroups,
 		nbi.InitDefaultVlanGroup,
+		nbi.InitPrefixes,
 		nbi.InitVlans,
 		nbi.InitDeviceRoles,
 		nbi.InitServerDeviceRole,

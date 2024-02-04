@@ -361,6 +361,17 @@ var (
 	InterfaceModeTaggedAll = InterfaceMode{Choice{Value: "tagged-all", Label: "Tagged (All)"}}
 )
 
+type InterfaceDuplex struct {
+	Choice
+}
+
+// https://github.com/netbox-community/netbox/blob/1b9e6bed55d4ee53f60bcd6540bce953ddbf4167/netbox/dcim/choices.py#L1155
+var (
+	DuplexHalf = InterfaceDuplex{Choice{Value: "half", Label: "Half"}}
+	DuplexFull = InterfaceDuplex{Choice{Value: "full", Label: "Full"}}
+	DuplexAuto = InterfaceDuplex{Choice{Value: "auto", Label: "Auto"}}
+)
+
 // Interface represents a physical data interface within a device.
 type Interface struct {
 	NetboxObject
@@ -383,6 +394,11 @@ type Interface struct {
 	LAG *Interface `json:"lag,omitempty"`
 	// MTU is the maximum transmission unit (MTU) configured for the interface.
 	MTU int `json:"mtu,omitempty"`
+	// MAC is the mac address of the interface
+	MAC string `json:"mac_address,omitempty"`
+
+	// Duplex is the duplex mode of the interface
+	Duplex *InterfaceDuplex `json:"duplex,omitempty"`
 
 	//802.1Q Mode
 	Mode *InterfaceMode `json:"mode,omitempty"`
@@ -395,5 +411,5 @@ type Interface struct {
 }
 
 func (i Interface) String() string {
-	return fmt.Sprintf("Interface{Id: %d, Device: %s, Name: %s}", i.Id, i.Device.Name, i.Name)
+	return fmt.Sprintf("Interface{Name: %s, Device: %s, Type: %s}", i.Name, i.Device.Name, i.Type.Label)
 }

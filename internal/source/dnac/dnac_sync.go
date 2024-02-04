@@ -3,9 +3,11 @@ package dnac
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/source/common"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
@@ -37,10 +39,49 @@ func (ds *DnacSource) SyncSites(nbi *inventory.NetboxInventory) error {
 		if err != nil {
 			return fmt.Errorf("adding site: %s", err)
 		}
-		if ds.SiteId2nbSite == nil {
-			ds.SiteId2nbSite = make(map[string]*objects.Site)
-		}
 		ds.SiteId2nbSite[site.ID] = nbSite
+	}
+	return nil
+}
+
+func (ds *DnacSource) SyncVlans(nbi *inventory.NetboxInventory) error {
+	for vid, vlan := range ds.Vlans {
+		vlanGroup, err := common.MatchVlanToGroup(nbi, vlan.InterfaceName, ds.VlanGroupRelations)
+		if err != nil {
+			return fmt.Errorf("vlanGroup: %s", err)
+		}
+		vlanTenant, err := common.MatchVlanToTenant(nbi, vlan.InterfaceName, ds.VlanTenantRelations)
+		if err != nil {
+			return fmt.Errorf("vlanTenant: %s", err)
+		}
+		newVlan, err := nbi.AddVlan(&objects.Vlan{
+			NetboxObject: objects.NetboxObject{
+				Tags: ds.SourceTags,
+			},
+			Name:   vlan.InterfaceName,
+			Group:  vlanGroup,
+			Vid:    vid,
+			Tenant: vlanTenant,
+		})
+		if err != nil {
+			return fmt.Errorf("adding vlan: %s", err)
+		}
+
+		if vlan.Prefix != "" && vlan.NetworkAddress != "" {
+			// Create prefix for this vlan
+			prefix := fmt.Sprintf("%s/%s", vlan.NetworkAddress, vlan.Prefix)
+			_, err = nbi.AddPrefix(&objects.Prefix{
+				NetboxObject: objects.NetboxObject{
+					Tags: ds.SourceTags,
+				},
+				Prefix: prefix,
+				Tenant: vlanTenant,
+				Vlan:   newVlan,
+			})
+			if err != nil {
+				return fmt.Errorf("adding prefix: %s", err)
+			}
+		}
 	}
 	return nil
 }
@@ -126,9 +167,6 @@ func (ds *DnacSource) SyncDevices(nbi *inventory.NetboxInventory) error {
 			return fmt.Errorf("adding dnac device: %s", err)
 		}
 
-		if ds.DeviceId2nbDevice == nil {
-			ds.DeviceId2nbDevice = make(map[string]*objects.Device)
-		}
 		ds.DeviceId2nbDevice[device.ID] = nbDevice
 	}
 
@@ -136,9 +174,89 @@ func (ds *DnacSource) SyncDevices(nbi *inventory.NetboxInventory) error {
 }
 
 func (ds *DnacSource) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error {
-	return nil
-}
+	for ifaceId, iface := range ds.Interfaces {
+		ifaceDescription := iface.Description
+		ifaceDevice := ds.DeviceId2nbDevice[iface.DeviceID]
+		var ifaceDuplex *objects.InterfaceDuplex
+		if iface.Duplex != "" {
+			switch iface.Duplex {
+			case "FullDuplex":
+				ifaceDuplex = &objects.DuplexFull
+			case "AutoNegotiate":
+				ifaceDuplex = &objects.DuplexAuto
+			case "HalfDuplex":
+				ifaceDuplex = &objects.DuplexHalf
+			default:
+				ds.Logger.Errorf("Wrong duplex value: %s", iface.Duplex)
+			}
 
-func (ds *DnacSource) SyncVlans(nbi *inventory.NetboxInventory) error {
+			var ifaceStatus bool
+			switch iface.Status {
+			case "down":
+				ifaceStatus = false
+			case "up":
+				ifaceStatus = true
+			default:
+				ds.Logger.Errorf("wrong interface status: %s", iface.Status)
+			}
+
+			ifaceSpeed, err := strconv.Atoi(iface.Speed)
+			if err != nil {
+				ds.Logger.Errorf("wrong speed for iface %s", iface.Speed)
+			}
+
+			var ifaceType *objects.InterfaceType
+			switch iface.InterfaceType {
+			case "Physical":
+				ifaceType = &objects.OtherInterfaceType // TODO: get from speed
+			case "Virtual":
+				ifaceType = &objects.VirtualInterfaceType
+			default:
+				ds.Logger.Errorf("Unknown interface type: %s. Skipping this device...", iface.InterfaceType)
+				continue
+			}
+
+			ifaceName := iface.PortName
+			if ifaceName == "" {
+				ds.Logger.Errorf("Unknown interface name for iface: %s", ifaceId)
+				continue
+			}
+
+			var ifaceMode *objects.InterfaceMode
+			var ifaceAccessVlan *objects.Vlan
+			var ifaceTrunkVlans []*objects.Vlan
+			switch iface.PortMode {
+			case "access":
+				ifaceMode = &objects.InterfaceModeAccess
+			case "trunk":
+				ifaceMode = &objects.InterfaceModeTagged
+			case "dynamic_auto":
+				// TODO: how to handle this mode in netbox
+			default:
+				ds.Logger.Errorf("Unknown interface mode: %s. Skipping this device...", iface.PortMode)
+			}
+
+			nbIface, err := nbi.AddInterface(&objects.Interface{
+				NetboxObject: objects.NetboxObject{
+					Description: ifaceDescription,
+					Tags:        ds.SourceTags,
+				},
+				Name:         iface.PortName,
+				MAC:          strings.ToUpper(iface.MacAddress),
+				Speed:        objects.InterfaceSpeed(ifaceSpeed),
+				Status:       ifaceStatus,
+				Duplex:       ifaceDuplex,
+				Device:       ifaceDevice,
+				Type:         ifaceType,
+				Mode:         ifaceMode,
+				UntaggedVlan: ifaceAccessVlan,
+				TaggedVlans:  ifaceTrunkVlans,
+			})
+			if err != nil {
+				return fmt.Errorf("add device interface: %s", err)
+			}
+			ds.InterfaceId2nbInterface[ifaceId] = nbIface
+		}
+	}
 	return nil
 }

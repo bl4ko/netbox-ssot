@@ -103,6 +103,8 @@ type Vlan struct {
 	Status *VlanStatus `json:"status,omitempty"`
 	// Tenant that this VLAN belongs to.
 	Tenant *Tenant `json:"tenant,omitempty"`
+	// Site that this VLAN belongs to.
+	Site *Site `json:"site,omitempty"`
 	// Comments about this Vlan.
 	Comments string `json:"comments,omitempty"`
 }
@@ -113,4 +115,38 @@ func (v Vlan) String() string {
 
 type IpRange struct {
 	NetboxObject
+}
+
+type PrefixStatus struct {
+	Choice
+}
+
+// https://github.com/netbox-community/netbox/blob/b408beaed52cb9fc5f7e197a7e00479af3714564/netbox/ipam/choices.py#L21
+var (
+	PrefixStatusContainer  = PrefixStatus{Choice{Value: "container", Label: "Container"}}
+	PrefixStatusActive     = PrefixStatus{Choice{Value: "active", Label: "Active"}}
+	PrefixStatusReserved   = PrefixStatus{Choice{Value: "reserved", Label: "Reserved"}}
+	PrefixStatusDeprecated = PrefixStatus{Choice{Value: "deprecated", Label: "Deprecated"}}
+)
+
+type Prefix struct {
+	NetboxObject
+	// Prefix is a IPv4 or IPv6 network address (with mask). This field is required.
+	Prefix string `json:"prefix,omitempty"`
+	// Status of the prefix (default "active").
+	Status *PrefixStatus `json:"status,omitempty"`
+
+	// Site that this prefix belongs to.
+	Site *Site `json:"site,omitempty"`
+	// Vlan that this prefix belongs to.
+	Vlan *Vlan `json:"vlan,omitempty"`
+
+	// Tenant that this prefix belongs to.
+	Tenant *Tenant `json:"tenant,omitempty"`
+
+	Comments string `json:"comments,omitempty"`
+}
+
+func (p Prefix) String() string {
+	return fmt.Sprintf("Prefix{Prefix: %s}", p.Prefix)
 }

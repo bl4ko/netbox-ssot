@@ -97,7 +97,6 @@ func (ds *DnacSource) InitInterfaces(c *dnac.Client) error {
 	}
 	ds.Interfaces = make(map[string]dnac.ResponseDevicesGetAllInterfacesResponse, len(allInterfaces))
 	ds.DeviceId2InterfaceIds = make(map[string][]string)
-	ds.InterfaceId2DeviceId = make(map[string]string)
 	for _, intf := range allInterfaces {
 		ds.Interfaces[intf.ID] = intf
 		if ds.DeviceId2InterfaceIds[intf.DeviceID] == nil {

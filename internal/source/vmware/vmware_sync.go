@@ -385,6 +385,7 @@ func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetboxInventory, vcH
 			Type:        &objects.OtherInterfaceType, //  TODO: Get type from link speed
 			Speed:       objects.InterfaceSpeed(pnicLinkSpeed),
 			MTU:         pnicMtu,
+			MAC:         strings.ToUpper(pnic.Mac),
 			Mode:        pnicMode,
 			TaggedVlans: taggedVlanList,
 		})
