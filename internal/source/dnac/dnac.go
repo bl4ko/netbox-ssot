@@ -26,9 +26,10 @@ type DnacSource struct {
 	DeviceId2InterfaceIds map[string][]string        // DeviceId -> []InterfaceId
 
 	// Netbox related data for easier access. Initialized in sync functions.
-	SiteId2nbSite           map[string]*objects.Site   // SiteId -> nbSite
-	DeviceId2nbDevice       map[string]*objects.Device // DeviceId -> nbDevice
-	InterfaceId2nbInterface map[string]*objects.Interface
+	Vid2nbVlan              map[int]*objects.Vlan         // VlanId -> nbVlan
+	SiteId2nbSite           map[string]*objects.Site      // SiteId -> nbSite
+	DeviceId2nbDevice       map[string]*objects.Device    // DeviceId -> nbDevice
+	InterfaceId2nbInterface map[string]*objects.Interface // InterfaceId -> nbInterface
 
 	// User defined relations
 	VlanGroupRelations  map[string]string
@@ -70,6 +71,7 @@ func (ds *DnacSource) Init() error {
 
 func (ds *DnacSource) Sync(nbi *inventory.NetboxInventory) error {
 	// initialize variables, that are shared between sync functions
+	ds.Vid2nbVlan = make(map[int]*objects.Vlan)
 	ds.SiteId2nbSite = make(map[string]*objects.Site)
 	ds.DeviceId2nbDevice = make(map[string]*objects.Device)
 	ds.InterfaceId2nbInterface = make(map[string]*objects.Interface)

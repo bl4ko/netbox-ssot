@@ -72,6 +72,7 @@ VCPUs
 Virt
 virtualmachine
 vlangroups
+VLANID
 vminterface
 VMSTATUS
 vnic

@@ -82,6 +82,8 @@ func (ds *DnacSource) SyncVlans(nbi *inventory.NetboxInventory) error {
 				return fmt.Errorf("adding prefix: %s", err)
 			}
 		}
+
+		ds.Vid2nbVlan[vid] = newVlan
 	}
 	return nil
 }
@@ -225,15 +227,25 @@ func (ds *DnacSource) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error
 			var ifaceMode *objects.InterfaceMode
 			var ifaceAccessVlan *objects.Vlan
 			var ifaceTrunkVlans []*objects.Vlan
+			vid, err := strconv.Atoi(iface.VLANID)
+			if err != nil {
+				ds.Logger.Errorf("Can't parse vid for iface %s", iface.VLANID)
+				continue
+			}
 			switch iface.PortMode {
 			case "access":
 				ifaceMode = &objects.InterfaceModeAccess
+				ifaceAccessVlan = ds.Vid2nbVlan[vid]
 			case "trunk":
 				ifaceMode = &objects.InterfaceModeTagged
+				// TODO: ifaceTrunkVlans = append(ifaceTrunkVlans, ds.Vid2nbVlan[vid])
 			case "dynamic_auto":
 				// TODO: how to handle this mode in netbox
+				ds.Logger.Warningf("interface vlans: dynamic_auto is not implemented yet")
+			case "routed":
+				ds.Logger.Warningf("interface vlans: routed is not implemented yet")
 			default:
-				ds.Logger.Errorf("Unknown interface mode: %s. Skipping this device...", iface.PortMode)
+				ds.Logger.Errorf("Unknown interface mode: %s", iface.PortMode)
 			}
 
 			nbIface, err := nbi.AddInterface(&objects.Interface{
