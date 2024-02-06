@@ -59,6 +59,7 @@ func GetAll[T any](api *NetboxAPI, extraParams string) ([]T, error) {
 	api.Logger.Debugf("Getting all %T from Netbox", dummy)
 
 	for {
+		api.Logger.Debugf("Getting %T with limit=%d and offset=%d", dummy, limit, offset)
 		queryPath := fmt.Sprintf("%s?limit=%d&offset=%d%s", path, limit, offset, extraParams)
 		response, err := api.doRequest(MethodGet, queryPath, nil)
 		if err != nil {
@@ -165,6 +166,7 @@ func (api *NetboxAPI) BulkDeleteObjects(objectPath string, idSet map[int]bool) e
 	}
 
 	for i := 0; i < len(ids); i += pageSize {
+		api.Logger.Debugf("Deleting %s with pagesize=%d and offset=%d", objectPath, pageSize, i)
 		end := i + pageSize
 		if end > len(ids) {
 			end = len(ids)
@@ -191,7 +193,6 @@ func (api *NetboxAPI) BulkDeleteObjects(objectPath string, idSet map[int]bool) e
 		if response.StatusCode != http.StatusNoContent {
 			return fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
 		}
-		api.Logger.Debugf("Successfully deleted %d objects of path %s", end-i, objectPath)
 
 	}
 	api.Logger.Debugf("Successfully deleted all objects of path %s", objectPath)

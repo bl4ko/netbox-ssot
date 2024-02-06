@@ -177,10 +177,7 @@ func (ds *DnacSource) SyncDevices(nbi *inventory.NetboxInventory) error {
 }
 
 func (ds *DnacSource) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error {
-	i := 1
 	for ifaceId, iface := range ds.Interfaces {
-		fmt.Printf("Interface[%d]\n", i)
-		i += 1
 		ifaceDescription := iface.Description
 		ifaceDevice := ds.DeviceId2nbDevice[iface.DeviceID]
 		var ifaceDuplex *objects.InterfaceDuplex
@@ -191,8 +188,9 @@ func (ds *DnacSource) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error
 			ifaceDuplex = &objects.DuplexAuto
 		case "HalfDuplex":
 			ifaceDuplex = &objects.DuplexHalf
+		case "":
 		default:
-			ds.Logger.Errorf("Wrong duplex value: %s", iface.Duplex)
+			ds.Logger.Warningf("Unknown duplex value: %s", iface.Duplex)
 		}
 
 		var ifaceStatus bool
@@ -244,11 +242,11 @@ func (ds *DnacSource) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error
 			// TODO: ifaceTrunkVlans = append(ifaceTrunkVlans, ds.Vid2nbVlan[vid])
 		case "dynamic_auto":
 			// TODO: how to handle this mode in netbox
-			ds.Logger.Warningf("interface vlans: dynamic_auto is not implemented yet")
+			ds.Logger.Warningf("vlan mode 'dynamic_auto' is not implemented yet")
 		case "routed":
-			ds.Logger.Warningf("interface vlans: routed is not implemented yet")
+			ds.Logger.Warningf("vlan mode 'routed' is not implemented yet")
 		default:
-			ds.Logger.Errorf("Unknown interface mode: %s", iface.PortMode)
+			ds.Logger.Errorf("Unknown interface mode: '%s'", iface.PortMode)
 		}
 
 		nbIface, err := nbi.AddInterface(&objects.Interface{

@@ -21,6 +21,7 @@ import (
 // VmwareSource represents an vsphere source
 type VmwareSource struct {
 	common.CommonConfig
+	// Vmware API data initialized in init functions
 	Disks       map[string]mo.Datastore
 	DataCenters map[string]mo.Datacenter
 	Clusters    map[string]mo.ClusterComputeResource
