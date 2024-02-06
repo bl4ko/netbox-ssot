@@ -111,7 +111,7 @@ func (ds *DnacSource) SyncDevices(nbi *inventory.NetboxInventory) error {
 		deviceRole, err := nbi.AddDeviceRole(&objects.DeviceRole{
 			Name:   device.Family,
 			Slug:   utils.Slugify(device.Family),
-			Color:  objects.COLOR_AQUA, // TODO
+			Color:  objects.COLOR_AQUA,
 			VMRole: false,
 		})
 		if err != nil {

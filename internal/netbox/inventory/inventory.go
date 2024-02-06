@@ -136,7 +136,7 @@ func (nbi *NetboxInventory) Init() error {
 	nbi.Logger.Debug("Initializing Netbox API with baseURL: ", baseURL)
 	nbi.NetboxApi = service.NewNetBoxAPI(nbi.Logger, baseURL, nbi.NetboxConfig.ApiToken, nbi.NetboxConfig.ValidateCert, nbi.NetboxConfig.Timeout)
 
-	// order matters. TODO: use parallelization in the future, on the init functions that can be parallelized
+	// Order matters. TODO: use parallelization in the future, on the init functions that can be parallelized
 	initFunctions := []func() error{
 		nbi.InitTags,
 		nbi.InitContactGroups,

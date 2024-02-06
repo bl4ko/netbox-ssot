@@ -40,7 +40,7 @@ func New(dest string, logLevel int, name string) (*Logger, error) {
 	return &Logger{log.New(output, "", log.LstdFlags|log.Lshortfile), logLevel, name}, nil
 }
 
-// TODO: custom output
+// Custom log output function. It is used to add additional runtime information to the log message.
 func (l *Logger) Output(calldepth int, s string) error {
 	// Get additional runtime information
 	_, file, line, ok := runtime.Caller(calldepth)

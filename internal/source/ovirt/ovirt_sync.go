@@ -160,7 +160,7 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 	for hostId, host := range o.Hosts {
 		hostName, exists := host.Name()
 		if !exists {
-			o.Logger.Warning("name for oVirt host with id ", hostId, " is empty.")
+			o.Logger.Warningf("name of host with id=%s is empty", hostId)
 		}
 		hostCluster := nbi.ClustersIndexByName[o.Clusters[host.MustCluster().MustId()].MustName()]
 
@@ -312,12 +312,17 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 	if nics, exists := ovirtHost.Nics(); exists {
 		master2slave := make(map[string][]string) // masterId: [slaveId1, slaveId2, ...]
 		parent2child := make(map[string][]string) // parentId: [childId, ... ]
-		processedNicsIds := make(map[string]bool)
-		nicId2nbNic := map[string]*objects.Interface{}
-		var PrimaryIpv4Address string
-		var PrimaryIpv4nicId string
-		var PrimaryIpv6Address string
-		var PrimaryIpv6nicId string
+		processedNicsIds := make(map[string]bool) // set of all nic ids that have already been processed
+
+		nicId2nic := map[string]*objects.Interface{} // nicId: nic
+		nicId2ipv4 := map[string]string{}            // nicId: ipAv4address/mask
+		nicId2ipv6 := map[string]string{}            // nicId: ipv6Address/mask
+
+		var hostIp string
+		if hostAddress, exists := ovirtHost.Address(); exists {
+			hostIp = utils.Lookup(hostAddress)
+		}
+
 		var err error
 
 		// First loop through all nics
@@ -386,8 +391,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 			}
 
 			if nicType == nil {
-				// This is a physical interface.
-				// TODO: depending on speed assign different nic type
+				// This is a physical interface. TODO: depending on speed assign different nic type
 				nicType = &objects.OtherInterfaceType
 			}
 
@@ -439,8 +443,8 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 							return fmt.Errorf("mask to bits: %s", err)
 						}
 					}
-					PrimaryIpv4Address = fmt.Sprintf("%s/%d", nicAddress, mask)
-					PrimaryIpv4nicId = nicId
+					ipv4Address := fmt.Sprintf("%s/%d", nicAddress, mask)
+					nicId2ipv4[nicId] = ipv4Address
 				}
 			}
 			if nicIPv6, exists := nic.Ipv6(); exists {
@@ -452,114 +456,115 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 							return fmt.Errorf("mask to bits: %s", err)
 						}
 					}
-					PrimaryIpv6Address = fmt.Sprintf("%s/%d", nicAddress, mask)
-					PrimaryIpv4nicId = nicId
+					ipv6Address := fmt.Sprintf("%s/%d", nicAddress, mask)
+					nicId2ipv6[nicId] = ipv6Address
 				}
 			}
 
 			processedNicsIds[nicId] = true
-			nicId2nbNic[nicId] = newInterface
+			nicId2nic[nicId] = newInterface
 		}
 
 		// Second loop to add relations between interfaces (e.g. [eno1, eno2] -> bond1)
 		for masterId, slavesIds := range master2slave {
 			var err error
-			masterInterface := nicId2nbNic[masterId]
+			masterInterface := nicId2nic[masterId]
 			if _, ok := processedNicsIds[masterId]; ok {
 				masterInterface, err = nbi.AddInterface(masterInterface)
 				if err != nil {
 					return fmt.Errorf("failed to add oVirt master interface %s with error: %v", masterInterface.Name, err)
 				}
 				delete(processedNicsIds, masterId)
-				nicId2nbNic[masterId] = masterInterface
+				nicId2nic[masterId] = masterInterface
 			}
 			for _, slaveId := range slavesIds {
-				slaveInterface := nicId2nbNic[slaveId]
+				slaveInterface := nicId2nic[slaveId]
 				slaveInterface.LAG = masterInterface
 				slaveInterface, err := nbi.AddInterface(slaveInterface)
 				if err != nil {
 					return fmt.Errorf("failed to add oVirt slave interface %s with error: %v", slaveInterface.Name, err)
 				}
 				delete(processedNicsIds, slaveId)
-				nicId2nbNic[slaveId] = slaveInterface
+				nicId2nic[slaveId] = slaveInterface
 			}
 		}
 
 		// Third loop we connect children with parents (e.g. [bond1.605, bond1.604, bond1.603] -> bond1)
 		for parent, children := range parent2child {
-			parentInterface := nicId2nbNic[parent]
+			parentInterface := nicId2nic[parent]
 			if _, ok := processedNicsIds[parent]; ok {
 				parentInterface, err := nbi.AddInterface(parentInterface)
 				if err != nil {
 					return fmt.Errorf("failed to add oVirt parent interface %s with error: %v", parentInterface.Name, err)
 				}
-				nicId2nbNic[parent] = parentInterface
+				nicId2nic[parent] = parentInterface
 				delete(processedNicsIds, parent)
 			}
 			for _, child := range children {
-				childInterface := nicId2nbNic[child]
+				childInterface := nicId2nic[child]
 				childInterface.ParentInterface = parentInterface
 				childInterface, err := nbi.AddInterface(childInterface)
 				if err != nil {
 					return fmt.Errorf("failed to add oVirt child interface %s with error: %v", childInterface.Name, err)
 				}
-				nicId2nbNic[child] = childInterface
+				nicId2nic[child] = childInterface
 				delete(processedNicsIds, child)
 			}
 		}
 
 		// Fourth loop we check if there are any nics that were not processed
 		for nicId := range processedNicsIds {
-			nbNic, err := nbi.AddInterface(nicId2nbNic[nicId])
+			nbNic, err := nbi.AddInterface(nicId2nic[nicId])
 			if err != nil {
-				return fmt.Errorf("failed to add oVirt interface %s with error: %v", nicId2nbNic[nicId].Name, err)
+				return fmt.Errorf("failed to add oVirt interface %s with error: %v", nicId2nic[nicId].Name, err)
 			}
-			nicId2nbNic[nicId] = nbNic
+			nicId2nic[nicId] = nbNic
 		}
 
-		// We check that host has correct primary ips based on nics data
-		if PrimaryIpv4Address != "" && (nbHost.PrimaryIPv4 == nil || nbHost.PrimaryIPv4.Address != PrimaryIpv4Address) {
-			nbiAddr, err := nbi.AddIPAddress(&objects.IPAddress{
+		// Fifth loop we add ip addresses to interfaces
+		for nicId, ipv4 := range nicId2ipv4 {
+			nbNic := nicId2nic[nicId]
+			address := strings.Split(ipv4, "/")[0]
+			nbIpAddress, err := nbi.AddIPAddress(&objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
 					Tags: o.SourceTags,
 				},
+				Address:            ipv4,
 				Status:             &objects.IPAddressStatusActive, // TODO
-				DNSName:            utils.ReverseLookup(PrimaryIpv4Address),
-				Address:            PrimaryIpv4Address,
+				DNSName:            utils.ReverseLookup(address),
 				AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
-				AssignedObjectId:   nicId2nbNic[PrimaryIpv4nicId].Id,
+				AssignedObjectId:   nbNic.Id,
 			})
 			if err != nil {
-				return fmt.Errorf("add ipAddress: %s", err)
+				return fmt.Errorf("add ipv4 address: %s", err)
 			}
-			newHost := *nbHost // shallow copy
-			newHost.PrimaryIPv4 = nbiAddr
-			_, err = nbi.AddDevice(&newHost)
-			if err != nil {
-				return fmt.Errorf("updating primary ipv4 of host: %s", err)
+			if address == hostIp {
+				hostCopy := *nbHost
+				hostCopy.PrimaryIPv4 = nbIpAddress
+				_, err := nbi.AddDevice(&hostCopy)
+				if err != nil {
+					return fmt.Errorf("adding primary ipv4 address: %s", err)
+				}
 			}
 		}
-		if PrimaryIpv6Address != "" && (nbHost.PrimaryIPv6 == nil || nbHost.PrimaryIPv6.Address != PrimaryIpv6Address) {
-			nbiAddr, err := nbi.AddIPAddress(&objects.IPAddress{
+		for nicId, ipv6 := range nicId2ipv6 {
+			nbNic := nicId2nic[nicId]
+			address := strings.Split(ipv6, "/")[0]
+			_, err := nbi.AddIPAddress(&objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
 					Tags: o.SourceTags,
 				},
+				Address:            ipv6,
 				Status:             &objects.IPAddressStatusActive, // TODO
-				DNSName:            utils.ReverseLookup(PrimaryIpv6Address),
-				Address:            PrimaryIpv6Address,
+				DNSName:            utils.ReverseLookup(address),
 				AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
-				AssignedObjectId:   nicId2nbNic[PrimaryIpv6nicId].Id,
+				AssignedObjectId:   nbNic.Id,
 			})
 			if err != nil {
-				return fmt.Errorf("add ipAddress: %s", err)
-			}
-			newHost := *nbHost // shallow copy
-			newHost.PrimaryIPv6 = nbiAddr
-			_, err = nbi.AddDevice(&newHost)
-			if err != nil {
-				return fmt.Errorf("updating primary ipv6 of host: %s", err)
+				return fmt.Errorf("add ipv6 address: %s", err)
 			}
 		}
+
 	}
 	return nil
 }
@@ -716,8 +721,6 @@ func (o *OVirtSource) syncVms(nbi *inventory.NetboxInventory) error {
 
 // Syncs VM's interfaces to Netbox
 func (o *OVirtSource) syncVmInterfaces(nbi *inventory.NetboxInventory, ovirtVm *ovirtsdk4.Vm, netboxVm *objects.VM) error {
-	var vmPrimaryIpv4 *objects.IPAddress
-	var vmPrimaryIpv6 *objects.IPAddress
 	if reportedDevices, exist := ovirtVm.ReportedDevices(); exist {
 		for _, reportedDevice := range reportedDevices.Slice() {
 			if reportedDeviceType, exist := reportedDevice.Type(); exist {
@@ -775,7 +778,7 @@ func (o *OVirtSource) syncVmInterfaces(nbi *inventory.NetboxInventory, ovirtVm *
 										}
 									}
 
-									ipAddress, err := nbi.AddIPAddress(&objects.IPAddress{
+									newIpAddress, err := nbi.AddIPAddress(&objects.IPAddress{
 										NetboxObject: objects.NetboxObject{
 											Tags: o.SourceTags,
 										},
@@ -791,18 +794,21 @@ func (o *OVirtSource) syncVmInterfaces(nbi *inventory.NetboxInventory, ovirtVm *
 										// TODO: return should be here, commented just for now
 										// return fmt.Errorf("failed to sync oVirt vm's interface %s ip %s: %v", vmInterface, ip.MustAddress(), err)
 										o.Logger.Error(fmt.Sprintf("failed to sync oVirt vm's interface %s ip %s: %v", vmInterface, ip.MustAddress(), err))
-
 									}
 
-									// TODO: criteria to determine if reported device is primary IP
+									// Check if ip is primary
 									switch ipVersion {
 									case "v4":
-										if vmPrimaryIpv4 == nil {
-											vmPrimaryIpv4 = ipAddress
-										}
-									case "v6":
-										if vmPrimaryIpv6 == nil {
-											vmPrimaryIpv6 = ipAddress
+										vmIp := utils.Lookup(netboxVm.Name)
+										if vmIp != "" {
+											if ipAddress == vmIp {
+												vmCopy := *netboxVm
+												vmCopy.PrimaryIPv4 = newIpAddress
+												_, err := nbi.AddVM(&vmCopy)
+												if err != nil {
+													return fmt.Errorf("adding primary ipv4 address: %s", err)
+												}
+											}
 										}
 									}
 								}
@@ -813,21 +819,5 @@ func (o *OVirtSource) syncVmInterfaces(nbi *inventory.NetboxInventory, ovirtVm *
 			}
 		}
 	}
-	// Update netboxVM with primary IPs
-	// TODO: determine which ip is primary ipv4 and which is primary ipv6
-	// TODO: then assign them to netboxVM
-	// if vmPrimaryIpv4 != nil && (netboxVm.PrimaryIPv4 == nil || vmPrimaryIpv4.Address != netboxVm.PrimaryIPv4.Address) {
-	// 	netboxVm.PrimaryIPv4 = vmPrimaryIpv4
-	// 	if _, err := nbi.AddVM(netboxVm); err != nil {
-	// 		return fmt.Errorf("failed to sync oVirt vm's primary ipv4: %v", err)
-	// 	}
-	// }
-	// if vmPrimaryIpv6 != nil && (netboxVm.PrimaryIPv6 == nil || vmPrimaryIpv6.Address != netboxVm.PrimaryIPv6.Address) {
-	// 	netboxVm.PrimaryIPv6 = vmPrimaryIpv6
-	// 	if _, err := nbi.AddVM(netboxVm); err != nil {
-	// 		return fmt.Errorf("failed to sync oVirt vm's primary ipv6: %v", err)
-	// 	}
-	// }
-
 	return nil
 }
