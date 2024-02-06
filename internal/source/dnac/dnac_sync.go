@@ -56,7 +56,8 @@ func (ds *DnacSource) SyncVlans(nbi *inventory.NetboxInventory) error {
 		}
 		newVlan, err := nbi.AddVlan(&objects.Vlan{
 			NetboxObject: objects.NetboxObject{
-				Tags: ds.SourceTags,
+				Tags:        ds.SourceTags,
+				Description: vlan.VLANType,
 			},
 			Name:   vlan.InterfaceName,
 			Group:  vlanGroup,
@@ -176,99 +177,138 @@ func (ds *DnacSource) SyncDevices(nbi *inventory.NetboxInventory) error {
 }
 
 func (ds *DnacSource) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error {
+	i := 1
 	for ifaceId, iface := range ds.Interfaces {
+		fmt.Printf("Interface[%d]\n", i)
+		i += 1
 		ifaceDescription := iface.Description
 		ifaceDevice := ds.DeviceId2nbDevice[iface.DeviceID]
 		var ifaceDuplex *objects.InterfaceDuplex
-		if iface.Duplex != "" {
-			switch iface.Duplex {
-			case "FullDuplex":
-				ifaceDuplex = &objects.DuplexFull
-			case "AutoNegotiate":
-				ifaceDuplex = &objects.DuplexAuto
-			case "HalfDuplex":
-				ifaceDuplex = &objects.DuplexHalf
-			default:
-				ds.Logger.Errorf("Wrong duplex value: %s", iface.Duplex)
-			}
+		switch iface.Duplex {
+		case "FullDuplex":
+			ifaceDuplex = &objects.DuplexFull
+		case "AutoNegotiate":
+			ifaceDuplex = &objects.DuplexAuto
+		case "HalfDuplex":
+			ifaceDuplex = &objects.DuplexHalf
+		default:
+			ds.Logger.Errorf("Wrong duplex value: %s", iface.Duplex)
+		}
 
-			var ifaceStatus bool
-			switch iface.Status {
-			case "down":
-				ifaceStatus = false
-			case "up":
-				ifaceStatus = true
-			default:
-				ds.Logger.Errorf("wrong interface status: %s", iface.Status)
-			}
+		var ifaceStatus bool
+		switch iface.Status {
+		case "down":
+			ifaceStatus = false
+		case "up":
+			ifaceStatus = true
+		default:
+			ds.Logger.Errorf("wrong interface status: %s", iface.Status)
+		}
 
-			ifaceSpeed, err := strconv.Atoi(iface.Speed)
-			if err != nil {
-				ds.Logger.Errorf("wrong speed for iface %s", iface.Speed)
-			}
+		ifaceSpeed, err := strconv.Atoi(iface.Speed)
+		if err != nil {
+			ds.Logger.Errorf("wrong speed for iface %s", iface.Speed)
+		}
 
-			var ifaceType *objects.InterfaceType
-			switch iface.InterfaceType {
-			case "Physical":
-				ifaceType = &objects.OtherInterfaceType // TODO: get from speed
-			case "Virtual":
-				ifaceType = &objects.VirtualInterfaceType
-			default:
-				ds.Logger.Errorf("Unknown interface type: %s. Skipping this device...", iface.InterfaceType)
-				continue
-			}
+		var ifaceType *objects.InterfaceType
+		switch iface.InterfaceType {
+		case "Physical":
+			ifaceType = &objects.OtherInterfaceType // TODO: get from speed
+		case "Virtual":
+			ifaceType = &objects.VirtualInterfaceType
+		default:
+			ds.Logger.Errorf("Unknown interface type: %s. Skipping this device...", iface.InterfaceType)
+			continue
+		}
 
-			ifaceName := iface.PortName
-			if ifaceName == "" {
-				ds.Logger.Errorf("Unknown interface name for iface: %s", ifaceId)
-				continue
-			}
+		ifaceName := iface.PortName
+		if ifaceName == "" {
+			ds.Logger.Errorf("Unknown interface name for iface: %s", ifaceId)
+			continue
+		}
 
-			var ifaceMode *objects.InterfaceMode
-			var ifaceAccessVlan *objects.Vlan
-			var ifaceTrunkVlans []*objects.Vlan
-			vid, err := strconv.Atoi(iface.VLANID)
-			if err != nil {
-				ds.Logger.Errorf("Can't parse vid for iface %s", iface.VLANID)
-				continue
-			}
-			switch iface.PortMode {
-			case "access":
-				ifaceMode = &objects.InterfaceModeAccess
-				ifaceAccessVlan = ds.Vid2nbVlan[vid]
-			case "trunk":
-				ifaceMode = &objects.InterfaceModeTagged
-				// TODO: ifaceTrunkVlans = append(ifaceTrunkVlans, ds.Vid2nbVlan[vid])
-			case "dynamic_auto":
-				// TODO: how to handle this mode in netbox
-				ds.Logger.Warningf("interface vlans: dynamic_auto is not implemented yet")
-			case "routed":
-				ds.Logger.Warningf("interface vlans: routed is not implemented yet")
-			default:
-				ds.Logger.Errorf("Unknown interface mode: %s", iface.PortMode)
-			}
+		var ifaceMode *objects.InterfaceMode
+		var ifaceAccessVlan *objects.Vlan
+		var ifaceTrunkVlans []*objects.Vlan
+		vid, err := strconv.Atoi(iface.VLANID)
+		if err != nil {
+			ds.Logger.Errorf("Can't parse vid for iface %s", iface.VLANID)
+			continue
+		}
+		switch iface.PortMode {
+		case "access":
+			ifaceMode = &objects.InterfaceModeAccess
+			ifaceAccessVlan = ds.Vid2nbVlan[vid]
+		case "trunk":
+			ifaceMode = &objects.InterfaceModeTagged
+			// TODO: ifaceTrunkVlans = append(ifaceTrunkVlans, ds.Vid2nbVlan[vid])
+		case "dynamic_auto":
+			// TODO: how to handle this mode in netbox
+			ds.Logger.Warningf("interface vlans: dynamic_auto is not implemented yet")
+		case "routed":
+			ds.Logger.Warningf("interface vlans: routed is not implemented yet")
+		default:
+			ds.Logger.Errorf("Unknown interface mode: %s", iface.PortMode)
+		}
 
-			nbIface, err := nbi.AddInterface(&objects.Interface{
+		nbIface, err := nbi.AddInterface(&objects.Interface{
+			NetboxObject: objects.NetboxObject{
+				Description: ifaceDescription,
+				Tags:        ds.SourceTags,
+			},
+			Name:         iface.PortName,
+			MAC:          strings.ToUpper(iface.MacAddress),
+			Speed:        objects.InterfaceSpeed(ifaceSpeed),
+			Status:       ifaceStatus,
+			Duplex:       ifaceDuplex,
+			Device:       ifaceDevice,
+			Type:         ifaceType,
+			Mode:         ifaceMode,
+			UntaggedVlan: ifaceAccessVlan,
+			TaggedVlans:  ifaceTrunkVlans,
+		})
+		if err != nil {
+			return fmt.Errorf("add device interface: %s", err)
+		}
+
+		// Add IP address to the interface
+		if iface.IPv4Address != "" {
+			defaultMask := 32
+			if iface.IPv4Mask != "" {
+				maskBits, err := utils.MaskToBits(iface.IPv4Mask)
+				if err != nil {
+					return fmt.Errorf("wrong mask: %s", err)
+				}
+				defaultMask = maskBits
+			}
+			nbIpAddress, err := nbi.AddIPAddress(&objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
-					Description: ifaceDescription,
-					Tags:        ds.SourceTags,
+					Tags: ds.SourceTags,
 				},
-				Name:         iface.PortName,
-				MAC:          strings.ToUpper(iface.MacAddress),
-				Speed:        objects.InterfaceSpeed(ifaceSpeed),
-				Status:       ifaceStatus,
-				Duplex:       ifaceDuplex,
-				Device:       ifaceDevice,
-				Type:         ifaceType,
-				Mode:         ifaceMode,
-				UntaggedVlan: ifaceAccessVlan,
-				TaggedVlans:  ifaceTrunkVlans,
+				Address:            fmt.Sprintf("%s/%d", iface.IPv4Address, defaultMask),
+				Status:             &objects.IPAddressStatusActive,
+				DNSName:            utils.ReverseLookup(iface.IPv4Address),
+				AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
+				AssignedObjectId:   nbIface.Id,
 			})
 			if err != nil {
-				return fmt.Errorf("add device interface: %s", err)
+				return fmt.Errorf("adding ip address: %s", err)
 			}
-			ds.InterfaceId2nbInterface[ifaceId] = nbIface
+
+			// To determine if this interface, has the same IP address as the device's management IP
+			// we need to check if management IP is in the same subnet as this interface
+			deviceManagementIp := ds.Devices[iface.DeviceID].ManagementIPAddress
+			if deviceManagementIp == iface.IPv4Address {
+				deviceCopy := *ifaceDevice
+				deviceCopy.PrimaryIPv4 = nbIpAddress
+				_, err = nbi.AddDevice(&deviceCopy)
+				if err != nil {
+					return fmt.Errorf("adding primary ipv4 address: %s", err)
+				}
+			}
 		}
+
+		ds.InterfaceId2nbInterface[ifaceId] = nbIface
 	}
 	return nil
 }

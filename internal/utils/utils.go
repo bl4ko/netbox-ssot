@@ -109,7 +109,23 @@ func ReverseLookup(ipAddress string) string {
 	}
 
 	if len(names) > 0 {
-		return names[0]
+		domain := strings.TrimSuffix(names[0], ".")
+		return domain
+	}
+
+	return ""
+}
+
+// Function that receives hostname and performs a forward lookup
+// to get the IP address. If the forward lookup fails, it returns an empty string.
+func Lookup(hostname string) string {
+	ips, err := net.LookupIP(hostname)
+	if err != nil {
+		return ""
+	}
+
+	if len(ips) > 0 {
+		return ips[0].String()
 	}
 
 	return ""
