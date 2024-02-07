@@ -72,7 +72,7 @@ type CustomField struct {
 	ContentTypes []string `json:"content_types,omitempty"`
 	// Description is a description of the field. This field is optional.
 	Description string `json:"description,omitempty"`
-	// Weighting for search. Lower values are considered more important. Deafult (1000)
+	// Weighting for search. Lower values are considered more important. Default (1000)
 	SearchWeight int `json:"search_weight,omitempty"`
 	// Filter logic. This field is required. (Default loose)
 	FilterLogic FilterLogic `json:"filter_logic,omitempty"`

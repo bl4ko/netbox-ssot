@@ -17,6 +17,7 @@ dvpg
 dvpgs
 Dvswitch
 epon
+errcheck
 gbase
 GBIC
 GBPS
@@ -38,6 +39,7 @@ netbox
 NGPON
 nics
 NICSTATUS
+nonspacing
 Nvidea
 OSFP
 OSFPRHS
@@ -71,6 +73,7 @@ vminterface
 VMSTATUS
 vnic
 VRRP
+vsphere
 Warningf
 XENPAK
 XGPON

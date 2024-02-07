@@ -1,0 +1,78 @@
+linters-settings:
+  misspell:
+    locale: US
+  errcheck:
+    ignore: github.com/bl4ko/netbox-ssot/internal/logger:.*
+
+linters:
+  enable:
+    # - cyclop # TODO: enable in future
+    # - errorlint # TODO: enable in future
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - containedctx
+    - decorder
+    - dogsled
+    # - dupl # TODO: enable in future
+    # - dupword # TODO: enable in future
+    - durationcheck
+    # - errchkjson # TODO: enable in future
+    - errname
+    - execinquery
+    # - exhaustive # TODO: enable in future
+    - exportloopref
+    # - forcetypeassert # TODO: enable in future
+    - gci
+    - gocheckcompilerdirectives
+    # - gochecknoglobals # TODO: enable in future
+    - gochecknoinits
+    # - gocognit # TODO: enable in future
+    - goconst
+    # - gocritic # TODO enable in future
+    # - gocyclo # TODO: enable in future
+    # - godot # TODO: enable in future
+    # - goerr113 # TODO: enable in future
+    - goheader
+    - goimports
+    # - gomnd # TODO: enable in future
+    - gomoddirectives
+    - goprintffuncname
+    # - gosec # TODO: enable in future
+    - gosmopolitan
+    - grouper
+    - importas
+    - interfacebloat
+    # - ireturn # TODO: enable in future
+    # - lll # TODO: enable in future
+    # - maintidx # TODO: enable in future
+    - makezero
+    - mirror
+    - misspell
+    - musttag
+    - nakedret
+    # - nestif # TODO: enable in future
+    - nilerr
+    # - nilnil # TODO: enable in future
+    - noctx
+    - nolintlint
+    - nosprintfhostport
+    # - paralleltest # TODO: enable in future
+    - prealloc
+    - predeclared
+    - promlinter
+    - reassign
+    # - revive # TODO: enable in future
+    - rowserrcheck
+    - sqlclosecheck
+    - tagalign
+    - tenv
+    - thelper
+    - tparallel
+    - unconvert
+    # - unparam # TODO: enable in future
+    - usestdlibvars
+    - wastedassign
+    # - whitespace # TODO: enable in future
+    - zerologlint

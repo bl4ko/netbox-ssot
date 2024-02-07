@@ -139,18 +139,31 @@ func (vc *VmwareSource) Init() error {
 	if err != nil {
 		return fmt.Errorf("failed creating containerView: %s", err)
 	}
-	defer containerView.Destroy(ctx)
+
+	// Ensure the containerView is destroyed after we are done with it
+	defer func() {
+		err := containerView.Destroy(ctx)
+		if err != nil {
+			vc.Logger.Errorf("failed destroying containerView: %s", err)
+		}
+	}()
 
 	vc.Logger.Debug("Connection to vmware source ", vc.SourceConfig.Hostname, " established successfully")
 
 	// Create CustomFieldManager to map custom field ids to their names
 	// This is required to determine which custom field key is used for
 	// which custom field name (e.g.g 202 -> vm owner, 203 -> vm description...)
-	vc.CreateCustomFieldRelation(ctx, conn.Client)
+	err = vc.CreateCustomFieldRelation(ctx, conn.Client)
+	if err != nil {
+		return fmt.Errorf("create custom field relation failed: %s", err)
+	}
 
-	// Find relation between datacenters and clusters. Currently we have to manually traverse
+	// Find relation between data centers and clusters. Currently we have to manually traverse
 	// the tree to get this relation.
-	vc.CreateClusterDataCenterRelation(ctx, conn.Client)
+	err = vc.CreateClusterDataCenterRelation(ctx, conn.Client)
+	if err != nil {
+		return fmt.Errorf("create cluster datacenter relation failed: %s", err)
+	}
 
 	// Initialize items from vsphere API to local storage
 	initFunctions := []func(context.Context, *view.ContainerView) error{

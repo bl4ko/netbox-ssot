@@ -11,7 +11,7 @@ import (
 )
 
 // NetboxAPI is a service used for communicating with the Netbox API.
-// It is created via constructur func newNetboxAPI()
+// It is created via constructor func newNetboxAPI()
 type NetboxAPI struct {
 	Logger     *logger.Logger
 	HttpClient *http.Client

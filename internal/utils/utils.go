@@ -10,6 +10,7 @@ import (
 	"unicode"
 
 	"github.com/bl4ko/netbox-ssot/internal/logger"
+	"golang.org/x/text/runes"
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
 )
@@ -197,15 +198,20 @@ func ConvertStringsToPairs(input []string) map[string]string {
 	return output
 }
 
-// Function that removes diacritics and normalize strings
-func removeDiacritics(s string) string {
-	t := transform.Chain(norm.NFD, transform.RemoveFunc(isMn), norm.NFC)
-	result, _, _ := transform.String(t, s)
-	return result
+// Define a new type that implements the runes.Set interface
+type mnSet struct{}
+
+// Contains implements the runes.Set interface for mnSet.
+// It returns true if the rune is a nonspacing mark.
+func (mnSet) Contains(r rune) bool {
+	return unicode.Is(unicode.Mn, r)
 }
 
-func isMn(r rune) bool {
-	return unicode.Is(unicode.Mn, r) // Mn: non spacing marks
+// Function that removes diacritics and normalizes strings
+func removeDiacritics(s string) string {
+	t := transform.Chain(norm.NFD, runes.Remove(mnSet{}), norm.NFC)
+	result, _, _ := transform.String(t, s)
+	return result
 }
 
 // Function that matches array of names to array of emails (which could be subset of it).
