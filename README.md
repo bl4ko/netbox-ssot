@@ -1,16 +1,25 @@
 # Netbox-SSOT
 
-Netbox-ssot is a tool to keep Netbox in sync with external data sources. 
+Netbox-ssot is a tool to keep Netbox in sync with external data sources.
+It is designed to be run as a cronjob, and will periodically update Netbox
+with the latest data from the external sources.
 
-Currently the supported external data sources types are:
+Currently, the supported external data sources types are:
 
 - `ovirt`
 - `vmware`
+- `dnac`
 
+> :warning: **This project is under heavy development, use with caution.**
 
 ## Configuration
 
-Example config can be found in [example section](#example-config)
+Netbox-ssot is configured via a single yaml file.
+The configuration file is divided into three sections:
+
+- [`logger`](#logger): Logger configuration
+- [`netbox`](#netbox): Netbox configuration
+- [`source`](#source): Array of configuration for each data source
 
 ### Logger
 
@@ -18,7 +27,6 @@ Example config can be found in [example section](#example-config)
 | -------------- | ------------------------------------------------------ | ---- | --------------- | ------- | -------- |
 | `logger.level` | Log level                                              | int  | 0-3             | 1       | Yes      |
 | `logger.dest`  | Log output filename. Default `""` representing stdout. | str  | Any valid path  | ""      | No       |
-
 
 ### Netbox
 
@@ -57,9 +65,6 @@ Example config can be found in [example section](#example-config)
 | `source.vlanGroupRelations`     | Regex relations in format `regex = vlanGroup`, that map each vlan that satisfies regex to vlanGroup              | []string     | any             | []                      | no       |
 | `source.vlanTenantRelations`    | Regex relations in format `regex = tenantName`, that map each vlan that satisfies regex to tenant                | []string     | any             | []                      | no       |
 | `source.customFieldMappings`    | Mappings of format `customFieldName = option`. Currently supported options are `contact`, `owner`, `description` | []string     | any             | []                      | no       |
-
-#### Vcenter specific
-
 
 ### Example config
 
@@ -103,7 +108,7 @@ Create k8s secret from self defined config.yaml:
 kubectl create secret generic netbox-ssot-secret --from-file=config.yaml
 ```
 
-Apply [cronjob](cronjob.yaml) with custom settings:
+Apply [cronjob](./k8s/cronjob.yaml) with custom settings:
 
 ```yaml
 kubectl apply -f cronjob.yaml
