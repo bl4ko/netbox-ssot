@@ -1,4 +1,5 @@
 adminpass
+automerge
 BASEFX
 BASELFX
 BASET
@@ -25,7 +26,9 @@ GBIC
 GBPS
 GEPON
 glbp
+goinstall
 golangci
+gomod
 govmomi
 gpon
 HOSTSTATUS
@@ -60,6 +63,7 @@ QSFP
 QSFPDD
 qsfpp
 reporteddevices
+rojopolis
 SFPDD
 SFPP
 slaac
@@ -84,5 +88,3 @@ wordlists
 XENPAK
 XGPON
 XGSPON
-goinstall
-rojopolis
