@@ -1,6 +1,5 @@
 // cSpell Settings
 {
-  // Version of the setting file. Always 0.2
   "language": "en",
   "dictionaries": [
     "project-words"
@@ -10,5 +9,15 @@
       "name": "project-words",
       "path": "./project-words.txt"
     }
+  ],
+  "ignorePaths": [
+    ".git/*",
+    ".git/!{COMMIT_EDITMSG,EDITMSG}",
+    ".git/*/**",
+    ".gitignore",
+    "action/lib/**",
+    "cspell.json",
+    "go.mod",
+    "go.sum"
   ]
 }

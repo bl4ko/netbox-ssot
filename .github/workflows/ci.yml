@@ -4,7 +4,6 @@ on:
   push: 
     branches:
       - main
-      - develop
     paths:
       - cmd/**
       - internal/**
@@ -15,7 +14,6 @@ on:
   pull_request:
     branches:
       - main
-      - develop
     paths:
       - cmd/**
       - internal/**

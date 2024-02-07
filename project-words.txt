@@ -5,6 +5,7 @@ BASELFX
 BASET
 BASETX
 Bips
+calldepth
 CDFP
 CDMA
 CPAK
@@ -39,7 +40,10 @@ Infof
 Inspur
 intf
 ipam
+ipnet
+ipvs
 Kbps
+lycheeverse
 MBPS
 netbox
 NGPON
@@ -68,12 +72,15 @@ SFPDD
 SFPP
 slaac
 SLAAC
+slugified
 Sriov
 ssot
 Supermicro
 testolvm
 TWDM
 VCPUs
+veth
+virbr
 Virt
 virtualmachine
 vlangroups
@@ -83,9 +90,9 @@ VMSTATUS
 vnic
 VRRP
 vsphere
+vxlan
 Warningf
 wordlists
 XENPAK
 XGPON
 XGSPON
-lycheeverse

@@ -100,7 +100,7 @@ func GeneratePlatformName(osType string, osVersion string) string {
 }
 
 // Function that returns true if the given string
-// representing an vm's interface name is valid and false otherwise.
+// representing an virtual machine interface name is valid and false otherwise.
 // Valid interface names are the ones that pass regex filtering.
 func IsVMInterfaceNameValid(vmIfaceName string) (bool, error) {
 	ifaceFilter := map[string]string{
