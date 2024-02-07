@@ -1,6 +1,6 @@
 module github.com/bl4ko/netbox-ssot
 
-go 1.21.4
+go 1.21
 
 require (
 	github.com/ovirt/go-ovirt v4.3.4+incompatible // indirect
