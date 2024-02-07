@@ -23,7 +23,6 @@ on:
       - .golangci.yml
       - go.mod
       - go.sum
-  workflow_dispatch:
 
 jobs:
   test:
@@ -33,7 +32,9 @@ jobs:
         go-version: ["1.21.x"]
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Setup Go
         uses: actions/setup-go@v4
         with:

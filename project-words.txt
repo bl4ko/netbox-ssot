@@ -25,6 +25,7 @@ GBIC
 GBPS
 GEPON
 glbp
+golangci
 govmomi
 gpon
 HOSTSTATUS
@@ -79,6 +80,9 @@ vnic
 VRRP
 vsphere
 Warningf
+wordlists
 XENPAK
 XGPON
 XGSPON
+goinstall
+rojopolis
