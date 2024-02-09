@@ -27,6 +27,7 @@ GBIC
 GBPS
 GEPON
 glbp
+GOARCH
 goinstall
 golangci
 gomod
@@ -77,6 +78,7 @@ Sriov
 ssot
 Supermicro
 testolvm
+topsecret
 TWDM
 VCPUs
 veth
@@ -96,4 +98,3 @@ wordlists
 XENPAK
 XGPON
 XGSPON
-GOARCH
