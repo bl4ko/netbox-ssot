@@ -1,26 +1,26 @@
 name: Run tests and upload results
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - cmd/**
-      - internal/**
-      - .dockerignore
-      - .golangci.yml
-      - go.mod
-      - go.sum
+  # push:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - cmd/**
+  #     - internal/**
+  #     - .dockerignore
+  #     - .golangci.yml
+  #     - go.mod
+  #     - go.sum
   pull_request:
     branches:
       - main
-    paths:
-      - cmd/**
-      - internal/**
-      - .dockerignore
-      - .golangci.yml
-      - go.mod
-      - go.sum
+    # paths:
+    #   - cmd/**
+    #   - internal/**
+    #   - .dockerignore
+    #   - .golangci.yml
+    #   - go.mod
+    #   - go.sum
 
 jobs:
   test:
@@ -41,9 +41,6 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v4
         with:
-          # Require: The version of golangci-lint to use.
-          # When `install-mode` is `binary` (default) the value can be v1.2 or v1.2.3 or `latest` to use the latest version.
-          # When `install-mode` is `goinstall` the value can be v1.2.3, `latest`, or the hash of a commit.
           version: latest
           args: --timeout=5m
 

@@ -6,11 +6,12 @@ with the latest data from the external sources.
 
 Currently, the supported external data sources types are:
 
-- `ovirt`
-- `vmware`
-- `dnac`
+- [`ovirt`](https://www.ovirt.org/)
+- [`vmware`](https://www.vmware.com/products/vcenter.html)
+- [`dnac`](https://www.cisco.com/site/us/en/products/networking/catalyst-center/index.html)
 
-> :warning: **This project is under heavy development, use with caution.**
+> [!WARNING]
+> **This project is still under heavy development, use with caution.**
 
 ## Configuration
 
@@ -20,6 +21,8 @@ The configuration file is divided into three sections:
 - [`logger`](#logger): Logger configuration
 - [`netbox`](#netbox): Netbox configuration
 - [`source`](#source): Array of configuration for each data source
+
+Example configuration can be found [here](#example-config).
 
 ### Logger
 
