@@ -52,6 +52,7 @@ nics
 NICSTATUS
 nonspacing
 Nvidea
+olvm
 OSFP
 OSFPRHS
 ovirt

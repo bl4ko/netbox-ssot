@@ -33,41 +33,40 @@ Example configuration can be found [here](#example-config).
 
 ### Netbox
 
-| Parameter              | Description                                                                                                | Type   | Possible values | Default       | Required |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------- | ------ | --------------- | ------------- | -------- |
-| `netbox.apiToken`      | apiToken to access netbox                                                                                  | str    | Any valid token | ""            | Yes      |
-| `netbox.hostname`      | Netbox hostname (e.g `netbox.example.com`)                                                                 | str    | Valid hostname  | ""            | Yes      |
-| `netbox.port`          | Netbox port                                                                                                | int    | 0-65536         | 443           | No       |
-| `netbox.HTTPScheme`    | Netbox API HTTP scheme                                                                                     | str    | http, https     | https         | No       |
-| `netbox.validateCert`  | Validate Netbox's TLS certificate                                                                          | bool   | true, false     | false         | No       |
-| `netbox.timeout`       | Max netbox API call length in seconds                                                                      | int    | >=0             | 30            | No       |
-| `netbox.removeOrphans` | Remove all objects tagged with **netbox-ssot** which, were not found on the sources, during this iteration | bool   | true, false     | true          | No       |
-| `netbox.tag`           | Tag to be applied to all objects managed by netbox-ssot                                                    | string | any             | "netbox-ssot" | No       |
-| `netbox.tagColor`      | TagColor for the netbox-ssot tag.                                                                          | string | any             | "07426b"      | No       |
+| Parameter               | Description                                                                                                                                   | Type     | Possible values | Default       | Required |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | -------- | --------------- | ------------- | -------- |
+| `netbox.apiToken`       | apiToken to access netbox                                                                                                                     | str      | Any valid token | ""            | Yes      |
+| `netbox.hostname`       | Netbox hostname (e.g `netbox.example.com`)                                                                                                    | str      | Valid hostname  | ""            | Yes      |
+| `netbox.port`           | Netbox port                                                                                                                                   | int      | 0-65536         | 443           | No       |
+| `netbox.HTTPScheme`     | Netbox API HTTP scheme                                                                                                                        | str      | [http, https]   | https         | No       |
+| `netbox.validateCert`   | Validate Netbox's TLS certificate                                                                                                             | bool     | [true, false]   | false         | No       |
+| `netbox.timeout`        | Max netbox API call length in seconds                                                                                                         | int      | >=0             | 30            | No       |
+| `netbox.removeOrphans`  | Remove all objects tagged with **netbox-ssot** which, were not found on the sources, during this iteration                                    | bool     | [true, false]   | true          | No       |
+| `netbox.tag`            | Tag to be applied to all objects managed by netbox-ssot                                                                                       | string   | any             | "netbox-ssot" | No       |
+| `netbox.tagColor`       | TagColor for the netbox-ssot tag.                                                                                                             | string   | any             | "07426b"      | No       |
+| `netbox.sourcePriority` | Array of source names in order of priority. If an object (e.g. Vlan) is found in multiple sources, the first source in the list will be used. | []string | any             | []            | No       |
 
 ### Source
 
-| Parameter                       | Description                                                                                                      | Type         | Possible values | Default                 | Required |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------ | --------------- | ----------------------- | -------- |
-| `source`                        | Array of data sources. Each data source requires its own config                                                  | []SourceType | SourceType      | []                      | No       |
-| `source.name`                   | Name of the data source.                                                                                         | str          | any             | ""                      | Yes      |
-| `source.type`                   | Data source type                                                                                                 | str          | ovirt, vmware   | ""                      | Yes      |
-| `source.hostname`               | Hostname of the data source                                                                                      | str          | any             | ""                      | Yes      |
-| `source.port`                   | Port of the data source                                                                                          | int          | 0-65536         | 443                     | No       |
-| `source.username`               | Username of the data source account.                                                                             | str          | any             | ""                      | Yes      |
-| `source.password`               | Password of the data source account.                                                                             | str          | any             | ""                      | Yes      |
-| `source.validateCert`           | Enforce TLS certificate validation.                                                                              | bool         | true, false     | false                   | No       |
-| `source.permittedSubnets`       | Array of subnets permitted for the source. Format: CIDR notation                                                 | []string     | any             | []                      | No       |
-| `source.tag`                    | Tag to be applied to all objects created by this source.                                                         | string       | any             | "source-" + source.name | No       |
-| `source.tagColor`               | TagColor for the source tag.                                                                                     | string       | any             | ovirt: "07426b"         | No       |
-| `source.hostSiteRelations`      | Regex relations in format `regex = siteName`, that map each host that satisfies regex to site                    | []string     | any             | []                      | No       |
-| `source.clusterSiteRelations`   | Regex relations in format `regex = siteName`, that map each cluster that satisfies regex to site                 | []string     | any             | []                      | No       |
-| `source.clusterTenantRelations` | Regex relations in format `regex = tenantName`, that map each cluster that satisfies regex to tenant             | []string     | any             | []                      | no       |
-| `source.hostTenantRelations`    | Regex relations in format `regex = tenantName`, that map each host that satisfies regex to tenant                | []string     | any             | []                      | no       |
-| `source.vmTenantRelations`      | Regex relations in format `regex = tenantName`, that map each vm that satisfies regex to tenant                  | []string     | any             | []                      | no       |
-| `source.vlanGroupRelations`     | Regex relations in format `regex = vlanGroup`, that map each vlan that satisfies regex to vlanGroup              | []string     | any             | []                      | no       |
-| `source.vlanTenantRelations`    | Regex relations in format `regex = tenantName`, that map each vlan that satisfies regex to tenant                | []string     | any             | []                      | no       |
-| `source.customFieldMappings`    | Mappings of format `customFieldName = option`. Currently supported options are `contact`, `owner`, `description` | []string     | any             | []                      | no       |
+| Parameter                       | Description                                                                                                        | Source Type     | Type     | Possible values       | Default                 | Required |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------ | --------------- | -------- | --------------------- | ----------------------- |
+| `source.name`                   | Name of the data source.                                                                                           | all             | str      | any                   | ""                      | Yes      |
+| `source.type`                   | Data source type                                                                                                   | all             | str      | [ovirt, vmware, dnac] | ""                      | Yes      |
+| `source.hostname`               | Hostname of the data source                                                                                        | all             | str      | any                   | ""                      | Yes      |
+| `source.port`                   | Port of the data source                                                                                            | all             | int      | 0-65536               | 443                     | No       |
+| `source.username`               | Username of the data source account.                                                                               | all             | str      | any                   | ""                      | Yes      |
+| `source.password`               | Password of the data source account.                                                                               | all             | str      | any                   | ""                      | Yes      |
+| `source.validateCert`           | Enforce TLS certificate validation.                                                                                | all             | bool     | [true, false]         | false                   | No       |
+| `source.tag`                    | Tag to be applied to all objects created by this source.                                                           | all             | string   | any                   | "source-${source.name}" | No       |
+| `source.tagColor`               | TagColor for the source tag.                                                                                       | all             | string   | any                   | Predefined              | No       |
+| `source.hostSiteRelations`      | Regex relations in format `regex = siteName`, that map each host that satisfies regex to site.                     | [vmware, ovirt] | []string | any                   | []                      | No       |
+| `source.clusterSiteRelations`   | Regex relations in format `regex = siteName`, that map each cluster that satisfies regex to site.                  | [vmware, ovirt] | []string | any                   | []                      | No       |
+| `source.clusterTenantRelations` | Regex relations in format `regex = tenantName`, that map each cluster that satisfies regex to tenant.              | [vmware, ovirt] | []string | any                   | []                      | No       |
+| `source.hostTenantRelations`    | Regex relations in format `regex = tenantName`, that map each host that satisfies regex to tenant.                 | [vmware, ovirt] | []string | any                   | []                      | No       |
+| `source.vmTenantRelations`      | Regex relations in format `regex = tenantName`, that map each vm that satisfies regex to tenant.                   | [vmware, ovirt] | []string | any                   | []                      | No       |
+| `source.vlanGroupRelations`     | Regex relations in format `regex = vlanGroup`, that map each vlan that satisfies regex to vlanGroup.               | all             | []string | any                   | []                      | No       |
+| `source.vlanTenantRelations`    | Regex relations in format `regex = tenantName`, that map each vlan that satisfies regex to tenant.                 | [vmware, ovirt] | []string | any                   | []                      | No       |
+| `source.customFieldMappings`    | Mappings of format `customFieldName = option`. Currently, supported options are `contact`, `owner`, `description`. | [vmware ]       | []string | any                   | []                      | No       |
 
 ### Example config
 
@@ -81,6 +80,7 @@ netbox:
   hostname: "netbox.example.com" # Netbox FQDN
   port: 443
   timeout: 30 # API call timeout in seconds
+  sourcePriority: ["Test oVirt", "prodvmware", "dnacenter"] # Not required, but recommended
 
 source:
   - name: "Test oVirt"
@@ -93,7 +93,20 @@ source:
       - "Contact = contact" # Vmware Field "Contact" will be mapped to Netbox Contact object
       - "Owner = owner"
       - "Comments = description"
+
+  - name: prodvmware
+    type: vmware
+    hostname: vcenter.example.com
+    username: svcuser
+    password: svcpassword
+
+  - name: dnacenter
+    type: dnac
+    hostname: dnac.example.com
+    username: user
+    password: "pa$$w0rd"
 ```
+
 
 ## Deployment
 
