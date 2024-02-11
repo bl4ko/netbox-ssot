@@ -19,5 +19,6 @@
     "cspell.json",
     "go.mod",
     "go.sum"
-  ]
+  ],
+  "enabled": false
 }

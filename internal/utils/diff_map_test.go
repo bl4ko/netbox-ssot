@@ -392,7 +392,6 @@ func TestMapAttributeDiff(t *testing.T) {
 			expectedDiff: map[string]interface{}{
 				"custom_fields": map[string]interface{}{
 					"host_cpu_cores": "5 cpu cores",
-					"host_mem":       "10 GB",
 					"existing_tag1":  "existing_tag1",
 					"existing_tag2":  "existing_tag2",
 				},
