@@ -26,6 +26,7 @@ gbase
 GBIC
 GBPS
 GEPON
+gitleaks
 glbp
 GOARCH
 goinstall
@@ -78,6 +79,7 @@ slugified
 Sriov
 ssot
 Supermicro
+testdata
 testolvm
 topsecret
 TWDM

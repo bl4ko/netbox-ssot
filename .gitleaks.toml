@@ -1,0 +1,8 @@
+title = "gitleaks config"
+
+# https://github.com/gitleaks/gitleaks?tab=readme-ov-file#configuration
+[allowlist]
+description = "global allow lists"
+paths = [
+    '''internal/parser/testdata/*''',
+]
