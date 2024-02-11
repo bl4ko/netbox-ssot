@@ -6,6 +6,7 @@ BASET
 BASETX
 Bips
 calldepth
+cddc
 CDFP
 CDMA
 CPAK
@@ -22,6 +23,7 @@ dvpgs
 Dvswitch
 epon
 errcheck
+ffeb
 gbase
 GBIC
 GBPS
@@ -45,6 +47,7 @@ ipam
 ipnet
 ipvs
 Kbps
+longtext
 lycheeverse
 MBPS
 netbox
@@ -65,7 +68,9 @@ Portgroup
 Portgroups
 prodolvm
 prodovirt
+prodvcenter
 pswitch
+Pvlan
 QSFP
 QSFPDD
 qsfpp
@@ -81,6 +86,8 @@ ssot
 Supermicro
 testdata
 testolvm
+teststring
+testvcenter
 topsecret
 TWDM
 VCPUs
@@ -101,3 +108,5 @@ wordlists
 XENPAK
 XGPON
 XGSPON
+buildx
+prodvmware

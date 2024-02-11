@@ -97,8 +97,8 @@ source:
   - name: prodvmware
     type: vmware
     hostname: vcenter.example.com
-    username: svcuser
-    password: svcpassword
+    username: user
+    password: "top_secret"
 
   - name: dnacenter
     type: dnac

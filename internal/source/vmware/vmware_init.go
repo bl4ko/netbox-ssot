@@ -55,7 +55,7 @@ func (vc *VmwareSource) InitNetworks(ctx context.Context, containerView *view.Co
 		case *types.VmwareDistributedVirtualSwitchVlanIdSpec:
 			vlanIds = append(vlanIds, int(v.VlanId))
 		default:
-			return fmt.Errorf("uknown vlan info spec %T", v)
+			return fmt.Errorf("unknown vlan info spec %T", v)
 		}
 
 		for _, vid := range vlanIds {

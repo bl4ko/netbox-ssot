@@ -137,7 +137,7 @@ type VMInterface struct {
 	BridgedInterface *VMInterface `json:"bridge,omitempty"`
 	// 802.1Q VLAN Tagging Mode
 	Mode *VMInterfaceMode `json:"mode,omitempty"`
-	// When Mode=VMInterfaceModeTagged: TaggedVlans is a list of all the VLANs that are tagged on the inteface.
+	// When Mode=VMInterfaceModeTagged: TaggedVlans is a list of all the VLANs that are tagged on the interface.
 	TaggedVlans []*Vlan `json:"tagged_vlans,omitempty"`
 	// When mode=VMInterfaceModeAccess: UntaggedVlan is the VLAN that is untagged on the interface.
 	UntaggedVlan *Vlan `json:"untagged_vlan,omitempty"`
