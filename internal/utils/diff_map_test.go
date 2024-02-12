@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 )
 
@@ -82,7 +83,7 @@ func TestPrimaryAttributesDiff(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			outputDiff, err := JsonDiffMapExceptId(tt.newStruct, tt.existingStruct, tt.resetFields)
+			outputDiff, err := JsonDiffMapExceptId(tt.newStruct, tt.existingStruct, tt.resetFields, nil)
 			if err != nil {
 				t.Errorf("JsonDiffMapExceptId() error = %v", err)
 			}
@@ -149,7 +150,7 @@ func TestChoicesAttributesDiff(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			outputDiff, err := JsonDiffMapExceptId(tt.newStruct, tt.existingStruct, tt.resetFields)
+			outputDiff, err := JsonDiffMapExceptId(tt.newStruct, tt.existingStruct, tt.resetFields, nil)
 			if err != nil {
 				t.Errorf("JsonDiffMapExceptId() error = %v", err)
 			}
@@ -225,7 +226,7 @@ func TestStructAttributeDiff(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			outputDiff, err := JsonDiffMapExceptId(tt.newStruct, tt.existingStruct, tt.resetFields)
+			outputDiff, err := JsonDiffMapExceptId(tt.newStruct, tt.existingStruct, tt.resetFields, nil)
 			if err != nil {
 				t.Errorf("JsonDiffMapExceptId() error = %v", err)
 			}
@@ -307,7 +308,7 @@ func TestSliceAttributeDiff(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			outputDiff, err := JsonDiffMapExceptId(tt.newStruct, tt.existingStruct, tt.resetFields)
+			outputDiff, err := JsonDiffMapExceptId(tt.newStruct, tt.existingStruct, tt.resetFields, nil)
 			if err != nil {
 				t.Errorf("JsonDiffMapExceptId() error = %v", err)
 			}
@@ -401,7 +402,60 @@ func TestMapAttributeDiff(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			outputDiff, err := JsonDiffMapExceptId(tt.newStruct, tt.existingStruct, tt.resetFields)
+			outputDiff, err := JsonDiffMapExceptId(tt.newStruct, tt.existingStruct, tt.resetFields, nil)
+			if err != nil {
+				t.Errorf("JsonDiffMapExceptId() error = %v", err)
+			}
+			if !reflect.DeepEqual(outputDiff, tt.expectedDiff) {
+				t.Errorf("JsonDiffMapExceptId() = %v, want %v", outputDiff, tt.expectedDiff)
+			}
+		})
+	}
+}
+
+func TestPriorityMergeDiff(t *testing.T) {
+	tests := []struct {
+		name           string
+		newStruct      interface{}
+		existingStruct interface{}
+		resetFields    bool
+		sourcePriority map[string]int
+		expectedDiff   map[string]interface{}
+	}{
+		{
+			name:        "First object has higher priority",
+			resetFields: false,
+			newStruct: &objects.Vlan{
+				Name: "Vlan1000",
+				Vid:  1000,
+				NetboxObject: objects.NetboxObject{
+					CustomFields: map[string]string{
+						constants.CustomFieldSourceName: "test1",
+					},
+				},
+			},
+			existingStruct: &objects.Vlan{
+				Name: "1000Vlan",
+				Vid:  1000,
+				NetboxObject: objects.NetboxObject{
+					CustomFields: map[string]string{
+						constants.CustomFieldSourceName: "test2",
+					},
+				},
+			},
+			sourcePriority: map[string]int{
+				"test1": 0,
+				"test2": 1,
+			},
+			expectedDiff: map[string]interface{}{
+				"name": "Vlan1000",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			outputDiff, err := JsonDiffMapExceptId(tt.newStruct, tt.existingStruct, tt.resetFields, nil)
 			if err != nil {
 				t.Errorf("JsonDiffMapExceptId() error = %v", err)
 			}

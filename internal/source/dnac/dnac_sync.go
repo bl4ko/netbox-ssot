@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
@@ -16,7 +17,10 @@ func (ds *DnacSource) SyncSites(nbi *inventory.NetboxInventory) error {
 	for _, site := range ds.Sites {
 		dnacSite := &objects.Site{
 			NetboxObject: objects.NetboxObject{
-				Tags: ds.SourceTags,
+				Tags: ds.CommonConfig.SourceTags,
+				CustomFields: map[string]string{
+					constants.CustomFieldSourceName: ds.SourceConfig.Name,
+				},
 			},
 			Name: site.Name,
 			Slug: utils.Slugify(site.Name),
@@ -56,8 +60,11 @@ func (ds *DnacSource) SyncVlans(nbi *inventory.NetboxInventory) error {
 		}
 		newVlan, err := nbi.AddVlan(&objects.Vlan{
 			NetboxObject: objects.NetboxObject{
-				Tags:        ds.SourceTags,
+				Tags:        ds.CommonConfig.SourceTags,
 				Description: vlan.VLANType,
+				CustomFields: map[string]string{
+					constants.CustomFieldSourceName: ds.SourceConfig.Name,
+				},
 			},
 			Name:   vlan.InterfaceName,
 			Group:  vlanGroup,
@@ -73,7 +80,10 @@ func (ds *DnacSource) SyncVlans(nbi *inventory.NetboxInventory) error {
 			prefix := fmt.Sprintf("%s/%s", vlan.NetworkAddress, vlan.Prefix)
 			_, err = nbi.AddPrefix(&objects.Prefix{
 				NetboxObject: objects.NetboxObject{
-					Tags: ds.SourceTags,
+					Tags: ds.CommonConfig.SourceTags,
+					CustomFields: map[string]string{
+						constants.CustomFieldSourceName: ds.SourceConfig.Name,
+					},
 				},
 				Prefix: prefix,
 				Tenant: vlanTenant,
@@ -154,8 +164,11 @@ func (ds *DnacSource) SyncDevices(nbi *inventory.NetboxInventory) error {
 
 		nbDevice, err := nbi.AddDevice(&objects.Device{
 			NetboxObject: objects.NetboxObject{
-				Tags:        ds.SourceTags,
+				Tags:        ds.CommonConfig.SourceTags,
 				Description: description,
+				CustomFields: map[string]string{
+					constants.CustomFieldSourceName: ds.SourceConfig.Name,
+				},
 			},
 			Name:         device.Hostname,
 			DeviceRole:   deviceRole,
@@ -252,7 +265,10 @@ func (ds *DnacSource) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error
 		nbIface, err := nbi.AddInterface(&objects.Interface{
 			NetboxObject: objects.NetboxObject{
 				Description: ifaceDescription,
-				Tags:        ds.SourceTags,
+				Tags:        ds.CommonConfig.SourceTags,
+				CustomFields: map[string]string{
+					constants.CustomFieldSourceName: ds.SourceConfig.Name,
+				},
 			},
 			Name:         iface.PortName,
 			MAC:          strings.ToUpper(iface.MacAddress),
@@ -281,7 +297,10 @@ func (ds *DnacSource) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error
 			}
 			nbIpAddress, err := nbi.AddIPAddress(&objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
-					Tags: ds.SourceTags,
+					Tags: ds.CommonConfig.SourceTags,
+					CustomFields: map[string]string{
+						constants.CustomFieldHostCpuCoresName: ds.SourceConfig.Name,
+					},
 				},
 				Address:            fmt.Sprintf("%s/%d", iface.IPv4Address, defaultMask),
 				Status:             &objects.IPAddressStatusActive,

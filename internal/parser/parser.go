@@ -40,12 +40,13 @@ type NetboxConfig struct {
 	Hostname string `yaml:"hostname"`
 	Port     int    `yaml:"port"`
 	// Can be http or https (default)
-	HTTPScheme    HTTPScheme `yaml:"httpScheme"`
-	ValidateCert  bool       `yaml:"validateCert"`
-	Timeout       int        `yaml:"timeout"`
-	Tag           string     `yaml:"tag"`
-	TagColor      string     `yaml:"tagColor"`
-	RemoveOrphans bool       `yaml:"removeOrphans"`
+	HTTPScheme     HTTPScheme `yaml:"httpScheme"`
+	ValidateCert   bool       `yaml:"validateCert"`
+	Timeout        int        `yaml:"timeout"`
+	Tag            string     `yaml:"tag"`
+	TagColor       string     `yaml:"tagColor"`
+	RemoveOrphans  bool       `yaml:"removeOrphans"`
+	SourcePriority []string   `yaml:"sourcePriority"`
 }
 
 func (n NetboxConfig) String() string {
@@ -140,6 +141,23 @@ func validateNetboxConfig(config *Config) error {
 		for _, c := range config.Netbox.TagColor {
 			if c < '0' || c > '9' && c < 'a' || c > 'f' {
 				return errors.New("netbox.tagColor: must be a string of 6 lowercase hexadecimal characters")
+			}
+		}
+	}
+	if len(config.Netbox.SourcePriority) > 0 {
+		if len(config.Netbox.SourcePriority) != len(config.Sources) {
+			return fmt.Errorf("netbox.sourcePriority: len(config.Netbox.SourcePriority != len(config.Sources))")
+		}
+		for _, sourceName := range config.Netbox.SourcePriority {
+			contains := false
+			for _, source := range config.Sources {
+				if source.Name == sourceName {
+					contains = true
+					break
+				}
+			}
+			if !contains {
+				return fmt.Errorf("netbox.sourcePriority: source[%s] doesn't exist in sources array", sourceName)
 			}
 		}
 	}

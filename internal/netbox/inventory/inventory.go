@@ -19,6 +19,8 @@ type NetboxInventory struct {
 	NetboxConfig *parser.NetboxConfig
 	// NetboxApi is the Netbox API object, for communicating with the Netbox API
 	NetboxApi *service.NetboxAPI
+	// SourcePriority: if object is found on multiple sources, which source has the priority for the object attributes.
+	SourcePriority map[string]int
 	// Tags is a list of all tags in the netbox inventory
 	Tags []*objects.Tag
 	// ContactGroupsIndexByName is a map of all contact groups indexed by their names.
@@ -105,6 +107,10 @@ func (nbi NetboxInventory) String() string {
 // It takes a logger and a NetboxConfig as parameters, and returns a pointer to the newly created NetBoxInventory.
 // The logger is used for logging messages, and the NetboxConfig is used to configure the NetBoxInventory.
 func NewNetboxInventory(logger *logger.Logger, nbConfig *parser.NetboxConfig) *NetboxInventory {
+	sourcePriority := make(map[string]int, len(nbConfig.SourcePriority))
+	for i, sourceName := range nbConfig.SourcePriority {
+		sourcePriority[sourceName] = i
+	}
 	// Starts with 0 for easier integration with for loops
 	orphanObjectPriority := map[int]string{
 		0:  service.VlanGroupsApiPath,
@@ -125,7 +131,7 @@ func NewNetboxInventory(logger *logger.Logger, nbConfig *parser.NetboxConfig) *N
 		15: service.ContactsApiPath,
 		16: service.ContactAssignmentsApiPath,
 	}
-	nbi := &NetboxInventory{Logger: logger, NetboxConfig: nbConfig, OrphanManager: make(map[string]map[int]bool), OrphanObjectPriority: orphanObjectPriority}
+	nbi := &NetboxInventory{Logger: logger, NetboxConfig: nbConfig, SourcePriority: sourcePriority, OrphanManager: make(map[string]map[int]bool), OrphanObjectPriority: orphanObjectPriority}
 	return nbi
 }
 
@@ -138,6 +144,8 @@ func (nbi *NetboxInventory) Init() error {
 
 	// Order matters. TODO: use parallelization in the future, on the init functions that can be parallelized
 	initFunctions := []func() error{
+		nbi.InitCustomFields,
+		nbi.InitSsotCustomFields,
 		nbi.InitTags,
 		nbi.InitContactGroups,
 		nbi.InitContactRoles,
@@ -158,8 +166,6 @@ func (nbi *NetboxInventory) Init() error {
 		nbi.InitDeviceRoles,
 		nbi.InitServerDeviceRole,
 		nbi.InitDeviceTypes,
-		nbi.InitCustomFields,
-		nbi.InitSsotCustomFields,
 		nbi.InitClusterGroups,
 		nbi.InitClusterTypes,
 		nbi.InitClusters,

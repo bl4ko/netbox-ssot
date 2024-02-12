@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"slices"
 
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/service"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
@@ -130,6 +131,9 @@ func (nbi *NetboxInventory) InitAdminContactRole() error {
 	_, err := nbi.AddContactRole(&objects.ContactRole{
 		NetboxObject: objects.NetboxObject{
 			Description: "Auto generated contact role by netbox-ssot for admins of vms.",
+			CustomFields: map[string]string{
+				constants.CustomFieldHostCpuCoresLabel: nbi.SsotTag.Name,
+			},
 		},
 		Name: objects.AdminContactRoleName,
 		Slug: utils.Slugify(objects.AdminContactRoleName),
@@ -297,8 +301,23 @@ func (nbi *NetboxInventory) InitCustomFields() error {
 // - sourceId - this is used to store the ID of the source object in Netbox (interfaces)
 func (netboxInventory *NetboxInventory) InitSsotCustomFields() error {
 	err := netboxInventory.AddCustomField(&objects.CustomField{
-		Name:                  "host_cpu_cores",
-		Label:                 "Host CPU cores",
+		Name:                  constants.CustomFieldSourceName,
+		Label:                 constants.CustomFieldSourceLabel,
+		Type:                  objects.CustomFieldTypeText,
+		FilterLogic:           objects.FilterLogicLoose,
+		CustomFieldUIVisible:  &objects.CustomFieldUIVisibleAlways,
+		CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
+		DisplayWeight:         100,
+		Description:           "Source origin of the object",
+		SearchWeight:          1000,
+		ContentTypes:          []string{"dcim.device", "dcim.devicerole", "dcim.devicetype", "dcim.interface", "dcim.location", "dcim.manufacturer", "dcim.platform", "dcim.region", "dcim.site", "ipam.ipaddress", "ipam.vlangroup", "ipam.vlan", "ipam.prefix", "tenancy.tenantgroup", "tenancy.tenant", "tenancy.contact", "tenancy.contactassignment", "tenancy.contactgroup", "virtualization.cluster", "virtualization.clustergroup", "virtualization.clustertype", "virtualization.virtualmachine", "virtualization.vminterface"},
+	})
+	if err != nil {
+		return err
+	}
+	err = netboxInventory.AddCustomField(&objects.CustomField{
+		Name:                  constants.CustomFieldHostCpuCoresName,
+		Label:                 constants.CustomFieldHostCpuCoresLabel,
 		Type:                  objects.CustomFieldTypeText,
 		FilterLogic:           objects.FilterLogicLoose,
 		CustomFieldUIVisible:  &objects.CustomFieldUIVisibleAlways,
@@ -312,8 +331,8 @@ func (netboxInventory *NetboxInventory) InitSsotCustomFields() error {
 		return err
 	}
 	err = netboxInventory.AddCustomField(&objects.CustomField{
-		Name:                  "host_memory",
-		Label:                 "Host memory",
+		Name:                  constants.CustomFieldHostMemoryName,
+		Label:                 constants.CustomFieldHostMemoryLabel,
 		Type:                  objects.CustomFieldTypeText,
 		FilterLogic:           objects.FilterLogicLoose,
 		CustomFieldUIVisible:  &objects.CustomFieldUIVisibleAlways,
@@ -326,22 +345,6 @@ func (netboxInventory *NetboxInventory) InitSsotCustomFields() error {
 	if err != nil {
 		return err
 	}
-	err = netboxInventory.AddCustomField(&objects.CustomField{
-		Name:                  "source_id",
-		Label:                 "Source ID",
-		Type:                  objects.CustomFieldTypeText,
-		FilterLogic:           objects.FilterLogicLoose,
-		CustomFieldUIVisible:  &objects.CustomFieldUIVisibleAlways,
-		CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
-		DisplayWeight:         100,
-		Description:           "ID of the object on the source API",
-		SearchWeight:          1000,
-		ContentTypes:          []string{"dcim.interface"},
-	})
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -472,6 +475,9 @@ func (nbi *NetboxInventory) InitDefaultVlanGroup() error {
 		NetboxObject: objects.NetboxObject{
 			Tags:        []*objects.Tag{nbi.SsotTag},
 			Description: "Default netbox-ssot VlanGroup for all vlans that are not part of any other vlanGroup. This group is required for netbox-ssot vlan index to work.",
+			CustomFields: map[string]string{
+				constants.CustomFieldSourceName: nbi.SsotTag.Name,
+			},
 		},
 		Name:   objects.DefaultVlanGroupName,
 		Slug:   utils.Slugify(objects.DefaultVlanGroupName),

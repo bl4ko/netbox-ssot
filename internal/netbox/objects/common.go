@@ -24,6 +24,8 @@ type NetboxObject struct {
 	Tags []*Tag `json:"tags,omitempty"`
 	// Description represents custom description of the object.
 	Description string `json:"description,omitempty"`
+	// Array of custom fields, in format customFieldLabel: customFieldValue
+	CustomFields map[string]string `json:"custom_fields,omitempty"`
 }
 
 func (n NetboxObject) String() string {

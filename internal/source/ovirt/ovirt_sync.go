@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
@@ -35,7 +36,10 @@ func (o *OVirtSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 				_, err := nbi.AddVlan(&objects.Vlan{
 					NetboxObject: objects.NetboxObject{
 						Description: description,
-						Tags:        o.SourceTags,
+						Tags:        o.CommonConfig.SourceTags,
+						CustomFields: map[string]string{
+							constants.CustomFieldSourceName: o.SourceConfig.Name,
+						},
 					},
 					Name:     name,
 					Group:    vlanGroup,
@@ -63,9 +67,15 @@ func (o *OVirtSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
 		description, _ := datacenter.Description()
 
 		nbClusterGroup := &objects.ClusterGroup{
-			NetboxObject: objects.NetboxObject{Description: description, Tags: o.SourceTags},
-			Name:         name,
-			Slug:         utils.Slugify(name),
+			NetboxObject: objects.NetboxObject{
+				Description: description,
+				Tags:        o.CommonConfig.SourceTags,
+				CustomFields: map[string]string{
+					constants.CustomFieldSourceName: o.SourceConfig.Name,
+				},
+			},
+			Name: name,
+			Slug: utils.Slugify(name),
 		}
 		_, err := nbi.AddClusterGroup(nbClusterGroup)
 		if err != nil {
@@ -78,7 +88,10 @@ func (o *OVirtSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
 func (o *OVirtSource) syncClusters(nbi *inventory.NetboxInventory) error {
 	clusterType := &objects.ClusterType{
 		NetboxObject: objects.NetboxObject{
-			Tags: o.SourceTags,
+			Tags: o.CommonConfig.SourceTags,
+			CustomFields: map[string]string{
+				constants.CustomFieldSourceName: o.SourceConfig.Name,
+			},
 		},
 		Name: "oVirt",
 		Slug: "ovirt",
@@ -137,7 +150,10 @@ func (o *OVirtSource) syncClusters(nbi *inventory.NetboxInventory) error {
 		nbCluster := &objects.Cluster{
 			NetboxObject: objects.NetboxObject{
 				Description: description,
-				Tags:        o.SourceTags,
+				Tags:        o.CommonConfig.SourceTags,
+				CustomFields: map[string]string{
+					constants.CustomFieldSourceName: o.SourceConfig.Name,
+				},
 			},
 			Name:   clusterName,
 			Type:   clusterType,
@@ -276,7 +292,13 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		mem /= (1024 * 1024 * 1024) // Value is in Bytes, we convert to GB
 
 		nbHost := &objects.Device{
-			NetboxObject: objects.NetboxObject{Description: hostDescription, Tags: o.SourceTags},
+			NetboxObject: objects.NetboxObject{
+				Description: hostDescription,
+				Tags:        o.CommonConfig.SourceTags,
+				CustomFields: map[string]string{
+					constants.CustomFieldSourceName: o.SourceConfig.Name,
+				},
+			},
 			Name:         hostName,
 			Status:       hostStatus,
 			Platform:     hostPlatform,
@@ -418,8 +440,11 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 
 			newInterface := &objects.Interface{
 				NetboxObject: objects.NetboxObject{
-					Tags:        o.SourceTags,
+					Tags:        o.CommonConfig.SourceTags,
 					Description: nicComment,
+					CustomFields: map[string]string{
+						constants.CustomFieldSourceName: o.SourceConfig.Name,
+					},
 				},
 				Device: nbHost,
 				Name:   nicName,
@@ -527,7 +552,10 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 			address := strings.Split(ipv4, "/")[0]
 			nbIpAddress, err := nbi.AddIPAddress(&objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
-					Tags: o.SourceTags,
+					Tags: o.CommonConfig.SourceTags,
+					CustomFields: map[string]string{
+						constants.CustomFieldSourceName: o.SourceConfig.Name,
+					},
 				},
 				Address:            ipv4,
 				Status:             &objects.IPAddressStatusActive, // TODO
@@ -552,7 +580,10 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 			address := strings.Split(ipv6, "/")[0]
 			_, err := nbi.AddIPAddress(&objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
-					Tags: o.SourceTags,
+					Tags: o.CommonConfig.SourceTags,
+					CustomFields: map[string]string{
+						constants.CustomFieldSourceName: o.SourceConfig.Name,
+					},
 				},
 				Address:            ipv6,
 				Status:             &objects.IPAddressStatusActive, // TODO
@@ -691,7 +722,10 @@ func (o *OVirtSource) syncVms(nbi *inventory.NetboxInventory) error {
 
 		newVM, err := nbi.AddVM(&objects.VM{
 			NetboxObject: objects.NetboxObject{
-				Tags: o.SourceTags,
+				Tags: o.CommonConfig.SourceTags,
+				CustomFields: map[string]string{
+					constants.CustomFieldSourceName: o.SourceConfig.Name,
+				},
 			},
 			Name:        vmName,
 			Cluster:     vmCluster,
@@ -731,8 +765,11 @@ func (o *OVirtSource) syncVmInterfaces(nbi *inventory.NetboxInventory, ovirtVm *
 					if reportedDeviceName, exists := reportedDevice.Name(); exists {
 						vmInterface, err = nbi.AddVMInterface(&objects.VMInterface{
 							NetboxObject: objects.NetboxObject{
-								Tags:        o.SourceTags,
+								Tags:        o.CommonConfig.SourceTags,
 								Description: reportedDevice.MustDescription(),
+								CustomFields: map[string]string{
+									constants.CustomFieldSourceName: o.SourceConfig.Name,
+								},
 							},
 							VM:         netboxVm,
 							Name:       reportedDeviceName,
@@ -780,7 +817,10 @@ func (o *OVirtSource) syncVmInterfaces(nbi *inventory.NetboxInventory, ovirtVm *
 
 									newIpAddress, err := nbi.AddIPAddress(&objects.IPAddress{
 										NetboxObject: objects.NetboxObject{
-											Tags: o.SourceTags,
+											Tags: o.CommonConfig.SourceTags,
+											CustomFields: map[string]string{
+												constants.CustomFieldSourceName: o.SourceConfig.Name,
+											},
 										},
 										Address:            ipAddress + ipMask,
 										Tenant:             netboxVm.Tenant,

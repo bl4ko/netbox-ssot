@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 )
 
@@ -33,12 +34,44 @@ type IDObject struct {
 	ID int `json:"id"`
 }
 
+// hasPriorityOver returns true if newObj has priority over existingObj, false otherwise.
+// newObject will alwaays have priority over exisitngObject, unless
+// sourcePriority[newObj.CustomFields[constants.CustomFieldSourceName]] >
+// sourcePriority[existingObj.CustomFields[constants.CustomFieldSourceName]]
+func hasPriorityOver(newObj, existingObj reflect.Value, source2priority map[string]int) bool {
+
+	// Retrieve the SourceName field from CustomFields for both objects
+	newObjCustomFields := newObj.FieldByName("CustomFields")
+	existingObjCustomFields := existingObj.FieldByName("CustomFields")
+
+	// Check if fields are valid and present in the sourcePriority map
+	if newObjCustomFields.IsValid() && existingObjCustomFields.IsValid() {
+		newCustomFields := newObjCustomFields.Interface().(map[string]string)
+		existingCustomFields := existingObjCustomFields.Interface().(map[string]string)
+
+		newPriority := int(^uint(0) >> 1)
+		if priority, newOk := source2priority[newCustomFields[constants.CustomFieldSourceName]]; newOk {
+			newPriority = priority
+		}
+		existingPriority := int(^uint(0) >> 1)
+		if existingPriority, existingOk := source2priority[constants.CustomFieldSourceName]; existingOk {
+
+		}
+
+		if newOk && existingOk {
+			return newPriority < existingPriority
+		}
+	}
+
+	return true
+}
+
 // JsonDiffMapExceptID compares two objects and returns a map of fields
 // (represented by their JSON tag names) that are different with their
 // values from newObj.
 // If resetFields is set to true, the function will also include fields
 // that are empty in newObj but might have a value in existingObj.
-func JsonDiffMapExceptId(newObj, existingObj interface{}, resetFields bool) (map[string]interface{}, error) {
+func JsonDiffMapExceptId(newObj, existingObj interface{}, resetFields bool, source2priority map[string]int) (map[string]interface{}, error) {
 	diff := make(map[string]interface{})
 
 	newObject := reflect.ValueOf(newObj)
@@ -60,6 +93,10 @@ func JsonDiffMapExceptId(newObj, existingObj interface{}, resetFields bool) (map
 		return nil, fmt.Errorf("arguments are not structs")
 	}
 
+	// Check for priority
+	hasPriority := hasPriorityOver(newObject, existingObject, source2priority)
+	fmt.Println(hasPriority)
+
 	for i := 0; i < newObject.NumField(); i++ {
 		fieldName := newObject.Type().Field(i).Name
 		jsonTag := newObject.Type().Field(i).Tag.Get("json")
@@ -70,7 +107,7 @@ func JsonDiffMapExceptId(newObj, existingObj interface{}, resetFields bool) (map
 
 		// Custom logic for all objects that inherit from NetboxObject
 		if fieldName == "NetboxObject" {
-			netboxObjectDiffMap, err := JsonDiffMapExceptId(newObject.Field(i).Interface(), existingObject.Field(i).Interface(), resetFields)
+			netboxObjectDiffMap, err := JsonDiffMapExceptId(newObject.Field(i).Interface(), existingObject.Field(i).Interface(), resetFields, source2priority)
 			if err != nil {
 				return nil, fmt.Errorf("error processing JsonDiffMapExceptId when processing NetboxObject %s", err)
 			}
@@ -419,7 +456,7 @@ func TestJsonDiffMapExceptId(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			diff, err := JsonDiffMapExceptId(tt.newObj, tt.existingObj, true)
+			diff, err := JsonDiffMapExceptId(tt.newObj, tt.existingObj, true, nil)
 			if (err != nil) != tt.expectError {
 				t.Errorf("JsonDiffMapExceptId() error = %v, expectError %v", err, tt.expectError)
 				return
@@ -505,7 +542,7 @@ func TestJsonDiffMapComplex(t *testing.T) {
 		"tags": []int{1, 3, 4},
 	}
 
-	diff, err := JsonDiffMapExceptId(newObj, existingObj, true)
+	diff, err := JsonDiffMapExceptId(newObj, existingObj, true, nil)
 	if err != nil {
 		t.Errorf("JsonDiffMapExceptId() error = %v", err)
 		return
@@ -548,7 +585,7 @@ func TestJsonDiffMapComplex2(t *testing.T) {
 		"weight":        100,
 	}
 
-	diff, err := JsonDiffMapExceptId(newObj, existingObj, true)
+	diff, err := JsonDiffMapExceptId(newObj, existingObj, true, nil)
 	if err != nil {
 		t.Errorf("JsonDiffMapExceptId() error = %v", err)
 		return
@@ -622,7 +659,7 @@ func TestJsonDiffMapWithMapAttr(t *testing.T) {
 		"status":      "active",
 	}
 
-	respDiffMap, err := JsonDiffMapExceptId(newObj, existingObj, true)
+	respDiffMap, err := JsonDiffMapExceptId(newObj, existingObj, true, nil)
 	if err != nil {
 		t.Errorf("JsonDiffMapExceptId() error = %v", err)
 	}
@@ -686,7 +723,7 @@ func TestJsonDiffMapWithMapAttr2(t *testing.T) {
 			"extra_one": "extra_one",
 		},
 	}
-	gotDiffMap, err := JsonDiffMapExceptId(newInterface, existingInterface, true)
+	gotDiffMap, err := JsonDiffMapExceptId(newInterface, existingInterface, true, nil)
 	if err != nil {
 		t.Errorf("JsonDiffMapExceptId() error = %v", err)
 	}
