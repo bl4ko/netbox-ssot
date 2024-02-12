@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/cisco-en-programmability/dnacenter-go-sdk/v5 v5.0.24
 	github.com/ovirt/go-ovirt v4.3.4+incompatible
-	github.com/vmware/govmomi v0.34.2
+	github.com/vmware/govmomi v0.35.0
 	golang.org/x/text v0.14.0
 	gopkg.in/yaml.v3 v3.0.1
 )
