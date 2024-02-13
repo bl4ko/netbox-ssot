@@ -449,13 +449,46 @@ func TestPriorityMergeDiff(t *testing.T) {
 			},
 			expectedDiff: map[string]interface{}{
 				"name": "Vlan1000",
+				"custom_fields": map[string]interface{}{
+					constants.CustomFieldSourceName: "test1",
+				},
+			},
+		},
+		{
+			name:        "Second object has higher priority",
+			resetFields: false,
+			newStruct: &objects.Vlan{
+				Name:     "Vlan1000",
+				Vid:      1000,
+				Comments: "Added comment",
+				NetboxObject: objects.NetboxObject{
+					CustomFields: map[string]string{
+						constants.CustomFieldSourceName: "test1",
+					},
+				},
+			},
+			existingStruct: &objects.Vlan{
+				Name: "1000Vlan",
+				Vid:  1000,
+				NetboxObject: objects.NetboxObject{
+					CustomFields: map[string]string{
+						constants.CustomFieldSourceName: "test2",
+					},
+				},
+			},
+			sourcePriority: map[string]int{
+				"test1": 1,
+				"test2": 0,
+			},
+			expectedDiff: map[string]interface{}{
+				"comments": "Added comment",
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			outputDiff, err := JsonDiffMapExceptId(tt.newStruct, tt.existingStruct, tt.resetFields, nil)
+			outputDiff, err := JsonDiffMapExceptId(tt.newStruct, tt.existingStruct, tt.resetFields, tt.sourcePriority)
 			if err != nil {
 				t.Errorf("JsonDiffMapExceptId() error = %v", err)
 			}
