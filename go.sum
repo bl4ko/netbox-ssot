@@ -1,5 +1,7 @@
 github.com/cisco-en-programmability/dnacenter-go-sdk/v5 v5.0.24 h1:oRehRjFSGag2N/F98iWDAhOsbVtkSuRzMmNQhMMO+Rg=
 github.com/cisco-en-programmability/dnacenter-go-sdk/v5 v5.0.24/go.mod h1:4Km+JuiyL/LsNRvO4dMWUSUVbnNBRmbwzJMU1oUbn0E=
+github.com/cisco-en-programmability/dnacenter-go-sdk/v5 v5.0.25 h1:H9i9u7ADeiuMzfkJIzQUg/noTWA82DmAehcAwlIfBPE=
+github.com/cisco-en-programmability/dnacenter-go-sdk/v5 v5.0.25/go.mod h1:4Km+JuiyL/LsNRvO4dMWUSUVbnNBRmbwzJMU1oUbn0E=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/go-resty/resty/v2 v2.11.0 h1:i7jMfNOJYMp69lq7qozJP+bjgzfAzeOhuGlyDrqxT/8=
