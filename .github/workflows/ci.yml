@@ -1,9 +1,9 @@
 name: Run tests and upload results
 
 on:
-  # push:
-  #   branches:
-  #     - main
+  pull_request:
+    branches:
+      - main
   #   paths:
   #     - cmd/**
   #     - internal/**
@@ -11,19 +11,46 @@ on:
   #     - .golangci.yml
   #     - go.mod
   #     - go.sum
-  pull_request:
-    branches:
-      - main
-    # paths:
-    #   - cmd/**
-    #   - internal/**
-    #   - .dockerignore
-    #   - .golangci.yml
-    #   - go.mod
-    #   - go.sum
 
 jobs:
-  test:
+  changed_files:
+    name: Get changed files
+    runs-on: ubuntu-latest
+    outputs:
+      # reference: https://github.com/tj-actions/changed-files#outputs-
+      tests: ${{ steps.changed-files.outputs.tests_any_modified == 'true'}}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Get relevant changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v42
+        with:
+          files_yaml: |
+            tests: &tests
+              - cmd/**
+              - internal/**
+              - .dockerignore
+              - .golangci.yml
+              - go.mod
+              - go.sum
+
+      - name: Get all changed go dependent files
+        id: changed-go-files
+        uses: tj-actions/changed-files@v42
+        with:
+          files: |
+            cmd/**
+            internal/**
+            .dockerignore
+            .golangci.yml
+            go.mod
+            go.sum
+
+  tests:
+    name: Run tests
+    needs: [ changed_files ]
+    if: ${{ needs.changed_files.outputs.tests == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -33,7 +60,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # This is currently workaround for checking if gofiles have changed,
+      # Because paths filter doesn't work with required checks
+      - name: Get hanged files
+        id: changed-go-files
+        uses: tj-actions/changed-files@v42
+        with:
+          files: |
+            cmd/**
+            internal/**
+            .dockerignore
+            .golangci.yml
+            go.mod
+            go.sum
+
       - name: Setup Go
+        if: steps.changed-go-files.outputs.files-changed == 'true'
         uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}

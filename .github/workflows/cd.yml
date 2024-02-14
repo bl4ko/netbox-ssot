@@ -4,15 +4,15 @@ on:
   push:
     tags:
       - v*
-    # paths:
-    #   - cmd/**
-    #   - internal/**
-    #   - pkg/**
-    #   - Dockerfile
-    #   - .dockerignore
-    #   - .golangci.yml
-    #   - go.mod
-    #   - go.sum
+    paths:
+      - cmd/**
+      - internal/**
+      - pkg/**
+      - Dockerfile
+      - .dockerignore
+      - .golangci.yml
+      - go.mod
+      - go.sum
 
 jobs:
   build_and_push:
