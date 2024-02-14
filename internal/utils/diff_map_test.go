@@ -331,26 +331,30 @@ func TestMapAttributeDiff(t *testing.T) {
 			name:        "Map diff with reset",
 			resetFields: true,
 			newStruct: &objects.Device{
-				CustomFields: map[string]string{
-					"host_cpu_cores": "10 cpu cores",
-					"host_mem":       "10 GB",
-					"host_id":        "123456789",
+				NetboxObject: objects.NetboxObject{
+					CustomFields: map[string]string{
+						constants.CustomFieldHostCpuCoresName: "10 cpu cores",
+						constants.CustomFieldHostMemoryName:   "10 GB",
+						constants.CustomFieldSourceIdName:     "123456789",
+					},
 				},
 			},
 			existingStruct: &objects.Device{
-				CustomFields: map[string]string{
-					"host_cpu_cores": "5 cpu cores",
-					"existing_tag1":  "existing_tag1",
-					"existing_tag2":  "existing_tag2",
+				NetboxObject: objects.NetboxObject{
+					CustomFields: map[string]string{
+						constants.CustomFieldHostCpuCoresName: "5 cpu cores",
+						"existing_tag1":                       "existing_tag1",
+						"existing_tag2":                       "existing_tag2",
+					},
 				},
 			},
 			expectedDiff: map[string]interface{}{
 				"custom_fields": map[string]interface{}{
-					"host_cpu_cores": "10 cpu cores",
-					"host_mem":       "10 GB",
-					"host_id":        "123456789",
-					"existing_tag1":  "existing_tag1",
-					"existing_tag2":  "existing_tag2",
+					constants.CustomFieldHostCpuCoresName: "10 cpu cores",
+					constants.CustomFieldHostMemoryName:   "10 GB",
+					constants.CustomFieldSourceIdName:     "123456789",
+					"existing_tag1":                       "existing_tag1",
+					"existing_tag2":                       "existing_tag2",
 				},
 			},
 		},
@@ -358,17 +362,22 @@ func TestMapAttributeDiff(t *testing.T) {
 			name:        "Map no diff with reset",
 			resetFields: true,
 			newStruct: &objects.Device{
-				CustomFields: map[string]string{
-					"host_cpu_cores": "10 cpu cores",
-					"host_mem":       "10 GB",
+				NetboxObject: objects.NetboxObject{
+					CustomFields: map[string]string{
+						constants.CustomFieldHostCpuCoresName: "10 cpu cores",
+						constants.CustomFieldHostMemoryName:   "10 GB",
+					},
 				},
 			},
+
 			existingStruct: &objects.Device{
-				CustomFields: map[string]string{
-					"host_cpu_cores": "10 cpu cores",
-					"host_mem":       "10 GB",
-					"existing_tag1":  "existing_tag1",
-					"existing_tag2":  "existing_tag2",
+				NetboxObject: objects.NetboxObject{
+					CustomFields: map[string]string{
+						constants.CustomFieldHostCpuCoresName: "10 cpu cores",
+						constants.CustomFieldHostMemoryName:   "10 GB",
+						"existing_tag1":                       "existing_tag1",
+						"existing_tag2":                       "existing_tag2",
+					},
 				},
 			},
 			expectedDiff: map[string]interface{}{},
@@ -377,24 +386,28 @@ func TestMapAttributeDiff(t *testing.T) {
 			name:        "Map single diff with reset",
 			resetFields: true,
 			newStruct: &objects.Device{
-				CustomFields: map[string]string{
-					"host_cpu_cores": "5 cpu cores",
-					"host_mem":       "10 GB",
+				NetboxObject: objects.NetboxObject{
+					CustomFields: map[string]string{
+						constants.CustomFieldHostCpuCoresName: "5 cpu cores",
+						constants.CustomFieldHostMemoryName:   "10 GB",
+					},
 				},
 			},
 			existingStruct: &objects.Device{
-				CustomFields: map[string]string{
-					"host_cpu_cores": "10 cpu cores",
-					"host_mem":       "10 GB",
-					"existing_tag1":  "existing_tag1",
-					"existing_tag2":  "existing_tag2",
+				NetboxObject: objects.NetboxObject{
+					CustomFields: map[string]string{
+						constants.CustomFieldHostCpuCoresName: "10 cpu cores",
+						constants.CustomFieldHostMemoryName:   "10 GB",
+						"existing_tag1":                       "existing_tag1",
+						"existing_tag2":                       "existing_tag2",
+					},
 				},
 			},
 			expectedDiff: map[string]interface{}{
 				"custom_fields": map[string]interface{}{
-					"host_cpu_cores": "5 cpu cores",
-					"existing_tag1":  "existing_tag1",
-					"existing_tag2":  "existing_tag2",
+					constants.CustomFieldHostCpuCoresName: "5 cpu cores",
+					"existing_tag1":                       "existing_tag1",
+					"existing_tag2":                       "existing_tag2",
 				},
 			},
 		},
@@ -432,6 +445,10 @@ func TestPriorityMergeDiff(t *testing.T) {
 					CustomFields: map[string]string{
 						constants.CustomFieldSourceName: "test1",
 					},
+					Tags: []*objects.Tag{
+						{Id: 1, Name: "Tag1"},
+						{Id: 2, Name: "Tag2"},
+					},
 				},
 			},
 			existingStruct: &objects.Vlan{
@@ -440,6 +457,10 @@ func TestPriorityMergeDiff(t *testing.T) {
 				NetboxObject: objects.NetboxObject{
 					CustomFields: map[string]string{
 						constants.CustomFieldSourceName: "test2",
+					},
+					Tags: []*objects.Tag{
+						{Id: 2, Name: "Tag1"},
+						{Id: 3, Name: "Tag2"},
 					},
 				},
 			},
@@ -452,6 +473,7 @@ func TestPriorityMergeDiff(t *testing.T) {
 				"custom_fields": map[string]interface{}{
 					constants.CustomFieldSourceName: "test1",
 				},
+				"tags": []int{1, 2},
 			},
 		},
 		{
@@ -465,6 +487,10 @@ func TestPriorityMergeDiff(t *testing.T) {
 					CustomFields: map[string]string{
 						constants.CustomFieldSourceName: "test1",
 					},
+					Tags: []*objects.Tag{
+						{Id: 1, Name: "Tag1"},
+						{Id: 2, Name: "Tag2"},
+					},
 				},
 			},
 			existingStruct: &objects.Vlan{
@@ -473,6 +499,10 @@ func TestPriorityMergeDiff(t *testing.T) {
 				NetboxObject: objects.NetboxObject{
 					CustomFields: map[string]string{
 						constants.CustomFieldSourceName: "test2",
+					},
+					Tags: []*objects.Tag{
+						{Id: 2, Name: "Tag1"},
+						{Id: 3, Name: "Tag2"},
 					},
 				},
 			},

@@ -230,7 +230,9 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 
 		nbHost := &objects.Device{
 			NetboxObject: objects.NetboxObject{Tags: vc.CommonConfig.SourceTags, CustomFields: map[string]string{
-				constants.CustomFieldSourceName: vc.SourceConfig.Name,
+				constants.CustomFieldSourceName:       vc.SourceConfig.Name,
+				constants.CustomFieldHostCpuCoresName: fmt.Sprintf("%d", hostCpuCores),
+				constants.CustomFieldHostMemoryName:   fmt.Sprintf("%d GB", hostMemGB),
 			}},
 			Name:         hostName,
 			Status:       hostStatus,
@@ -242,10 +244,6 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 			SerialNumber: hostSerialNumber,
 			AssetTag:     hostAssetTag,
 			DeviceType:   hostDeviceType,
-			CustomFields: map[string]string{
-				"host_cpu_cores": fmt.Sprintf("%d", hostCpuCores),
-				"host_memory":    fmt.Sprintf("%d GB", hostMemGB),
-			},
 		}
 		nbHost, err = nbi.AddDevice(nbHost)
 		if err != nil {
@@ -692,11 +690,13 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
 						if err != nil {
 							return fmt.Errorf("vm's custom field %s: %s", fieldName, err)
 						}
-						vmCustomFields[fieldName] = field.Value
 					}
+					vmCustomFields[fieldName] = field.Value
 				}
 			}
 		}
+		vmCustomFields[constants.CustomFieldSourceName] = vc.SourceConfig.Name
+		vmCustomFields[constants.CustomFieldSourceIdName] = vm.Self.Value
 
 		// netbox description has constraint <= len(200 characters)
 		// In this case we make a comment
@@ -708,24 +708,21 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
 
 		newVM, err := nbi.AddVM(&objects.VM{
 			NetboxObject: objects.NetboxObject{
-				Tags:        vc.CommonConfig.SourceTags,
-				Description: vmDescription,
-				CustomFields: map[string]string{
-					constants.CustomFieldSourceName: vc.SourceConfig.Name,
-				},
+				Tags:         vc.CommonConfig.SourceTags,
+				Description:  vmDescription,
+				CustomFields: vmCustomFields,
 			},
-			Name:         vmName,
-			Cluster:      vmCluster,
-			Site:         vmSite,
-			Tenant:       vmTenant,
-			Status:       vmStatus,
-			Host:         vmHost,
-			Platform:     vmPlatform,
-			VCPUs:        float32(vmVCPUs),
-			Memory:       int(vmMemory),                         // MBs
-			Disk:         int(vmDiskSizeB / 1024 / 1024 / 1024), // GBs
-			Comments:     vmComments,
-			CustomFields: vmCustomFields,
+			Name:     vmName,
+			Cluster:  vmCluster,
+			Site:     vmSite,
+			Tenant:   vmTenant,
+			Status:   vmStatus,
+			Host:     vmHost,
+			Platform: vmPlatform,
+			VCPUs:    float32(vmVCPUs),
+			Memory:   int(vmMemory),                         // MBs
+			Disk:     int(vmDiskSizeB / 1024 / 1024 / 1024), // GBs
+			Comments: vmComments,
 		})
 
 		if err != nil {

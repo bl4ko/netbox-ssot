@@ -190,7 +190,9 @@ func addSliceDiff(newSlice reflect.Value, existingSlice reflect.Value, jsonTag s
 	// If first slice is nil, that means that we reset the value
 	if !newSlice.IsValid() || newSlice.Len() == 0 {
 		if existingSlice.IsValid() && existingSlice.Len() > 0 {
-			diffMap[jsonTag] = []interface{}{}
+			if hasPriority {
+				diffMap[jsonTag] = []interface{}{}
+			}
 		}
 		return nil
 	}
@@ -206,12 +208,16 @@ func addSliceDiff(newSlice reflect.Value, existingSlice reflect.Value, jsonTag s
 			strSet[newSlice.Index(j).Interface().(string)] = true
 		}
 		if len(strSet) != existingSlice.Len() {
-			diffMap[jsonTag] = newSlice.Interface()
+			if hasPriority {
+				diffMap[jsonTag] = newSlice.Interface()
+			}
 		} else {
-			for j := 0; j < existingSlice.Len(); j++ {
-				if !strSet[existingSlice.Index(j).Interface().(string)] {
-					diffMap[jsonTag] = newSlice.Interface()
-					return nil
+			if hasPriority {
+				for j := 0; j < existingSlice.Len(); j++ {
+					if !strSet[existingSlice.Index(j).Interface().(string)] {
+						diffMap[jsonTag] = newSlice.Interface()
+						return nil
+					}
 				}
 			}
 		}
@@ -231,24 +237,26 @@ func addSliceDiff(newSlice reflect.Value, existingSlice reflect.Value, jsonTag s
 			newIdSet[id] = true
 		}
 
-		newIdSlice := make([]int, 0, len(newIdSet))
-		for id := range newIdSet {
-			newIdSlice = append(newIdSlice, id)
-		}
-		slices.Sort(newIdSlice)
+		if hasPriority {
+			newIdSlice := make([]int, 0, len(newIdSet))
+			for id := range newIdSet {
+				newIdSlice = append(newIdSlice, id)
+			}
+			slices.Sort(newIdSlice)
 
-		if len(newIdSet) != existingSlice.Len() {
-			diffMap[jsonTag] = newIdSlice
-		} else {
-			for j := 0; j < existingSlice.Len(); j++ {
-				existingSliceEl := existingSlice.Index(j)
-				if existingSlice.Index(j).Kind() == reflect.Ptr {
-					existingSliceEl = existingSliceEl.Elem()
-				}
-				id = existingSliceEl.FieldByName("Id").Interface().(int)
-				if _, ok := newIdSet[id]; !ok {
-					diffMap[jsonTag] = newIdSlice
-					return nil
+			if len(newIdSet) != existingSlice.Len() && hasPriority {
+				diffMap[jsonTag] = newIdSlice
+			} else {
+				for j := 0; j < existingSlice.Len(); j++ {
+					existingSliceEl := existingSlice.Index(j)
+					if existingSlice.Index(j).Kind() == reflect.Ptr {
+						existingSliceEl = existingSliceEl.Elem()
+					}
+					id = existingSliceEl.FieldByName("Id").Interface().(int)
+					if _, ok := newIdSet[id]; !ok {
+						diffMap[jsonTag] = newIdSlice
+						return nil
+					}
 				}
 			}
 		}

@@ -236,9 +236,6 @@ type Device struct {
 	// Priority
 	// Additional comments.
 	Comments string `json:"comments,omitempty"`
-
-	// CustomFields is a dictionary of custom fields defined for the device type. map[customFieldName]: valueStr
-	CustomFields map[string]string `json:"custom_fields,omitempty"`
 }
 
 func (d Device) String() string {
@@ -406,8 +403,6 @@ type Interface struct {
 	TaggedVlans []*Vlan `json:"tagged_vlans,omitempty"`
 	// UntaggedVlan
 	UntaggedVlan *Vlan `json:"untagged_vlan,omitempty"`
-	// CustomFields that can be added to a device. We use source_id custom field to store the id of the interface in the source system.
-	CustomFields map[string]string `json:"custom_fields,omitempty"`
 }
 
 func (i Interface) String() string {

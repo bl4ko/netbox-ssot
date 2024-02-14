@@ -296,7 +296,9 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 				Description: hostDescription,
 				Tags:        o.CommonConfig.SourceTags,
 				CustomFields: map[string]string{
-					constants.CustomFieldSourceName: o.SourceConfig.Name,
+					constants.CustomFieldSourceName:       o.SourceConfig.Name,
+					constants.CustomFieldHostCpuCoresName: hostCpuCores,
+					constants.CustomFieldHostMemoryName:   fmt.Sprintf("%d GB", mem),
 				},
 			},
 			Name:         hostName,
@@ -310,10 +312,6 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 			SerialNumber: hostSerialNumber,
 			AssetTag:     hostAssetTag,
 			DeviceType:   hostDeviceType,
-			CustomFields: map[string]string{
-				"host_cpu_cores": hostCpuCores,
-				"host_memory":    fmt.Sprintf("%d GB", mem),
-			},
 		}
 		nbHost, err = nbi.AddDevice(nbHost)
 		if err != nil {
@@ -443,18 +441,16 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 					Tags:        o.CommonConfig.SourceTags,
 					Description: nicComment,
 					CustomFields: map[string]string{
-						constants.CustomFieldSourceName: o.SourceConfig.Name,
+						constants.CustomFieldSourceName:   o.SourceConfig.Name,
+						constants.CustomFieldSourceIdName: nicId,
 					},
 				},
-				Device: nbHost,
-				Name:   nicName,
-				Speed:  objects.InterfaceSpeed(nicSpeedKbps),
-				Status: nicEnabled,
-				MTU:    int(nicMtu),
-				Type:   nicType,
-				CustomFields: map[string]string{
-					"source_id": nicId,
-				},
+				Device:      nbHost,
+				Name:        nicName,
+				Speed:       objects.InterfaceSpeed(nicSpeedKbps),
+				Status:      nicEnabled,
+				MTU:         int(nicMtu),
+				Type:        nicType,
 				TaggedVlans: nicTaggedVlans,
 			}
 

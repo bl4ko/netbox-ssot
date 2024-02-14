@@ -299,7 +299,7 @@ func (ds *DnacSource) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error
 				NetboxObject: objects.NetboxObject{
 					Tags: ds.CommonConfig.SourceTags,
 					CustomFields: map[string]string{
-						constants.CustomFieldHostCpuCoresName: ds.SourceConfig.Name,
+						constants.CustomFieldSourceName: ds.SourceConfig.Name,
 					},
 				},
 				Address:            fmt.Sprintf("%s/%d", iface.IPv4Address, defaultMask),
