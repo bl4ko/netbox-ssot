@@ -4,57 +4,14 @@ on:
   pull_request:
     branches:
       - main
-  #   paths:
-  #     - cmd/**
-  #     - internal/**
-  #     - .dockerignore
-  #     - .golangci.yml
-  #     - go.mod
-  #     - go.sum
 
 jobs:
-  changed_files:
-    name: Get changed files
-    runs-on: ubuntu-latest
-    outputs:
-      # reference: https://github.com/tj-actions/changed-files#outputs-
-      tests: ${{ steps.changed-files.outputs.tests_any_modified == 'true'}}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Get relevant changed files
-        id: changed-files
-        uses: tj-actions/changed-files@v42
-        with:
-          files_yaml: |
-            tests: &tests
-              - cmd/**
-              - internal/**
-              - .dockerignore
-              - .golangci.yml
-              - go.mod
-              - go.sum
-
-      - name: Get all changed go dependent files
-        id: changed-go-files
-        uses: tj-actions/changed-files@v42
-        with:
-          files: |
-            cmd/**
-            internal/**
-            .dockerignore
-            .golangci.yml
-            go.mod
-            go.sum
-
   tests:
     name: Run tests
-    needs: [ changed_files ]
-    if: ${{ needs.changed_files.outputs.tests == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: ["1.20", "1.21", "1.22.x"]
+        go-version: ["1.21", "1.22"]
 
     steps:
       - name: Checkout code
@@ -62,38 +19,78 @@ jobs:
 
       # This is currently workaround for checking if gofiles have changed,
       # Because paths filter doesn't work with required checks
-      - name: Get hanged files
-        id: changed-go-files
+      - name: Get changed files
+        id: changed-files
         uses: tj-actions/changed-files@v42
         with:
           files: |
             cmd/**
             internal/**
-            .dockerignore
             .golangci.yml
             go.mod
             go.sum
 
       - name: Setup Go
-        if: steps.changed-go-files.outputs.files-changed == 'true'
+        if: steps.changed-files.outputs.any_modified == 'true'
         uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}
 
       - name: golangci-lint
+        if: steps.changed-files.outputs.any_modified == 'true'
         uses: golangci/golangci-lint-action@v4
         with:
           version: latest
           args: --timeout=5m
 
       - name: Install dependencies
+        if: steps.changed-files.outputs.any_modified == 'true'
         run: go mod download
 
       - name: Test with Go
+        if: steps.changed-files.outputs.any_modified == 'true'
         run: go test ./... -json > TestResults-${{ matrix.go-version }}.json
 
       - name: Upload Go test results
+        if: steps.changed-files.outputs.any_modified == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: Go-results-${{ matrix.go-version }}
           path: TestResults-${{ matrix.go-version }}.json
+
+  vulnerabilities:
+    name: Check for vulnerabilities
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v42
+        with:
+          files: |
+            cmd/**
+            internal/**
+            .golangci.yml
+            go.mod
+            go.sum
+            .dockerignore
+            Dockerfile
+      
+      # https://github.com/aquasecurity/trivy-action?tab=readme-ov-file#scan-ci-pipeline
+      - name: Build an image from Dockerfile
+        if: steps.changed-files.outputs.any_modified == 'true'
+        run: |
+          docker build -t netbox-ssot:${{ github.sha }} .
+      
+      - name: Run Trivy vulnerability scanner
+        if: steps.changed-files.outputs.any_modified == 'true'
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: netbox-ssot:${{ github.sha }}
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
