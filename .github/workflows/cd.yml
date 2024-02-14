@@ -41,5 +41,5 @@ jobs:
         uses: docker/build-push-action@v5.1.0
         with:
           platforms: linux/amd64,linux/arm64,linux/386,linux/arm/v6,linux/arm/v7
-          tags: bl4ko/netbox-ssot:latest
+          tags: bl4ko/netbox-ssot:latest, bl4ko/netbox-ssot:$GITHUB_REF_NAME
           push: true
