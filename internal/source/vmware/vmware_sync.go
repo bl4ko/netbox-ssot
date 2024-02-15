@@ -373,20 +373,21 @@ func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetboxInventory, vcH
 		// Determine interface mode for non VM traffic NIC, from vlans data
 		var taggedVlanList []*objects.Vlan // when mode="tagged"
 		if len(vlanIdMap) > 0 {
-			if len(vlanIdMap) == 1 && vlanIdMap[0] != nil {
+			switch {
+			case len(vlanIdMap) == 1 && vlanIdMap[0] != nil:
 				pnicMode = &objects.InterfaceModeAccess
-			} else if vlanIdMap[4095] != nil {
+			case vlanIdMap[4095] != nil:
 				pnicMode = &objects.InterfaceModeTaggedAll
-			} else {
+			default:
 				pnicMode = &objects.InterfaceModeTagged
-			}
-			taggedVlanList = []*objects.Vlan{}
-			if pnicMode == &objects.InterfaceModeTagged {
-				for vid, vlan := range vlanIdMap {
-					if vid == 0 {
-						continue
+				taggedVlanList = []*objects.Vlan{}
+				if pnicMode == &objects.InterfaceModeTagged {
+					for vid, vlan := range vlanIdMap {
+						if vid == 0 {
+							continue
+						}
+						taggedVlanList = append(taggedVlanList, vlan)
 					}
-					taggedVlanList = append(taggedVlanList, vlan)
 				}
 			}
 		}

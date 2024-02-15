@@ -302,13 +302,11 @@ func addStructDiff(newObj reflect.Value, existingObj reflect.Value, jsonTag stri
 	if !idField.IsValid() {
 		if !existingObj.IsValid() {
 			diffMap[jsonTag] = newObj.Interface()
-		} else {
-			if newObj.Interface() != existingObj.Interface() {
-				if isChoiceEmbedded(newObj) {
-					diffMap[jsonTag] = choiceValue(newObj)
-				} else {
-					diffMap[jsonTag] = newObj.Interface()
-				}
+		} else if newObj.Interface() != existingObj.Interface() {
+			if isChoiceEmbedded(newObj) {
+				diffMap[jsonTag] = choiceValue(newObj)
+			} else {
+				diffMap[jsonTag] = newObj.Interface()
 			}
 		}
 	} else {
@@ -318,15 +316,13 @@ func addStructDiff(newObj reflect.Value, existingObj reflect.Value, jsonTag stri
 				return fmt.Errorf("id field is not an int")
 			}
 			diffMap[jsonTag] = IDObject{ID: idValue}
-		} else {
+		} else if newObj.FieldByName("Id").Interface() != existingObj.FieldByName("Id").Interface() {
 			// Objects have ID field, compare their ids
-			if newObj.FieldByName("Id").Interface() != existingObj.FieldByName("Id").Interface() {
-				idValue, ok := idField.Interface().(int)
-				if !ok {
-					return fmt.Errorf("id field is not an int")
-				}
-				diffMap[jsonTag] = IDObject{ID: idValue}
+			idValue, ok := idField.Interface().(int)
+			if !ok {
+				return fmt.Errorf("id field is not an int")
 			}
+			diffMap[jsonTag] = IDObject{ID: idValue}
 		}
 	}
 	return nil
@@ -373,13 +369,14 @@ func addMapDiff(newMap reflect.Value, existingMap reflect.Value, jsonTag string,
 }
 
 func addPrimaryDiff(newField reflect.Value, existingField reflect.Value, jsonTag string, hasPriority bool, diffMap map[string]interface{}) error {
-	if newField.IsZero() {
+	switch {
+	case newField.IsZero():
 		if !existingField.IsZero() {
 			diffMap[jsonTag] = reflect.Zero(newField.Type()).Interface()
 		}
-	} else if existingField.IsZero() {
+	case existingField.IsZero():
 		diffMap[jsonTag] = newField.Interface()
-	} else if newField.Interface() != existingField.Interface() {
+	case newField.Interface() != existingField.Interface():
 		if hasPriority {
 			diffMap[jsonTag] = newField.Interface()
 		}

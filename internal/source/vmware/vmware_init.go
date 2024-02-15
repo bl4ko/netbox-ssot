@@ -35,17 +35,18 @@ func (vc *VmwareSource) InitNetworks(ctx context.Context, containerView *view.Co
 			switch v := vlanInfo.Vlan.(type) {
 			case *types.VmwareDistributedVirtualSwitchTrunkVlanSpec:
 				for _, item := range v.VlanId {
-					if item.Start == item.End {
+					switch {
+					case item.Start == item.End:
 						vlanIds = append(vlanIds, int(item.Start))
 						vlanIdRanges = append(vlanIdRanges, fmt.Sprintf("%d", item.Start))
-					} else if item.Start == 0 && item.End == 4094 {
+					case item.Start == 0 && item.End == 4094:
 						vlanIds = append(vlanIds, 4095)
 						vlanIdRanges = append(vlanIdRanges, fmt.Sprintf("%d-%d", item.Start, item.End))
-					} else {
+					default:
 						for vlan := item.Start; vlan <= item.End; vlan++ {
 							vlanIds = append(vlanIds, int(vlan))
+							vlanIdRanges = append(vlanIdRanges, fmt.Sprintf("%d-%d", item.Start, item.End))
 						}
-						vlanIdRanges = append(vlanIdRanges, fmt.Sprintf("%d-%d", item.Start, item.End))
 					}
 				}
 			case *types.VmwareDistributedVirtualSwitchPvlanSpec:

@@ -434,7 +434,7 @@ type Interface struct {
 	// Duplex is the duplex mode of the interface
 	Duplex *InterfaceDuplex `json:"duplex,omitempty"`
 
-	//802.1Q Mode
+	// 802.1Q Mode
 	Mode *InterfaceMode `json:"mode,omitempty"`
 	// TaggedVlans is a list of all the VLANs to which the interface is tagged.
 	TaggedVlans []*Vlan `json:"tagged_vlans,omitempty"`

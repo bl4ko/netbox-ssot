@@ -6,10 +6,13 @@ linters-settings:
 
 linters:
   enable:
+    # - gocognit # TODO: enable in future
     # - cyclop # TODO: enable in future
     # - errorlint # TODO: enable in future
     # - exhaustive # TODO: enable in future
     # - dupl # TODO: enable in future
+    # - gochecknoglobals # TODO: enable in future
+    - gocritic
     - asasalint
     - asciicheck
     - bidichk
@@ -23,14 +26,11 @@ linters:
     - errname
     - execinquery
     - exportloopref
-    - forcetypeassert # TODO: enable in future
+    - forcetypeassert
     - gci
     - gocheckcompilerdirectives
-    # - gochecknoglobals # TODO: enable in future
     - gochecknoinits
-    # - gocognit # TODO: enable in future
     - goconst
-    # - gocritic # TODO enable in future
     # - gocyclo # TODO: enable in future
     # - godot # TODO: enable in future
     # - goerr113 # TODO: enable in future

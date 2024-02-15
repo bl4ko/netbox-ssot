@@ -836,8 +836,7 @@ func (o *OVirtSource) syncVmInterfaces(nbi *inventory.NetboxInventory, ovirtVm *
 									}
 
 									// Check if ip is primary
-									switch ipVersion {
-									case "v4":
+									if ipVersion == "v4" {
 										vmIp := utils.Lookup(netboxVm.Name)
 										if vmIp != "" {
 											if ipAddress == vmIp {

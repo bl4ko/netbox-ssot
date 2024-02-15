@@ -26,8 +26,7 @@ func (ds *DnacSource) SyncSites(nbi *inventory.NetboxInventory) error {
 			Slug: utils.Slugify(site.Name),
 		}
 		for _, additionalInfo := range site.AdditionalInfo {
-			switch additionalInfo.Namespace {
-			case "Location":
+			if additionalInfo.Namespace == "Location" {
 				dnacSite.PhysicalAddress = additionalInfo.Attributes.Address
 				longitude, err := strconv.ParseFloat(additionalInfo.Attributes.Longitude, 64)
 				if err != nil {

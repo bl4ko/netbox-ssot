@@ -68,7 +68,7 @@ func Slugify(name string) string {
 	name = strings.ReplaceAll(name, " ", "_")
 
 	// Remove characters except lowercase letters, numbers, underscores, hyphens
-	reg, _ := regexp.Compile("[^a-z0-9_-]+")
+	reg := regexp.MustCompile("[^a-z0-9_-]+")
 	name = reg.ReplaceAllString(name, "")
 	return name
 }
@@ -81,7 +81,7 @@ func Alphanumeric(name string) string {
 	name = strings.ReplaceAll(name, " ", "_")
 
 	// Remove characters except lowercase letters, numbers, underscores
-	reg, _ := regexp.Compile("[^a-z0-9_]+")
+	reg := regexp.MustCompile("[^a-z0-9_]+")
 	name = reg.ReplaceAllString(name, "")
 	return name
 }
