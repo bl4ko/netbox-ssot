@@ -9,7 +9,7 @@ import (
 	"github.com/vmware/govmomi/vim25/types"
 )
 
-// In vsphere we get vlans from DistributedVirtualPortgroups
+// In vsphere we get vlans from DistributedVirtualPortgroups.
 func (vc *VmwareSource) InitNetworks(ctx context.Context, containerView *view.ContainerView) error {
 	var dvpgs []mo.DistributedVirtualPortgroup
 	err := containerView.Retrieve(ctx, []string{"DistributedVirtualPortgroup"}, []string{"config"}, &dvpgs)

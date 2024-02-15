@@ -31,7 +31,7 @@ type ContactGroup struct {
 	Parent *ContactGroup `json:"parent,omitempty"`
 }
 
-// Default role name for admins of vms
+// Default role name for admins of vms.
 const (
 	AdminContactRoleName = "Admin"
 )

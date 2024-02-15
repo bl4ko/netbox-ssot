@@ -162,7 +162,7 @@ func (nbi *NetboxInventory) AddContact(newContact *objects.Contact) (*objects.Co
 }
 
 // AddContact assignment adds a contact assignment to the local netbox inventory.
-// TODO: Make index check less code and more universal, checking each level is ugly
+// TODO: Make index check less code and more universal, checking each level is ugly.
 func (nbi *NetboxInventory) AddContactAssignment(newCA *objects.ContactAssignment) (*objects.ContactAssignment, error) {
 	if nbi.ContactAssignmentsIndexByContentTypeAndObjectIdAndContactIdAndRoleId[newCA.ContentType] == nil {
 		nbi.ContactAssignmentsIndexByContentTypeAndObjectIdAndContactIdAndRoleId[newCA.ContentType] = make(map[int]map[int]map[int]*objects.ContactAssignment)

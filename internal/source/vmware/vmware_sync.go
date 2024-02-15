@@ -147,7 +147,7 @@ func (vc *VmwareSource) syncClusters(nbi *inventory.NetboxInventory) error {
 }
 
 // Host in vmware is a represented as device in netbox with a
-// custom role Server
+// custom role Server.
 func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 	for hostId, host := range vc.Hosts {
 		var err error
@@ -784,7 +784,7 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
-// Syncs VM's interfaces to Netbox
+// Syncs VM's interfaces to Netbox.
 func (vc *VmwareSource) syncVmInterfaces(nbi *inventory.NetboxInventory, vmwareVm mo.VirtualMachine, netboxVm *objects.VM) error {
 	var vmPrimaryIpv4 *objects.IPAddress
 	var vmPrimaryIpv6 *objects.IPAddress

@@ -38,7 +38,7 @@ func Lookup(hostname string) string {
 }
 
 // Function that converts string representation of ipv4 mask (e.g. 255.255.255.128) to
-// bit representation (e.g. 25)
+// bit representation (e.g. 25).
 func MaskToBits(mask string) (int, error) {
 	ipMask := net.IPMask(net.ParseIP(mask).To4())
 	if ipMask == nil {
@@ -64,7 +64,7 @@ func GetIPVersion(ipAddress string) int {
 // Function that checks if given IP address is part of the
 // given subnet.
 // e.g. ipAddress "172.31.4.129" and subnet "172.31.4.145/25"
-// Return true
+// Return true.
 func SubnetContainsIpAddress(ipAddress string, subnet string) bool {
 	ip := net.ParseIP(ipAddress)
 	if ip == nil {

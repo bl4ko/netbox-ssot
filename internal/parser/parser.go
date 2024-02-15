@@ -83,7 +83,7 @@ func (s SourceConfig) String() string {
 	return fmt.Sprintf("SourceConfig{Name: %s, Type: %s, HTTPScheme: %s, Hostname: %s, Port: %d, Username: %s, Password: %s, PermittedSubnets: %v, ValidateCert: %t, Tag: %s, TagColor: %s, HostSiteRelations: %v, ClusterSiteRelations: %v, clusterTenantRelations: %v, HostTenantRelations: %v, VmTenantRelations %v, VlanGroupRelations: %v, VlanTenantRelations: %v}", s.Name, s.Type, s.HTTPScheme, s.Hostname, s.Port, s.Username, s.Password, s.PermittedSubnets, s.ValidateCert, s.Tag, s.TagColor, s.HostSiteRelations, s.ClusterSiteRelations, s.ClusterTenantRelations, s.HostTenantRelations, s.VmTenantRelations, s.VlanGroupRelations, s.VlanTenantRelations)
 }
 
-// Validates the user's config for limits and required fields
+// Validates the user's config for limits and required fields.
 func validateConfig(config *Config) error {
 	err := validateLoggerConfig(config)
 	if err != nil {
@@ -110,7 +110,7 @@ func validateLoggerConfig(config *Config) error {
 	return nil
 }
 
-// Function that validates NetboxConfig
+// Function that validates NetboxConfig.
 func validateNetboxConfig(config *Config) error {
 	// Validate Netbox config
 	if config.Netbox.ApiToken == "" {

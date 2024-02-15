@@ -61,7 +61,7 @@ func (ip IPAddress) String() string {
 }
 
 const (
-	// Default vlan group for all objects, that are not party of any other vlan group
+	// Default vlan group for all objects, that are not party of any other vlan group.
 	DefaultVlanGroupName = "Default netbox-ssot vlan group"
 )
 
@@ -71,9 +71,9 @@ type VlanGroup struct {
 	Name string `json:"name,omitempty"`
 	// Slug of the VlanGroup. This field is required.
 	Slug string `json:"slug,omitempty"`
-	// MinVid is the minimal VID that can be assigned in this group. This field is required (default 1)
+	// MinVid is the minimal VID that can be assigned in this group. This field is required (default 1).
 	MinVid int `json:"min_vid,omitempty"`
-	// MaxVid is the maximal VID that can be assigned in this group. This field is required (default 4094)
+	// MaxVid is the maximal VID that can be assigned in this group. This field is required (default 4094).
 	MaxVid int `json:"max_vid,omitempty"`
 }
 

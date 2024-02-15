@@ -5,7 +5,7 @@ const (
 	Rocket    = "\U0001F680"
 )
 
-// Custom field names
+// Names used for netbox objects custom fields attribute.
 const (
 	CustomFieldSourceName  = "source"
 	CustomFieldSourceLabel = "Source"

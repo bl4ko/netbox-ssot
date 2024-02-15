@@ -16,7 +16,7 @@ func (t Tag) String() string {
 	return fmt.Sprintf("Tag{Id: %d, Name: %s, Slug: %s, Color: %s, Description: %s}", t.Id, t.Name, t.Slug, t.Color, t.Description)
 }
 
-// CustomFieldTypes are predefined netbox's types for CustomFields
+// CustomFieldTypes are predefined netbox's types for CustomFields.
 type CustomFieldType struct {
 	Choice
 }

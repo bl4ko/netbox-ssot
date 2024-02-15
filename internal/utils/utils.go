@@ -15,7 +15,7 @@ import (
 )
 
 // Validates array of regex relations
-// Regex relation is a string of format "regex = value"
+// Regex relation is a string of format "regex = value".
 func ValidateRegexRelations(regexRelations []string) error {
 	for _, regexRelation := range regexRelations {
 		relation := strings.Split(regexRelation, "=")
@@ -32,7 +32,7 @@ func ValidateRegexRelations(regexRelations []string) error {
 }
 
 // Converts array of strings, that are of form "regex = value", to a map
-// where key is regex and value is value
+// where key is regex and value is value.
 func ConvertStringsToRegexPairs(input []string) map[string]string {
 	output := make(map[string]string, len(input))
 	for _, s := range input {
@@ -43,7 +43,7 @@ func ConvertStringsToRegexPairs(input []string) map[string]string {
 }
 
 // Matches input string to a regex from input map patterns,
-// and returns the value. If there is no match, it returns an empty string
+// and returns the value. If there is no match, it returns an empty string.
 func MatchStringToValue(input string, patterns map[string]string) (string, error) {
 	for regex, value := range patterns {
 		matched, err := regexp.MatchString(regex, input)
@@ -61,7 +61,7 @@ func MatchStringToValue(input string, patterns map[string]string) (string, error
 // Slugified version can only contain: lowercase letters, numbers,
 // underscores or hyphens.
 // e.g. "My Name" -> "my-name"
-// e.g. "  @Test@ " -> "test"
+// e.g. "  @Test@ " -> "test".
 func Slugify(name string) string {
 	name = strings.TrimSpace(name)
 	name = strings.ToLower(name)
@@ -132,7 +132,7 @@ func ExtractFunctionName(i interface{}) string {
 	return funcNameParts[len(funcNameParts)-1]
 }
 
-// Converts strings of format fieldName = value to map[fieldName] = value
+// Converts strings of format fieldName = value to map[fieldName] = value.
 func ConvertStringsToPairs(input []string) map[string]string {
 	output := make(map[string]string, len(input))
 	for _, s := range input {
@@ -142,7 +142,7 @@ func ConvertStringsToPairs(input []string) map[string]string {
 	return output
 }
 
-// Define a new type that implements the runes.Set interface
+// Define a new type that implements the runes.Set interface.
 type mnSet struct{}
 
 // Contains implements the runes.Set interface for mnSet.
@@ -151,7 +151,7 @@ func (mnSet) Contains(r rune) bool {
 	return unicode.Is(unicode.Mn, r)
 }
 
-// Function that removes diacritics and normalizes strings
+// Function that removes diacritics and normalizes strings.
 func removeDiacritics(s string) string {
 	t := transform.Chain(norm.NFD, runes.Remove(mnSet{}), norm.NFC)
 	result, _, _ := transform.String(t, s)
@@ -162,7 +162,7 @@ func removeDiacritics(s string) string {
 // It returns a map of name -> email.
 //
 // E.g. names = ["John Doe", "Jane Doe"], emails = ["jane.doe@example"]
-// Output: map["Jane Doe"] = "jane.doe@example"
+// Output: map["Jane Doe"] = "jane.doe@example".
 func MatchNamesWithEmails(names []string, emails []string, logger *logger.Logger) map[string]string {
 	normalizedNames := make(map[string]string) // Map for easy lookup
 	for _, name := range names {

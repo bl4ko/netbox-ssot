@@ -11,7 +11,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
-// NetboxInventory is a singleton class to manage a inventory of NetBoxObject objects
+// NetboxInventory is a singleton class to manage a inventory of NetBoxObject objects.
 type NetboxInventory struct {
 	// Logger is the logger used for logging messages
 	Logger *logger.Logger
@@ -98,7 +98,7 @@ type NetboxInventory struct {
 	SsotTag *objects.Tag
 }
 
-// Func string representation
+// Func string representation.
 func (nbi NetboxInventory) String() string {
 	return fmt.Sprintf("NetBoxInventory{Logger: %+v, NetboxConfig: %+v...}", nbi.Logger, nbi.NetboxConfig)
 }
@@ -135,7 +135,7 @@ func NewNetboxInventory(logger *logger.Logger, nbConfig *parser.NetboxConfig) *N
 	return nbi
 }
 
-// Init function that initializes the NetBoxInventory object with objects from Netbox
+// Init function that initializes the NetBoxInventory object with objects from Netbox.
 func (nbi *NetboxInventory) Init() error {
 	baseURL := fmt.Sprintf("%s://%s:%d", nbi.NetboxConfig.HTTPScheme, nbi.NetboxConfig.Hostname, nbi.NetboxConfig.Port)
 

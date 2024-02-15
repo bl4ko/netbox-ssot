@@ -153,7 +153,7 @@ func (dr DeviceRole) String() string {
 }
 
 // https://github.com/netbox-community/netbox/blob/b93735861d3bde0354c855a8bbd2a2311e8eb920/netbox/dcim/choices.py#L182
-// Predefined airflow types from netbox
+// Predefined airflow types from netbox.
 type DeviceAirFlowType struct {
 	Choice
 }
@@ -248,12 +248,12 @@ type InterfaceType struct {
 
 // Predefined types: https://github.com/netbox-community/netbox/blob/ec245b968f50bdbafaadd5d6b885832d858fa167/netbox/dcim/choices.py#L800
 var (
-	// VirtualInterfaces
+	// Netbox's Virtual interface types.
 	VirtualInterfaceType = InterfaceType{Choice{Value: "virtual", Label: "Virtual"}}
 	BridgeInterfaceType  = InterfaceType{Choice{Value: "bridge", Label: "Bridge"}}
 	LAGInterfaceType     = InterfaceType{Choice{Value: "lag", Label: "Link Aggregation Group (LAG)"}}
 
-	// Ethernet (Fixed)
+	// Netbox's Ethernet (Fixed) interface types.
 	BASEFXInterfaceType       = InterfaceType{Choice{Value: "100base-fx", Label: "100BASE-FX (10/100ME FIBER)"}}
 	BASELFXInterfaceType      = InterfaceType{Choice{Value: "100base-lfx", Label: "100BASE-LFX (10/100ME FIBER)"}}
 	BASETXInterfaceType       = InterfaceType{Choice{Value: "100base-tx", Label: "100BASE-TX (10/100ME)"}}
@@ -295,7 +295,7 @@ var (
 	GE800QSFPDDInterfaceType  = InterfaceType{Choice{Value: "800gbase-x-qsfpdd", Label: "QSFP-DD (800GE)"}}
 	GE800OSFPInterfaceType    = InterfaceType{Choice{Value: "800gbase-x-osfp", Label: "OSFP (800GE)"}}
 
-	// Wireless
+	// Netbox's Wireless interface types.
 	IEEE80211AInterfaceType  = InterfaceType{Choice{Value: "ieee802.11a", Label: "IEEE 802.11a"}}
 	IEEE80211GInterfaceType  = InterfaceType{Choice{Value: "ieee802.11g", Label: "IEEE 802.11b/g"}}
 	IEEE80211NInterfaceType  = InterfaceType{Choice{Value: "ieee802.11n", Label: "IEEE 802.11n"}}
@@ -303,7 +303,7 @@ var (
 	IEEE80211ADInterfaceType = InterfaceType{Choice{Value: "ieee802.11ad", Label: "IEEE 802.11ad"}}
 	IEEE80211AXInterfaceType = InterfaceType{Choice{Value: "ieee802.11ax", Label: "IEEE 802.11ax"}}
 
-	// PON
+	// Netbox's PON interface types.
 	GPONInterfaceType     = InterfaceType{Choice{Value: "gpon", Label: "GPON (2.5 Gbps / 1.25 Gps)"}}
 	XGPONInterfaceType    = InterfaceType{Choice{Value: "xg-pon", Label: "XG-PON (10 Gbps / 2.5 Gbps)"}}
 	XGSPONInterfaceType   = InterfaceType{Choice{Value: "xgs-pon", Label: "XGS-PON (10 Gbps)"}}
@@ -311,16 +311,16 @@ var (
 	EPONInterfaceType     = InterfaceType{Choice{Value: "epon", Label: "EPON (1 Gbps)"}}
 	TenGEPONInterfaceType = InterfaceType{Choice{Value: "10g-epon", Label: "10G-EPON (10 Gbps)"}}
 
-	// Stacking
+	// Netbox's Stacking interface types.
 
-	// Cellular
+	// Netbox's Cellular interface types.
 	GSMInterfaceType  = InterfaceType{Choice{Value: "gsm", Label: "GSM"}}
 	CDMAInterfaceType = InterfaceType{Choice{Value: "cdma", Label: "CDMA"}}
 	LTEInterfaceType  = InterfaceType{Choice{Value: "lte", Label: "LTE"}}
 
-	// Sonet
+	// Netbox's Sonet interface types.
 
-	// Fiber channel
+	// Netbox's Fiber channel interface types.
 	GFC1SFPInterfaceType                    = InterfaceType{Choice{Value: "1gfc-sfp", Label: "SFP (1GFC)"}}
 	GFC2SFPInterfaceType                    = InterfaceType{Choice{Value: "2gfc-sfp", Label: "SFP (2GFC)"}}
 	GFC4SFPInterfaceType                    = InterfaceType{Choice{Value: "4gfc-sfp", Label: "SFP (4GFC)"}}
@@ -330,11 +330,11 @@ var (
 	GFC64QSFPPInterfaceType   InterfaceType = InterfaceType{Choice{Value: "64gfc-qsfpp", Label: "QSFP (64GFC)"}}
 	GFC128QSFP28InterfaceType               = InterfaceType{Choice{Value: "128gfc-qsfp28", Label: "QSFP28 (128GFC)"}}
 
-	// Other type
+	// Other type used for interfaces that do not suffice the above types.
 	OtherInterfaceType = InterfaceType{Choice{Value: "other", Label: "Other"}}
 )
 
-// Maps interface speed (Kbps) to interface type
+// Maps interface speed (Kbps) to interface type.
 var IfaceSpeed2IfaceType = map[InterfaceSpeed]*InterfaceType{
 	MBPS10:  &BASETXInterfaceType,
 	MBPS100: &BASETXInterfaceType,
@@ -358,7 +358,7 @@ var IfaceSpeed2IfaceType = map[InterfaceSpeed]*InterfaceType{
 	GBPS800: &GE800QSFPDDInterfaceType,
 }
 
-// Interface speed in kbps
+// Interface speed in kbps.
 type InterfaceSpeed int64
 
 // Available interface speeds: https://github.com/netbox-community/netbox/blob/ec245b968f50bdbafaadd5d6b885832d858fa167/netbox/dcim/choices.py#L1139

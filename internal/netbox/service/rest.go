@@ -11,7 +11,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
-// Standard response format from Netbox's API
+// Standard response format from Netbox's API.
 type Response[T any] struct {
 	Count    int     `json:"count"`
 	Next     *string `json:"next"`
@@ -90,7 +90,7 @@ func GetAll[T any](api *NetboxAPI, extraParams string) ([]T, error) {
 }
 
 // Patch func patches the object of type T, with the given api path and body.
-// Path of the object (must contain the id), for example /api/dcim/devices/1/
+// Path of the object (must contain the id), for example /api/dcim/devices/1/.
 func Patch[T any](api *NetboxAPI, objectId int, body map[string]interface{}) (*T, error) {
 	var dummy T // dummy variable for printf
 	path := type2path[reflect.TypeOf(dummy)]

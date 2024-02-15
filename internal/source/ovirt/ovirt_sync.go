@@ -171,7 +171,7 @@ func (o *OVirtSource) syncClusters(nbi *inventory.NetboxInventory) error {
 }
 
 // Host in oVirt is a represented as device in netbox with a
-// custom role Server
+// custom role Server.
 func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 	for hostId, host := range o.Hosts {
 		hostName, exists := host.Name()
@@ -752,7 +752,7 @@ func (o *OVirtSource) syncVms(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
-// Syncs VM's interfaces to Netbox
+// Syncs VM's interfaces to Netbox.
 func (o *OVirtSource) syncVmInterfaces(nbi *inventory.NetboxInventory, ovirtVm *ovirtsdk4.Vm, netboxVm *objects.VM) error {
 	if reportedDevices, exist := ovirtVm.ReportedDevices(); exist {
 		for _, reportedDevice := range reportedDevices.Slice() {

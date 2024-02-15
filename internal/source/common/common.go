@@ -7,7 +7,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/parser"
 )
 
-// Source is an interface for all sources (e.g. oVirt, VMware, etc.)
+// Source is an interface for all sources (e.g. oVirt, VMware, etc.).
 type Source interface {
 	// Init initializes the source
 	Init() error
@@ -15,7 +15,7 @@ type Source interface {
 	Sync(*inventory.NetboxInventory) error
 }
 
-// CommonConfig is a common configuration that all sources share
+// CommonConfig is a common configuration that all sources share.
 type CommonConfig struct {
 	Logger       *logger.Logger
 	SourceConfig *parser.SourceConfig

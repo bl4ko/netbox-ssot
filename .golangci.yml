@@ -4,8 +4,13 @@ linters-settings:
   errcheck:
     ignore: github.com/bl4ko/netbox-ssot/internal/logger:.*
 
+issues:
+  max-issues-per-linter: 50
+  max-same-issues: 20
+
 linters:
   enable:
+    # - gocyclo # TODO: enable in future
     # - gocognit # TODO: enable in future
     # - cyclop # TODO: enable in future
     # - errorlint # TODO: enable in future
@@ -31,8 +36,7 @@ linters:
     - gocheckcompilerdirectives
     - gochecknoinits
     - goconst
-    # - gocyclo # TODO: enable in future
-    # - godot # TODO: enable in future
+    - godot # TODO: enable in future
     # - goerr113 # TODO: enable in future
     - goheader
     - goimports

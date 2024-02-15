@@ -64,7 +64,7 @@ var (
 	VMStatusOffline = VMStatus{Choice{Value: "offline", Label: "Offline"}}
 )
 
-// VM represents a virtual machine
+// VM represents a netbox's virtual machine.
 type VM struct {
 	NetboxObject
 	// Name is the name of the virtual machine. This field is required.
@@ -105,7 +105,7 @@ func (vm VM) String() string {
 	return fmt.Sprintf("VM{Id: %d, Name: %s}", vm.Id, vm.Name)
 }
 
-// 802.1Q VLAN Tagging Mode
+// 802.1Q VLAN Tagging Mode (Access, Tagged, Tagged All).
 type VMInterfaceMode struct {
 	Choice
 }

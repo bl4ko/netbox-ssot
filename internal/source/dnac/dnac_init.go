@@ -63,7 +63,7 @@ func (ds *DnacSource) InitDevices(c *dnac.Client) error {
 	return nil
 }
 
-// Function that gets all vlans for device id
+// Function that gets all vlans for device id.
 func (ds *DnacSource) addVlansForDevice(c *dnac.Client, deviceId string) error {
 	vlans, _, _ := c.Devices.GetDeviceInterfaceVLANs(deviceId, nil)
 	if vlans != nil {
@@ -110,7 +110,7 @@ func (ds *DnacSource) InitInterfaces(c *dnac.Client) error {
 // For each site id finds the corresponding device ids.
 // This is necessary to find relations between devices and sites.
 //
-// This function has to run after InitSites
+// This function has to run after InitSites.
 func (ds *DnacSource) InitMemberships(c *dnac.Client) error {
 	offset := 0
 	limit := 100

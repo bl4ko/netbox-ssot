@@ -18,7 +18,7 @@ import (
 	"github.com/vmware/govmomi/vim25/mo"
 )
 
-// VmwareSource represents an vsphere source
+// VmwareSource represents an vsphere source.
 type VmwareSource struct {
 	common.CommonConfig
 	// Vmware API data initialized in init functions
@@ -195,7 +195,7 @@ func (vc *VmwareSource) Init() error {
 	return nil
 }
 
-// Function that syncs all data from oVirt to Netbox
+// Function that syncs all data from oVirt to Netbox.
 func (vc *VmwareSource) Sync(nbi *inventory.NetboxInventory) error {
 	syncFunctions := []func(*inventory.NetboxInventory) error{
 		vc.syncNetworks,
@@ -238,7 +238,7 @@ func (vc *VmwareSource) CreateClusterDataCenterRelation(ctx context.Context, cli
 	return nil
 }
 
-// Creates a map of custom field ids to their names
+// Creates a map of custom field ids to their names.
 func (vc *VmwareSource) CreateCustomFieldRelation(ctx context.Context, client *vim25.Client) error {
 	cfm, err := object.GetCustomFieldsManager(client)
 	if err != nil {

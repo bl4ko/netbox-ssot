@@ -67,7 +67,7 @@ func (o *OVirtSource) InitDataCenters(conn *ovirtsdk4.Connection) error {
 	return nil
 }
 
-// Function that queries ovirt api for clusters and stores them locally
+// Function that queries ovirt api for clusters and stores them locally.
 func (o *OVirtSource) InitClusters(conn *ovirtsdk4.Connection) error {
 	clustersResponse, err := conn.SystemService().ClustersService().List().Send()
 	if err != nil {
@@ -85,7 +85,7 @@ func (o *OVirtSource) InitClusters(conn *ovirtsdk4.Connection) error {
 	return nil
 }
 
-// Function that queries ovirt api for hosts and stores them locally
+// Function that queries ovirt api for hosts and stores them locally.
 func (o *OVirtSource) InitHosts(conn *ovirtsdk4.Connection) error {
 	hostsResponse, err := conn.SystemService().HostsService().List().Follow("nics").Send()
 	if err != nil {
@@ -103,7 +103,7 @@ func (o *OVirtSource) InitHosts(conn *ovirtsdk4.Connection) error {
 	return nil
 }
 
-// Function that queries the ovirt api for vms and stores them locally
+// Function that queries the ovirt api for vms and stores them locally.
 func (o *OVirtSource) InitVms(conn *ovirtsdk4.Connection) error {
 	vmsResponse, err := conn.SystemService().VmsService().List().Follow("nics,diskattachments,reporteddevices").Send()
 	if err != nil {

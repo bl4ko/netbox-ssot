@@ -10,7 +10,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
-// Collect all tags from Netbox API and store them in the NetBoxInventory
+// Collect all tags from Netbox API and store them in the NetBoxInventory.
 func (nbi *NetboxInventory) InitTags() error {
 	nbTags, err := service.GetAll[objects.Tag](nbi.NetboxApi, "")
 	if err != nil {
@@ -41,7 +41,7 @@ func (nbi *NetboxInventory) InitTags() error {
 	return nil
 }
 
-// Collects all tenants from Netbox API and store them in the NetBoxInventory
+// Collects all tenants from Netbox API and store them in the NetBoxInventory.
 func (nbi *NetboxInventory) InitTenants() error {
 	nbTenants, err := service.GetAll[objects.Tenant](nbi.NetboxApi, "")
 	if err != nil {
@@ -57,7 +57,7 @@ func (nbi *NetboxInventory) InitTenants() error {
 	return nil
 }
 
-// Collects all contacts from Netbox API and store them in the NetBoxInventory
+// Collects all contacts from Netbox API and store them in the NetBoxInventory.
 func (nbi *NetboxInventory) InitContacts() error {
 	nbContacts, err := service.GetAll[objects.Contact](nbi.NetboxApi, "")
 	if err != nil {
@@ -77,7 +77,7 @@ func (nbi *NetboxInventory) InitContacts() error {
 	return nil
 }
 
-// Collects all contact roles from Netbox API and store them in the NetBoxInventory
+// Collects all contact roles from Netbox API and store them in the NetBoxInventory.
 func (nbi *NetboxInventory) InitContactRoles() error {
 	nbContactRoles, err := service.GetAll[objects.ContactRole](nbi.NetboxApi, "")
 	if err != nil {
@@ -126,7 +126,7 @@ func (nbi *NetboxInventory) InitContactAssignments() error {
 	return nil
 }
 
-// Initializes default admin contact role used for adding admin contacts of vms
+// Initializes default admin contact role used for adding admin contacts of vms.
 func (nbi *NetboxInventory) InitAdminContactRole() error {
 	_, err := nbi.AddContactRole(&objects.ContactRole{
 		NetboxObject: objects.NetboxObject{
@@ -144,7 +144,7 @@ func (nbi *NetboxInventory) InitAdminContactRole() error {
 	return nil
 }
 
-// Collects all contact groups from Netbox API and store them in the NetBoxInventory
+// Collects all contact groups from Netbox API and store them in the NetBoxInventory.
 func (nbi *NetboxInventory) InitContactGroups() error {
 	nbContactGroups, err := service.GetAll[objects.ContactGroup](nbi.NetboxApi, "")
 	if err != nil {
@@ -160,7 +160,7 @@ func (nbi *NetboxInventory) InitContactGroups() error {
 	return nil
 }
 
-// Collects all sites from Netbox API and store them in the NetBoxInventory
+// Collects all sites from Netbox API and store them in the NetBoxInventory.
 func (nbi *NetboxInventory) InitSites() error {
 	nbSites, err := service.GetAll[objects.Site](nbi.NetboxApi, "")
 	if err != nil {
@@ -176,7 +176,7 @@ func (nbi *NetboxInventory) InitSites() error {
 	return nil
 }
 
-// Collects all manufacturers from Netbox API and store them in NetBoxInventory
+// Collects all manufacturers from Netbox API and store them in NetBoxInventory.
 func (nbi *NetboxInventory) InitManufacturers() error {
 	nbManufacturers, err := service.GetAll[objects.Manufacturer](nbi.NetboxApi, "")
 	if err != nil {
@@ -199,7 +199,7 @@ func (nbi *NetboxInventory) InitManufacturers() error {
 	return nil
 }
 
-// Collects all platforms from Netbox API and store them in the NetBoxInventory
+// Collects all platforms from Netbox API and store them in the NetBoxInventory.
 func (nbi *NetboxInventory) InitPlatforms() error {
 	nbPlatforms, err := service.GetAll[objects.Platform](nbi.NetboxApi, "")
 	if err != nil {
@@ -247,7 +247,7 @@ func (nbi *NetboxInventory) InitDevices() error {
 }
 
 // Collects all deviceRoles from Netbox API and store them in the
-// NetBoxInventory
+// NetBoxInventory.
 func (nbi *NetboxInventory) InitDeviceRoles() error {
 	nbDeviceRoles, err := service.GetAll[objects.DeviceRole](nbi.NetboxApi, "")
 	if err != nil {
@@ -270,7 +270,7 @@ func (nbi *NetboxInventory) InitDeviceRoles() error {
 	return nil
 }
 
-// Ensures that attribute ServerDeviceRole is proper initialized
+// Ensures that attribute ServerDeviceRole is proper initialized.
 func (nbi *NetboxInventory) InitServerDeviceRole() error {
 	_, err := nbi.AddDeviceRole(&objects.DeviceRole{Name: "Server", Slug: "server", Color: "00add8", VMRole: true})
 	if err != nil {
@@ -298,7 +298,7 @@ func (nbi *NetboxInventory) InitCustomFields() error {
 // Currently these are two:
 // - host_cpu_cores
 // - host_memory
-// - sourceId - this is used to store the ID of the source object in Netbox (interfaces)
+// - sourceId - this is used to store the ID of the source object in Netbox (interfaces).
 func (netboxInventory *NetboxInventory) InitSsotCustomFields() error {
 	err := netboxInventory.AddCustomField(&objects.CustomField{
 		Name:                  constants.CustomFieldSourceName,
@@ -363,7 +363,7 @@ func (netboxInventory *NetboxInventory) InitSsotCustomFields() error {
 	return nil
 }
 
-// Collects all nbClusters from Netbox API and stores them in the NetBoxInventory
+// Collects all nbClusters from Netbox API and stores them in the NetBoxInventory.
 func (nbi *NetboxInventory) InitClusterGroups() error {
 	nbClusterGroups, err := service.GetAll[objects.ClusterGroup](nbi.NetboxApi, "")
 	if err != nil {
@@ -385,7 +385,7 @@ func (nbi *NetboxInventory) InitClusterGroups() error {
 	return nil
 }
 
-// Collects all ClusterTypes from Netbox API and stores them in the NetBoxInventory
+// Collects all ClusterTypes from Netbox API and stores them in the NetBoxInventory.
 func (nbi *NetboxInventory) InitClusterTypes() error {
 	nbClusterTypes, err := service.GetAll[objects.ClusterType](nbi.NetboxApi, "")
 	if err != nil {
@@ -409,7 +409,7 @@ func (nbi *NetboxInventory) InitClusterTypes() error {
 	return nil
 }
 
-// Collects all clusters from Netbox API and stores them to local inventory
+// Collects all clusters from Netbox API and stores them to local inventory.
 func (nbi *NetboxInventory) InitClusters() error {
 	nbClusters, err := service.GetAll[objects.Cluster](nbi.NetboxApi, "")
 	if err != nil {
@@ -456,7 +456,7 @@ func (nbi *NetboxInventory) InitDeviceTypes() error {
 	return nil
 }
 
-// Collects all interfaces from Netbox API and stores them to local inventory
+// Collects all interfaces from Netbox API and stores them to local inventory.
 func (nbi *NetboxInventory) InitInterfaces() error {
 	nbInterfaces, err := service.GetAll[objects.Interface](nbi.NetboxApi, "")
 	if err != nil {
@@ -505,7 +505,7 @@ func (nbi *NetboxInventory) InitDefaultVlanGroup() error {
 	return nil
 }
 
-// Collects all vlans from Netbox API and stores them to local inventory
+// Collects all vlans from Netbox API and stores them to local inventory.
 func (nbi *NetboxInventory) InitVlanGroups() error {
 	nbVlanGroups, err := service.GetAll[objects.VlanGroup](nbi.NetboxApi, "")
 	if err != nil {
@@ -529,7 +529,7 @@ func (nbi *NetboxInventory) InitVlanGroups() error {
 	return nil
 }
 
-// Collects all vlans from Netbox API and stores them to local inventory
+// Collects all vlans from Netbox API and stores them to local inventory.
 func (nbi *NetboxInventory) InitVlans() error {
 	nbVlans, err := service.GetAll[objects.Vlan](nbi.NetboxApi, "")
 	if err != nil {
@@ -565,7 +565,7 @@ func (nbi *NetboxInventory) InitVlans() error {
 	return nil
 }
 
-// Collects all vms from Netbox API and stores them to local inventory
+// Collects all vms from Netbox API and stores them to local inventory.
 func (nbi *NetboxInventory) InitVMs() error {
 	nbVMs, err := service.GetAll[objects.VM](nbi.NetboxApi, "")
 	if err != nil {
@@ -589,7 +589,7 @@ func (nbi *NetboxInventory) InitVMs() error {
 	return nil
 }
 
-// Collects all VMInterfaces from Netbox API and stores them to local inventory
+// Collects all VMInterfaces from Netbox API and stores them to local inventory.
 func (nbi *NetboxInventory) InitVMInterfaces() error {
 	nbVMInterfaces, err := service.GetAll[objects.VMInterface](nbi.NetboxApi, "")
 	if err != nil {
@@ -616,7 +616,7 @@ func (nbi *NetboxInventory) InitVMInterfaces() error {
 	return nil
 }
 
-// Collects all IP addresses from Netbox API and stores them to local inventory
+// Collects all IP addresses from Netbox API and stores them to local inventory.
 func (nbi *NetboxInventory) InitIPAddresses() error {
 	ipAddresses, err := service.GetAll[objects.IPAddress](nbi.NetboxApi, "")
 	if err != nil {
@@ -640,7 +640,7 @@ func (nbi *NetboxInventory) InitIPAddresses() error {
 	return nil
 }
 
-// Collects all Prefixes from Netbox API and stores them to local inventory
+// Collects all Prefixes from Netbox API and stores them to local inventory.
 func (nbi *NetboxInventory) InitPrefixes() error {
 	prefixes, err := service.GetAll[objects.Prefix](nbi.NetboxApi, "")
 	if err != nil {

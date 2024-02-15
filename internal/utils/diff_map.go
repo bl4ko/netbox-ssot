@@ -10,7 +10,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 )
 
-// Helper function to determine if a given reflect.Value contains an embedded objects.Choice
+// Helper function to determine if a given reflect.Value contains an embedded objects.Choice.
 func isChoiceEmbedded(v reflect.Value) bool {
 	vType := v.Type()
 	return vType.Field(0).Type == reflect.TypeOf(objects.Choice{})
@@ -35,7 +35,7 @@ type IDObject struct {
 // hasPriorityOver returns true if newObj has priority over existingObj, false otherwise.
 // newObject will alwaays have priority over exisitngObject, unless
 // sourcePriority[newObj.CustomFields[constants.CustomFieldSourceName]] >
-// sourcePriority[existingObj.CustomFields[constants.CustomFieldSourceName]]
+// sourcePriority[existingObj.CustomFields[constants.CustomFieldSourceName]].
 func hasPriorityOver(newObj, existingObj reflect.Value, source2priority map[string]int) bool {
 
 	// Retrieve the SourceName field from CustomFields for both objects
@@ -71,7 +71,7 @@ func hasPriorityOver(newObj, existingObj reflect.Value, source2priority map[stri
 // If resetFields is set to true, the function will also include fields
 // that are empty in newObj but might have a value in existingObj.
 // Also we check for priority, if newObject has priority over existingObject
-// we use the fields from newObject, otherwise we use the fields from exisingObject
+// we use the fields from newObject, otherwise we use the fields from exisingObject.
 func JsonDiffMapExceptId(newObj, existingObj interface{}, resetFields bool, source2priority map[string]int) (map[string]interface{}, error) {
 	diff := make(map[string]interface{})
 
@@ -185,7 +185,7 @@ func JsonDiffMapExceptId(newObj, existingObj interface{}, resetFields bool, sour
 // that can be easily used with json.Marshal
 // To achieve this the map is of the following format:
 // map[jsonTag] = [id1, id2, id3] // If the slice contains objects with ID field
-// map[jsonTag] = [value1, value2, value3] // If the slice contains strings
+// map[jsonTag] = [value1, value2, value3] // If the slice contains strings.
 func addSliceDiff(newSlice reflect.Value, existingSlice reflect.Value, jsonTag string, hasPriority bool, diffMap map[string]interface{}) error {
 
 	// If first slice is nil, that means that we reset the value
@@ -278,7 +278,7 @@ func addSliceDiff(newSlice reflect.Value, existingSlice reflect.Value, jsonTag s
 	return nil
 }
 
-// Returns json form for patching the difference e.g. { "Id": 1 }
+// Returns json form for patching the difference e.g. { "Id": 1 }.
 func addStructDiff(newObj reflect.Value, existingObj reflect.Value, jsonTag string, hasPriority bool, diffMap map[string]interface{}) error {
 
 	// If first struct is nil, that means that we reset the attribute to nil

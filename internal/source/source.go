@@ -16,7 +16,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
-// NewSource creates a Source from the given configuration
+// NewSource creates a Source from the given configuration.
 func NewSource(config *parser.SourceConfig, logger *logger.Logger, netboxInventory *inventory.NetboxInventory) (common.Source, error) {
 	// First we create default tags for the source
 	sourceTag, err := netboxInventory.AddTag(&objects.Tag{
