@@ -609,9 +609,6 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
 		vmName := vm.Name
 		vmHostName := vc.Hosts[vc.Vm2Host[vmKey]].Name
 
-		// TODO: with custom field uuid: vmUuid
-		// vmUuid := vm.Config.Uuid
-
 		// Tenant is received from VmTenantRelations
 		vmTenant, err := common.MatchVmToTenant(nbi, vmName, vc.VmTenantRelations)
 		if err != nil {
@@ -672,33 +669,34 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
 		vmCustomFields := map[string]string{}
 		if len(vm.Summary.CustomValue) > 0 {
 			for _, field := range vm.Summary.CustomValue {
-				field := field.(*types.CustomFieldStringValue)
-				fieldName := vc.CustomFieldId2Name[field.Key]
+				if field, ok := field.(*types.CustomFieldStringValue); ok {
+					fieldName := vc.CustomFieldId2Name[field.Key]
 
-				if mappedField, ok := vc.CustomFieldMappings[fieldName]; ok {
-					switch mappedField {
-					case "owner":
-						vmOwners = strings.Split(field.Value, ",")
-					case "email":
-						vmOwnerEmails = strings.Split(field.Value, ",")
-					case "description":
-						vmDescription = strings.TrimSpace(field.Value)
-					}
-				} else {
-					fieldName = utils.Alphanumeric(fieldName)
-					if _, ok := nbi.CustomFieldsIndexByName[fieldName]; !ok {
-						err := nbi.AddCustomField(&objects.CustomField{
-							Name:                  fieldName,
-							Type:                  objects.CustomFieldTypeText,
-							CustomFieldUIVisible:  &objects.CustomFieldUIVisibleIfSet,
-							CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
-							ContentTypes:          []string{"virtualization.virtualmachine"},
-						})
-						if err != nil {
-							return fmt.Errorf("vm's custom field %s: %s", fieldName, err)
+					if mappedField, ok := vc.CustomFieldMappings[fieldName]; ok {
+						switch mappedField {
+						case "owner":
+							vmOwners = strings.Split(field.Value, ",")
+						case "email":
+							vmOwnerEmails = strings.Split(field.Value, ",")
+						case "description":
+							vmDescription = strings.TrimSpace(field.Value)
 						}
+					} else {
+						fieldName = utils.Alphanumeric(fieldName)
+						if _, ok := nbi.CustomFieldsIndexByName[fieldName]; !ok {
+							err := nbi.AddCustomField(&objects.CustomField{
+								Name:                  fieldName,
+								Type:                  objects.CustomFieldTypeText,
+								CustomFieldUIVisible:  &objects.CustomFieldUIVisibleIfSet,
+								CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
+								ContentTypes:          []string{"virtualization.virtualmachine"},
+							})
+							if err != nil {
+								return fmt.Errorf("vm's custom field %s: %s", fieldName, err)
+							}
+						}
+						vmCustomFields[fieldName] = field.Value
 					}
-					vmCustomFields[fieldName] = field.Value
 				}
 			}
 		}

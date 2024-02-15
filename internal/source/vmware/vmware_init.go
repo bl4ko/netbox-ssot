@@ -28,50 +28,49 @@ func (vc *VmwareSource) InitNetworks(ctx context.Context, containerView *view.Co
 			continue
 		}
 
-		vlanInfo := dvpg.Config.DefaultPortConfig.(*types.VMwareDVSPortSetting)
-		var vlanIds []int
-		var vlanIdRanges []string
-		private := false
-
-		switch v := vlanInfo.Vlan.(type) {
-		case *types.VmwareDistributedVirtualSwitchTrunkVlanSpec:
-			for _, item := range v.VlanId {
-				if item.Start == item.End {
-					vlanIds = append(vlanIds, int(item.Start))
-					vlanIdRanges = append(vlanIdRanges, fmt.Sprintf("%d", item.Start))
-				} else if item.Start == 0 && item.End == 4094 {
-					vlanIds = append(vlanIds, 4095)
-					vlanIdRanges = append(vlanIdRanges, fmt.Sprintf("%d-%d", item.Start, item.End))
-				} else {
-					for vlan := item.Start; vlan <= item.End; vlan++ {
-						vlanIds = append(vlanIds, int(vlan))
+		if vlanInfo, ok := dvpg.Config.DefaultPortConfig.(*types.VMwareDVSPortSetting); ok {
+			var vlanIds []int
+			var vlanIdRanges []string
+			private := false
+			switch v := vlanInfo.Vlan.(type) {
+			case *types.VmwareDistributedVirtualSwitchTrunkVlanSpec:
+				for _, item := range v.VlanId {
+					if item.Start == item.End {
+						vlanIds = append(vlanIds, int(item.Start))
+						vlanIdRanges = append(vlanIdRanges, fmt.Sprintf("%d", item.Start))
+					} else if item.Start == 0 && item.End == 4094 {
+						vlanIds = append(vlanIds, 4095)
+						vlanIdRanges = append(vlanIdRanges, fmt.Sprintf("%d-%d", item.Start, item.End))
+					} else {
+						for vlan := item.Start; vlan <= item.End; vlan++ {
+							vlanIds = append(vlanIds, int(vlan))
+						}
+						vlanIdRanges = append(vlanIdRanges, fmt.Sprintf("%d-%d", item.Start, item.End))
 					}
-					vlanIdRanges = append(vlanIdRanges, fmt.Sprintf("%d-%d", item.Start, item.End))
 				}
+			case *types.VmwareDistributedVirtualSwitchPvlanSpec:
+				vlanIds = append(vlanIds, int(v.PvlanId))
+				private = true
+			case *types.VmwareDistributedVirtualSwitchVlanIdSpec:
+				vlanIds = append(vlanIds, int(v.VlanId))
+			default:
+				return fmt.Errorf("unknown vlan info spec %T", v)
 			}
-		case *types.VmwareDistributedVirtualSwitchPvlanSpec:
-			vlanIds = append(vlanIds, int(v.PvlanId))
-			private = true
-		case *types.VmwareDistributedVirtualSwitchVlanIdSpec:
-			vlanIds = append(vlanIds, int(v.VlanId))
-		default:
-			return fmt.Errorf("unknown vlan info spec %T", v)
-		}
 
-		for _, vid := range vlanIds {
-			if vid == 0 || vid == 4095 {
-				continue
+			for _, vid := range vlanIds {
+				if vid == 0 || vid == 4095 {
+					continue
+				}
+				vc.Networks.Vid2Name[vid] = dvpg.Config.Name
 			}
-			vc.Networks.Vid2Name[vid] = dvpg.Config.Name
-		}
 
-		vc.Networks.DistributedVirtualPortgroups[dvpg.Config.Key] = &DistributedPortgroupData{
-			Name:         dvpg.Config.Name,
-			VlanIds:      vlanIds,
-			VlanIdRanges: vlanIdRanges,
-			Private:      private,
+			vc.Networks.DistributedVirtualPortgroups[dvpg.Config.Key] = &DistributedPortgroupData{
+				Name:         dvpg.Config.Name,
+				VlanIds:      vlanIds,
+				VlanIdRanges: vlanIdRanges,
+				Private:      private,
+			}
 		}
-
 	}
 	return nil
 }

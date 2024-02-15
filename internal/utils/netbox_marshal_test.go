@@ -79,7 +79,10 @@ func TestNetboxMarshal(t *testing.T) {
 		"group":       4,
 		"tenant":      1,
 	}
-	expectedJson, _ := json.Marshal(expectedJsonMap)
+	expectedJson, err := json.Marshal(expectedJsonMap)
+	if err != nil {
+		t.Errorf("NetboxMarshal() error = %v", err)
+	}
 	responseJson, err := NetboxJsonMarshal(newObj)
 	if err != nil {
 		t.Errorf("NetboxMarshal() error = %v", err)
@@ -147,7 +150,10 @@ func TestNetboxJsonMarshalWithChoiceAttr(t *testing.T) {
 		"status":      "active",
 		"site":        1,
 	}
-	expectedJson, _ := json.Marshal(expectedMap)
+	expectedJson, err := json.Marshal(expectedMap)
+	if err != nil {
+		t.Errorf("NetboxMarshal() error = %v", err)
+	}
 	responseJson, err := NetboxJsonMarshal(device)
 	fmt.Println(string(responseJson))
 	if err != nil {

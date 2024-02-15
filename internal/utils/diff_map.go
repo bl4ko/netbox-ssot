@@ -44,21 +44,22 @@ func hasPriorityOver(newObj, existingObj reflect.Value, source2priority map[stri
 
 	// Check if fields are valid and present in the sourcePriority map
 	if newObjCustomFields.IsValid() && existingObjCustomFields.IsValid() {
-		newCustomFields := newObjCustomFields.Interface().(map[string]string)
-		existingCustomFields := existingObjCustomFields.Interface().(map[string]string)
+		if newCustomFields, ok := newObjCustomFields.Interface().(map[string]string); ok {
+			if existingCustomFields, ok := existingObjCustomFields.Interface().(map[string]string); ok {
+				newPriority := int(^uint(0) >> 1) // max int
+				if priority, newOk := source2priority[newCustomFields[constants.CustomFieldSourceName]]; newOk {
+					newPriority = priority
+				}
+				existingPriority := int(^uint(0) >> 1)
+				if priority, existingOk := source2priority[existingCustomFields[constants.CustomFieldSourceName]]; existingOk {
+					existingPriority = priority
+				}
 
-		newPriority := int(^uint(0) >> 1) // max int
-		if priority, newOk := source2priority[newCustomFields[constants.CustomFieldSourceName]]; newOk {
-			newPriority = priority
+				// In case newPriority is lower or equal than existingPriority
+				// newObj has precedence over exsitingObj
+				return newPriority <= existingPriority
+			}
 		}
-		existingPriority := int(^uint(0) >> 1)
-		if priority, existingOk := source2priority[existingCustomFields[constants.CustomFieldSourceName]]; existingOk {
-			existingPriority = priority
-		}
-
-		// In case newPriority is lower or equal than existingPriority
-		// newObj has precedence over exsitingObj
-		return newPriority <= existingPriority
 	}
 
 	return true
@@ -205,7 +206,11 @@ func addSliceDiff(newSlice reflect.Value, existingSlice reflect.Value, jsonTag s
 	case reflect.String:
 		strSet := make(map[string]bool)
 		for j := 0; j < newSlice.Len(); j++ {
-			strSet[newSlice.Index(j).Interface().(string)] = true
+			val, ok := newSlice.Index(j).Interface().(string)
+			if !ok {
+				return fmt.Errorf("slice contains non string values")
+			}
+			strSet[val] = true
 		}
 		if len(strSet) != existingSlice.Len() {
 			if hasPriority {
@@ -214,7 +219,11 @@ func addSliceDiff(newSlice reflect.Value, existingSlice reflect.Value, jsonTag s
 		} else {
 			if hasPriority {
 				for j := 0; j < existingSlice.Len(); j++ {
-					if !strSet[existingSlice.Index(j).Interface().(string)] {
+					val, ok := existingSlice.Index(j).Interface().(string)
+					if !ok {
+						return fmt.Errorf("slice contains non string values")
+					}
+					if !strSet[val] {
 						diffMap[jsonTag] = newSlice.Interface()
 						return nil
 					}
@@ -224,7 +233,6 @@ func addSliceDiff(newSlice reflect.Value, existingSlice reflect.Value, jsonTag s
 
 	default:
 		newIdSet := make(map[int]bool, newSlice.Len())
-		var id int
 		for j := 0; j < newSlice.Len(); j++ {
 			element := newSlice.Index(j)
 			if newSlice.Index(j).IsNil() {
@@ -233,7 +241,10 @@ func addSliceDiff(newSlice reflect.Value, existingSlice reflect.Value, jsonTag s
 			if element.Kind() == reflect.Ptr {
 				element = element.Elem()
 			}
-			id := element.FieldByName("Id").Interface().(int)
+			id, ok := element.FieldByName("Id").Interface().(int)
+			if !ok {
+				return fmt.Errorf("slice contains non id values")
+			}
 			newIdSet[id] = true
 		}
 
@@ -252,7 +263,10 @@ func addSliceDiff(newSlice reflect.Value, existingSlice reflect.Value, jsonTag s
 					if existingSlice.Index(j).Kind() == reflect.Ptr {
 						existingSliceEl = existingSliceEl.Elem()
 					}
-					id = existingSliceEl.FieldByName("Id").Interface().(int)
+					id, ok := existingSliceEl.FieldByName("Id").Interface().(int)
+					if !ok {
+						return fmt.Errorf("slice contains non id values")
+					}
 					if _, ok := newIdSet[id]; !ok {
 						diffMap[jsonTag] = newIdSlice
 						return nil
@@ -299,12 +313,19 @@ func addStructDiff(newObj reflect.Value, existingObj reflect.Value, jsonTag stri
 		}
 	} else {
 		if !existingObj.IsValid() {
-			diffMap[jsonTag] = IDObject{ID: idField.Interface().(int)}
+			idValue, ok := idField.Interface().(int)
+			if !ok {
+				return fmt.Errorf("id field is not an int")
+			}
+			diffMap[jsonTag] = IDObject{ID: idValue}
 		} else {
 			// Objects have ID field, compare their ids
 			if newObj.FieldByName("Id").Interface() != existingObj.FieldByName("Id").Interface() {
-				id := newObj.FieldByName("Id").Interface().(int)
-				diffMap[jsonTag] = IDObject{ID: id}
+				idValue, ok := idField.Interface().(int)
+				if !ok {
+					return fmt.Errorf("id field is not an int")
+				}
+				diffMap[jsonTag] = IDObject{ID: idValue}
 			}
 		}
 	}
@@ -323,22 +344,27 @@ func addMapDiff(newMap reflect.Value, existingMap reflect.Value, jsonTag string,
 	mapsDiff := make(map[string]interface{})
 	for _, key := range newMap.MapKeys() {
 		// Keys have to be strings
-		if key.Kind() != reflect.String {
-			return fmt.Errorf("map keys have to be strings. Not implemented for anything else yet")
-		}
-		if !existingMap.MapIndex(key).IsValid() {
-			mapsDiff[key.Interface().(string)] = newMap.MapIndex(key).Interface()
-		} else if newMap.MapIndex(key).Interface() != existingMap.MapIndex(key).Interface() {
-			if hasPriority {
-				mapsDiff[key.Interface().(string)] = newMap.MapIndex(key).Interface()
+		if keyValue, ok := key.Interface().(string); ok {
+			if !existingMap.MapIndex(key).IsValid() {
+				mapsDiff[keyValue] = newMap.MapIndex(key).Interface()
+			} else if newMap.MapIndex(key).Interface() != existingMap.MapIndex(key).Interface() {
+				if hasPriority {
+					mapsDiff[keyValue] = newMap.MapIndex(key).Interface()
+				}
 			}
+		} else {
+			return fmt.Errorf("map keys have to be strings. Not implemented for anything else yet")
 		}
 	}
 
 	if len(mapsDiff) > 0 {
 		for _, key := range existingMap.MapKeys() {
-			if !newMap.MapIndex(key).IsValid() {
-				mapsDiff[key.Interface().(string)] = existingMap.MapIndex(key).Interface()
+			if keyValue, ok := key.Interface().(string); ok {
+				if !newMap.MapIndex(key).IsValid() {
+					mapsDiff[keyValue] = existingMap.MapIndex(key).Interface()
+				}
+			} else {
+				return fmt.Errorf("map keys have to be strings. Not implemented for anything else yet")
 			}
 		}
 		diffMap[jsonTag] = mapsDiff

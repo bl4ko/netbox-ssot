@@ -8,6 +8,8 @@ linters:
   enable:
     # - cyclop # TODO: enable in future
     # - errorlint # TODO: enable in future
+    # - exhaustive # TODO: enable in future
+    # - dupl # TODO: enable in future
     - asasalint
     - asciicheck
     - bidichk
@@ -15,15 +17,13 @@ linters:
     - containedctx
     - decorder
     - dogsled
-    # - dupl # TODO: enable in future
-    # - dupword # TODO: enable in future
+    - dupword
     - durationcheck
-    # - errchkjson # TODO: enable in future
+    - errchkjson
     - errname
     - execinquery
-    # - exhaustive # TODO: enable in future
     - exportloopref
-    # - forcetypeassert # TODO: enable in future
+    - forcetypeassert # TODO: enable in future
     - gci
     - gocheckcompilerdirectives
     # - gochecknoglobals # TODO: enable in future
