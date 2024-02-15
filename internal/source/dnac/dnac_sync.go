@@ -224,7 +224,10 @@ func (ds *DnacSource) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error
 		var ifaceType *objects.InterfaceType
 		switch iface.InterfaceType {
 		case "Physical":
-			ifaceType = &objects.OtherInterfaceType // TODO: get from speed
+			ifaceType = objects.IfaceSpeed2IfaceType[objects.InterfaceSpeed(ifaceSpeed)]
+			if ifaceType == nil {
+				ifaceType = &objects.OtherInterfaceType
+			}
 		case "Virtual":
 			ifaceType = &objects.VirtualInterfaceType
 		default:

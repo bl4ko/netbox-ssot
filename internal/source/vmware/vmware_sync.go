@@ -303,6 +303,8 @@ func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetboxInventory, vcH
 			pnicDescription = fmt.Sprintf("%dMB/s", pnicLinkSpeed)
 		}
 		pnicDescription += " pNIC"
+		// netbox stores pnicSpeed in kbps
+		pnicLinkSpeed *= 1000
 
 		var pnicMtu int
 		var pnicMode *objects.InterfaceMode
@@ -389,6 +391,11 @@ func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetboxInventory, vcH
 			}
 		}
 
+		pnicType := objects.IfaceSpeed2IfaceType[objects.InterfaceSpeed(pnicLinkSpeed)]
+		if pnicType == nil {
+			pnicType = &objects.OtherInterfaceType
+		}
+
 		// After collecting all of the data add interface to nbi
 		_, err := nbi.AddInterface(&objects.Interface{
 			NetboxObject: objects.NetboxObject{
@@ -401,7 +408,7 @@ func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetboxInventory, vcH
 			Device:      nbHost,
 			Name:        pnicName,
 			Status:      true,
-			Type:        &objects.OtherInterfaceType, //  TODO: Get type from link speed
+			Type:        pnicType,
 			Speed:       objects.InterfaceSpeed(pnicLinkSpeed),
 			MTU:         pnicMtu,
 			MAC:         strings.ToUpper(pnic.Mac),

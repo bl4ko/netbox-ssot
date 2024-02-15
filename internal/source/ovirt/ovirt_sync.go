@@ -411,8 +411,11 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 			}
 
 			if nicType == nil {
-				// This is a physical interface. TODO: depending on speed assign different nic type
-				nicType = &objects.OtherInterfaceType
+				// This is a physical interface.
+				nicType = objects.IfaceSpeed2IfaceType[objects.InterfaceSpeed(nicSpeedKbps)]
+				if nicType == nil {
+					nicType = &objects.OtherInterfaceType
+				}
 			}
 
 			var nicVlan *objects.Vlan
