@@ -65,7 +65,10 @@ func (ds *DnacSource) InitDevices(c *dnac.Client) error {
 
 // Function that gets all vlans for device id.
 func (ds *DnacSource) addVlansForDevice(c *dnac.Client, deviceId string) error {
-	vlans, _, _ := c.Devices.GetDeviceInterfaceVLANs(deviceId, nil)
+	vlans, _, err := c.Devices.GetDeviceInterfaceVLANs(deviceId, nil)
+	if err != nil {
+		return err
+	}
 	if vlans != nil {
 		for _, vlan := range *vlans.Response {
 			if vlan.VLANNumber != nil {
@@ -142,7 +145,6 @@ func (ds *DnacSource) InitMemberships(c *dnac.Client) error {
 			}
 			offset += limit
 		}
-
 	}
 	return nil
 }

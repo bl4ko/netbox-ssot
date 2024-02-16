@@ -594,7 +594,6 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 				return fmt.Errorf("add ipv6 address: %s", err)
 			}
 		}
-
 	}
 	return nil
 }
@@ -787,7 +786,6 @@ func (o *OVirtSource) syncVmInterfaces(nbi *inventory.NetboxInventory, ovirtVm *
 						for _, ip := range reportedDeviceIps.Slice() {
 							if ipAddress, exists := ip.Address(); exists {
 								if ipVersion, exists := ip.Version(); exists {
-
 									// Filter IPs, we won't sync IPs from specific interfaces
 									// like docker, flannel, calico, etc. interfaces
 									valid, err := utils.IsVMInterfaceNameValid(vmInterface.Name)

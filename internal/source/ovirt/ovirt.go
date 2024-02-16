@@ -54,7 +54,6 @@ func (o *OVirtSource) Init() error {
 	o.Logger.Debug("VlanGroupRelations: ", o.VlanGroupRelations)
 	o.VlanTenantRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.VlanTenantRelations)
 	o.Logger.Debug("VlanTenantRelations: ", o.VlanTenantRelations)
-
 	// Initialize the connection
 	o.Logger.Debug("Initializing oVirt source ", o.SourceConfig.Name)
 	conn, err := ovirtsdk4.NewConnectionBuilder().

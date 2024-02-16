@@ -41,6 +41,7 @@ func NewNetBoxAPI(logger *logger.Logger, baseURL string, apiToken string, valida
 	if validateCert {
 		client = &http.Client{}
 	} else {
+		logger.Warning("TLS certificate validation is disabled")
 		client = &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},

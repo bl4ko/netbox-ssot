@@ -37,7 +37,6 @@ type IDObject struct {
 // sourcePriority[newObj.CustomFields[constants.CustomFieldSourceName]] >
 // sourcePriority[existingObj.CustomFields[constants.CustomFieldSourceName]].
 func hasPriorityOver(newObj, existingObj reflect.Value, source2priority map[string]int) bool {
-
 	// Retrieve the SourceName field from CustomFields for both objects
 	newObjCustomFields := newObj.FieldByName("CustomFields")
 	existingObjCustomFields := existingObj.FieldByName("CustomFields")
@@ -144,7 +143,6 @@ func JsonDiffMapExceptId(newObj, existingObj interface{}, resetFields bool, sour
 		}
 
 		switch newObjectField.Kind() {
-
 		// Reset the field (when it is set to nil),
 		// this only happens if flag resetFields is set to true
 		case reflect.Invalid:
@@ -171,10 +169,7 @@ func JsonDiffMapExceptId(newObj, existingObj interface{}, resetFields bool, sour
 			}
 
 		default:
-			err := addPrimaryDiff(newObjectField, existingObjectField, jsonTag, hasPriority, diff)
-			if err != nil {
-				return nil, fmt.Errorf("error processing JsonDiffMapExceptId when processing primary %s", err)
-			}
+			addPrimaryDiff(newObjectField, existingObjectField, jsonTag, hasPriority, diff)
 		}
 	}
 
@@ -187,7 +182,6 @@ func JsonDiffMapExceptId(newObj, existingObj interface{}, resetFields bool, sour
 // map[jsonTag] = [id1, id2, id3] // If the slice contains objects with ID field
 // map[jsonTag] = [value1, value2, value3] // If the slice contains strings.
 func addSliceDiff(newSlice reflect.Value, existingSlice reflect.Value, jsonTag string, hasPriority bool, diffMap map[string]interface{}) error {
-
 	// If first slice is nil, that means that we reset the value
 	if !newSlice.IsValid() || newSlice.Len() == 0 {
 		if existingSlice.IsValid() && existingSlice.Len() > 0 {
@@ -280,7 +274,6 @@ func addSliceDiff(newSlice reflect.Value, existingSlice reflect.Value, jsonTag s
 
 // Returns json form for patching the difference e.g. { "Id": 1 }.
 func addStructDiff(newObj reflect.Value, existingObj reflect.Value, jsonTag string, hasPriority bool, diffMap map[string]interface{}) error {
-
 	// If first struct is nil, that means that we reset the attribute to nil
 	if !newObj.IsValid() {
 		diffMap[jsonTag] = nil
@@ -303,10 +296,12 @@ func addStructDiff(newObj reflect.Value, existingObj reflect.Value, jsonTag stri
 		if !existingObj.IsValid() {
 			diffMap[jsonTag] = newObj.Interface()
 		} else if newObj.Interface() != existingObj.Interface() {
-			if isChoiceEmbedded(newObj) {
-				diffMap[jsonTag] = choiceValue(newObj)
-			} else {
-				diffMap[jsonTag] = newObj.Interface()
+			if hasPriority {
+				if isChoiceEmbedded(newObj) {
+					diffMap[jsonTag] = choiceValue(newObj)
+				} else {
+					diffMap[jsonTag] = newObj.Interface()
+				}
 			}
 		}
 	} else {
@@ -329,7 +324,6 @@ func addStructDiff(newObj reflect.Value, existingObj reflect.Value, jsonTag stri
 }
 
 func addMapDiff(newMap reflect.Value, existingMap reflect.Value, jsonTag string, hasPriority bool, diffMap map[string]interface{}) error {
-
 	// If the new map is not set, we don't change anything
 	if !newMap.IsValid() {
 		return nil
@@ -368,7 +362,7 @@ func addMapDiff(newMap reflect.Value, existingMap reflect.Value, jsonTag string,
 	return nil
 }
 
-func addPrimaryDiff(newField reflect.Value, existingField reflect.Value, jsonTag string, hasPriority bool, diffMap map[string]interface{}) error {
+func addPrimaryDiff(newField reflect.Value, existingField reflect.Value, jsonTag string, hasPriority bool, diffMap map[string]interface{}) {
 	switch {
 	case newField.IsZero():
 		if !existingField.IsZero() {
@@ -381,5 +375,4 @@ func addPrimaryDiff(newField reflect.Value, existingField reflect.Value, jsonTag
 			diffMap[jsonTag] = newField.Interface()
 		}
 	}
-	return nil
 }

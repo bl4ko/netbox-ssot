@@ -52,7 +52,6 @@ func (vc *VmwareSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 
 func (vc *VmwareSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
 	for _, dc := range vc.DataCenters {
-
 		nbClusterGroup := &objects.ClusterGroup{
 			NetboxObject: objects.NetboxObject{
 				Description: fmt.Sprintf("Datacenter from source %s", vc.SourceConfig.Hostname),
@@ -89,7 +88,6 @@ func (vc *VmwareSource) syncClusters(nbi *inventory.NetboxInventory) error {
 	}
 	// Then sync vmware Clusters as NetBoxClusters
 	for clusterId, cluster := range vc.Clusters {
-
 		clusterName := cluster.Name
 
 		var clusterGroup *objects.ClusterGroup
@@ -261,7 +259,6 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 }
 
 func (vc *VmwareSource) syncHostNics(nbi *inventory.NetboxInventory, vcHost mo.HostSystem, nbHost *objects.Device) error {
-
 	// Sync host's physical interfaces
 	err := vc.syncHostPhysicalNics(nbi, vcHost, nbHost)
 	if err != nil {
@@ -278,7 +275,6 @@ func (vc *VmwareSource) syncHostNics(nbi *inventory.NetboxInventory, vcHost mo.H
 }
 
 func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetboxInventory, vcHost mo.HostSystem, nbHost *objects.Device) error {
-
 	// Collect data from physical interfaces
 	for _, pnic := range vcHost.Config.Network.Pnic {
 		pnicName := pnic.Device
@@ -866,7 +862,6 @@ func (vc *VmwareSource) syncVmInterfaces(nbi *inventory.NetboxInventory, vmwareV
 					if intVswitchData != nil {
 						intMtu = intVswitchData.mtu
 					}
-
 				}
 			} else if backingInfo, ok := intDeviceBackingInfo.(*types.VirtualEthernetCardDistributedVirtualPortBackingInfo); ok {
 				dvsPortgroupKey := backingInfo.Port.PortgroupKey

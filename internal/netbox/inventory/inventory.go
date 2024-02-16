@@ -182,5 +182,4 @@ func (nbi *NetboxInventory) Init() error {
 	}
 
 	return nil
-
 }

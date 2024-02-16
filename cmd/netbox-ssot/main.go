@@ -48,14 +48,15 @@ func main() {
 	mainLogger.Debug("Netbox inventory initialized: ", netboxInventory)
 
 	// Go through all sources and sync data
-	for _, sourceConfig := range config.Sources {
+	for i := range config.Sources {
+		sourceConfig := &config.Sources[i]
 		mainLogger.Info("Processing source ", sourceConfig.Name, "...")
 
 		sourceLogger, err := logger.New(config.Logger.Dest, config.Logger.Level, sourceConfig.Name)
 		if err != nil {
 			mainLogger.Errorf("source logger: %s", err)
 		}
-		source, err := source.NewSource(&sourceConfig, sourceLogger, netboxInventory)
+		source, err := source.NewSource(sourceConfig, sourceLogger, netboxInventory)
 		if err != nil {
 			sourceLogger.Error(err)
 			return

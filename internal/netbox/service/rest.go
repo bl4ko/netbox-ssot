@@ -193,7 +193,6 @@ func (api *NetboxAPI) BulkDeleteObjects(objectPath string, idSet map[int]bool) e
 		if response.StatusCode != http.StatusNoContent {
 			return fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
 		}
-
 	}
 	api.Logger.Debugf("Successfully deleted all objects of path %s", objectPath)
 

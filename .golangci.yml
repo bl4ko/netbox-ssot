@@ -7,17 +7,27 @@ linters-settings:
 issues:
   max-issues-per-linter: 50
   max-same-issues: 20
+  exclude:
+    - G402
 
 linters:
   enable:
+    # - revive # TODO: enable in future
     # - gocyclo # TODO: enable in future
     # - gocognit # TODO: enable in future
     # - cyclop # TODO: enable in future
+    # - paralleltest # TODO: enable in future
     # - errorlint # TODO: enable in future
+    # - lll # TODO: enable in future
+    # - nestif # TODO: enable in future
+    # - maintidx # TODO: enable in future
     # - exhaustive # TODO: enable in future
     # - dupl # TODO: enable in future
+    # - nilnil # TODO: enable in future
     # - gochecknoglobals # TODO: enable in future
     # - goerr113 # TODO: enable in future
+    # - ireturn # TODO: enable in future
+    - gosec
     - gocritic
     - asasalint
     - asciicheck
@@ -43,31 +53,23 @@ linters:
     - gomnd
     - gomoddirectives
     - goprintffuncname
-    # - gosec # TODO: enable in future
     - gosmopolitan
     - grouper
     - importas
     - interfacebloat
-    # - ireturn # TODO: enable in future
-    # - lll # TODO: enable in future
-    # - maintidx # TODO: enable in future
     - makezero
     - mirror
     - misspell
     - musttag
     - nakedret
-    # - nestif # TODO: enable in future
     - nilerr
-    # - nilnil # TODO: enable in future
     - noctx
     - nolintlint
     - nosprintfhostport
-    # - paralleltest # TODO: enable in future
     - prealloc
     - predeclared
     - promlinter
     - reassign
-    # - revive # TODO: enable in future
     - rowserrcheck
     - sqlclosecheck
     - tagalign
@@ -75,8 +77,8 @@ linters:
     - thelper
     - tparallel
     - unconvert
-    # - unparam # TODO: enable in future
+    - unparam
     - usestdlibvars
     - wastedassign
-    # - whitespace # TODO: enable in future
+    - whitespace
     - zerologlint
