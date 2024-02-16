@@ -19,7 +19,7 @@ import (
 func ValidateRegexRelations(regexRelations []string) error {
 	for _, regexRelation := range regexRelations {
 		relation := strings.Split(regexRelation, "=")
-		if len(relation) != 2 {
+		if len(relation) != len([]string{"regex", "value"}) {
 			return fmt.Errorf("invalid regex relation: %s. Should be of format: regex = value", regexRelation)
 		}
 		regexStr := strings.TrimSpace(relation[0])

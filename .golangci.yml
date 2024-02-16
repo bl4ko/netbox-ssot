@@ -17,6 +17,7 @@ linters:
     # - exhaustive # TODO: enable in future
     # - dupl # TODO: enable in future
     # - gochecknoglobals # TODO: enable in future
+    # - goerr113 # TODO: enable in future
     - gocritic
     - asasalint
     - asciicheck
@@ -36,11 +37,10 @@ linters:
     - gocheckcompilerdirectives
     - gochecknoinits
     - goconst
-    - godot # TODO: enable in future
-    # - goerr113 # TODO: enable in future
+    - godot
     - goheader
     - goimports
-    # - gomnd # TODO: enable in future
+    - gomnd
     - gomoddirectives
     - goprintffuncname
     # - gosec # TODO: enable in future

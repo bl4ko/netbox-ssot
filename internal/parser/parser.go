@@ -135,7 +135,7 @@ func validateNetboxConfig(config *Config) error {
 		config.Netbox.TagColor = "00add8"
 	} else {
 		// Ensure that TagColor is a string of 6 hexadecimal characters
-		if len(config.Netbox.TagColor) != 6 {
+		if len(config.Netbox.TagColor) != len("ffffff") {
 			return errors.New("netbox.tagColor: must be a string of 6 hexadecimal characters")
 		}
 		for _, c := range config.Netbox.TagColor {
@@ -266,8 +266,8 @@ func ParseConfig(filename string) (*Config, error) {
 		},
 		Netbox: &NetboxConfig{
 			HTTPScheme:    "https",
-			Port:          443,
-			Timeout:       30,
+			Port:          constants.HTTPSDefaultPort,
+			Timeout:       constants.DefaultTimeout,
 			RemoveOrphans: true,
 		},
 		Sources: []SourceConfig{},

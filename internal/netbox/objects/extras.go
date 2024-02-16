@@ -60,6 +60,11 @@ var (
 	CustomFieldUIEditableHidden = CustomFieldUIEditable{Choice{Value: "hidden", Label: "Hidden"}}
 )
 
+const (
+	DisplayWeightDefault = 100
+	SearchWeightDefault  = 1000
+)
+
 type CustomField struct {
 	Id int `json:"id,omitempty"`
 	// Name of the custom field (e.g. host_cpu_cores). This field is required.
@@ -72,13 +77,13 @@ type CustomField struct {
 	ContentTypes []string `json:"content_types,omitempty"`
 	// Description is a description of the field. This field is optional.
 	Description string `json:"description,omitempty"`
-	// Weighting for search. Lower values are considered more important. Default (1000)
+	// Weighting for search. Lower values are considered more important. Default (1000).
 	SearchWeight int `json:"search_weight,omitempty"`
-	// Filter logic. This field is required. (Default loose)
+	// Filter logic. This field is required. (Default loose).
 	FilterLogic FilterLogic `json:"filter_logic,omitempty"`
-	// UI visible. This field is required. (Default read-write)
+	// UI visible. This field is required. (Default read-write).
 	CustomFieldUIVisible *CustomFieldUIVisible `json:"ui_visible,omitempty"`
-	// UI editable. This field is required. (Default read-write)
+	// UI editable. This field is required. (Default read-write).
 	CustomFieldUIEditable *CustomFieldUIEditable `json:"ui_editable,omitempty"`
 	// Display Weight. Fields with higher weights appear lower in a form.
 	// default 100

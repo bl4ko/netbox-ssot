@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
@@ -62,7 +63,7 @@ func (o *OVirtSource) Init() error {
 		Password(o.SourceConfig.Password).
 		Insecure(!o.SourceConfig.ValidateCert).
 		Compress(true).
-		Timeout(time.Second * 10).
+		Timeout(time.Second * constants.DefaultTimeout).
 		Build()
 	if err != nil {
 		return fmt.Errorf("failed to create oVirt connection: %v", err)

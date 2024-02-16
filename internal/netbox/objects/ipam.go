@@ -91,6 +91,13 @@ var (
 	VlanStatusDeprecated = VlanStatus{Choice{Value: "deprecated", Label: "Deprecated"}}
 )
 
+const (
+	UntaggedVID = 0
+	DefaultVID  = 1
+	MaxVID      = 4094
+	TaggedVID   = 4095
+)
+
 type Vlan struct {
 	NetboxObject
 	// Name of the VLAN. This field is required.

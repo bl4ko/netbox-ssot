@@ -96,6 +96,6 @@ func main() {
 
 	duration := time.Since(startTime)
 	minutes := int(duration.Minutes())
-	seconds := int(duration.Seconds()) % 60
+	seconds := int((duration - time.Duration(minutes)*time.Minute).Seconds())
 	mainLogger.Infof("%s Syncing took %d min %d sec in total", constants.Rocket, minutes, seconds)
 }

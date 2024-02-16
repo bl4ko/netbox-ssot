@@ -289,7 +289,7 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		}
 
 		mem, _ := host.Memory()
-		mem /= (1024 * 1024 * 1024) // Value is in Bytes, we convert to GB
+		mem /= (constants.KiB * constants.KiB * constants.KiB) // Value is in Bytes, we convert to GB
 
 		nbHost := &objects.Device{
 			NetboxObject: objects.NetboxObject{
@@ -361,7 +361,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 			if !exists {
 				o.Logger.Warning("speed for oVirt nic with id ", nicId, " is empty.")
 			}
-			nicSpeedKbps := nicSpeedBips / 1000
+			nicSpeedKbps := nicSpeedBips / constants.KB
 
 			nicMtu, exists := nic.Mtu()
 			if !exists {
@@ -736,8 +736,8 @@ func (o *OVirtSource) syncVms(nbi *inventory.NetboxInventory) error {
 			Platform:    vmPlatform,
 			Comments:    vmComments,
 			VCPUs:       vmVCPUs,
-			Memory:      int(vmMemorySizeBytes / 1024 / 1024),      // MBs
-			Disk:        int(vmDiskSizeBytes / 1024 / 1024 / 1024), // GBs
+			Memory:      int(vmMemorySizeBytes / constants.KiB / constants.KiB),               // MBs
+			Disk:        int(vmDiskSizeBytes / constants.KiB / constants.KiB / constants.KiB), // GBs
 		})
 		if err != nil {
 			return fmt.Errorf("failed to sync oVirt vm: %v", err)

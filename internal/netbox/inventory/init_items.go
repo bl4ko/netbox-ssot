@@ -307,9 +307,9 @@ func (netboxInventory *NetboxInventory) InitSsotCustomFields() error {
 		FilterLogic:           objects.FilterLogicLoose,
 		CustomFieldUIVisible:  &objects.CustomFieldUIVisibleAlways,
 		CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
-		DisplayWeight:         100,
+		DisplayWeight:         objects.DisplayWeightDefault,
 		Description:           "Source origin of the object",
-		SearchWeight:          1000,
+		SearchWeight:          objects.SearchWeightDefault,
 		ContentTypes:          []string{"dcim.device", "dcim.devicerole", "dcim.devicetype", "dcim.interface", "dcim.location", "dcim.manufacturer", "dcim.platform", "dcim.region", "dcim.site", "ipam.ipaddress", "ipam.vlangroup", "ipam.vlan", "ipam.prefix", "tenancy.tenantgroup", "tenancy.tenant", "tenancy.contact", "tenancy.contactassignment", "tenancy.contactgroup", "tenancy.contactrole", "virtualization.cluster", "virtualization.clustergroup", "virtualization.clustertype", "virtualization.virtualmachine", "virtualization.vminterface"},
 	})
 	if err != nil {
@@ -322,9 +322,9 @@ func (netboxInventory *NetboxInventory) InitSsotCustomFields() error {
 		FilterLogic:           objects.FilterLogicLoose,
 		CustomFieldUIVisible:  &objects.CustomFieldUIVisibleAlways,
 		CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
-		DisplayWeight:         100,
+		DisplayWeight:         objects.DisplayWeightDefault,
 		Description:           "Source ID of the object",
-		SearchWeight:          1000,
+		SearchWeight:          objects.SearchWeightDefault,
 		ContentTypes:          []string{"dcim.device", "dcim.devicerole", "dcim.devicetype", "dcim.interface", "dcim.location", "dcim.manufacturer", "dcim.platform", "dcim.region", "dcim.site", "ipam.ipaddress", "ipam.vlangroup", "ipam.vlan", "ipam.prefix", "tenancy.tenantgroup", "tenancy.tenant", "tenancy.contact", "tenancy.contactassignment", "tenancy.contactgroup", "tenancy.contactrole", "virtualization.cluster", "virtualization.clustergroup", "virtualization.clustertype", "virtualization.virtualmachine", "virtualization.vminterface"},
 	})
 	if err != nil {
@@ -337,9 +337,9 @@ func (netboxInventory *NetboxInventory) InitSsotCustomFields() error {
 		FilterLogic:           objects.FilterLogicLoose,
 		CustomFieldUIVisible:  &objects.CustomFieldUIVisibleAlways,
 		CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
-		DisplayWeight:         100,
+		DisplayWeight:         objects.DisplayWeightDefault,
 		Description:           "Number of CPU cores on the host",
-		SearchWeight:          1000,
+		SearchWeight:          objects.SearchWeightDefault,
 		ContentTypes:          []string{"dcim.device"},
 	})
 	if err != nil {
@@ -352,9 +352,9 @@ func (netboxInventory *NetboxInventory) InitSsotCustomFields() error {
 		FilterLogic:           objects.FilterLogicLoose,
 		CustomFieldUIVisible:  &objects.CustomFieldUIVisibleAlways,
 		CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
-		DisplayWeight:         100,
+		DisplayWeight:         objects.DisplayWeightDefault,
 		Description:           "Amount of memory on the host",
-		SearchWeight:          1000,
+		SearchWeight:          objects.SearchWeightDefault,
 		ContentTypes:          []string{"dcim.device"},
 	})
 	if err != nil {
@@ -497,7 +497,7 @@ func (nbi *NetboxInventory) InitDefaultVlanGroup() error {
 		Name:   objects.DefaultVlanGroupName,
 		Slug:   utils.Slugify(objects.DefaultVlanGroupName),
 		MinVid: 1,
-		MaxVid: 4094,
+		MaxVid: objects.MaxVID,
 	})
 	if err != nil {
 		return fmt.Errorf("init default vlan group: %s", err)

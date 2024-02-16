@@ -14,6 +14,10 @@ func (c Choice) String() string {
 	return c.Value
 }
 
+const (
+	MaxDescriptionLength = 200
+)
+
 // Struct representing attributes that are common to all objects in Netbox.
 // We can this struct as an embedded struct in other structs that represent
 // Netbox objects.

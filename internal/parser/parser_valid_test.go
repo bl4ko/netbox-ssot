@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 )
 
 func findDifferentFields(firstConf Config, secondConf Config) map[string]string {
@@ -142,8 +144,8 @@ func TestValidConfig(t *testing.T) {
 			Hostname:      "netbox.example.com",
 			HTTPScheme:    "https",
 			Port:          666,
-			ValidateCert:  false,         // Default
-			Timeout:       30,            // Default
+			ValidateCert:  false, // Default
+			Timeout:       constants.DefaultTimeout,
 			Tag:           "netbox-ssot", // Default
 			TagColor:      "00add8",      // Default
 			RemoveOrphans: true,          // Default

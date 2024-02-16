@@ -104,7 +104,7 @@ func (ds *DnacSource) SyncDevices(nbi *inventory.NetboxInventory) error {
 		if device.Description != "" {
 			description = device.Description
 		}
-		if len(description) > 200 {
+		if len(description) > objects.MaxDescriptionLength {
 			comments = description
 			description = "See comments"
 		}

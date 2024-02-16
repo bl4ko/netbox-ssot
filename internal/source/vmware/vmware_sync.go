@@ -226,7 +226,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		}
 
 		hostCpuCores := host.Summary.Hardware.NumCpuCores
-		hostMemGB := host.Summary.Hardware.MemorySize / 1024 / 1024 / 1024
+		hostMemGB := host.Summary.Hardware.MemorySize / constants.KiB / constants.KiB / constants.KiB
 
 		nbHost := &objects.Device{
 			NetboxObject: objects.NetboxObject{Tags: vc.CommonConfig.SourceTags, CustomFields: map[string]string{
@@ -282,29 +282,28 @@ func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetboxInventory, vcH
 	// Collect data from physical interfaces
 	for _, pnic := range vcHost.Config.Network.Pnic {
 		pnicName := pnic.Device
-		var pnicLinkSpeed int32
+		var pnicLinkSpeedMb int32
 		if pnic.LinkSpeed != nil {
-			pnicLinkSpeed = pnic.LinkSpeed.SpeedMb
+			pnicLinkSpeedMb = pnic.LinkSpeed.SpeedMb
 		}
-		if pnicLinkSpeed == 0 {
+		if pnicLinkSpeedMb == 0 {
 			if pnic.Spec.LinkSpeed != nil {
-				pnicLinkSpeed = pnic.LinkSpeed.SpeedMb
+				pnicLinkSpeedMb = pnic.LinkSpeed.SpeedMb
 			}
-			if pnicLinkSpeed == 0 {
+			if pnicLinkSpeedMb == 0 {
 				if pnic.ValidLinkSpecification != nil {
-					pnicLinkSpeed = pnic.ValidLinkSpecification[0].SpeedMb
+					pnicLinkSpeedMb = pnic.ValidLinkSpecification[0].SpeedMb
 				}
 			}
 		}
 		var pnicDescription string
-		if pnicLinkSpeed >= 1000 {
-			pnicDescription = fmt.Sprintf("%dGB/s", pnicLinkSpeed/1000)
+		if pnicLinkSpeedMb*constants.MB >= constants.GB {
+			pnicDescription = fmt.Sprintf("%dGB/s", pnicLinkSpeedMb/constants.KB)
 		} else {
-			pnicDescription = fmt.Sprintf("%dMB/s", pnicLinkSpeed)
+			pnicDescription = fmt.Sprintf("%dMB/s", pnicLinkSpeedMb)
 		}
 		pnicDescription += " pNIC"
 		// netbox stores pnicSpeed in kbps
-		pnicLinkSpeed *= 1000
 
 		var pnicMtu int
 		var pnicMode *objects.InterfaceMode
@@ -392,7 +391,7 @@ func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetboxInventory, vcH
 			}
 		}
 
-		pnicType := objects.IfaceSpeed2IfaceType[objects.InterfaceSpeed(pnicLinkSpeed)]
+		pnicType := objects.IfaceSpeed2IfaceType[objects.InterfaceSpeed(pnicLinkSpeedMb)]
 		if pnicType == nil {
 			pnicType = &objects.OtherInterfaceType
 		}
@@ -410,7 +409,7 @@ func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetboxInventory, vcH
 			Name:        pnicName,
 			Status:      true,
 			Type:        pnicType,
-			Speed:       objects.InterfaceSpeed(pnicLinkSpeed),
+			Speed:       objects.InterfaceSpeed(pnicLinkSpeedMb / constants.KB),
 			MTU:         pnicMtu,
 			MAC:         strings.ToUpper(pnic.Mac),
 			Mode:        pnicMode,
@@ -707,7 +706,7 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
 		// netbox description has constraint <= len(200 characters)
 		// In this case we make a comment
 		var vmComments string
-		if len(vmDescription) >= 200 {
+		if len(vmDescription) >= objects.MaxDescriptionLength {
 			vmDescription = "See comments."
 			vmComments = vmDescription
 		}
@@ -726,8 +725,8 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
 			Host:     vmHost,
 			Platform: vmPlatform,
 			VCPUs:    float32(vmVCPUs),
-			Memory:   int(vmMemory),                         // MBs
-			Disk:     int(vmDiskSizeB / 1024 / 1024 / 1024), // GBs
+			Memory:   int(vmMemory),                                                    // MBs
+			Disk:     int(vmDiskSizeB / constants.KiB / constants.KiB / constants.KiB), // GBs
 			Comments: vmComments,
 		})
 
@@ -806,9 +805,9 @@ func (vc *VmwareSource) syncVmInterfaces(nbi *inventory.NetboxInventory, vmwareV
 
 				// Get version from ipAddress (v4 or v6)
 				ipVersion := utils.GetIPVersion(ipAddress)
-				if ipVersion == 4 {
+				if ipVersion == constants.IPv4 {
 					vmDefaultGatewayIpv4 = gatewayIpAddress
-				} else if ipVersion == 6 {
+				} else if ipVersion == constants.IPv6 {
 					vmDefaultGatewayIpv6 = gatewayIpAddress
 				}
 			}

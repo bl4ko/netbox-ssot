@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net"
 	"strings"
+
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 )
 
 // Function that receives ipAddress and performs a reverse lookup
@@ -56,9 +58,9 @@ func GetIPVersion(ipAddress string) int {
 		return 0
 	}
 	if ip.To4() != nil {
-		return 4
+		return constants.IPv4
 	}
-	return 6
+	return constants.IPv6
 }
 
 // Function that checks if given IP address is part of the
