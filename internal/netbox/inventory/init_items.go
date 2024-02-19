@@ -565,6 +565,28 @@ func (nbi *NetboxInventory) InitVlans() error {
 	return nil
 }
 
+func (nbi *NetboxInventory) InitWirelessLans() error {
+	nbWirelessLans, err := service.GetAll[objects.WirelessLan](nbi.NetboxApi, "")
+	if err != nil {
+		return err
+	}
+
+	// Initialize internal index of vlans by VlanGroupId and Vid
+	nbi.WirelessLansIndexBySsid = make(map[string]*objects.WirelessLan)
+	// Add vlans to orphan manager
+	nbi.OrphanManager[service.VlansApiPath] = make(map[int]bool, 0)
+
+	for i := range nbWirelessLans {
+		wirelessLan := &nbWirelessLans[i]
+		nbi.WirelessLansIndexBySsid[wirelessLan.SSID] = wirelessLan
+		if slices.IndexFunc(wirelessLan.Tags, func(t *objects.Tag) bool { return t.Slug == nbi.SsotTag.Slug }) >= 0 {
+			nbi.OrphanManager[service.VlansApiPath][wirelessLan.Id] = true
+		}
+	}
+	nbi.Logger.Debug("Successfully collected wireless-lans from Netbox: ", nbi.WirelessLansIndexBySsid)
+	return nil
+}
+
 // Collects all vms from Netbox API and stores them to local inventory.
 func (nbi *NetboxInventory) InitVMs() error {
 	nbVMs, err := service.GetAll[objects.VM](nbi.NetboxApi, "")

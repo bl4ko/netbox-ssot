@@ -331,3 +331,21 @@ func (ds *DnacSource) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error
 	}
 	return nil
 }
+
+func (ds *DnacSource) SyncWirelessLans(nbi *inventory.NetboxInventory) error {
+	for _, wlan := range ds.WirelessLans {
+		_, err := nbi.AddWirelessLan(&objects.WirelessLan{
+			NetboxObject: objects.NetboxObject{
+				Tags: ds.CommonConfig.SourceTags,
+				CustomFields: map[string]string{
+					constants.CustomFieldSourceName: ds.SourceConfig.Name,
+				},
+			},
+			SSID: wlan.Name,
+		})
+		if err != nil {
+			return fmt.Errorf("add wireless lan: %s", err)
+		}
+	}
+	return nil
+}

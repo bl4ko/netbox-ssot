@@ -55,20 +55,14 @@ func (ds *DnacSource) InitDevices(c *dnac.Client) error {
 	ds.Vlans = make(map[int]dnac.ResponseDevicesGetDeviceInterfaceVLANsResponse)
 	for _, device := range allDevices {
 		ds.Devices[device.ID] = device
-		err := ds.addVlansForDevice(c, device.ID)
-		if err != nil {
-			return fmt.Errorf("init vlans for device[%s]: %s", device.ID, err)
-		}
+		ds.addVlansForDevice(c, device.ID)
 	}
 	return nil
 }
 
 // Function that gets all vlans for device id.
-func (ds *DnacSource) addVlansForDevice(c *dnac.Client, deviceId string) error {
-	vlans, _, err := c.Devices.GetDeviceInterfaceVLANs(deviceId, nil)
-	if err != nil {
-		return err
-	}
+func (ds *DnacSource) addVlansForDevice(c *dnac.Client, deviceId string) {
+	vlans, _, _ := c.Devices.GetDeviceInterfaceVLANs(deviceId, nil)
 	if vlans != nil {
 		for _, vlan := range *vlans.Response {
 			if vlan.VLANNumber != nil {
@@ -76,7 +70,6 @@ func (ds *DnacSource) addVlansForDevice(c *dnac.Client, deviceId string) error {
 			}
 		}
 	}
-	return nil
 }
 
 func (ds *DnacSource) InitInterfaces(c *dnac.Client) error {
@@ -146,5 +139,43 @@ func (ds *DnacSource) InitMemberships(c *dnac.Client) error {
 			offset += limit
 		}
 	}
+	return nil
+}
+
+// Function that fetches all data from DNAC used for creating wireless
+// LANs in Netbox. Currently only enterprise SSIDs are supported
+// (see https://community.cisco.com/t5/cisco-digital-network-architecture-dna/dnac-api-call-to-update-passphrase-of-ssid-type-guest/td-p/4796014).
+func (ds *DnacSource) InitWirelessLans(c *dnac.Client) error {
+	// Get all WirelessProfiles
+	wirelessProfiles, response, err := c.Wireless.GetWirelessProfile(nil)
+	if err != nil {
+		return fmt.Errorf("init wireless profiles: %s", err)
+	}
+	if response.StatusCode() != http.StatusOK {
+		return fmt.Errorf("init wireless profiles response code: %s", response.String())
+	}
+
+	// Get wireless lan vlan relation.
+	wirelessDynamicInterfaces, response, err := c.Wireless.GetDynamicInterface(nil)
+	if err != nil {
+		return fmt.Errorf("init wireless dynamic interfaces: %s", err)
+	}
+	if response.StatusCode() != http.StatusOK {
+		return fmt.Errorf("init wireless dynamic interfaces: %s", response.String())
+	}
+
+	// Get wireless lan data.
+	enterpriseSsids, response, err := c.Wireless.GetEnterpriseSSID(nil)
+	if err != nil {
+		return fmt.Errorf("init enterprise ssids: %s", err)
+	}
+	if response.StatusCode() != http.StatusOK {
+		return fmt.Errorf("init enterprise ssids response code: %s", response.String())
+	}
+
+	fmt.Println(wirelessProfiles)
+	fmt.Println(wirelessDynamicInterfaces)
+	fmt.Println(enterpriseSsids)
+
 	return nil
 }

@@ -16,10 +16,12 @@ type DnacSource struct {
 	common.CommonConfig
 
 	// Dnac fetched data. Initialized in init functions.
-	Sites      map[string]dnac.ResponseSitesGetSiteResponse                // SiteId -> Site
-	Devices    map[string]dnac.ResponseDevicesGetDeviceListResponse        // DeviceId -> Device
-	Interfaces map[string]dnac.ResponseDevicesGetAllInterfacesResponse     // InterfaceId -> Interface
-	Vlans      map[int]dnac.ResponseDevicesGetDeviceInterfaceVLANsResponse // VlanId -> Vlan
+	Sites        map[string]dnac.ResponseSitesGetSiteResponse                     // SiteId -> Site
+	Devices      map[string]dnac.ResponseDevicesGetDeviceListResponse             // DeviceId -> Device
+	Interfaces   map[string]dnac.ResponseDevicesGetAllInterfacesResponse          // InterfaceId -> Interface
+	Vlans        map[int]dnac.ResponseDevicesGetDeviceInterfaceVLANsResponse      // VlanId -> Vlan
+	WirelessLans map[string]dnac.ResponseItemWirelessGetEnterpriseSSIDSSIDDetails // Ssid -> WirelessLan
+
 	// Relations between dnac data. Initialized in init functions.
 	Site2Devices          map[string]map[string]bool // Site Id - > set of device Ids
 	Device2Site           map[string]string          // Device Id -> Site Id
@@ -55,6 +57,7 @@ func (ds *DnacSource) Init() error {
 		ds.InitMemberships,
 		ds.InitDevices,
 		ds.InitInterfaces,
+		ds.InitWirelessLans,
 	}
 
 	for _, initFunc := range initFunctions {
@@ -81,6 +84,7 @@ func (ds *DnacSource) Sync(nbi *inventory.NetboxInventory) error {
 		ds.SyncVlans,
 		ds.SyncDevices,
 		ds.SyncDeviceInterfaces,
+		ds.SyncWirelessLans,
 	}
 
 	for _, syncFunc := range syncFunctions {

@@ -43,6 +43,7 @@ var type2path = map[reflect.Type]string{
 	reflect.TypeOf((*objects.Tag)(nil)).Elem():               TagsApiPath,
 	reflect.TypeOf((*objects.ContactAssignment)(nil)).Elem(): ContactAssignmentsApiPath,
 	reflect.TypeOf((*objects.Prefix)(nil)).Elem():            PrefixesApiPath,
+	reflect.TypeOf((*objects.WirelessLan)(nil)).Elem():       WirelessLansApiPath,
 }
 
 // GetAll queries all objects of type T from Netbox's API.

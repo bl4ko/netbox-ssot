@@ -50,6 +50,8 @@ type NetboxInventory struct {
 	VlanGroupsIndexByName map[string]*objects.VlanGroup
 	// VlansIndexByVlanGroupIdAndVid is a map of all vlans in the Netbox's inventory, indexed by their VlanGroup and vid.
 	VlansIndexByVlanGroupIdAndVid map[int]map[int]*objects.Vlan
+	// WirelessLansIndexBySsid is a map of all wireless lans in the Netbox's inventory, indexed by their ssid
+	WirelessLansIndexBySsid map[string]*objects.WirelessLan
 	// ClusterGroupsIndexByName is a map of all cluster groups in the Netbox's inventory, indexed by their name
 	ClusterGroupsIndexByName map[string]*objects.ClusterGroup
 	// ClusterTypesIndexByName is a map of all cluster types in the Netbox's inventory, indexed by their name
@@ -130,6 +132,7 @@ func NewNetboxInventory(logger *logger.Logger, nbConfig *parser.NetboxConfig) *N
 		14: service.ClusterGroupsApiPath,
 		15: service.ContactsApiPath,
 		16: service.ContactAssignmentsApiPath,
+		17: service.WirelessLansApiPath,
 	}
 	nbi := &NetboxInventory{Logger: logger, NetboxConfig: nbConfig, SourcePriority: sourcePriority, OrphanManager: make(map[string]map[int]bool), OrphanObjectPriority: orphanObjectPriority}
 	return nbi
@@ -163,6 +166,7 @@ func (nbi *NetboxInventory) Init() error {
 		nbi.InitDefaultVlanGroup,
 		nbi.InitPrefixes,
 		nbi.InitVlans,
+		nbi.InitWirelessLans,
 		nbi.InitDeviceRoles,
 		nbi.InitServerDeviceRole,
 		nbi.InitDeviceTypes,

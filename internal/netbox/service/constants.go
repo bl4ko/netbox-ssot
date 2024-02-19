@@ -30,4 +30,6 @@ const (
 
 	CustomFieldsApiPath = "/api/extras/custom-fields/"
 	TagsApiPath         = "/api/extras/tags/"
+
+	WirelessLansApiPath = "/api/wireless/wireless-lans/"
 )

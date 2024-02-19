@@ -712,3 +712,34 @@ func (nbi *NetboxInventory) AddPrefix(newPrefix *objects.Prefix) (*objects.Prefi
 	}
 	return nbi.PrefixesIndexByPrefix[newPrefix.Prefix], nil
 }
+
+func (nbi *NetboxInventory) AddWirelessLan(newWirelessLan *objects.WirelessLan) (*objects.WirelessLan, error) {
+	newWirelessLan.Tags = append(newWirelessLan.Tags, nbi.SsotTag)
+	if _, ok := nbi.WirelessLansIndexBySsid[newWirelessLan.SSID]; ok {
+		// Remove id from orphan manager, because it still exists in the sources
+		oldWirelessLan := nbi.WirelessLansIndexBySsid[newWirelessLan.SSID]
+		delete(nbi.OrphanManager[service.WirelessLansApiPath], oldWirelessLan.Id)
+		diffMap, err := utils.JsonDiffMapExceptId(newWirelessLan, oldWirelessLan, false, nbi.SourcePriority)
+		if err != nil {
+			return nil, err
+		}
+		if len(diffMap) > 0 {
+			nbi.Logger.Debug("WirelessLan ", newWirelessLan.SSID, " already exists in Netbox but is out of date. Patching it...")
+			patchedWirelessLan, err := service.Patch[objects.WirelessLan](nbi.NetboxApi, oldWirelessLan.Id, diffMap)
+			if err != nil {
+				return nil, err
+			}
+			nbi.WirelessLansIndexBySsid[newWirelessLan.SSID] = patchedWirelessLan
+		} else {
+			nbi.Logger.Debug("WirelessLan ", newWirelessLan.SSID, " already exists in Netbox and is up to date...")
+		}
+	} else {
+		nbi.Logger.Debug("WirelessLan ", newWirelessLan.SSID, " does not exist in Netbox. Creating it...")
+		newWirelessLan, err := service.Create[objects.WirelessLan](nbi.NetboxApi, newWirelessLan)
+		if err != nil {
+			return nil, err
+		}
+		nbi.WirelessLansIndexBySsid[newWirelessLan.SSID] = newWirelessLan
+	}
+	return nbi.WirelessLansIndexBySsid[newWirelessLan.SSID], nil
+}
