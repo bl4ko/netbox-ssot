@@ -39,12 +39,12 @@ func MatchVlanToTenant(nbi *inventory.NetboxInventory, vlanName string, vlanTena
 	}
 	tenantName, err := utils.MatchStringToValue(vlanName, vlanTenantRelations)
 	if err != nil {
-		return nil, fmt.Errorf("matching host to site: %s", err)
+		return nil, fmt.Errorf("matching vlan to tenant: %s", err)
 	}
 	if tenantName != "" {
 		tenant, ok := nbi.TenantsIndexByName[tenantName]
 		if !ok {
-			return nil, fmt.Errorf("site with name %s doesn't exist", tenantName)
+			return nil, fmt.Errorf("tenant with name %s doesn't exist", tenantName)
 		}
 		return tenant, nil
 	}
