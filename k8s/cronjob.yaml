@@ -9,15 +9,22 @@ spec:
       template:
         spec:
           containers:
-          - name: netbox-ssot
-            image: ghcr.io/bl4ko/netbox-ssot:latest
-            imagePullPolicy: Always
-            volumeMounts:
-            - name: netbox-ssot-secret
-              mountPath: /app/config.yaml
-              subPath: config.yaml
+            - name: netbox-ssot
+              image: ghcr.io/bl4ko/netbox-ssot:latest
+              imagePullPolicy: Always
+              resources:
+                limits:
+                  cpu: 100m
+                  memory: 100Mi
+                requests:
+                  cpu: 50m
+                  memory: 50Mi
+              volumeMounts:
+                - name: netbox-ssot-secret
+                  mountPath: /app/config.yaml
+                  subPath: config.yaml
           volumes:
-          - name: netbox-ssot-secret
-            secret:
-              secretName: netbox-ssot-secret
+            - name: netbox-ssot-secret
+              secret:
+                secretName: netbox-ssot-secret
           restartPolicy: OnFailure
