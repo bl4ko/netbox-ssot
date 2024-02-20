@@ -14,15 +14,15 @@ linters:
   enable:
     - revive
     # - gocyclo # TODO: enable in future
+    # - dupl # TODO: enable in future
+    # - errorlint # TODO: enable in future
     # - gocognit # TODO: enable in future
     # - cyclop # TODO: enable in future
     # - paralleltest # TODO: enable in future
-    # - errorlint # TODO: enable in future
     # - lll # TODO: enable in future
     # - nestif # TODO: enable in future
     # - maintidx # TODO: enable in future
     # - exhaustive # TODO: enable in future
-    # - dupl # TODO: enable in future
     # - nilnil # TODO: enable in future
     # - gochecknoglobals # TODO: enable in future
     # - goerr113 # TODO: enable in future

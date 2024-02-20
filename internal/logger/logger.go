@@ -33,7 +33,7 @@ func New(dest string, logLevel int, name string) (*Logger, error) {
 	if dest == "" {
 		output = os.Stdout
 	} else {
-		file, err := os.Create(fmt.Sprintf("/var/log/%s.log", dest))
+		file, err := os.Create(dest)
 		if err != nil {
 			return nil, err
 		}
@@ -69,16 +69,13 @@ func (l *Logger) Output(calldepth int, s string) error {
 	logMessage := fmt.Sprintf("%s %s%s", timePrefix, filePrefix, s)
 
 	// Print to the desired output
-	fmt.Println(logMessage)
+	l.Println(logMessage)
 	return nil
 }
 
 func (l *Logger) Debug(v ...interface{}) error {
 	if l.level <= DEBUG {
-		err := l.Output(logCallDepth, fmt.Sprintf("%-7s (%s): %s", "DEBUG", l.name, fmt.Sprint(v...)))
-		if err != nil {
-			return err
-		}
+		return l.Output(logCallDepth, fmt.Sprintf("%-7s (%s): %s", "DEBUG", l.name, fmt.Sprint(v...)))
 	}
 	return nil
 }
@@ -93,10 +90,7 @@ func (l *Logger) Debugf(format string, v ...interface{}) error {
 
 func (l *Logger) Info(v ...interface{}) error {
 	if l.level <= INFO {
-		err := l.Output(logCallDepth, fmt.Sprintf("%-7s (%s): %s", "INFO", l.name, fmt.Sprint(v...)))
-		if err != nil {
-			return err
-		}
+		return l.Output(logCallDepth, fmt.Sprintf("%-7s (%s): %s", "INFO", l.name, fmt.Sprint(v...)))
 	}
 	return nil
 }
@@ -111,10 +105,7 @@ func (l *Logger) Infof(format string, v ...interface{}) error {
 
 func (l *Logger) Warning(v ...interface{}) error {
 	if l.level <= WARNING {
-		err := l.Output(logCallDepth, fmt.Sprintf("%-7s (%s): %s", "WARNING", l.name, fmt.Sprint(v...)))
-		if err != nil {
-			return err
-		}
+		return l.Output(logCallDepth, fmt.Sprintf("%-7s (%s): %s", "WARNING", l.name, fmt.Sprint(v...)))
 	}
 	return nil
 }
@@ -129,10 +120,7 @@ func (l *Logger) Warningf(format string, v ...interface{}) error {
 
 func (l *Logger) Error(v ...interface{}) error {
 	if l.level <= ERROR {
-		err := l.Output(logCallDepth, fmt.Sprintf("%-7s (%s): %s", "ERROR", l.name, fmt.Sprint(v...)))
-		if err != nil {
-			return err
-		}
+		return l.Output(logCallDepth, fmt.Sprintf("%-7s (%s): %s", "ERROR", l.name, fmt.Sprint(v...)))
 	}
 	return nil
 }
