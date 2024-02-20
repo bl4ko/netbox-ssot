@@ -11,7 +11,7 @@ import (
 )
 
 // In vsphere we get vlans from DistributedVirtualPortgroups.
-func (vc *VmwareSource) InitNetworks(ctx context.Context, containerView *view.ContainerView) error {
+func (vc *Source) InitNetworks(ctx context.Context, containerView *view.ContainerView) error {
 	var dvpgs []mo.DistributedVirtualPortgroup
 	err := containerView.Retrieve(ctx, []string{"DistributedVirtualPortgroup"}, []string{"config"}, &dvpgs)
 	if err != nil {
@@ -30,36 +30,36 @@ func (vc *VmwareSource) InitNetworks(ctx context.Context, containerView *view.Co
 		}
 
 		if vlanInfo, ok := dvpg.Config.DefaultPortConfig.(*types.VMwareDVSPortSetting); ok {
-			var vlanIds []int
-			var vlanIdRanges []string
+			var vlanIDs []int
+			var vlanIDRanges []string
 			private := false
 			switch v := vlanInfo.Vlan.(type) {
 			case *types.VmwareDistributedVirtualSwitchTrunkVlanSpec:
 				for _, item := range v.VlanId {
 					switch {
 					case item.Start == item.End:
-						vlanIds = append(vlanIds, int(item.Start))
-						vlanIdRanges = append(vlanIdRanges, fmt.Sprintf("%d", item.Start))
+						vlanIDs = append(vlanIDs, int(item.Start))
+						vlanIDRanges = append(vlanIDRanges, fmt.Sprintf("%d", item.Start))
 					case item.Start == objects.UntaggedVID && item.End == objects.MaxVID:
-						vlanIds = append(vlanIds, objects.TaggedVID)
-						vlanIdRanges = append(vlanIdRanges, fmt.Sprintf("%d-%d", item.Start, item.End))
+						vlanIDs = append(vlanIDs, objects.TaggedVID)
+						vlanIDRanges = append(vlanIDRanges, fmt.Sprintf("%d-%d", item.Start, item.End))
 					default:
 						for vlan := item.Start; vlan <= item.End; vlan++ {
-							vlanIds = append(vlanIds, int(vlan))
-							vlanIdRanges = append(vlanIdRanges, fmt.Sprintf("%d-%d", item.Start, item.End))
+							vlanIDs = append(vlanIDs, int(vlan))
+							vlanIDRanges = append(vlanIDRanges, fmt.Sprintf("%d-%d", item.Start, item.End))
 						}
 					}
 				}
 			case *types.VmwareDistributedVirtualSwitchPvlanSpec:
-				vlanIds = append(vlanIds, int(v.PvlanId))
+				vlanIDs = append(vlanIDs, int(v.PvlanId))
 				private = true
 			case *types.VmwareDistributedVirtualSwitchVlanIdSpec:
-				vlanIds = append(vlanIds, int(v.VlanId))
+				vlanIDs = append(vlanIDs, int(v.VlanId))
 			default:
 				return fmt.Errorf("unknown vlan info spec %T", v)
 			}
 
-			for _, vid := range vlanIds {
+			for _, vid := range vlanIDs {
 				if vid == objects.UntaggedVID || vid == objects.TaggedVID {
 					continue
 				}
@@ -68,8 +68,8 @@ func (vc *VmwareSource) InitNetworks(ctx context.Context, containerView *view.Co
 
 			vc.Networks.DistributedVirtualPortgroups[dvpg.Config.Key] = &DistributedPortgroupData{
 				Name:         dvpg.Config.Name,
-				VlanIds:      vlanIds,
-				VlanIdRanges: vlanIdRanges,
+				VlanIDs:      vlanIDs,
+				VlanIDRanges: vlanIDRanges,
 				Private:      private,
 			}
 		}
@@ -77,7 +77,7 @@ func (vc *VmwareSource) InitNetworks(ctx context.Context, containerView *view.Co
 	return nil
 }
 
-func (vc *VmwareSource) InitDisks(ctx context.Context, containerView *view.ContainerView) error {
+func (vc *Source) InitDisks(ctx context.Context, containerView *view.ContainerView) error {
 	var disks []mo.Datastore
 	err := containerView.Retrieve(ctx, []string{"Datastore"}, []string{"summary", "host", "vm"}, &disks)
 	if err != nil {
@@ -90,7 +90,7 @@ func (vc *VmwareSource) InitDisks(ctx context.Context, containerView *view.Conta
 	return nil
 }
 
-func (vc *VmwareSource) InitDataCenters(ctx context.Context, containerView *view.ContainerView) error {
+func (vc *Source) InitDataCenters(ctx context.Context, containerView *view.ContainerView) error {
 	var datacenters []mo.Datacenter
 	err := containerView.Retrieve(ctx, []string{"Datacenter"}, []string{"name"}, &datacenters)
 	if err != nil {
@@ -103,7 +103,7 @@ func (vc *VmwareSource) InitDataCenters(ctx context.Context, containerView *view
 	return nil
 }
 
-func (vc *VmwareSource) InitClusters(ctx context.Context, containerView *view.ContainerView) error {
+func (vc *Source) InitClusters(ctx context.Context, containerView *view.ContainerView) error {
 	var clusters []mo.ClusterComputeResource
 	err := containerView.Retrieve(ctx, []string{"ClusterComputeResource"}, []string{"summary", "host", "name"}, &clusters)
 	if err != nil {
@@ -120,18 +120,18 @@ func (vc *VmwareSource) InitClusters(ctx context.Context, containerView *view.Co
 	return nil
 }
 
-func (vc *VmwareSource) InitHosts(ctx context.Context, containerView *view.ContainerView) error {
+func (vc *Source) InitHosts(ctx context.Context, containerView *view.ContainerView) error {
 	var hosts []mo.HostSystem
 	err := containerView.Retrieve(ctx, []string{"HostSystem"}, []string{"name", "summary.host", "summary.hardware", "summary.runtime", "summary.config", "vm", "config.network"}, &hosts)
 	if err != nil {
 		return fmt.Errorf("failed retrieving hosts: %s", err)
 	}
-	vc.Vm2Host = make(map[string]string)
+	vc.VM2Host = make(map[string]string)
 	vc.Hosts = make(map[string]mo.HostSystem, len(hosts))
 	for _, host := range hosts {
 		vc.Hosts[host.Self.Value] = host
 		for _, vm := range host.Vm {
-			vc.Vm2Host[vm.Value] = host.Self.Value
+			vc.VM2Host[vm.Value] = host.Self.Value
 		}
 
 		// Add network data which is received from hosts
@@ -161,18 +161,18 @@ func (vc *VmwareSource) InitHosts(ctx context.Context, containerView *view.Conta
 		vc.Networks.HostPortgroups[host.Name] = make(map[string]*HostPortgroupData)
 		for _, pgroup := range host.Config.Network.Portgroup {
 			if pgroup.Spec.Name != "" {
-				nic_order := pgroup.ComputedPolicy.NicTeaming.NicOrder
-				pgroup_nics := []string{}
-				if len(nic_order.ActiveNic) > 0 {
-					pgroup_nics = append(pgroup_nics, nic_order.ActiveNic...)
+				nicOrder := pgroup.ComputedPolicy.NicTeaming.NicOrder
+				pgroupNics := []string{}
+				if len(nicOrder.ActiveNic) > 0 {
+					pgroupNics = append(pgroupNics, nicOrder.ActiveNic...)
 				}
-				if len(nic_order.StandbyNic) > 0 {
-					pgroup_nics = append(pgroup_nics, nic_order.StandbyNic...)
+				if len(nicOrder.StandbyNic) > 0 {
+					pgroupNics = append(pgroupNics, nicOrder.StandbyNic...)
 				}
 				vc.Networks.HostPortgroups[host.Name][pgroup.Spec.Name] = &HostPortgroupData{
-					vlanId:  int(pgroup.Spec.VlanId),
+					vlanID:  int(pgroup.Spec.VlanId),
 					vswitch: pgroup.Spec.VswitchName,
-					nics:    pgroup_nics,
+					nics:    pgroupNics,
 				}
 			}
 		}
@@ -180,7 +180,7 @@ func (vc *VmwareSource) InitHosts(ctx context.Context, containerView *view.Conta
 	return nil
 }
 
-func (vc *VmwareSource) InitVms(ctx context.Context, containerView *view.ContainerView) error {
+func (vc *Source) InitVms(ctx context.Context, containerView *view.ContainerView) error {
 	var vms []mo.VirtualMachine
 	err := containerView.Retrieve(ctx, []string{"VirtualMachine"}, []string{"summary", "name", "runtime", "guest", "config.hardware", "config.guestFullName"}, &vms)
 	if err != nil {

@@ -257,7 +257,7 @@ func TestSubnetContainsIpAddress(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := SubnetContainsIpAddress(tt.ipAddress, tt.subnet)
+			result := SubnetContainsIPAddress(tt.ipAddress, tt.subnet)
 			if result != tt.expected {
 				t.Errorf("SubnetContainsIpAddress() = %v, want %v", result, tt.expected)
 			}

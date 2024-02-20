@@ -18,9 +18,9 @@ import (
 	"github.com/vmware/govmomi/vim25/mo"
 )
 
-// VmwareSource represents an vsphere source.
-type VmwareSource struct {
-	common.CommonConfig
+// Source represents an vsphere source.
+type Source struct {
+	common.Config
 	// Vmware API data initialized in init functions
 	Disks       map[string]mo.Datastore
 	DataCenters map[string]mo.Datacenter
@@ -32,17 +32,17 @@ type VmwareSource struct {
 	// Relations between objects "object_id": "object_id"
 	Cluster2Datacenter map[string]string // ClusterKey -> DatacenterKey
 	Host2Cluster       map[string]string // HostKey -> ClusterKey
-	Vm2Host            map[string]string // VmKey ->  HostKey
+	VM2Host            map[string]string // VmKey ->  HostKey
 
 	// CustomField2Name is a map of custom field ids to their names
-	CustomFieldId2Name map[int32]string
+	CustomFieldID2Name map[int32]string
 
 	// Netbox relations
 	ClusterSiteRelations   map[string]string
 	ClusterTenantRelations map[string]string
 	HostTenantRelations    map[string]string
 	HostSiteRelations      map[string]string
-	VmTenantRelations      map[string]string
+	VMTenantRelations      map[string]string
 	VlanGroupRelations     map[string]string
 	VlanTenantRelations    map[string]string
 
@@ -60,8 +60,8 @@ type NetworkData struct {
 
 type DistributedPortgroupData struct {
 	Name         string
-	VlanIds      []int
-	VlanIdRanges []string
+	VlanIDs      []int
+	VlanIDRanges []string
 	Private      bool
 	Tenant       *objects.Tenant
 }
@@ -78,12 +78,12 @@ type HostProxySwitchData struct {
 }
 
 type HostPortgroupData struct {
-	vlanId  int
+	vlanID  int
 	vswitch string
 	nics    []string
 }
 
-func (vc *VmwareSource) Init() error {
+func (vc *Source) Init() error {
 	// Initialize regex relations
 	vc.Logger.Debug("Initializing regex relations for oVirt source ", vc.SourceConfig.Name)
 	vc.HostSiteRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.HostSiteRelations)
@@ -94,8 +94,8 @@ func (vc *VmwareSource) Init() error {
 	vc.Logger.Debug("ClusterTenantRelations: ", vc.ClusterTenantRelations)
 	vc.HostTenantRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.HostTenantRelations)
 	vc.Logger.Debug("HostTenantRelations: ", vc.HostTenantRelations)
-	vc.VmTenantRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.VmTenantRelations)
-	vc.Logger.Debug("VmTenantRelations: ", vc.VmTenantRelations)
+	vc.VMTenantRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.VMTenantRelations)
+	vc.Logger.Debug("VmTenantRelations: ", vc.VMTenantRelations)
 	vc.VlanGroupRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.VlanGroupRelations)
 	vc.Logger.Debug("VlanGroupRelations: ", vc.VlanGroupRelations)
 	vc.VlanTenantRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.VlanTenantRelations)
@@ -112,9 +112,9 @@ func (vc *VmwareSource) Init() error {
 	escapedUsername := url.PathEscape(vc.SourceConfig.Username)
 	escapedPassword := url.PathEscape(vc.SourceConfig.Password)
 
-	vcUrl := fmt.Sprintf("%s://%s:%s@%s:%d/sdk", vc.SourceConfig.HTTPScheme, escapedUsername, escapedPassword, vc.SourceConfig.Hostname, vc.SourceConfig.Port)
+	vcURL := fmt.Sprintf("%s://%s:%s@%s:%d/sdk", vc.SourceConfig.HTTPScheme, escapedUsername, escapedPassword, vc.SourceConfig.Hostname, vc.SourceConfig.Port)
 
-	url, err := url.Parse(vcUrl)
+	url, err := url.Parse(vcURL)
 	if err != nil {
 		return fmt.Errorf("failed parsing url for %s with error %s", vc.SourceConfig.Hostname, err)
 	}
@@ -196,7 +196,7 @@ func (vc *VmwareSource) Init() error {
 }
 
 // Function that syncs all data from oVirt to Netbox.
-func (vc *VmwareSource) Sync(nbi *inventory.NetboxInventory) error {
+func (vc *Source) Sync(nbi *inventory.NetboxInventory) error {
 	syncFunctions := []func(*inventory.NetboxInventory) error{
 		vc.syncNetworks,
 		vc.syncDatacenters,
@@ -218,7 +218,7 @@ func (vc *VmwareSource) Sync(nbi *inventory.NetboxInventory) error {
 
 // Currently we have to traverse the vsphere tree to get datacenter to cluster relation
 // For other objects relations are available in with containerView.
-func (vc *VmwareSource) CreateClusterDataCenterRelation(ctx context.Context, client *vim25.Client) error {
+func (vc *Source) CreateClusterDataCenterRelation(ctx context.Context, client *vim25.Client) error {
 	finder := find.NewFinder(client, true)
 	datacenters, err := finder.DatacenterList(ctx, "*")
 	if err != nil {
@@ -239,7 +239,7 @@ func (vc *VmwareSource) CreateClusterDataCenterRelation(ctx context.Context, cli
 }
 
 // Creates a map of custom field ids to their names.
-func (vc *VmwareSource) CreateCustomFieldRelation(ctx context.Context, client *vim25.Client) error {
+func (vc *Source) CreateCustomFieldRelation(ctx context.Context, client *vim25.Client) error {
 	cfm, err := object.GetCustomFieldsManager(client)
 	if err != nil {
 		return fmt.Errorf("createCustomFieldRelation: %s", err)
@@ -249,9 +249,9 @@ func (vc *VmwareSource) CreateCustomFieldRelation(ctx context.Context, client *v
 		return fmt.Errorf("createCustomFieldRelation fieldDefs: %s", err)
 	}
 
-	vc.CustomFieldId2Name = make(map[int32]string)
+	vc.CustomFieldID2Name = make(map[int32]string)
 	for _, field := range fieldDefs {
-		vc.CustomFieldId2Name[field.Key] = field.Name
+		vc.CustomFieldID2Name[field.Key] = field.Name
 	}
 
 	return nil

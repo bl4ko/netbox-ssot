@@ -21,8 +21,8 @@ func findDifferentFields(firstConf Config, secondConf Config) map[string]string 
 	}
 
 	// Compare netbox fields
-	if firstConf.Netbox.ApiToken != secondConf.Netbox.ApiToken {
-		field2diff["Netbox.ApiToken"] = fmt.Sprintf("%s != %s", firstConf.Netbox.ApiToken, secondConf.Netbox.ApiToken)
+	if firstConf.Netbox.APIToken != secondConf.Netbox.APIToken {
+		field2diff["Netbox.ApiToken"] = fmt.Sprintf("%s != %s", firstConf.Netbox.APIToken, secondConf.Netbox.APIToken)
 	}
 	if firstConf.Netbox.Hostname != secondConf.Netbox.Hostname {
 		field2diff["Netbox.Hostname"] = fmt.Sprintf("%s != %s", firstConf.Netbox.Hostname, secondConf.Netbox.Hostname)
@@ -120,12 +120,12 @@ func findDifferentFields(firstConf Config, secondConf Config) map[string]string 
 				field2diff[fmt.Sprintf("Sources[%d].HostTenantRelations[%d]", i, j)] = fmt.Sprintf("%s != %s", firstSource.HostTenantRelations[j], secondSource.HostTenantRelations[j])
 			}
 		}
-		if len(firstSource.VmTenantRelations) != len(secondSource.VmTenantRelations) {
-			field2diff[fmt.Sprintf("Sources[%d].VmTenantRelations", i)] = fmt.Sprintf("len(%d) != len(%d)", len(firstSource.VmTenantRelations), len(secondSource.VmTenantRelations))
+		if len(firstSource.VMTenantRelations) != len(secondSource.VMTenantRelations) {
+			field2diff[fmt.Sprintf("Sources[%d].VmTenantRelations", i)] = fmt.Sprintf("len(%d) != len(%d)", len(firstSource.VMTenantRelations), len(secondSource.VMTenantRelations))
 		}
-		for j := 0; j < len(firstSource.VmTenantRelations); j++ {
-			if firstSource.VmTenantRelations[j] != secondSource.VmTenantRelations[j] {
-				field2diff[fmt.Sprintf("Sources[%d].VmTenantRelations[%d]", i, j)] = fmt.Sprintf("%s != %s", firstSource.VmTenantRelations[j], secondSource.VmTenantRelations[j])
+		for j := 0; j < len(firstSource.VMTenantRelations); j++ {
+			if firstSource.VMTenantRelations[j] != secondSource.VMTenantRelations[j] {
+				field2diff[fmt.Sprintf("Sources[%d].VmTenantRelations[%d]", i, j)] = fmt.Sprintf("%s != %s", firstSource.VMTenantRelations[j], secondSource.VMTenantRelations[j])
 			}
 		}
 	}
@@ -140,7 +140,7 @@ func TestValidConfig(t *testing.T) {
 			Dest:  "test",
 		},
 		Netbox: &NetboxConfig{
-			ApiToken:      "netbox-token",
+			APIToken:      "netbox-token",
 			Hostname:      "netbox.example.com",
 			HTTPScheme:    "https",
 			Port:          666,
@@ -198,7 +198,7 @@ func TestValidConfig(t *testing.T) {
 					".*Health = Health Department",
 					".* = Default",
 				},
-				VmTenantRelations: []string{
+				VMTenantRelations: []string{
 					".*Health = Health Department",
 					".* = Default",
 				},

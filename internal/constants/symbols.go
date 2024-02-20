@@ -10,11 +10,11 @@ const (
 	CustomFieldSourceName  = "source"
 	CustomFieldSourceLabel = "Source"
 
-	CustomFieldSourceIdName  = "source_id"
-	CustomFieldSourceIdLabel = "Source ID"
+	CustomFieldSourceIDName  = "source_id"
+	CustomFieldSourceIDLabel = "Source ID"
 
-	CustomFieldHostCpuCoresName  = "host_cpu_cores"
-	CustomFieldHostCpuCoresLabel = "Host CPU cores"
+	CustomFieldHostCPUCoresName  = "host_cpu_cores"
+	CustomFieldHostCPUCoresLabel = "Host CPU cores"
 
 	CustomFieldHostMemoryName  = "host_memory"
 	CustomFieldHostMemoryLabel = "Host memory"

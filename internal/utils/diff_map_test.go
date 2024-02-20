@@ -83,7 +83,7 @@ func TestPrimaryAttributesDiff(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			outputDiff, err := JsonDiffMapExceptId(tt.newStruct, tt.existingStruct, tt.resetFields, nil)
+			outputDiff, err := JSONDiffMapExceptID(tt.newStruct, tt.existingStruct, tt.resetFields, nil)
 			if err != nil {
 				t.Errorf("JsonDiffMapExceptId() error = %v", err)
 			}
@@ -150,7 +150,7 @@ func TestChoicesAttributesDiff(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			outputDiff, err := JsonDiffMapExceptId(tt.newStruct, tt.existingStruct, tt.resetFields, nil)
+			outputDiff, err := JSONDiffMapExceptID(tt.newStruct, tt.existingStruct, tt.resetFields, nil)
 			if err != nil {
 				t.Errorf("JsonDiffMapExceptId() error = %v", err)
 			}
@@ -175,19 +175,19 @@ func TestStructAttributeDiff(t *testing.T) {
 			newStruct: &objects.Device{
 				DeviceType: &objects.DeviceType{
 					NetboxObject: objects.NetboxObject{
-						Id: 1,
+						ID: 1,
 					},
 				},
 			},
 			existingStruct: &objects.Device{
 				DeviceType: &objects.DeviceType{
 					NetboxObject: objects.NetboxObject{
-						Id: 2,
+						ID: 2,
 					},
 				},
 				DeviceRole: &objects.DeviceRole{
 					NetboxObject: objects.NetboxObject{
-						Id: 3,
+						ID: 3,
 					},
 				},
 			},
@@ -202,19 +202,19 @@ func TestStructAttributeDiff(t *testing.T) {
 			newStruct: &objects.Device{
 				DeviceType: &objects.DeviceType{
 					NetboxObject: objects.NetboxObject{
-						Id: 1,
+						ID: 1,
 					},
 				},
 			},
 			existingStruct: &objects.Device{
 				DeviceType: &objects.DeviceType{
 					NetboxObject: objects.NetboxObject{
-						Id: 2,
+						ID: 2,
 					},
 				},
 				DeviceRole: &objects.DeviceRole{
 					NetboxObject: objects.NetboxObject{
-						Id: 3,
+						ID: 3,
 					},
 				},
 			},
@@ -226,7 +226,7 @@ func TestStructAttributeDiff(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			outputDiff, err := JsonDiffMapExceptId(tt.newStruct, tt.existingStruct, tt.resetFields, nil)
+			outputDiff, err := JSONDiffMapExceptID(tt.newStruct, tt.existingStruct, tt.resetFields, nil)
 			if err != nil {
 				t.Errorf("JsonDiffMapExceptId() error = %v", err)
 			}
@@ -250,14 +250,14 @@ func TestSliceAttributeDiff(t *testing.T) {
 			resetFields: true,
 			newStruct: &objects.Interface{
 				TaggedVlans: []*objects.Vlan{
-					{NetboxObject: objects.NetboxObject{Id: 1}},
-					{NetboxObject: objects.NetboxObject{Id: 2}},
+					{NetboxObject: objects.NetboxObject{ID: 1}},
+					{NetboxObject: objects.NetboxObject{ID: 2}},
 				},
 			},
 			existingStruct: &objects.Interface{
 				TaggedVlans: []*objects.Vlan{
-					{NetboxObject: objects.NetboxObject{Id: 3}},
-					{NetboxObject: objects.NetboxObject{Id: 4}},
+					{NetboxObject: objects.NetboxObject{ID: 3}},
+					{NetboxObject: objects.NetboxObject{ID: 4}},
 				},
 				Mode: &objects.InterfaceModeAccess,
 			},
@@ -271,14 +271,14 @@ func TestSliceAttributeDiff(t *testing.T) {
 			resetFields: false,
 			newStruct: &objects.Interface{
 				TaggedVlans: []*objects.Vlan{
-					{NetboxObject: objects.NetboxObject{Id: 1}},
-					{NetboxObject: objects.NetboxObject{Id: 2}},
+					{NetboxObject: objects.NetboxObject{ID: 1}},
+					{NetboxObject: objects.NetboxObject{ID: 2}},
 				},
 			},
 			existingStruct: &objects.Interface{
 				TaggedVlans: []*objects.Vlan{
-					{NetboxObject: objects.NetboxObject{Id: 3}},
-					{NetboxObject: objects.NetboxObject{Id: 4}},
+					{NetboxObject: objects.NetboxObject{ID: 3}},
+					{NetboxObject: objects.NetboxObject{ID: 4}},
 				},
 				Mode: &objects.InterfaceModeAccess,
 			},
@@ -291,14 +291,14 @@ func TestSliceAttributeDiff(t *testing.T) {
 			resetFields: false,
 			newStruct: &objects.Interface{
 				TaggedVlans: []*objects.Vlan{
-					{NetboxObject: objects.NetboxObject{Id: 1}},
-					{NetboxObject: objects.NetboxObject{Id: 2}},
+					{NetboxObject: objects.NetboxObject{ID: 1}},
+					{NetboxObject: objects.NetboxObject{ID: 2}},
 				},
 			},
 			existingStruct: &objects.Interface{
 				TaggedVlans: []*objects.Vlan{
-					{NetboxObject: objects.NetboxObject{Id: 1}},
-					{NetboxObject: objects.NetboxObject{Id: 2}},
+					{NetboxObject: objects.NetboxObject{ID: 1}},
+					{NetboxObject: objects.NetboxObject{ID: 2}},
 				},
 				Mode: &objects.InterfaceModeAccess,
 			},
@@ -308,7 +308,7 @@ func TestSliceAttributeDiff(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			outputDiff, err := JsonDiffMapExceptId(tt.newStruct, tt.existingStruct, tt.resetFields, nil)
+			outputDiff, err := JSONDiffMapExceptID(tt.newStruct, tt.existingStruct, tt.resetFields, nil)
 			if err != nil {
 				t.Errorf("JsonDiffMapExceptId() error = %v", err)
 			}
@@ -333,16 +333,16 @@ func TestMapAttributeDiff(t *testing.T) {
 			newStruct: &objects.Device{
 				NetboxObject: objects.NetboxObject{
 					CustomFields: map[string]string{
-						constants.CustomFieldHostCpuCoresName: "10 cpu cores",
+						constants.CustomFieldHostCPUCoresName: "10 cpu cores",
 						constants.CustomFieldHostMemoryName:   "10 GB",
-						constants.CustomFieldSourceIdName:     "123456789",
+						constants.CustomFieldSourceIDName:     "123456789",
 					},
 				},
 			},
 			existingStruct: &objects.Device{
 				NetboxObject: objects.NetboxObject{
 					CustomFields: map[string]string{
-						constants.CustomFieldHostCpuCoresName: "5 cpu cores",
+						constants.CustomFieldHostCPUCoresName: "5 cpu cores",
 						"existing_tag1":                       "existing_tag1",
 						"existing_tag2":                       "existing_tag2",
 					},
@@ -350,9 +350,9 @@ func TestMapAttributeDiff(t *testing.T) {
 			},
 			expectedDiff: map[string]interface{}{
 				"custom_fields": map[string]interface{}{
-					constants.CustomFieldHostCpuCoresName: "10 cpu cores",
+					constants.CustomFieldHostCPUCoresName: "10 cpu cores",
 					constants.CustomFieldHostMemoryName:   "10 GB",
-					constants.CustomFieldSourceIdName:     "123456789",
+					constants.CustomFieldSourceIDName:     "123456789",
 					"existing_tag1":                       "existing_tag1",
 					"existing_tag2":                       "existing_tag2",
 				},
@@ -364,7 +364,7 @@ func TestMapAttributeDiff(t *testing.T) {
 			newStruct: &objects.Device{
 				NetboxObject: objects.NetboxObject{
 					CustomFields: map[string]string{
-						constants.CustomFieldHostCpuCoresName: "10 cpu cores",
+						constants.CustomFieldHostCPUCoresName: "10 cpu cores",
 						constants.CustomFieldHostMemoryName:   "10 GB",
 					},
 				},
@@ -373,7 +373,7 @@ func TestMapAttributeDiff(t *testing.T) {
 			existingStruct: &objects.Device{
 				NetboxObject: objects.NetboxObject{
 					CustomFields: map[string]string{
-						constants.CustomFieldHostCpuCoresName: "10 cpu cores",
+						constants.CustomFieldHostCPUCoresName: "10 cpu cores",
 						constants.CustomFieldHostMemoryName:   "10 GB",
 						"existing_tag1":                       "existing_tag1",
 						"existing_tag2":                       "existing_tag2",
@@ -388,7 +388,7 @@ func TestMapAttributeDiff(t *testing.T) {
 			newStruct: &objects.Device{
 				NetboxObject: objects.NetboxObject{
 					CustomFields: map[string]string{
-						constants.CustomFieldHostCpuCoresName: "5 cpu cores",
+						constants.CustomFieldHostCPUCoresName: "5 cpu cores",
 						constants.CustomFieldHostMemoryName:   "10 GB",
 					},
 				},
@@ -396,7 +396,7 @@ func TestMapAttributeDiff(t *testing.T) {
 			existingStruct: &objects.Device{
 				NetboxObject: objects.NetboxObject{
 					CustomFields: map[string]string{
-						constants.CustomFieldHostCpuCoresName: "10 cpu cores",
+						constants.CustomFieldHostCPUCoresName: "10 cpu cores",
 						constants.CustomFieldHostMemoryName:   "10 GB",
 						"existing_tag1":                       "existing_tag1",
 						"existing_tag2":                       "existing_tag2",
@@ -405,7 +405,7 @@ func TestMapAttributeDiff(t *testing.T) {
 			},
 			expectedDiff: map[string]interface{}{
 				"custom_fields": map[string]interface{}{
-					constants.CustomFieldHostCpuCoresName: "5 cpu cores",
+					constants.CustomFieldHostCPUCoresName: "5 cpu cores",
 					"existing_tag1":                       "existing_tag1",
 					"existing_tag2":                       "existing_tag2",
 				},
@@ -415,7 +415,7 @@ func TestMapAttributeDiff(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			outputDiff, err := JsonDiffMapExceptId(tt.newStruct, tt.existingStruct, tt.resetFields, nil)
+			outputDiff, err := JSONDiffMapExceptID(tt.newStruct, tt.existingStruct, tt.resetFields, nil)
 			if err != nil {
 				t.Errorf("JsonDiffMapExceptId() error = %v", err)
 			}
@@ -446,8 +446,8 @@ func TestPriorityMergeDiff(t *testing.T) {
 						constants.CustomFieldSourceName: "test1",
 					},
 					Tags: []*objects.Tag{
-						{Id: 1, Name: "Tag1"},
-						{Id: 2, Name: "Tag2"},
+						{ID: 1, Name: "Tag1"},
+						{ID: 2, Name: "Tag2"},
 					},
 				},
 			},
@@ -459,8 +459,8 @@ func TestPriorityMergeDiff(t *testing.T) {
 						constants.CustomFieldSourceName: "test2",
 					},
 					Tags: []*objects.Tag{
-						{Id: 2, Name: "Tag1"},
-						{Id: 3, Name: "Tag2"},
+						{ID: 2, Name: "Tag1"},
+						{ID: 3, Name: "Tag2"},
 					},
 				},
 			},
@@ -488,8 +488,8 @@ func TestPriorityMergeDiff(t *testing.T) {
 						constants.CustomFieldSourceName: "test1",
 					},
 					Tags: []*objects.Tag{
-						{Id: 1, Name: "Tag1"},
-						{Id: 2, Name: "Tag2"},
+						{ID: 1, Name: "Tag1"},
+						{ID: 2, Name: "Tag2"},
 					},
 				},
 			},
@@ -501,8 +501,8 @@ func TestPriorityMergeDiff(t *testing.T) {
 						constants.CustomFieldSourceName: "test2",
 					},
 					Tags: []*objects.Tag{
-						{Id: 2, Name: "Tag1"},
-						{Id: 3, Name: "Tag2"},
+						{ID: 2, Name: "Tag1"},
+						{ID: 3, Name: "Tag2"},
 					},
 				},
 			},
@@ -518,7 +518,7 @@ func TestPriorityMergeDiff(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			outputDiff, err := JsonDiffMapExceptId(tt.newStruct, tt.existingStruct, tt.resetFields, tt.sourcePriority)
+			outputDiff, err := JSONDiffMapExceptID(tt.newStruct, tt.existingStruct, tt.resetFields, tt.sourcePriority)
 			if err != nil {
 				t.Errorf("JsonDiffMapExceptId() error = %v", err)
 			}

@@ -13,11 +13,11 @@ import (
 )
 
 // Syncs dnac sites to netbox inventory.
-func (ds *DnacSource) SyncSites(nbi *inventory.NetboxInventory) error {
+func (ds *Source) SyncSites(nbi *inventory.NetboxInventory) error {
 	for _, site := range ds.Sites {
 		dnacSite := &objects.Site{
 			NetboxObject: objects.NetboxObject{
-				Tags: ds.CommonConfig.SourceTags,
+				Tags: ds.Config.SourceTags,
 				CustomFields: map[string]string{
 					constants.CustomFieldSourceName: ds.SourceConfig.Name,
 				},
@@ -42,12 +42,12 @@ func (ds *DnacSource) SyncSites(nbi *inventory.NetboxInventory) error {
 		if err != nil {
 			return fmt.Errorf("adding site: %s", err)
 		}
-		ds.SiteId2nbSite[site.ID] = nbSite
+		ds.SiteID2nbSite[site.ID] = nbSite
 	}
 	return nil
 }
 
-func (ds *DnacSource) SyncVlans(nbi *inventory.NetboxInventory) error {
+func (ds *Source) SyncVlans(nbi *inventory.NetboxInventory) error {
 	for vid, vlan := range ds.Vlans {
 		vlanGroup, err := common.MatchVlanToGroup(nbi, vlan.InterfaceName, ds.VlanGroupRelations)
 		if err != nil {
@@ -59,7 +59,7 @@ func (ds *DnacSource) SyncVlans(nbi *inventory.NetboxInventory) error {
 		}
 		newVlan, err := nbi.AddVlan(&objects.Vlan{
 			NetboxObject: objects.NetboxObject{
-				Tags:        ds.CommonConfig.SourceTags,
+				Tags:        ds.Config.SourceTags,
 				Description: vlan.VLANType,
 				CustomFields: map[string]string{
 					constants.CustomFieldSourceName: ds.SourceConfig.Name,
@@ -79,7 +79,7 @@ func (ds *DnacSource) SyncVlans(nbi *inventory.NetboxInventory) error {
 			prefix := fmt.Sprintf("%s/%s", vlan.NetworkAddress, vlan.Prefix)
 			_, err = nbi.AddPrefix(&objects.Prefix{
 				NetboxObject: objects.NetboxObject{
-					Tags: ds.CommonConfig.SourceTags,
+					Tags: ds.Config.SourceTags,
 					CustomFields: map[string]string{
 						constants.CustomFieldSourceName: ds.SourceConfig.Name,
 					},
@@ -93,12 +93,12 @@ func (ds *DnacSource) SyncVlans(nbi *inventory.NetboxInventory) error {
 			}
 		}
 
-		ds.Vid2nbVlan[vid] = newVlan
+		ds.VID2nbVlan[vid] = newVlan
 	}
 	return nil
 }
 
-func (ds *DnacSource) SyncDevices(nbi *inventory.NetboxInventory) error {
+func (ds *Source) SyncDevices(nbi *inventory.NetboxInventory) error {
 	for _, device := range ds.Devices {
 		var description, comments string
 		if device.Description != "" {
@@ -120,7 +120,7 @@ func (ds *DnacSource) SyncDevices(nbi *inventory.NetboxInventory) error {
 		deviceRole, err := nbi.AddDeviceRole(&objects.DeviceRole{
 			Name:   device.Family,
 			Slug:   utils.Slugify(device.Family),
-			Color:  objects.COLOR_AQUA,
+			Color:  objects.ColorAqua,
 			VMRole: false,
 		})
 		if err != nil {
@@ -143,7 +143,7 @@ func (ds *DnacSource) SyncDevices(nbi *inventory.NetboxInventory) error {
 
 		var deviceSite *objects.Site
 		var ok bool
-		if deviceSite, ok = ds.SiteId2nbSite[ds.Device2Site[device.ID]]; !ok {
+		if deviceSite, ok = ds.SiteID2nbSite[ds.Device2Site[device.ID]]; !ok {
 			ds.Logger.Errorf("DeviceSite is not existing for device %s, this should not happen. This device will be skipped", device.ID)
 			continue
 		}
@@ -163,7 +163,7 @@ func (ds *DnacSource) SyncDevices(nbi *inventory.NetboxInventory) error {
 
 		nbDevice, err := nbi.AddDevice(&objects.Device{
 			NetboxObject: objects.NetboxObject{
-				Tags:        ds.CommonConfig.SourceTags,
+				Tags:        ds.Config.SourceTags,
 				Description: description,
 				CustomFields: map[string]string{
 					constants.CustomFieldSourceName: ds.SourceConfig.Name,
@@ -182,16 +182,16 @@ func (ds *DnacSource) SyncDevices(nbi *inventory.NetboxInventory) error {
 			return fmt.Errorf("adding dnac device: %s", err)
 		}
 
-		ds.DeviceId2nbDevice[device.ID] = nbDevice
+		ds.DeviceID2nbDevice[device.ID] = nbDevice
 	}
 
 	return nil
 }
 
-func (ds *DnacSource) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error {
-	for ifaceId, iface := range ds.Interfaces {
+func (ds *Source) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error {
+	for ifaceID, iface := range ds.Interfaces {
 		ifaceDescription := iface.Description
-		ifaceDevice := ds.DeviceId2nbDevice[iface.DeviceID]
+		ifaceDevice := ds.DeviceID2nbDevice[iface.DeviceID]
 		var ifaceDuplex *objects.InterfaceDuplex
 		switch iface.Duplex {
 		case "FullDuplex":
@@ -236,7 +236,7 @@ func (ds *DnacSource) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error
 
 		ifaceName := iface.PortName
 		if ifaceName == "" {
-			ds.Logger.Errorf("Unknown interface name for iface: %s", ifaceId)
+			ds.Logger.Errorf("Unknown interface name for iface: %s", ifaceID)
 			continue
 		}
 
@@ -251,7 +251,7 @@ func (ds *DnacSource) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error
 		switch iface.PortMode {
 		case "access":
 			ifaceMode = &objects.InterfaceModeAccess
-			ifaceAccessVlan = ds.Vid2nbVlan[vid]
+			ifaceAccessVlan = ds.VID2nbVlan[vid]
 		case "trunk":
 			ifaceMode = &objects.InterfaceModeTagged
 			// TODO: ifaceTrunkVlans = append(ifaceTrunkVlans, ds.Vid2nbVlan[vid])
@@ -267,7 +267,7 @@ func (ds *DnacSource) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error
 		nbIface, err := nbi.AddInterface(&objects.Interface{
 			NetboxObject: objects.NetboxObject{
 				Description: ifaceDescription,
-				Tags:        ds.CommonConfig.SourceTags,
+				Tags:        ds.Config.SourceTags,
 				CustomFields: map[string]string{
 					constants.CustomFieldSourceName: ds.SourceConfig.Name,
 				},
@@ -297,9 +297,9 @@ func (ds *DnacSource) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error
 				}
 				defaultMask = maskBits
 			}
-			nbIpAddress, err := nbi.AddIPAddress(&objects.IPAddress{
+			nbIPAddress, err := nbi.AddIPAddress(&objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
-					Tags: ds.CommonConfig.SourceTags,
+					Tags: ds.Config.SourceTags,
 					CustomFields: map[string]string{
 						constants.CustomFieldSourceName: ds.SourceConfig.Name,
 					},
@@ -308,7 +308,7 @@ func (ds *DnacSource) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error
 				Status:             &objects.IPAddressStatusActive,
 				DNSName:            utils.ReverseLookup(iface.IPv4Address),
 				AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
-				AssignedObjectId:   nbIface.Id,
+				AssignedObjectID:   nbIface.ID,
 			})
 			if err != nil {
 				return fmt.Errorf("adding ip address: %s", err)
@@ -316,10 +316,10 @@ func (ds *DnacSource) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error
 
 			// To determine if this interface, has the same IP address as the device's management IP
 			// we need to check if management IP is in the same subnet as this interface
-			deviceManagementIp := ds.Devices[iface.DeviceID].ManagementIPAddress
-			if deviceManagementIp == iface.IPv4Address {
+			deviceManagementIP := ds.Devices[iface.DeviceID].ManagementIPAddress
+			if deviceManagementIP == iface.IPv4Address {
 				deviceCopy := *ifaceDevice
-				deviceCopy.PrimaryIPv4 = nbIpAddress
+				deviceCopy.PrimaryIPv4 = nbIPAddress
 				_, err = nbi.AddDevice(&deviceCopy)
 				if err != nil {
 					return fmt.Errorf("adding primary ipv4 address: %s", err)
@@ -327,7 +327,7 @@ func (ds *DnacSource) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error
 			}
 		}
 
-		ds.InterfaceId2nbInterface[ifaceId] = nbIface
+		ds.InterfaceID2nbInterface[ifaceID] = nbIface
 	}
 	return nil
 }

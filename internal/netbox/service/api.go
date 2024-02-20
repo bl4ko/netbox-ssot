@@ -14,9 +14,9 @@ import (
 // It is created via constructor func newNetboxAPI().
 type NetboxAPI struct {
 	Logger     *logger.Logger
-	HttpClient *http.Client
+	HTTPClient *http.Client
 	BaseURL    string
-	ApiKey     string
+	APIKey     string
 	Timeout    int // in seconds
 	MaxRetires int
 }
@@ -49,10 +49,10 @@ func NewNetBoxAPI(logger *logger.Logger, baseURL string, apiToken string, valida
 		}
 	}
 	return &NetboxAPI{
-		HttpClient: client,
+		HTTPClient: client,
 		Logger:     logger,
 		BaseURL:    baseURL,
-		ApiKey:     apiToken,
+		APIKey:     apiToken,
 		Timeout:    timeout,
 	}
 }
@@ -67,10 +67,10 @@ func (api *NetboxAPI) doRequest(method string, path string, body io.Reader) (*AP
 	}
 
 	// We add necessary headers to the request
-	req.Header.Add("Authorization", "Token "+api.ApiKey)
+	req.Header.Add("Authorization", "Token "+api.APIKey)
 	req.Header.Add("Content-Type", "application/json")
 
-	resp, err := api.HttpClient.Do(req)
+	resp, err := api.HTTPClient.Do(req)
 	if err != nil {
 		return nil, err
 	}

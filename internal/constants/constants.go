@@ -12,16 +12,16 @@ const (
 
 // Default mappings of sources to colors (for tags).
 var DefaultSourceToTagColorMap = map[SourceType]string{
-	Ovirt:  objects.COLOR_DARK_RED,
-	Vmware: objects.COLOR_LIGHT_GREEN,
-	Dnac:   objects.COLOR_LIGHT_BLUE,
+	Ovirt:  objects.ColorDarkRed,
+	Vmware: objects.ColorLightGreen,
+	Dnac:   objects.ColorLightBlue,
 }
 
 // Object for mapping source type to tag color.
 var SourceTypeToTagColorMap = map[SourceType]string{
-	Ovirt:  objects.COLOR_RED,
-	Vmware: objects.COLOR_GREEN,
-	Dnac:   objects.COLOR_BLUE,
+	Ovirt:  objects.ColorRed,
+	Vmware: objects.ColorGreen,
+	Dnac:   objects.ColorBlue,
 }
 
 const (

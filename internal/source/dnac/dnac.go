@@ -12,8 +12,8 @@ import (
 	dnac "github.com/cisco-en-programmability/dnacenter-go-sdk/v5/sdk"
 )
 
-type DnacSource struct {
-	common.CommonConfig
+type Source struct {
+	common.Config
 
 	// Dnac fetched data. Initialized in init functions.
 	Sites      map[string]dnac.ResponseSitesGetSiteResponse                // SiteId -> Site
@@ -23,22 +23,22 @@ type DnacSource struct {
 	// Relations between dnac data. Initialized in init functions.
 	Site2Devices          map[string]map[string]bool // Site Id - > set of device Ids
 	Device2Site           map[string]string          // Device Id -> Site Id
-	DeviceId2InterfaceIds map[string][]string        // DeviceId -> []InterfaceId
+	DeviceID2InterfaceIDs map[string][]string        // DeviceId -> []InterfaceID
 
 	// Netbox related data for easier access. Initialized in sync functions.
-	Vid2nbVlan              map[int]*objects.Vlan         // VlanId -> nbVlan
-	SiteId2nbSite           map[string]*objects.Site      // SiteId -> nbSite
-	DeviceId2nbDevice       map[string]*objects.Device    // DeviceId -> nbDevice
-	InterfaceId2nbInterface map[string]*objects.Interface // InterfaceId -> nbInterface
+	VID2nbVlan              map[int]*objects.Vlan         // VlanId -> nbVlan
+	SiteID2nbSite           map[string]*objects.Site      // SiteId -> nbSite
+	DeviceID2nbDevice       map[string]*objects.Device    // DeviceId -> nbDevice
+	InterfaceID2nbInterface map[string]*objects.Interface // InterfaceId -> nbInterface
 
 	// User defined relations
 	VlanGroupRelations  map[string]string
 	VlanTenantRelations map[string]string
 }
 
-func (ds *DnacSource) Init() error {
-	dnacUrl := fmt.Sprintf("%s://%s:%d", ds.CommonConfig.SourceConfig.HTTPScheme, ds.CommonConfig.SourceConfig.Hostname, ds.CommonConfig.SourceConfig.Port)
-	Client, err := dnac.NewClientWithOptions(dnacUrl, ds.SourceConfig.Username, ds.SourceConfig.Password, "false", strconv.FormatBool(ds.SourceConfig.ValidateCert), nil)
+func (ds *Source) Init() error {
+	dnacURL := fmt.Sprintf("%s://%s:%d", ds.Config.SourceConfig.HTTPScheme, ds.Config.SourceConfig.Hostname, ds.Config.SourceConfig.Port)
+	Client, err := dnac.NewClientWithOptions(dnacURL, ds.SourceConfig.Username, ds.SourceConfig.Password, "false", strconv.FormatBool(ds.SourceConfig.ValidateCert), nil)
 	if err != nil {
 		return fmt.Errorf("creating dnac client: %s", err)
 	}
@@ -69,12 +69,12 @@ func (ds *DnacSource) Init() error {
 	return nil
 }
 
-func (ds *DnacSource) Sync(nbi *inventory.NetboxInventory) error {
+func (ds *Source) Sync(nbi *inventory.NetboxInventory) error {
 	// initialize variables, that are shared between sync functions
-	ds.Vid2nbVlan = make(map[int]*objects.Vlan)
-	ds.SiteId2nbSite = make(map[string]*objects.Site)
-	ds.DeviceId2nbDevice = make(map[string]*objects.Device)
-	ds.InterfaceId2nbInterface = make(map[string]*objects.Interface)
+	ds.VID2nbVlan = make(map[int]*objects.Vlan)
+	ds.SiteID2nbSite = make(map[string]*objects.Site)
+	ds.DeviceID2nbDevice = make(map[string]*objects.Device)
+	ds.InterfaceID2nbInterface = make(map[string]*objects.Interface)
 
 	syncFunctions := []func(*inventory.NetboxInventory) error{
 		ds.SyncSites,

@@ -7,7 +7,7 @@ import (
 	dnac "github.com/cisco-en-programmability/dnacenter-go-sdk/v5/sdk"
 )
 
-func (ds *DnacSource) InitSites(c *dnac.Client) error {
+func (ds *Source) InitSites(c *dnac.Client) error {
 	offset := 0
 	limit := 100
 	allSites := make([]dnac.ResponseSitesGetSiteResponse, 0)
@@ -32,7 +32,7 @@ func (ds *DnacSource) InitSites(c *dnac.Client) error {
 	return nil
 }
 
-func (ds *DnacSource) InitDevices(c *dnac.Client) error {
+func (ds *Source) InitDevices(c *dnac.Client) error {
 	offset := 0.
 	limit := 100.
 	allDevices := make([]dnac.ResponseDevicesGetDeviceListResponse, 0)
@@ -64,8 +64,8 @@ func (ds *DnacSource) InitDevices(c *dnac.Client) error {
 }
 
 // Function that gets all vlans for device id.
-func (ds *DnacSource) addVlansForDevice(c *dnac.Client, deviceId string) error {
-	vlans, _, err := c.Devices.GetDeviceInterfaceVLANs(deviceId, nil)
+func (ds *Source) addVlansForDevice(c *dnac.Client, deviceID string) error {
+	vlans, _, err := c.Devices.GetDeviceInterfaceVLANs(deviceID, nil)
 	if err != nil {
 		return err
 	}
@@ -79,7 +79,7 @@ func (ds *DnacSource) addVlansForDevice(c *dnac.Client, deviceId string) error {
 	return nil
 }
 
-func (ds *DnacSource) InitInterfaces(c *dnac.Client) error {
+func (ds *Source) InitInterfaces(c *dnac.Client) error {
 	offset := 0
 	limit := 100
 	allInterfaces := make([]dnac.ResponseDevicesGetAllInterfacesResponse, 0)
@@ -99,13 +99,13 @@ func (ds *DnacSource) InitInterfaces(c *dnac.Client) error {
 		offset += limit
 	}
 	ds.Interfaces = make(map[string]dnac.ResponseDevicesGetAllInterfacesResponse, len(allInterfaces))
-	ds.DeviceId2InterfaceIds = make(map[string][]string)
+	ds.DeviceID2InterfaceIDs = make(map[string][]string)
 	for _, intf := range allInterfaces {
 		ds.Interfaces[intf.ID] = intf
-		if ds.DeviceId2InterfaceIds[intf.DeviceID] == nil {
-			ds.DeviceId2InterfaceIds[intf.DeviceID] = make([]string, 0)
+		if ds.DeviceID2InterfaceIDs[intf.DeviceID] == nil {
+			ds.DeviceID2InterfaceIDs[intf.DeviceID] = make([]string, 0)
 		}
-		ds.DeviceId2InterfaceIds[intf.DeviceID] = append(ds.DeviceId2InterfaceIds[intf.DeviceID], intf.ID)
+		ds.DeviceID2InterfaceIDs[intf.DeviceID] = append(ds.DeviceID2InterfaceIDs[intf.DeviceID], intf.ID)
 	}
 	return nil
 }
@@ -114,7 +114,7 @@ func (ds *DnacSource) InitInterfaces(c *dnac.Client) error {
 // This is necessary to find relations between devices and sites.
 //
 // This function has to run after InitSites.
-func (ds *DnacSource) InitMemberships(c *dnac.Client) error {
+func (ds *Source) InitMemberships(c *dnac.Client) error {
 	offset := 0
 	limit := 100
 	ds.Site2Devices = make(map[string]map[string]bool)
@@ -125,16 +125,16 @@ func (ds *DnacSource) InitMemberships(c *dnac.Client) error {
 			if len(*membershipResp.Device) > 0 {
 				deviceResponses := *membershipResp.Device
 				for _, deviceResponse := range deviceResponses {
-					siteId := deviceResponse.SiteID
+					siteID := deviceResponse.SiteID
 					devices := *deviceResponse.Response
 					for _, device := range devices {
 						if deviceMap, ok := device.(map[string]interface{}); ok {
-							if deviceId, ok := deviceMap["instanceUuid"].(string); ok {
-								if ds.Site2Devices[siteId] == nil {
-									ds.Site2Devices[siteId] = make(map[string]bool)
+							if deviceID, ok := deviceMap["instanceUuid"].(string); ok {
+								if ds.Site2Devices[siteID] == nil {
+									ds.Site2Devices[siteID] = make(map[string]bool)
 								}
-								ds.Site2Devices[siteId][deviceId] = true
-								ds.Device2Site[deviceId] = siteId
+								ds.Site2Devices[siteID][deviceID] = true
+								ds.Device2Site[deviceID] = siteID
 							}
 						}
 					}

@@ -15,7 +15,7 @@ import (
 	"github.com/vmware/govmomi/vim25/types"
 )
 
-func (vc *VmwareSource) syncNetworks(nbi *inventory.NetboxInventory) error {
+func (vc *Source) syncNetworks(nbi *inventory.NetboxInventory) error {
 	for _, dvpg := range vc.Networks.DistributedVirtualPortgroups {
 		// TODO: currently we are syncing only vlans
 		// Get vlanGroup from relations
@@ -28,17 +28,17 @@ func (vc *VmwareSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 		if err != nil {
 			return fmt.Errorf("vlanTenant: %s", err)
 		}
-		if len(dvpg.VlanIds) == 1 && len(dvpg.VlanIdRanges) == 0 {
+		if len(dvpg.VlanIDs) == 1 && len(dvpg.VlanIDRanges) == 0 {
 			_, err := nbi.AddVlan(&objects.Vlan{
 				NetboxObject: objects.NetboxObject{
-					Tags: vc.CommonConfig.SourceTags,
+					Tags: vc.Config.SourceTags,
 					CustomFields: map[string]string{
 						constants.CustomFieldSourceName: vc.SourceConfig.Name,
 					},
 				},
 				Name:   dvpg.Name,
 				Group:  vlanGroup,
-				Vid:    dvpg.VlanIds[0],
+				Vid:    dvpg.VlanIDs[0],
 				Status: &objects.VlanStatusActive,
 				Tenant: vlanTenant,
 			})
@@ -50,12 +50,12 @@ func (vc *VmwareSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
-func (vc *VmwareSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
+func (vc *Source) syncDatacenters(nbi *inventory.NetboxInventory) error {
 	for _, dc := range vc.DataCenters {
 		nbClusterGroup := &objects.ClusterGroup{
 			NetboxObject: objects.NetboxObject{
 				Description: fmt.Sprintf("Datacenter from source %s", vc.SourceConfig.Hostname),
-				Tags:        vc.CommonConfig.SourceTags,
+				Tags:        vc.Config.SourceTags,
 				CustomFields: map[string]string{
 					constants.CustomFieldSourceName: vc.SourceConfig.Name,
 				},
@@ -71,10 +71,10 @@ func (vc *VmwareSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
-func (vc *VmwareSource) syncClusters(nbi *inventory.NetboxInventory) error {
+func (vc *Source) syncClusters(nbi *inventory.NetboxInventory) error {
 	clusterType := &objects.ClusterType{
 		NetboxObject: objects.NetboxObject{
-			Tags: vc.CommonConfig.SourceTags,
+			Tags: vc.Config.SourceTags,
 			CustomFields: map[string]string{
 				constants.CustomFieldSourceName: vc.SourceConfig.Name,
 			},
@@ -87,12 +87,12 @@ func (vc *VmwareSource) syncClusters(nbi *inventory.NetboxInventory) error {
 		return fmt.Errorf("failed to add vmware ClusterType: %v", err)
 	}
 	// Then sync vmware Clusters as NetBoxClusters
-	for clusterId, cluster := range vc.Clusters {
+	for clusterID, cluster := range vc.Clusters {
 		clusterName := cluster.Name
 
 		var clusterGroup *objects.ClusterGroup
-		datacenterId := vc.Cluster2Datacenter[clusterId]
-		clusterGroup = nbi.ClusterGroupsIndexByName[vc.DataCenters[datacenterId].Name]
+		datacenterID := vc.Cluster2Datacenter[clusterID]
+		clusterGroup = nbi.ClusterGroupsIndexByName[vc.DataCenters[datacenterID].Name]
 
 		var clusterSite *objects.Site
 		if vc.ClusterSiteRelations != nil {
@@ -124,7 +124,7 @@ func (vc *VmwareSource) syncClusters(nbi *inventory.NetboxInventory) error {
 
 		nbCluster := &objects.Cluster{
 			NetboxObject: objects.NetboxObject{
-				Tags: vc.CommonConfig.SourceTags,
+				Tags: vc.Config.SourceTags,
 				CustomFields: map[string]string{
 					constants.CustomFieldSourceName: vc.SourceConfig.Name,
 				},
@@ -146,11 +146,11 @@ func (vc *VmwareSource) syncClusters(nbi *inventory.NetboxInventory) error {
 
 // Host in vmware is a represented as device in netbox with a
 // custom role Server.
-func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
-	for hostId, host := range vc.Hosts {
+func (vc *Source) syncHosts(nbi *inventory.NetboxInventory) error {
+	for hostID, host := range vc.Hosts {
 		var err error
 		hostName := host.Name
-		hostCluster := nbi.ClustersIndexByName[vc.Clusters[vc.Host2Cluster[hostId]].Name]
+		hostCluster := nbi.ClustersIndexByName[vc.Clusters[vc.Host2Cluster[hostID]].Name]
 
 		hostSite, err := common.MatchHostToSite(nbi, hostName, vc.HostSiteRelations)
 		if err != nil {
@@ -223,13 +223,13 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 			return fmt.Errorf("failed adding vmware Platform %v with error: %s", hostPlatform, err)
 		}
 
-		hostCpuCores := host.Summary.Hardware.NumCpuCores
+		hostCPUCores := host.Summary.Hardware.NumCpuCores
 		hostMemGB := host.Summary.Hardware.MemorySize / constants.KiB / constants.KiB / constants.KiB
 
 		nbHost := &objects.Device{
-			NetboxObject: objects.NetboxObject{Tags: vc.CommonConfig.SourceTags, CustomFields: map[string]string{
+			NetboxObject: objects.NetboxObject{Tags: vc.Config.SourceTags, CustomFields: map[string]string{
 				constants.CustomFieldSourceName:       vc.SourceConfig.Name,
-				constants.CustomFieldHostCpuCoresName: fmt.Sprintf("%d", hostCpuCores),
+				constants.CustomFieldHostCPUCoresName: fmt.Sprintf("%d", hostCPUCores),
 				constants.CustomFieldHostMemoryName:   fmt.Sprintf("%d GB", hostMemGB),
 			}},
 			Name:         hostName,
@@ -258,7 +258,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
-func (vc *VmwareSource) syncHostNics(nbi *inventory.NetboxInventory, vcHost mo.HostSystem, nbHost *objects.Device) error {
+func (vc *Source) syncHostNics(nbi *inventory.NetboxInventory, vcHost mo.HostSystem, nbHost *objects.Device) error {
 	// Sync host's physical interfaces
 	err := vc.syncHostPhysicalNics(nbi, vcHost, nbHost)
 	if err != nil {
@@ -274,7 +274,7 @@ func (vc *VmwareSource) syncHostNics(nbi *inventory.NetboxInventory, vcHost mo.H
 	return nil
 }
 
-func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetboxInventory, vcHost mo.HostSystem, nbHost *objects.Device) error {
+func (vc *Source) syncHostPhysicalNics(nbi *inventory.NetboxInventory, vcHost mo.HostSystem, nbHost *objects.Device) error {
 	// Collect data from physical interfaces
 	for _, pnic := range vcHost.Config.Network.Pnic {
 		pnicName := pnic.Device
@@ -321,20 +321,20 @@ func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetboxInventory, vcH
 		}
 
 		// Check vlans on this pnic
-		vlanIdMap := map[int]*objects.Vlan{} // set of vlans
+		vlanIDMap := map[int]*objects.Vlan{} // set of vlans
 		for portgroupName, portgroupData := range vc.Networks.HostPortgroups[nbHost.Name] {
 			if slices.Contains(portgroupData.nics, pnicName) {
-				if portgroupData.vlanId == 0 || portgroupData.vlanId > 4094 {
-					vlanIdMap[portgroupData.vlanId] = &objects.Vlan{Vid: portgroupData.vlanId}
+				if portgroupData.vlanID == 0 || portgroupData.vlanID > 4094 {
+					vlanIDMap[portgroupData.vlanID] = &objects.Vlan{Vid: portgroupData.vlanID}
 					continue
 				}
 				// Check if vlan with this vid already exists, else create it
-				if vlanName, ok := vc.Networks.Vid2Name[portgroupData.vlanId]; ok {
+				if vlanName, ok := vc.Networks.Vid2Name[portgroupData.vlanID]; ok {
 					vlanGroup, err := common.MatchVlanToGroup(nbi, vlanName, vc.VlanGroupRelations)
 					if err != nil {
 						return fmt.Errorf("vlanGroup: %s", err)
 					}
-					vlanIdMap[portgroupData.vlanId] = nbi.VlansIndexByVlanGroupIdAndVid[vlanGroup.Id][portgroupData.vlanId]
+					vlanIDMap[portgroupData.vlanID] = nbi.VlansIndexByVlanGroupIDAndVID[vlanGroup.ID][portgroupData.vlanID]
 				} else {
 					vlanGroup, err := common.MatchVlanToGroup(nbi, portgroupName, vc.VlanGroupRelations)
 					if err != nil {
@@ -342,42 +342,42 @@ func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetboxInventory, vcH
 					}
 					var newVlan *objects.Vlan
 					var ok bool
-					newVlan, ok = nbi.VlansIndexByVlanGroupIdAndVid[vlanGroup.Id][portgroupData.vlanId]
+					newVlan, ok = nbi.VlansIndexByVlanGroupIDAndVID[vlanGroup.ID][portgroupData.vlanID]
 					if !ok {
 						newVlan, err = nbi.AddVlan(&objects.Vlan{
 							NetboxObject: objects.NetboxObject{
-								Tags: vc.CommonConfig.SourceTags,
+								Tags: vc.Config.SourceTags,
 								CustomFields: map[string]string{
 									constants.CustomFieldSourceName: vc.SourceConfig.Name,
 								},
 							},
 							Status: &objects.VlanStatusActive,
-							Name:   fmt.Sprintf("VLAN%d_%s", portgroupData.vlanId, portgroupName),
-							Vid:    portgroupData.vlanId,
+							Name:   fmt.Sprintf("VLAN%d_%s", portgroupData.vlanID, portgroupName),
+							Vid:    portgroupData.vlanID,
 							Group:  vlanGroup,
 						})
 						if err != nil {
 							return fmt.Errorf("new vlan: %s", err)
 						}
 					}
-					vlanIdMap[portgroupData.vlanId] = newVlan
+					vlanIDMap[portgroupData.vlanID] = newVlan
 				}
 			}
 		}
 
 		// Determine interface mode for non VM traffic NIC, from vlans data
 		var taggedVlanList []*objects.Vlan // when mode="tagged"
-		if len(vlanIdMap) > 0 {
+		if len(vlanIDMap) > 0 {
 			switch {
-			case len(vlanIdMap) == 1 && vlanIdMap[0] != nil:
+			case len(vlanIDMap) == 1 && vlanIDMap[0] != nil:
 				pnicMode = &objects.InterfaceModeAccess
-			case vlanIdMap[4095] != nil:
+			case vlanIDMap[4095] != nil:
 				pnicMode = &objects.InterfaceModeTaggedAll
 			default:
 				pnicMode = &objects.InterfaceModeTagged
 				taggedVlanList = []*objects.Vlan{}
 				if pnicMode == &objects.InterfaceModeTagged {
-					for vid, vlan := range vlanIdMap {
+					for vid, vlan := range vlanIDMap {
 						if vid == 0 {
 							continue
 						}
@@ -395,7 +395,7 @@ func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetboxInventory, vcH
 		// After collecting all of the data add interface to nbi
 		_, err := nbi.AddInterface(&objects.Interface{
 			NetboxObject: objects.NetboxObject{
-				Tags:        vc.CommonConfig.SourceTags,
+				Tags:        vc.Config.SourceTags,
 				Description: pnicDescription,
 				CustomFields: map[string]string{
 					constants.CustomFieldSourceName: vc.SourceConfig.Name,
@@ -418,7 +418,7 @@ func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetboxInventory, vcH
 	return nil
 }
 
-func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetboxInventory, vcHost mo.HostSystem, nbHost *objects.Device) error {
+func (vc *Source) syncHostVirtualNics(nbi *inventory.NetboxInventory, vcHost mo.HostSystem, nbHost *objects.Device) error {
 	// Collect data over all virtual interfaces
 	for _, vnic := range vcHost.Config.Network.Vnic {
 		vnicName := vnic.Device
@@ -428,36 +428,36 @@ func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetboxInventory, vcHo
 			vnicDvPortgroupKey = vnic.Spec.DistributedVirtualPort.PortgroupKey
 		}
 		vnicDvPortgroupData, vnicDvPortgroupDataOk := vc.Networks.DistributedVirtualPortgroups[vnicDvPortgroupKey]
-		vnicPortgroupVlanId := 0
-		vnicDvPortgroupVlanIds := []int{}
+		vnicPortgroupVlanID := 0
+		vnicDvPortgroupVlanIDs := []int{}
 		var vnicMode *objects.InterfaceMode
 		var vlanDescription, vnicDescription string
 
 		// Get data from local portgroup, or distributed portgroup
 		if vnicPortgroupDataOk {
-			vnicPortgroupVlanId = vnicPortgroupData.vlanId
+			vnicPortgroupVlanID = vnicPortgroupData.vlanID
 			vnicSwitch := vnicPortgroupData.vswitch
-			vnicDescription = fmt.Sprintf("%s (%s, vlan ID: %d)", vnic.Portgroup, vnicSwitch, vnicPortgroupVlanId)
+			vnicDescription = fmt.Sprintf("%s (%s, vlan ID: %d)", vnic.Portgroup, vnicSwitch, vnicPortgroupVlanID)
 		} else if vnicDvPortgroupDataOk {
 			vnicDescription = vnicDvPortgroupData.Name
-			vnicDvPortgroupVlanIds = vnicDvPortgroupData.VlanIds
-			if len(vnicDvPortgroupVlanIds) == 1 && vnicDvPortgroupData.VlanIds[0] == 4095 {
+			vnicDvPortgroupVlanIDs = vnicDvPortgroupData.VlanIDs
+			if len(vnicDvPortgroupVlanIDs) == 1 && vnicDvPortgroupData.VlanIDs[0] == 4095 {
 				vnicDescription = "all vlans"
 				vnicMode = &objects.InterfaceModeTaggedAll
 			} else {
-				if len(vnicDvPortgroupData.VlanIdRanges) > 0 {
-					vlanDescription = fmt.Sprintf("vlan IDs: %s", strings.Join(vnicDvPortgroupData.VlanIdRanges, ","))
+				if len(vnicDvPortgroupData.VlanIDRanges) > 0 {
+					vlanDescription = fmt.Sprintf("vlan IDs: %s", strings.Join(vnicDvPortgroupData.VlanIDRanges, ","))
 				} else {
-					vlanDescription = fmt.Sprintf("vlan ID: %d", vnicDvPortgroupData.VlanIds[0])
+					vlanDescription = fmt.Sprintf("vlan ID: %d", vnicDvPortgroupData.VlanIDs[0])
 				}
-				if len(vnicDvPortgroupData.VlanIds) == 1 && vnicDvPortgroupData.VlanIds[0] == 0 {
+				if len(vnicDvPortgroupData.VlanIDs) == 1 && vnicDvPortgroupData.VlanIDs[0] == 0 {
 					vnicMode = &objects.InterfaceModeAccess
 				} else {
 					vnicMode = &objects.InterfaceModeTagged
 				}
 			}
-			vnicDvPortgroupDwSwitchUuid := vnic.Spec.DistributedVirtualPort.SwitchUuid
-			vnicVswitch, vnicVswitchOk := vc.Networks.HostVirtualSwitches[vcHost.Name][vnicDvPortgroupDwSwitchUuid]
+			vnicDvPortgroupDwSwitchUUID := vnic.Spec.DistributedVirtualPort.SwitchUuid
+			vnicVswitch, vnicVswitchOk := vc.Networks.HostVirtualSwitches[vcHost.Name][vnicDvPortgroupDwSwitchUUID]
 			if vnicVswitchOk {
 				vnicDescription = fmt.Sprintf("%s (%v, %s)", vnicDescription, vnicVswitch, vlanDescription)
 			}
@@ -465,12 +465,12 @@ func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetboxInventory, vcHo
 
 		var vnicUntaggedVlan *objects.Vlan
 		var vnicTaggedVlans []*objects.Vlan
-		if vnicPortgroupData != nil && vnicPortgroupVlanId != 0 {
-			vnicUntaggedVlanGroup, err := common.MatchVlanToGroup(nbi, vc.Networks.Vid2Name[vnicPortgroupVlanId], vc.VlanGroupRelations)
+		if vnicPortgroupData != nil && vnicPortgroupVlanID != 0 {
+			vnicUntaggedVlanGroup, err := common.MatchVlanToGroup(nbi, vc.Networks.Vid2Name[vnicPortgroupVlanID], vc.VlanGroupRelations)
 			if err != nil {
 				return fmt.Errorf("vlan group: %s", err)
 			}
-			vnicUntaggedVlan = nbi.VlansIndexByVlanGroupIdAndVid[vnicUntaggedVlanGroup.Id][vnicPortgroupVlanId]
+			vnicUntaggedVlan = nbi.VlansIndexByVlanGroupIDAndVID[vnicUntaggedVlanGroup.ID][vnicPortgroupVlanID]
 			vnicMode = &objects.InterfaceModeAccess
 			// vnicUntaggedVlan = &objects.Vlan{
 			// 	Name:   fmt.Sprintf("ESXi %s (ID: %d) (%s)", vnic.Portgroup, vnicPortgroupVlanId, nbHost.Site.Name),
@@ -478,18 +478,18 @@ func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetboxInventory, vcHo
 			// 	Tenant: nbHost.Tenant,
 			// }
 		} else if vnicDvPortgroupData != nil {
-			for _, vnicDvPortgroupDataVlanId := range vnicDvPortgroupVlanIds {
+			for _, vnicDvPortgroupDataVlanID := range vnicDvPortgroupVlanIDs {
 				if vnicMode != &objects.InterfaceModeTagged {
 					break
 				}
-				if vnicDvPortgroupDataVlanId == 0 {
+				if vnicDvPortgroupDataVlanID == 0 {
 					continue
 				}
-				vnicTaggedVlanGroup, err := common.MatchVlanToGroup(nbi, vc.Networks.Vid2Name[vnicDvPortgroupDataVlanId], vc.VlanGroupRelations)
+				vnicTaggedVlanGroup, err := common.MatchVlanToGroup(nbi, vc.Networks.Vid2Name[vnicDvPortgroupDataVlanID], vc.VlanGroupRelations)
 				if err != nil {
 					return fmt.Errorf("vlan group: %s", err)
 				}
-				vnicTaggedVlans = append(vnicTaggedVlans, nbi.VlansIndexByVlanGroupIdAndVid[vnicTaggedVlanGroup.Id][vnicDvPortgroupDataVlanId])
+				vnicTaggedVlans = append(vnicTaggedVlans, nbi.VlansIndexByVlanGroupIDAndVID[vnicTaggedVlanGroup.ID][vnicDvPortgroupDataVlanID])
 				// vnicTaggedVlans = append(vnicTaggedVlans, &objects.Vlan{
 				// 	Name:   fmt.Sprintf("%s-%d", vnicDvPortgroupData.Name, vnicDvPortgroupDataVlanId),
 				// 	Vid:    vnicDvPortgroupDataVlanId,
@@ -500,7 +500,7 @@ func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetboxInventory, vcHo
 
 		nbVnic, err := nbi.AddInterface(&objects.Interface{
 			NetboxObject: objects.NetboxObject{
-				Tags:        vc.CommonConfig.SourceTags,
+				Tags:        vc.Config.SourceTags,
 				Description: vnicDescription,
 				CustomFields: map[string]string{
 					constants.CustomFieldSourceName: vc.SourceConfig.Name,
@@ -519,50 +519,50 @@ func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetboxInventory, vcHo
 			return err
 		}
 
-		var ipv4Address *objects.IPAddress
+		var nbIPAddress *objects.IPAddress
 		// Get IPv4 address for this vnic. TODO: filter
-		ipv4_address := vnic.Spec.Ip.IpAddress
-		ipv4_mask_bits, err := utils.MaskToBits(vnic.Spec.Ip.SubnetMask)
+		ipv4Address := vnic.Spec.Ip.IpAddress
+		ipv4MaskBits, err := utils.MaskToBits(vnic.Spec.Ip.SubnetMask)
 		if err != nil {
 			return fmt.Errorf("mask to bits: %s", err)
 		}
-		ipv4_dns := utils.ReverseLookup(ipv4_address)
-		ipv4Address, err = nbi.AddIPAddress(&objects.IPAddress{
+		ipv4DNS := utils.ReverseLookup(ipv4Address)
+		nbIPAddress, err = nbi.AddIPAddress(&objects.IPAddress{
 			NetboxObject: objects.NetboxObject{
-				Tags: vc.CommonConfig.SourceTags,
+				Tags: vc.Config.SourceTags,
 				CustomFields: map[string]string{
 					constants.CustomFieldSourceName: vc.SourceConfig.Name,
 				},
 			},
-			Address:            fmt.Sprintf("%s/%d", ipv4_address, ipv4_mask_bits),
+			Address:            fmt.Sprintf("%s/%d", ipv4Address, ipv4MaskBits),
 			Status:             &objects.IPAddressStatusActive, // TODO
-			DNSName:            ipv4_dns,
+			DNSName:            ipv4DNS,
 			Tenant:             nbHost.Tenant,
 			AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
-			AssignedObjectId:   nbVnic.Id,
+			AssignedObjectID:   nbVnic.ID,
 		})
 		if err != nil {
 			return err
 		}
 
-		var ipv6Address *objects.IPAddress
+		var nbIPv6Address *objects.IPAddress
 		if vnic.Spec.Ip.IpV6Config != nil {
-			for _, ipv6_entry := range vnic.Spec.Ip.IpV6Config.IpV6Address {
-				ipv6_address := ipv6_entry.IpAddress
-				ipv6_mask := ipv6_entry.PrefixLength
+			for _, ipv6Entry := range vnic.Spec.Ip.IpV6Config.IpV6Address {
+				ipv6Address := ipv6Entry.IpAddress
+				ipv6Mask := ipv6Entry.PrefixLength
 				// TODO: Filter out ipv6 addresses
-				ipv6Address, err = nbi.AddIPAddress(&objects.IPAddress{
+				nbIPv6Address, err = nbi.AddIPAddress(&objects.IPAddress{
 					NetboxObject: objects.NetboxObject{
-						Tags: vc.CommonConfig.SourceTags,
+						Tags: vc.Config.SourceTags,
 						CustomFields: map[string]string{
 							constants.CustomFieldSourceName: vc.SourceConfig.Name,
 						},
 					},
-					Address:            fmt.Sprintf("%s/%d", ipv6_address, ipv6_mask),
+					Address:            fmt.Sprintf("%s/%d", ipv6Address, ipv6Mask),
 					Status:             &objects.IPAddressStatusActive, // TODO
 					Tenant:             nbHost.Tenant,
 					AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
-					AssignedObjectId:   nbVnic.Id,
+					AssignedObjectID:   nbVnic.ID,
 				})
 				if err != nil {
 					return err
@@ -571,9 +571,9 @@ func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetboxInventory, vcHo
 		}
 
 		// Update host's primary ipv4: TODO, determine if primary or not
-		if nbHost.PrimaryIPv4 == nil && ipv4Address != nil {
+		if nbHost.PrimaryIPv4 == nil && nbIPAddress != nil {
 			newNbHost := *nbHost
-			newNbHost.PrimaryIPv4 = ipv4Address
+			newNbHost.PrimaryIPv4 = nbIPAddress
 			nbHost, err = nbi.AddDevice(&newNbHost)
 			if err != nil {
 				return fmt.Errorf("new Host's primaryIpv4: %s", err)
@@ -581,9 +581,9 @@ func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetboxInventory, vcHo
 		}
 
 		// Update host's primary ipv4: TODO, determine if primary or not
-		if nbHost.PrimaryIPv6 == nil && ipv6Address != nil {
+		if nbHost.PrimaryIPv6 == nil && nbIPv6Address != nil {
 			newNbHost := *nbHost
-			newNbHost.PrimaryIPv6 = ipv6Address
+			newNbHost.PrimaryIPv6 = nbIPv6Address
 			nbHost, err = nbi.AddDevice(&newNbHost)
 			if err != nil {
 				return fmt.Errorf("new Host's primaryIpv6: %s", err)
@@ -593,7 +593,7 @@ func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetboxInventory, vcHo
 	return nil
 }
 
-func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
+func (vc *Source) syncVms(nbi *inventory.NetboxInventory) error {
 	for vmKey, vm := range vc.Vms {
 		// Check if vm is a template, we don't add templates into netbox.
 		if vm.Config != nil {
@@ -603,10 +603,10 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
 		}
 
 		vmName := vm.Name
-		vmHostName := vc.Hosts[vc.Vm2Host[vmKey]].Name
+		vmHostName := vc.Hosts[vc.VM2Host[vmKey]].Name
 
 		// Tenant is received from VmTenantRelations
-		vmTenant, err := common.MatchVmToTenant(nbi, vmName, vc.VmTenantRelations)
+		vmTenant, err := common.MatchVMToTenant(nbi, vmName, vc.VMTenantRelations)
 		if err != nil {
 			return fmt.Errorf("vm's Tenant: %s", err)
 		}
@@ -616,7 +616,7 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
 		if err != nil {
 			return fmt.Errorf("vm's Site: %s", err)
 		}
-		vmHost := nbi.DevicesIndexByNameAndSiteId[vmHostName][vmSite.Id]
+		vmHost := nbi.DevicesIndexByNameAndSiteID[vmHostName][vmSite.ID]
 
 		// Cluster of the vm is same as the host
 		vmCluster := vmHost.Cluster
@@ -666,7 +666,7 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
 		if len(vm.Summary.CustomValue) > 0 {
 			for _, field := range vm.Summary.CustomValue {
 				if field, ok := field.(*types.CustomFieldStringValue); ok {
-					fieldName := vc.CustomFieldId2Name[field.Key]
+					fieldName := vc.CustomFieldID2Name[field.Key]
 
 					if mappedField, ok := vc.CustomFieldMappings[fieldName]; ok {
 						switch mappedField {
@@ -697,7 +697,7 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
 			}
 		}
 		vmCustomFields[constants.CustomFieldSourceName] = vc.SourceConfig.Name
-		vmCustomFields[constants.CustomFieldSourceIdName] = vm.Self.Value
+		vmCustomFields[constants.CustomFieldSourceIDName] = vm.Self.Value
 
 		// netbox description has constraint <= len(200 characters)
 		// In this case we make a comment
@@ -709,7 +709,7 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
 
 		newVM, err := nbi.AddVM(&objects.VM{
 			NetboxObject: objects.NetboxObject{
-				Tags:         vc.CommonConfig.SourceTags,
+				Tags:         vc.Config.SourceTags,
 				Description:  vmDescription,
 				CustomFields: vmCustomFields,
 			},
@@ -760,7 +760,7 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
 				}
 				_, err = nbi.AddContactAssignment(&objects.ContactAssignment{
 					ContentType: "virtualization.virtualmachine",
-					ObjectId:    newVM.Id,
+					ObjectID:    newVM.ID,
 					Contact:     contact,
 					Role:        nbi.ContactRolesIndexByName[objects.AdminContactRoleName],
 				})
@@ -771,7 +771,7 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
 		}
 
 		// Sync vm interfaces
-		err = vc.syncVmInterfaces(nbi, vm, newVM)
+		err = vc.syncVMInterfaces(nbi, vm, newVM)
 		if err != nil {
 			return fmt.Errorf("failed to sync vmware vm's interfaces: %v", err)
 		}
@@ -780,31 +780,31 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
 }
 
 // Syncs VM's interfaces to Netbox.
-func (vc *VmwareSource) syncVmInterfaces(nbi *inventory.NetboxInventory, vmwareVm mo.VirtualMachine, netboxVm *objects.VM) error {
+func (vc *Source) syncVMInterfaces(nbi *inventory.NetboxInventory, vmwareVM mo.VirtualMachine, netboxVM *objects.VM) error {
 	var vmPrimaryIpv4 *objects.IPAddress
 	var vmPrimaryIpv6 *objects.IPAddress
 	var vmDefaultGatewayIpv4 string
 	var vmDefaultGatewayIpv6 string
 
 	// From vm's routing determine the default interface
-	if len(vmwareVm.Guest.IpStack) > 0 {
-		for _, route := range vmwareVm.Guest.IpStack[0].IpRouteConfig.IpRoute {
+	if len(vmwareVM.Guest.IpStack) > 0 {
+		for _, route := range vmwareVM.Guest.IpStack[0].IpRouteConfig.IpRoute {
 			if route.PrefixLength == 0 {
 				ipAddress := route.Network
 				if ipAddress == "" {
 					continue
 				}
-				gatewayIpAddress := route.Gateway.IpAddress
-				if gatewayIpAddress == "" {
+				gatewayIPAddress := route.Gateway.IpAddress
+				if gatewayIPAddress == "" {
 					continue
 				}
 
 				// Get version from ipAddress (v4 or v6)
 				ipVersion := utils.GetIPVersion(ipAddress)
 				if ipVersion == constants.IPv4 {
-					vmDefaultGatewayIpv4 = gatewayIpAddress
+					vmDefaultGatewayIpv4 = gatewayIPAddress
 				} else if ipVersion == constants.IPv6 {
-					vmDefaultGatewayIpv6 = gatewayIpAddress
+					vmDefaultGatewayIpv6 = gatewayIPAddress
 				}
 			}
 		}
@@ -812,7 +812,7 @@ func (vc *VmwareSource) syncVmInterfaces(nbi *inventory.NetboxInventory, vmwareV
 
 	nicIps := map[string][]string{}
 
-	for _, vmDevice := range vmwareVm.Config.Hardware.Device {
+	for _, vmDevice := range vmwareVM.Config.Hardware.Device {
 		// TODO: Refactor this to avoid hardcoded typecasting. Ensure all types
 		// that compose VirtualEthernetCard are properly handled.
 		var vmEthernetCard *types.VirtualEthernetCard
@@ -846,19 +846,19 @@ func (vc *VmwareSource) syncVmInterfaces(nbi *inventory.NetboxInventory, vmwareV
 			var intNetworkName string
 			var intNetworkPrivate bool
 			var intMode *objects.VMInterfaceMode
-			intNetworkVlanIds := []int{}
-			intNetworkVlanIdRanges := []string{}
+			intNetworkVlanIDs := []int{}
+			intNetworkVlanIDRanges := []string{}
 
 			// Get info from local vSwitches if possible, else from DistributedPortGroup
 			if backingInfo, ok := intDeviceBackingInfo.(*types.VirtualEthernetCardNetworkBackingInfo); ok {
 				intNetworkName = backingInfo.DeviceName
-				intHostPgroup := vc.Networks.HostPortgroups[netboxVm.Host.Name][intNetworkName]
+				intHostPgroup := vc.Networks.HostPortgroups[netboxVM.Host.Name][intNetworkName]
 
 				if intHostPgroup != nil {
-					intNetworkVlanIds = []int{intHostPgroup.vlanId}
-					intNetworkVlanIdRanges = []string{strconv.Itoa(intHostPgroup.vlanId)}
+					intNetworkVlanIDs = []int{intHostPgroup.vlanID}
+					intNetworkVlanIDRanges = []string{strconv.Itoa(intHostPgroup.vlanID)}
 					intVswitchName := intHostPgroup.vswitch
-					intVswitchData := vc.Networks.HostVirtualSwitches[netboxVm.Host.Name][intVswitchName]
+					intVswitchData := vc.Networks.HostVirtualSwitches[netboxVM.Host.Name][intVswitchName]
 					if intVswitchData != nil {
 						intMtu = intVswitchData.mtu
 					}
@@ -869,16 +869,16 @@ func (vc *VmwareSource) syncVmInterfaces(nbi *inventory.NetboxInventory, vmwareV
 
 				if intPortgroupData != nil {
 					intNetworkName = intPortgroupData.Name
-					intNetworkVlanIds = intPortgroupData.VlanIds
-					intNetworkVlanIdRanges = intPortgroupData.VlanIdRanges
-					if len(intNetworkVlanIdRanges) == 0 {
-						intNetworkVlanIdRanges = []string{strconv.Itoa(intNetworkVlanIds[0])}
+					intNetworkVlanIDs = intPortgroupData.VlanIDs
+					intNetworkVlanIDRanges = intPortgroupData.VlanIDRanges
+					if len(intNetworkVlanIDRanges) == 0 {
+						intNetworkVlanIDRanges = []string{strconv.Itoa(intNetworkVlanIDs[0])}
 					}
 					intNetworkPrivate = intPortgroupData.Private
 				}
 
-				intDvswitchUuid := backingInfo.Port.SwitchUuid
-				intDvswitchData := vc.Networks.HostProxySwitches[netboxVm.Host.Name][intDvswitchUuid]
+				intDvswitchUUID := backingInfo.Port.SwitchUuid
+				intDvswitchData := vc.Networks.HostProxySwitches[netboxVM.Host.Name][intDvswitchUUID]
 
 				if intDvswitchData != nil {
 					intMtu = intDvswitchData.mtu
@@ -894,13 +894,13 @@ func (vc *VmwareSource) syncVmInterfaces(nbi *inventory.NetboxInventory, vmwareV
 				intFullName = fmt.Sprintf("%s (%s)", intFullName, intNetworkName)
 			}
 			intDescription := intLabel
-			if len(intNetworkVlanIds) > 0 {
-				if len(intNetworkVlanIds) == 1 && intNetworkVlanIds[0] == 4095 {
+			if len(intNetworkVlanIDs) > 0 {
+				if len(intNetworkVlanIDs) == 1 && intNetworkVlanIDs[0] == 4095 {
 					vlanDescription = "all vlans"
 					intMode = &objects.VMInterfaceModeTaggedAll
 				} else {
-					vlanDescription = fmt.Sprintf("vlan ID: %s", strings.Join(intNetworkVlanIdRanges, ", "))
-					if len(intNetworkVlanIds) == 1 {
+					vlanDescription = fmt.Sprintf("vlan ID: %s", strings.Join(intNetworkVlanIDRanges, ", "))
+					if len(intNetworkVlanIDs) == 1 {
 						intMode = &objects.VMInterfaceModeAccess
 					} else {
 						intMode = &objects.VMInterfaceModeTagged
@@ -913,7 +913,7 @@ func (vc *VmwareSource) syncVmInterfaces(nbi *inventory.NetboxInventory, vmwareV
 				intDescription = fmt.Sprintf("%s (%s)", intDescription, vlanDescription)
 			}
 			// Find corresponding guest NIC and get IP addresses and connected status
-			for _, guestNic := range vmwareVm.Guest.Net {
+			for _, guestNic := range vmwareVM.Guest.Net {
 				if intMac != guestNic.MacAddress {
 					continue
 				}
@@ -924,38 +924,38 @@ func (vc *VmwareSource) syncVmInterfaces(nbi *inventory.NetboxInventory, vmwareV
 				}
 
 				if guestNic.IpConfig != nil {
-					for _, intIp := range guestNic.IpConfig.IpAddress {
-						intIpAddress := fmt.Sprintf("%s/%d", intIp.IpAddress, intIp.PrefixLength)
-						nicIps[intFullName] = append(nicIps[intFullName], intIpAddress)
+					for _, intIP := range guestNic.IpConfig.IpAddress {
+						intIPAddress := fmt.Sprintf("%s/%d", intIP.IpAddress, intIP.PrefixLength)
+						nicIps[intFullName] = append(nicIps[intFullName], intIPAddress)
 
 						// Check if primary gateways are in the subnet of this IP address
 						// if it matches IP gets chosen as primary ip
-						if vmDefaultGatewayIpv4 != "" && utils.SubnetContainsIpAddress(vmDefaultGatewayIpv4, intIpAddress) {
-							ipDns := utils.ReverseLookup(intIp.IpAddress)
+						if vmDefaultGatewayIpv4 != "" && utils.SubnetContainsIPAddress(vmDefaultGatewayIpv4, intIPAddress) {
+							ipDNS := utils.ReverseLookup(intIP.IpAddress)
 							vmPrimaryIpv4 = &objects.IPAddress{
 								NetboxObject: objects.NetboxObject{
-									Tags: vc.CommonConfig.SourceTags,
+									Tags: vc.Config.SourceTags,
 									CustomFields: map[string]string{
 										constants.CustomFieldSourceName: vc.SourceConfig.Name,
 									},
 								},
-								Address: intIpAddress,
+								Address: intIPAddress,
 								Status:  &objects.IPAddressStatusActive,
-								DNSName: ipDns,
+								DNSName: ipDNS,
 							}
 						}
-						if vmDefaultGatewayIpv6 != "" && utils.SubnetContainsIpAddress(vmDefaultGatewayIpv6, intIpAddress) {
-							ipDns := utils.ReverseLookup(intIp.IpAddress)
+						if vmDefaultGatewayIpv6 != "" && utils.SubnetContainsIPAddress(vmDefaultGatewayIpv6, intIPAddress) {
+							ipDNS := utils.ReverseLookup(intIP.IpAddress)
 							vmPrimaryIpv6 = &objects.IPAddress{
 								NetboxObject: objects.NetboxObject{
-									Tags: vc.CommonConfig.SourceTags,
+									Tags: vc.Config.SourceTags,
 									CustomFields: map[string]string{
 										constants.CustomFieldSourceName: vc.SourceConfig.Name,
 									},
 								},
-								Address: intIpAddress,
+								Address: intIPAddress,
 								Status:  &objects.IPAddressStatusActive,
-								DNSName: ipDns,
+								DNSName: ipDNS,
 							}
 						}
 					}
@@ -963,33 +963,33 @@ func (vc *VmwareSource) syncVmInterfaces(nbi *inventory.NetboxInventory, vmwareV
 			}
 			var intUntaggedVlan *objects.Vlan
 			var intTaggedVlanList []*objects.Vlan
-			if len(intNetworkVlanIds) > 0 && intMode != &objects.VMInterfaceModeTaggedAll {
-				if len(intNetworkVlanIds) == 1 && intNetworkVlanIds[0] != 0 {
-					vidId := intNetworkVlanIds[0]
-					nicUntaggedVlanGroup, err := common.MatchVlanToGroup(nbi, vc.Networks.Vid2Name[vidId], vc.VlanGroupRelations)
+			if len(intNetworkVlanIDs) > 0 && intMode != &objects.VMInterfaceModeTaggedAll {
+				if len(intNetworkVlanIDs) == 1 && intNetworkVlanIDs[0] != 0 {
+					vidID := intNetworkVlanIDs[0]
+					nicUntaggedVlanGroup, err := common.MatchVlanToGroup(nbi, vc.Networks.Vid2Name[vidID], vc.VlanGroupRelations)
 					if err != nil {
 						return fmt.Errorf("vlan group: %s", err)
 					}
-					intUntaggedVlan = nbi.VlansIndexByVlanGroupIdAndVid[nicUntaggedVlanGroup.Id][vidId]
+					intUntaggedVlan = nbi.VlansIndexByVlanGroupIDAndVID[nicUntaggedVlanGroup.ID][vidID]
 				} else {
 					intTaggedVlanList = []*objects.Vlan{}
-					for _, intNetworkVlanId := range intNetworkVlanIds {
-						if intNetworkVlanId == 0 {
+					for _, intNetworkVlanID := range intNetworkVlanIDs {
+						if intNetworkVlanID == 0 {
 							continue
 						}
 						// nicTaggedVlanList = append(nicTaggedVlanList, nbi.get[intNetworkVlanId])
 					}
 				}
 			}
-			nbVmInterface, err := nbi.AddVMInterface(&objects.VMInterface{
+			nbVMInterface, err := nbi.AddVMInterface(&objects.VMInterface{
 				NetboxObject: objects.NetboxObject{
-					Tags:        vc.CommonConfig.SourceTags,
+					Tags:        vc.Config.SourceTags,
 					Description: intDescription,
 					CustomFields: map[string]string{
 						constants.CustomFieldSourceName: vc.SourceConfig.Name,
 					},
 				},
-				VM:           netboxVm,
+				VM:           netboxVM,
 				Name:         intFullName,
 				MACAddress:   strings.ToUpper(intMac),
 				MTU:          intMtu,
@@ -1005,7 +1005,7 @@ func (vc *VmwareSource) syncVmInterfaces(nbi *inventory.NetboxInventory, vmwareV
 			// Add primary IPs to the netbox
 			if vmPrimaryIpv4 != nil {
 				vmPrimaryIpv4.AssignedObjectType = objects.AssignedObjectTypeVMInterface
-				vmPrimaryIpv4.AssignedObjectId = nbVmInterface.Id
+				vmPrimaryIpv4.AssignedObjectID = nbVMInterface.ID
 				vmPrimaryIpv4, err = nbi.AddIPAddress(vmPrimaryIpv4)
 				if err != nil {
 					vc.Logger.Warningf("adding vm's primary ipv4: %s", err)
@@ -1013,7 +1013,7 @@ func (vc *VmwareSource) syncVmInterfaces(nbi *inventory.NetboxInventory, vmwareV
 			}
 			if vmPrimaryIpv6 != nil {
 				vmPrimaryIpv6.AssignedObjectType = objects.AssignedObjectTypeVMInterface
-				vmPrimaryIpv6.AssignedObjectId = nbVmInterface.Id
+				vmPrimaryIpv6.AssignedObjectID = nbVMInterface.ID
 				vmPrimaryIpv6, err = nbi.AddIPAddress(vmPrimaryIpv6)
 				if err != nil {
 					vc.Logger.Warningf("adding vm's primary ipv6: %s", err)
@@ -1021,11 +1021,11 @@ func (vc *VmwareSource) syncVmInterfaces(nbi *inventory.NetboxInventory, vmwareV
 			}
 
 			// Update the vms with primary addresses
-			if vmPrimaryIpv4 != nil && (netboxVm.PrimaryIPv4 == nil || vmPrimaryIpv4.Address != netboxVm.PrimaryIPv4.Address) {
+			if vmPrimaryIpv4 != nil && (netboxVM.PrimaryIPv4 == nil || vmPrimaryIpv4.Address != netboxVM.PrimaryIPv4.Address) {
 				// Shallow copy netboxVm to newNetboxVM
-				newNetboxVm := *netboxVm
-				newNetboxVm.PrimaryIPv4 = vmPrimaryIpv4
-				_, err = nbi.AddVM(&newNetboxVm)
+				newNetboxVM := *netboxVM
+				newNetboxVM.PrimaryIPv4 = vmPrimaryIpv4
+				_, err = nbi.AddVM(&newNetboxVM)
 				if err != nil {
 					vc.Logger.Warningf("adding vm: %s", err)
 				}

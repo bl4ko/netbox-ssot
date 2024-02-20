@@ -67,7 +67,7 @@ func GetIPVersion(ipAddress string) int {
 // given subnet.
 // e.g. ipAddress "172.31.4.129" and subnet "172.31.4.145/25"
 // Return true.
-func SubnetContainsIpAddress(ipAddress string, subnet string) bool {
+func SubnetContainsIPAddress(ipAddress string, subnet string) bool {
 	ip := net.ParseIP(ipAddress)
 	if ip == nil {
 		return false

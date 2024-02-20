@@ -14,19 +14,19 @@ func TestNetboxMarshal(t *testing.T) {
 		NetboxObject: objects.NetboxObject{
 			Description: "Test Description",
 			Tags: []*objects.Tag{
-				{Id: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-				{Id: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
-				{Id: 4, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+				{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+				{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+				{ID: 4, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
 			},
 		},
 		Status: objects.ClusterStatusActive,
 		Name:   "Test",
 		Type: &objects.ClusterType{
 			NetboxObject: objects.NetboxObject{
-				Id: 2,
+				ID: 2,
 				Tags: []*objects.Tag{
-					{Id: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-					{Id: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+					{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
 				},
 			},
 			Name: "oVirt",
@@ -34,10 +34,10 @@ func TestNetboxMarshal(t *testing.T) {
 		},
 		Group: &objects.ClusterGroup{
 			NetboxObject: objects.NetboxObject{
-				Id: 4,
+				ID: 4,
 				Tags: []*objects.Tag{
-					{Id: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-					{Id: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+					{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
 				},
 				Description: "New cluster group",
 			},
@@ -46,10 +46,10 @@ func TestNetboxMarshal(t *testing.T) {
 		},
 		Site: &objects.Site{
 			NetboxObject: objects.NetboxObject{
-				Id: 2,
+				ID: 2,
 				Tags: []*objects.Tag{
-					{Id: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-					{Id: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+					{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
 				},
 			},
 			Name:   "New York",
@@ -58,18 +58,18 @@ func TestNetboxMarshal(t *testing.T) {
 		},
 		Tenant: &objects.Tenant{
 			NetboxObject: objects.NetboxObject{
-				Id: 1,
+				ID: 1,
 				Tags: []*objects.Tag{
-					{Id: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-					{Id: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
-					{Id: 4, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+					{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+					{ID: 4, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
 				},
 			},
 			Name: "Default",
 			Slug: "default",
 		},
 	}
-	expectedJsonMap := map[string]interface{}{
+	expectedJSONMap := map[string]interface{}{
 		"description": "Test Description",
 		"tags":        []int{1, 3, 4},
 		"name":        "Test",
@@ -79,16 +79,16 @@ func TestNetboxMarshal(t *testing.T) {
 		"group":       4,
 		"tenant":      1,
 	}
-	expectedJson, err := json.Marshal(expectedJsonMap)
+	expectedJSON, err := json.Marshal(expectedJSONMap)
 	if err != nil {
 		t.Errorf("NetboxMarshal() error = %v", err)
 	}
-	responseJson, err := NetboxJsonMarshal(newObj)
+	responseJSON, err := NetboxJSONMarshal(newObj)
 	if err != nil {
 		t.Errorf("NetboxMarshal() error = %v", err)
 	}
-	if !reflect.DeepEqual(responseJson, expectedJson) {
-		t.Errorf("NetboxMarshal() = %s\nwant %s", string(responseJson), string(expectedJson))
+	if !reflect.DeepEqual(responseJSON, expectedJSON) {
+		t.Errorf("NetboxMarshal() = %s\nwant %s", string(responseJSON), string(expectedJSON))
 	}
 }
 
@@ -97,17 +97,17 @@ func TestNetboxJsonMarshalWithChoiceAttr(t *testing.T) {
 		NetboxObject: objects.NetboxObject{
 			Description: "Test Description",
 			Tags: []*objects.Tag{
-				{Id: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-				{Id: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
-				{Id: 4, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+				{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+				{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+				{ID: 4, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
 			},
 		},
 		Name: "Test device",
 		DeviceRole: &objects.DeviceRole{
 			NetboxObject: objects.NetboxObject{
-				Id: 1,
+				ID: 1,
 				Tags: []*objects.Tag{
-					{Id: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
 				},
 				Description: "Test device role",
 			},
@@ -117,9 +117,9 @@ func TestNetboxJsonMarshalWithChoiceAttr(t *testing.T) {
 		},
 		DeviceType: &objects.DeviceType{
 			NetboxObject: objects.NetboxObject{
-				Id: 1,
+				ID: 1,
 				Tags: []*objects.Tag{
-					{Id: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
 				},
 				Description: "Test device type",
 			},
@@ -128,10 +128,10 @@ func TestNetboxJsonMarshalWithChoiceAttr(t *testing.T) {
 		Status:  &objects.DeviceStatusActive,
 		Site: &objects.Site{
 			NetboxObject: objects.NetboxObject{
-				Id:          1,
+				ID:          1,
 				Description: "Test site",
 				Tags: []*objects.Tag{
-					{Id: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
+					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
 				},
 			},
 			Name:   "Test site",
@@ -150,17 +150,17 @@ func TestNetboxJsonMarshalWithChoiceAttr(t *testing.T) {
 		"status":      "active",
 		"site":        1,
 	}
-	expectedJson, err := json.Marshal(expectedMap)
+	expectedJSON, err := json.Marshal(expectedMap)
 	if err != nil {
 		t.Errorf("NetboxMarshal() error = %v", err)
 	}
-	responseJson, err := NetboxJsonMarshal(device)
-	fmt.Println(string(responseJson))
+	responseJSON, err := NetboxJSONMarshal(device)
+	fmt.Println(string(responseJSON))
 	if err != nil {
 		t.Errorf("NetboxMarshal() error = %v", err)
 	}
-	if !reflect.DeepEqual(expectedJson, responseJson) {
-		t.Errorf("NetboxMarshal() = %s\nwant %s", string(responseJson), string(expectedJson))
+	if !reflect.DeepEqual(expectedJSON, responseJSON) {
+		t.Errorf("NetboxMarshal() = %s\nwant %s", string(responseJSON), string(expectedJSON))
 	}
 }
 

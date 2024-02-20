@@ -12,9 +12,9 @@ import (
 	ovirtsdk4 "github.com/ovirt/go-ovirt"
 )
 
-// OVirtSource represents an oVirt source.
-type OVirtSource struct {
-	common.CommonConfig
+// Source represents an oVirt source.
+type Source struct {
+	common.Config
 	Disks       map[string]*ovirtsdk4.Disk
 	DataCenters map[string]*ovirtsdk4.DataCenter
 	Clusters    map[string]*ovirtsdk4.Cluster
@@ -26,7 +26,7 @@ type OVirtSource struct {
 	ClusterSiteRelations   map[string]string
 	ClusterTenantRelations map[string]string
 	HostTenantRelations    map[string]string
-	VmTenantRelations      map[string]string
+	VMTenantRelations      map[string]string
 	VlanGroupRelations     map[string]string
 	VlanTenantRelations    map[string]string
 }
@@ -37,7 +37,7 @@ type NetworkData struct {
 }
 
 // Function that initializes state from ovirt api to local storage.
-func (o *OVirtSource) Init() error {
+func (o *Source) Init() error {
 	// Initialize regex relations
 	o.Logger.Debug("Initializing regex relations for oVirt source ", o.SourceConfig.Name)
 	o.HostSiteRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.HostSiteRelations)
@@ -48,8 +48,8 @@ func (o *OVirtSource) Init() error {
 	o.Logger.Debug("ClusterTenantRelations: ", o.ClusterTenantRelations)
 	o.HostTenantRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.HostTenantRelations)
 	o.Logger.Debug("HostTenantRelations: ", o.HostTenantRelations)
-	o.VmTenantRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.VmTenantRelations)
-	o.Logger.Debug("VmTenantRelations: ", o.VmTenantRelations)
+	o.VMTenantRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.VMTenantRelations)
+	o.Logger.Debug("VmTenantRelations: ", o.VMTenantRelations)
 	o.VlanGroupRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.VlanGroupRelations)
 	o.Logger.Debug("VlanGroupRelations: ", o.VlanGroupRelations)
 	o.VlanTenantRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.VlanTenantRelations)
@@ -92,7 +92,7 @@ func (o *OVirtSource) Init() error {
 }
 
 // Function that syncs all data from oVirt to Netbox.
-func (o *OVirtSource) Sync(nbi *inventory.NetboxInventory) error {
+func (o *Source) Sync(nbi *inventory.NetboxInventory) error {
 	syncFunctions := []func(*inventory.NetboxInventory) error{
 		o.syncNetworks,
 		o.syncDatacenters,

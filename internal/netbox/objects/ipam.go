@@ -53,11 +53,11 @@ type IPAddress struct {
 	// AssignedObjectType is either a DeviceInterface or a VMInterface.
 	AssignedObjectType AssignedObjectType `json:"assigned_object_type,omitempty"`
 	// ID of the assigned object (either an ID of DeviceInterface or an ID of VMInterface).
-	AssignedObjectId int `json:"assigned_object_id,omitempty"`
+	AssignedObjectID int `json:"assigned_object_id,omitempty"`
 }
 
 func (ip IPAddress) String() string {
-	return fmt.Sprintf("IPAddress{Id: %d, Address: %s, Status: %s, DNSName: %s}", ip.Id, ip.Address, ip.Status, ip.DNSName)
+	return fmt.Sprintf("IPAddress{Id: %d, Address: %s, Status: %s, DNSName: %s}", ip.ID, ip.Address, ip.Status, ip.DNSName)
 }
 
 const (
@@ -117,10 +117,10 @@ type Vlan struct {
 }
 
 func (v Vlan) String() string {
-	return fmt.Sprintf("Vlan{Id: %d, Name: %s, Vid: %d, Status: %s}", v.Id, v.Name, v.Vid, v.Status)
+	return fmt.Sprintf("Vlan{Id: %d, Name: %s, Vid: %d, Status: %s}", v.ID, v.Name, v.Vid, v.Status)
 }
 
-type IpRange struct {
+type IPRange struct {
 	NetboxObject
 }
 

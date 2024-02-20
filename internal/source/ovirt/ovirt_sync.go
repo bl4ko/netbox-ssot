@@ -13,7 +13,7 @@ import (
 )
 
 // Syncs networks received from oVirt API to the netbox.
-func (o *OVirtSource) syncNetworks(nbi *inventory.NetboxInventory) error {
+func (o *Source) syncNetworks(nbi *inventory.NetboxInventory) error {
 	for _, network := range o.Networks.OVirtNetworks {
 		name, exists := network.Name()
 		if !exists {
@@ -32,18 +32,18 @@ func (o *OVirtSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 			if err != nil {
 				return err
 			}
-			if networkVlanId, exists := networkVlan.Id(); exists {
+			if networkVlanID, exists := networkVlan.Id(); exists {
 				_, err := nbi.AddVlan(&objects.Vlan{
 					NetboxObject: objects.NetboxObject{
 						Description: description,
-						Tags:        o.CommonConfig.SourceTags,
+						Tags:        o.Config.SourceTags,
 						CustomFields: map[string]string{
 							constants.CustomFieldSourceName: o.SourceConfig.Name,
 						},
 					},
 					Name:     name,
 					Group:    vlanGroup,
-					Vid:      int(networkVlanId),
+					Vid:      int(networkVlanID),
 					Status:   &objects.VlanStatusActive,
 					Tenant:   vlanTenant,
 					Comments: network.MustComment(),
@@ -57,7 +57,7 @@ func (o *OVirtSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
-func (o *OVirtSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
+func (o *Source) syncDatacenters(nbi *inventory.NetboxInventory) error {
 	// First sync oVirt DataCenters as NetBoxClusterGroups
 	for _, datacenter := range o.DataCenters {
 		name, exists := datacenter.Name()
@@ -69,7 +69,7 @@ func (o *OVirtSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
 		nbClusterGroup := &objects.ClusterGroup{
 			NetboxObject: objects.NetboxObject{
 				Description: description,
-				Tags:        o.CommonConfig.SourceTags,
+				Tags:        o.Config.SourceTags,
 				CustomFields: map[string]string{
 					constants.CustomFieldSourceName: o.SourceConfig.Name,
 				},
@@ -85,10 +85,10 @@ func (o *OVirtSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
-func (o *OVirtSource) syncClusters(nbi *inventory.NetboxInventory) error {
+func (o *Source) syncClusters(nbi *inventory.NetboxInventory) error {
 	clusterType := &objects.ClusterType{
 		NetboxObject: objects.NetboxObject{
-			Tags: o.CommonConfig.SourceTags,
+			Tags: o.Config.SourceTags,
 			CustomFields: map[string]string{
 				constants.CustomFieldSourceName: o.SourceConfig.Name,
 			},
@@ -150,7 +150,7 @@ func (o *OVirtSource) syncClusters(nbi *inventory.NetboxInventory) error {
 		nbCluster := &objects.Cluster{
 			NetboxObject: objects.NetboxObject{
 				Description: description,
-				Tags:        o.CommonConfig.SourceTags,
+				Tags:        o.Config.SourceTags,
 				CustomFields: map[string]string{
 					constants.CustomFieldSourceName: o.SourceConfig.Name,
 				},
@@ -172,11 +172,11 @@ func (o *OVirtSource) syncClusters(nbi *inventory.NetboxInventory) error {
 
 // Host in oVirt is a represented as device in netbox with a
 // custom role Server.
-func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
-	for hostId, host := range o.Hosts {
+func (o *Source) syncHosts(nbi *inventory.NetboxInventory) error {
+	for hostID, host := range o.Hosts {
 		hostName, exists := host.Name()
 		if !exists {
-			o.Logger.Warningf("name of host with id=%s is empty", hostId)
+			o.Logger.Warningf("name of host with id=%s is empty", hostID)
 		}
 		hostCluster := nbi.ClustersIndexByName[o.Clusters[host.MustCluster().MustId()].MustName()]
 
@@ -280,9 +280,9 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 			hostComment = comment
 		}
 
-		var hostCpuCores string
+		var hostCPUCores string
 		if cpu, exists := host.Cpu(); exists {
-			hostCpuCores, exists = cpu.Name()
+			hostCPUCores, exists = cpu.Name()
 			if !exists {
 				o.Logger.Warning("oVirt hostCpuCores of ", hostName, " is empty.")
 			}
@@ -294,10 +294,10 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		nbHost := &objects.Device{
 			NetboxObject: objects.NetboxObject{
 				Description: hostDescription,
-				Tags:        o.CommonConfig.SourceTags,
+				Tags:        o.Config.SourceTags,
 				CustomFields: map[string]string{
 					constants.CustomFieldSourceName:       o.SourceConfig.Name,
-					constants.CustomFieldHostCpuCoresName: hostCpuCores,
+					constants.CustomFieldHostCPUCoresName: hostCPUCores,
 					constants.CustomFieldHostMemoryName:   fmt.Sprintf("%d GB", mem),
 				},
 			},
@@ -328,44 +328,44 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
-func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ovirtsdk4.Host, nbHost *objects.Device) error {
+func (o *Source) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ovirtsdk4.Host, nbHost *objects.Device) error {
 	if nics, exists := ovirtHost.Nics(); exists {
 		master2slave := make(map[string][]string) // masterId: [slaveId1, slaveId2, ...]
 		parent2child := make(map[string][]string) // parentId: [childId, ... ]
-		processedNicsIds := make(map[string]bool) // set of all nic ids that have already been processed
+		processedNicsIDs := make(map[string]bool) // set of all nic ids that have already been processed
 
-		nicId2nic := map[string]*objects.Interface{} // nicId: nic
-		nicId2ipv4 := map[string]string{}            // nicId: ipAv4address/mask
-		nicId2ipv6 := map[string]string{}            // nicId: ipv6Address/mask
+		nicID2nic := map[string]*objects.Interface{} // nicId: nic
+		nicID2IPv4 := map[string]string{}            // nicId: ipAv4address/mask
+		nicID2IPv6 := map[string]string{}            // nicId: ipv6Address/mask
 
-		var hostIp string
+		var hostIP string
 		if hostAddress, exists := ovirtHost.Address(); exists {
-			hostIp = utils.Lookup(hostAddress)
+			hostIP = utils.Lookup(hostAddress)
 		}
 
 		var err error
 
 		// First loop through all nics
 		for _, nic := range nics.Slice() {
-			nicId, exists := nic.Id()
+			nicID, exists := nic.Id()
 			if !exists {
-				o.Logger.Warning("id for oVirt nic with id ", nicId, " is empty. This should not happen! Skipping...")
+				o.Logger.Warning("id for oVirt nic with id ", nicID, " is empty. This should not happen! Skipping...")
 				continue
 			}
 			nicName, exists := nic.Name()
 			if !exists {
-				o.Logger.Warning("name for oVirt nic with id ", nicId, " is empty.")
+				o.Logger.Warning("name for oVirt nic with id ", nicID, " is empty.")
 			}
 			// var nicType *objects.InterfaceType
 			nicSpeedBips, exists := nic.Speed()
 			if !exists {
-				o.Logger.Warning("speed for oVirt nic with id ", nicId, " is empty.")
+				o.Logger.Warning("speed for oVirt nic with id ", nicID, " is empty.")
 			}
 			nicSpeedKbps := nicSpeedBips / constants.KB
 
 			nicMtu, exists := nic.Mtu()
 			if !exists {
-				o.Logger.Warning("mtu for oVirt nic with id ", nicId, " is empty.")
+				o.Logger.Warning("mtu for oVirt nic with id ", nicID, " is empty.")
 			}
 
 			nicComment, _ := nic.Comment()
@@ -395,7 +395,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 			if exists {
 				// This interface is a vlan bond. We treat is as a virtual interface
 				nicType = &objects.VirtualInterfaceType
-				parent2child[nicBaseInterface] = append(parent2child[nicBaseInterface], nicId)
+				parent2child[nicBaseInterface] = append(parent2child[nicBaseInterface], nicID)
 			}
 
 			nicBonding, exists := nic.Bonding()
@@ -405,7 +405,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 				slaves, exists := nicBonding.Slaves()
 				if exists {
 					for _, slave := range slaves.Slice() {
-						master2slave[nicId] = append(master2slave[nicId], slave.MustId())
+						master2slave[nicID] = append(master2slave[nicID], slave.MustId())
 					}
 				}
 			}
@@ -421,16 +421,16 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 			var nicVlan *objects.Vlan
 			vlan, exists := nic.Vlan()
 			if exists {
-				vlanId, exists := vlan.Id()
+				vlanID, exists := vlan.Id()
 				if exists {
-					vlanName := o.Networks.Vid2Name[int(vlanId)]
+					vlanName := o.Networks.Vid2Name[int(vlanID)]
 					// Get vlanGroup from relation
 					vlanGroup, err := common.MatchVlanToGroup(nbi, vlanName, o.VlanGroupRelations)
 					if err != nil {
 						return err
 					}
 					// Get vlan from inventory
-					nicVlan = nbi.VlansIndexByVlanGroupIdAndVid[vlanGroup.Id][int(vlanId)]
+					nicVlan = nbi.VlansIndexByVlanGroupIDAndVID[vlanGroup.ID][int(vlanID)]
 				}
 			}
 
@@ -441,11 +441,11 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 
 			newInterface := &objects.Interface{
 				NetboxObject: objects.NetboxObject{
-					Tags:        o.CommonConfig.SourceTags,
+					Tags:        o.Config.SourceTags,
 					Description: nicComment,
 					CustomFields: map[string]string{
 						constants.CustomFieldSourceName:   o.SourceConfig.Name,
-						constants.CustomFieldSourceIdName: nicId,
+						constants.CustomFieldSourceIDName: nicID,
 					},
 				},
 				Device:      nbHost,
@@ -468,7 +468,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 						}
 					}
 					ipv4Address := fmt.Sprintf("%s/%d", nicAddress, mask)
-					nicId2ipv4[nicId] = ipv4Address
+					nicID2IPv4[nicID] = ipv4Address
 				}
 			}
 			if nicIPv6, exists := nic.Ipv6(); exists {
@@ -481,77 +481,77 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 						}
 					}
 					ipv6Address := fmt.Sprintf("%s/%d", nicAddress, mask)
-					nicId2ipv6[nicId] = ipv6Address
+					nicID2IPv6[nicID] = ipv6Address
 				}
 			}
 
-			processedNicsIds[nicId] = true
-			nicId2nic[nicId] = newInterface
+			processedNicsIDs[nicID] = true
+			nicID2nic[nicID] = newInterface
 		}
 
 		// Second loop to add relations between interfaces (e.g. [eno1, eno2] -> bond1)
-		for masterId, slavesIds := range master2slave {
+		for masterID, slavesIDs := range master2slave {
 			var err error
-			masterInterface := nicId2nic[masterId]
-			if _, ok := processedNicsIds[masterId]; ok {
+			masterInterface := nicID2nic[masterID]
+			if _, ok := processedNicsIDs[masterID]; ok {
 				masterInterface, err = nbi.AddInterface(masterInterface)
 				if err != nil {
 					return fmt.Errorf("failed to add oVirt master interface %s with error: %v", masterInterface.Name, err)
 				}
-				delete(processedNicsIds, masterId)
-				nicId2nic[masterId] = masterInterface
+				delete(processedNicsIDs, masterID)
+				nicID2nic[masterID] = masterInterface
 			}
-			for _, slaveId := range slavesIds {
-				slaveInterface := nicId2nic[slaveId]
+			for _, slaveID := range slavesIDs {
+				slaveInterface := nicID2nic[slaveID]
 				slaveInterface.LAG = masterInterface
 				slaveInterface, err := nbi.AddInterface(slaveInterface)
 				if err != nil {
 					return fmt.Errorf("failed to add oVirt slave interface %s with error: %v", slaveInterface.Name, err)
 				}
-				delete(processedNicsIds, slaveId)
-				nicId2nic[slaveId] = slaveInterface
+				delete(processedNicsIDs, slaveID)
+				nicID2nic[slaveID] = slaveInterface
 			}
 		}
 
 		// Third loop we connect children with parents (e.g. [bond1.605, bond1.604, bond1.603] -> bond1)
 		for parent, children := range parent2child {
-			parentInterface := nicId2nic[parent]
-			if _, ok := processedNicsIds[parent]; ok {
+			parentInterface := nicID2nic[parent]
+			if _, ok := processedNicsIDs[parent]; ok {
 				parentInterface, err := nbi.AddInterface(parentInterface)
 				if err != nil {
 					return fmt.Errorf("failed to add oVirt parent interface %s with error: %v", parentInterface.Name, err)
 				}
-				nicId2nic[parent] = parentInterface
-				delete(processedNicsIds, parent)
+				nicID2nic[parent] = parentInterface
+				delete(processedNicsIDs, parent)
 			}
 			for _, child := range children {
-				childInterface := nicId2nic[child]
+				childInterface := nicID2nic[child]
 				childInterface.ParentInterface = parentInterface
 				childInterface, err := nbi.AddInterface(childInterface)
 				if err != nil {
 					return fmt.Errorf("failed to add oVirt child interface %s with error: %v", childInterface.Name, err)
 				}
-				nicId2nic[child] = childInterface
-				delete(processedNicsIds, child)
+				nicID2nic[child] = childInterface
+				delete(processedNicsIDs, child)
 			}
 		}
 
 		// Fourth loop we check if there are any nics that were not processed
-		for nicId := range processedNicsIds {
-			nbNic, err := nbi.AddInterface(nicId2nic[nicId])
+		for nicID := range processedNicsIDs {
+			nbNic, err := nbi.AddInterface(nicID2nic[nicID])
 			if err != nil {
-				return fmt.Errorf("failed to add oVirt interface %s with error: %v", nicId2nic[nicId].Name, err)
+				return fmt.Errorf("failed to add oVirt interface %s with error: %v", nicID2nic[nicID].Name, err)
 			}
-			nicId2nic[nicId] = nbNic
+			nicID2nic[nicID] = nbNic
 		}
 
 		// Fifth loop we add ip addresses to interfaces
-		for nicId, ipv4 := range nicId2ipv4 {
-			nbNic := nicId2nic[nicId]
+		for nicID, ipv4 := range nicID2IPv4 {
+			nbNic := nicID2nic[nicID]
 			address := strings.Split(ipv4, "/")[0]
-			nbIpAddress, err := nbi.AddIPAddress(&objects.IPAddress{
+			nbIPAddress, err := nbi.AddIPAddress(&objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
-					Tags: o.CommonConfig.SourceTags,
+					Tags: o.Config.SourceTags,
 					CustomFields: map[string]string{
 						constants.CustomFieldSourceName: o.SourceConfig.Name,
 					},
@@ -560,26 +560,26 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 				Status:             &objects.IPAddressStatusActive, // TODO
 				DNSName:            utils.ReverseLookup(address),
 				AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
-				AssignedObjectId:   nbNic.Id,
+				AssignedObjectID:   nbNic.ID,
 			})
 			if err != nil {
 				return fmt.Errorf("add ipv4 address: %s", err)
 			}
-			if address == hostIp {
+			if address == hostIP {
 				hostCopy := *nbHost
-				hostCopy.PrimaryIPv4 = nbIpAddress
+				hostCopy.PrimaryIPv4 = nbIPAddress
 				_, err := nbi.AddDevice(&hostCopy)
 				if err != nil {
 					return fmt.Errorf("adding primary ipv4 address: %s", err)
 				}
 			}
 		}
-		for nicId, ipv6 := range nicId2ipv6 {
-			nbNic := nicId2nic[nicId]
+		for nicID, ipv6 := range nicID2IPv6 {
+			nbNic := nicID2nic[nicID]
 			address := strings.Split(ipv6, "/")[0]
 			_, err := nbi.AddIPAddress(&objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
-					Tags: o.CommonConfig.SourceTags,
+					Tags: o.Config.SourceTags,
 					CustomFields: map[string]string{
 						constants.CustomFieldSourceName: o.SourceConfig.Name,
 					},
@@ -588,7 +588,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 				Status:             &objects.IPAddressStatusActive, // TODO
 				DNSName:            utils.ReverseLookup(address),
 				AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
-				AssignedObjectId:   nbNic.Id,
+				AssignedObjectID:   nbNic.ID,
 			})
 			if err != nil {
 				return fmt.Errorf("add ipv6 address: %s", err)
@@ -598,12 +598,12 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 	return nil
 }
 
-func (o *OVirtSource) syncVms(nbi *inventory.NetboxInventory) error {
-	for vmId, vm := range o.Vms {
+func (o *Source) syncVms(nbi *inventory.NetboxInventory) error {
+	for vmID, vm := range o.Vms {
 		// VM name, which is used as unique identifier for VMs in Netbox
 		vmName, exists := vm.Name()
 		if !exists {
-			o.Logger.Warning("name for oVirt vm with id ", vmId, " is empty. VM has to have unique name to be synced to netbox. Skipping...")
+			o.Logger.Warning("name for oVirt vm with id ", vmID, " is empty. VM has to have unique name to be synced to netbox. Skipping...")
 		}
 
 		// VM's Cluster
@@ -642,7 +642,7 @@ func (o *OVirtSource) syncVms(nbi *inventory.NetboxInventory) error {
 		if host, exists := vm.Host(); exists {
 			if oHost, ok := o.Hosts[host.MustId()]; ok {
 				if oHostName, ok := oHost.Name(); ok {
-					vmHostDevice = nbi.DevicesIndexByNameAndSiteId[oHostName][vmSite.Id]
+					vmHostDevice = nbi.DevicesIndexByNameAndSiteID[oHostName][vmSite.ID]
 				}
 			}
 		}
@@ -720,7 +720,7 @@ func (o *OVirtSource) syncVms(nbi *inventory.NetboxInventory) error {
 
 		newVM, err := nbi.AddVM(&objects.VM{
 			NetboxObject: objects.NetboxObject{
-				Tags: o.CommonConfig.SourceTags,
+				Tags: o.Config.SourceTags,
 				CustomFields: map[string]string{
 					constants.CustomFieldSourceName: o.SourceConfig.Name,
 				},
@@ -742,7 +742,7 @@ func (o *OVirtSource) syncVms(nbi *inventory.NetboxInventory) error {
 			return fmt.Errorf("failed to sync oVirt vm: %v", err)
 		}
 
-		err = o.syncVmInterfaces(nbi, vm, newVM)
+		err = o.syncVMInterfaces(nbi, vm, newVM)
 		if err != nil {
 			return fmt.Errorf("failed to sync oVirt vm's interfaces: %v", err)
 		}
@@ -752,8 +752,8 @@ func (o *OVirtSource) syncVms(nbi *inventory.NetboxInventory) error {
 }
 
 // Syncs VM's interfaces to Netbox.
-func (o *OVirtSource) syncVmInterfaces(nbi *inventory.NetboxInventory, ovirtVm *ovirtsdk4.Vm, netboxVm *objects.VM) error {
-	if reportedDevices, exist := ovirtVm.ReportedDevices(); exist {
+func (o *Source) syncVMInterfaces(nbi *inventory.NetboxInventory, ovirtVM *ovirtsdk4.Vm, netboxVM *objects.VM) error {
+	if reportedDevices, exist := ovirtVM.ReportedDevices(); exist {
 		for _, reportedDevice := range reportedDevices.Slice() {
 			if reportedDeviceType, exist := reportedDevice.Type(); exist {
 				if reportedDeviceType == "network" {
@@ -763,13 +763,13 @@ func (o *OVirtSource) syncVmInterfaces(nbi *inventory.NetboxInventory, ovirtVm *
 					if reportedDeviceName, exists := reportedDevice.Name(); exists {
 						vmInterface, err = nbi.AddVMInterface(&objects.VMInterface{
 							NetboxObject: objects.NetboxObject{
-								Tags:        o.CommonConfig.SourceTags,
+								Tags:        o.Config.SourceTags,
 								Description: reportedDevice.MustDescription(),
 								CustomFields: map[string]string{
 									constants.CustomFieldSourceName: o.SourceConfig.Name,
 								},
 							},
-							VM:         netboxVm,
+							VM:         netboxVM,
 							Name:       reportedDeviceName,
 							MACAddress: strings.ToUpper(reportedDevice.MustMac().MustAddress()),
 							Enabled:    true, // TODO
@@ -812,19 +812,19 @@ func (o *OVirtSource) syncVmInterfaces(nbi *inventory.NetboxInventory, ovirtVm *
 										}
 									}
 
-									newIpAddress, err := nbi.AddIPAddress(&objects.IPAddress{
+									newIPAddress, err := nbi.AddIPAddress(&objects.IPAddress{
 										NetboxObject: objects.NetboxObject{
-											Tags: o.CommonConfig.SourceTags,
+											Tags: o.Config.SourceTags,
 											CustomFields: map[string]string{
 												constants.CustomFieldSourceName: o.SourceConfig.Name,
 											},
 										},
 										Address:            ipAddress + ipMask,
-										Tenant:             netboxVm.Tenant,
+										Tenant:             netboxVM.Tenant,
 										Status:             &objects.IPAddressStatusActive,
 										DNSName:            hostname,
 										AssignedObjectType: objects.AssignedObjectTypeVMInterface,
-										AssignedObjectId:   vmInterface.Id,
+										AssignedObjectID:   vmInterface.ID,
 									})
 
 									if err != nil {
@@ -835,11 +835,11 @@ func (o *OVirtSource) syncVmInterfaces(nbi *inventory.NetboxInventory, ovirtVm *
 
 									// Check if ip is primary
 									if ipVersion == "v4" {
-										vmIp := utils.Lookup(netboxVm.Name)
-										if vmIp != "" {
-											if ipAddress == vmIp {
-												vmCopy := *netboxVm
-												vmCopy.PrimaryIPv4 = newIpAddress
+										vmIP := utils.Lookup(netboxVM.Name)
+										if vmIP != "" {
+											if ipAddress == vmIP {
+												vmCopy := *netboxVM
+												vmCopy.PrimaryIPv4 = newIPAddress
 												_, err := nbi.AddVM(&vmCopy)
 												if err != nil {
 													return fmt.Errorf("adding primary ipv4 address: %s", err)

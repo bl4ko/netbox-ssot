@@ -321,14 +321,14 @@ var (
 	// Netbox's Sonet interface types.
 
 	// Netbox's Fiber channel interface types.
-	GFC1SFPInterfaceType                    = InterfaceType{Choice{Value: "1gfc-sfp", Label: "SFP (1GFC)"}}
-	GFC2SFPInterfaceType                    = InterfaceType{Choice{Value: "2gfc-sfp", Label: "SFP (2GFC)"}}
-	GFC4SFPInterfaceType                    = InterfaceType{Choice{Value: "4gfc-sfp", Label: "SFP (4GFC)"}}
-	GFC8SFPPInterfaceType                   = InterfaceType{Choice{Value: "8gfc-sfpp", Label: "SFP+ (8GFC)"}}
-	GFC16SFPPInterfaceType                  = InterfaceType{Choice{Value: "16gfc-sfpp", Label: "SFP+ (16GFC)"}}
-	GFC32SFP28InterfaceType                 = InterfaceType{Choice{Value: "32gfc-sfp28", Label: "SFP28 (32GFC)"}}
-	GFC64QSFPPInterfaceType   InterfaceType = InterfaceType{Choice{Value: "64gfc-qsfpp", Label: "QSFP (64GFC)"}}
-	GFC128QSFP28InterfaceType               = InterfaceType{Choice{Value: "128gfc-qsfp28", Label: "QSFP28 (128GFC)"}}
+	GFC1SFPInterfaceType      = InterfaceType{Choice{Value: "1gfc-sfp", Label: "SFP (1GFC)"}}
+	GFC2SFPInterfaceType      = InterfaceType{Choice{Value: "2gfc-sfp", Label: "SFP (2GFC)"}}
+	GFC4SFPInterfaceType      = InterfaceType{Choice{Value: "4gfc-sfp", Label: "SFP (4GFC)"}}
+	GFC8SFPPInterfaceType     = InterfaceType{Choice{Value: "8gfc-sfpp", Label: "SFP+ (8GFC)"}}
+	GFC16SFPPInterfaceType    = InterfaceType{Choice{Value: "16gfc-sfpp", Label: "SFP+ (16GFC)"}}
+	GFC32SFP28InterfaceType   = InterfaceType{Choice{Value: "32gfc-sfp28", Label: "SFP28 (32GFC)"}}
+	GFC64QSFPPInterfaceType   = InterfaceType{Choice{Value: "64gfc-qsfpp", Label: "QSFP (64GFC)"}}
+	GFC128QSFP28InterfaceType = InterfaceType{Choice{Value: "128gfc-qsfp28", Label: "QSFP28 (128GFC)"}}
 
 	// Other type used for interfaces that do not suffice the above types.
 	OtherInterfaceType = InterfaceType{Choice{Value: "other", Label: "Other"}}
@@ -336,26 +336,26 @@ var (
 
 // Maps interface speed (Kbps) to interface type.
 var IfaceSpeed2IfaceType = map[InterfaceSpeed]*InterfaceType{
-	MBPS10:  &BASETXInterfaceType,
-	MBPS100: &BASETXInterfaceType,
-	GBPS1:   &GE1FixedInterfaceType,
-	GBPS2:   &GFC2SFPInterfaceType,
-	GBPS2_5: &GE2FixedInterfaceType,
-	GBPS4:   &GFC4SFPInterfaceType,
-	GBPS5:   &GE5FixedInterfaceType,
-	GBPS8:   &GFC8SFPPInterfaceType,
-	GBPS10:  &GE10SFPPInterfaceType,
-	GBPS16:  &GFC16SFPPInterfaceType,
-	GBPS25:  &GE25SFP28InterfaceType,
-	GBPS32:  &GFC32SFP28InterfaceType,
-	GBPS40:  &GE40QSFPPlusInterfaceType,
-	GBPS50:  &GE50QSFP28InterfaceType,
-	GBPS64:  &GFC64QSFPPInterfaceType,
-	GBPS100: &GE100QSFP28InterfaceType,
-	GBPS128: &GFC128QSFP28InterfaceType,
-	GBPS200: &GE200QSFP56InterfaceType,
-	GBPS400: &GE400QSFPDDInterfaceType,
-	GBPS800: &GE800QSFPDDInterfaceType,
+	MBPS10:      &BASETXInterfaceType,
+	MBPS100:     &BASETXInterfaceType,
+	GBPS1:       &GE1FixedInterfaceType,
+	GBPS2:       &GFC2SFPInterfaceType,
+	GBPS2Point5: &GE2FixedInterfaceType,
+	GBPS4:       &GFC4SFPInterfaceType,
+	GBPS5:       &GE5FixedInterfaceType,
+	GBPS8:       &GFC8SFPPInterfaceType,
+	GBPS10:      &GE10SFPPInterfaceType,
+	GBPS16:      &GFC16SFPPInterfaceType,
+	GBPS25:      &GE25SFP28InterfaceType,
+	GBPS32:      &GFC32SFP28InterfaceType,
+	GBPS40:      &GE40QSFPPlusInterfaceType,
+	GBPS50:      &GE50QSFP28InterfaceType,
+	GBPS64:      &GFC64QSFPPInterfaceType,
+	GBPS100:     &GE100QSFP28InterfaceType,
+	GBPS128:     &GFC128QSFP28InterfaceType,
+	GBPS200:     &GE200QSFP56InterfaceType,
+	GBPS400:     &GE400QSFPDDInterfaceType,
+	GBPS800:     &GE800QSFPDDInterfaceType,
 }
 
 // Interface speed in kbps.
@@ -363,26 +363,26 @@ type InterfaceSpeed int64
 
 // Available interface speeds: https://github.com/netbox-community/netbox/blob/ec245b968f50bdbafaadd5d6b885832d858fa167/netbox/dcim/choices.py#L1139
 const (
-	MBPS10  InterfaceSpeed = 10000
-	MBPS100 InterfaceSpeed = 100000
-	GBPS1   InterfaceSpeed = 1000000
-	GBPS2   InterfaceSpeed = 2000000
-	GBPS2_5 InterfaceSpeed = 2500000
-	GBPS4   InterfaceSpeed = 4000000
-	GBPS5   InterfaceSpeed = 5000000
-	GBPS8   InterfaceSpeed = 8000000
-	GBPS10  InterfaceSpeed = 10000000
-	GBPS16  InterfaceSpeed = 16000000
-	GBPS25  InterfaceSpeed = 25000000
-	GBPS32  InterfaceSpeed = 32000000
-	GBPS40  InterfaceSpeed = 40000000
-	GBPS50  InterfaceSpeed = 50000000
-	GBPS64  InterfaceSpeed = 64000000
-	GBPS100 InterfaceSpeed = 100000000
-	GBPS128 InterfaceSpeed = 128000000
-	GBPS200 InterfaceSpeed = 200000000
-	GBPS400 InterfaceSpeed = 400000000
-	GBPS800 InterfaceSpeed = 800000000
+	MBPS10      InterfaceSpeed = 10000
+	MBPS100     InterfaceSpeed = 100000
+	GBPS1       InterfaceSpeed = 1000000
+	GBPS2       InterfaceSpeed = 2000000
+	GBPS2Point5 InterfaceSpeed = 2500000
+	GBPS4       InterfaceSpeed = 4000000
+	GBPS5       InterfaceSpeed = 5000000
+	GBPS8       InterfaceSpeed = 8000000
+	GBPS10      InterfaceSpeed = 10000000
+	GBPS16      InterfaceSpeed = 16000000
+	GBPS25      InterfaceSpeed = 25000000
+	GBPS32      InterfaceSpeed = 32000000
+	GBPS40      InterfaceSpeed = 40000000
+	GBPS50      InterfaceSpeed = 50000000
+	GBPS64      InterfaceSpeed = 64000000
+	GBPS100     InterfaceSpeed = 100000000
+	GBPS128     InterfaceSpeed = 128000000
+	GBPS200     InterfaceSpeed = 200000000
+	GBPS400     InterfaceSpeed = 400000000
+	GBPS800     InterfaceSpeed = 800000000
 )
 
 type InterfaceMode struct {

@@ -37,7 +37,7 @@ func NewSource(config *parser.SourceConfig, logger *logger.Logger, netboxInvento
 	if err != nil {
 		return nil, fmt.Errorf("error creating sourceTypeTag: %s", err)
 	}
-	commonConfig := common.CommonConfig{
+	commonConfig := common.Config{
 		Logger:       logger,
 		SourceConfig: config,
 		SourceTags:   []*objects.Tag{sourceTag, sourceTypeTag},
@@ -45,11 +45,11 @@ func NewSource(config *parser.SourceConfig, logger *logger.Logger, netboxInvento
 
 	switch config.Type {
 	case constants.Ovirt:
-		return &ovirt.OVirtSource{CommonConfig: commonConfig}, nil
+		return &ovirt.Source{Config: commonConfig}, nil
 	case constants.Vmware:
-		return &vmware.VmwareSource{CommonConfig: commonConfig}, nil
+		return &vmware.Source{Config: commonConfig}, nil
 	case constants.Dnac:
-		return &dnac.DnacSource{CommonConfig: commonConfig}, nil
+		return &dnac.Source{Config: commonConfig}, nil
 	default:
 		return nil, fmt.Errorf("unsupported source type: %s", config.Type)
 	}

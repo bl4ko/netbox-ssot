@@ -36,7 +36,7 @@ const (
 )
 
 type NetboxConfig struct {
-	ApiToken string `yaml:"apiToken"`
+	APIToken string `yaml:"apiToken"`
 	Hostname string `yaml:"hostname"`
 	Port     int    `yaml:"port"`
 	// Can be http or https (default)
@@ -50,7 +50,7 @@ type NetboxConfig struct {
 }
 
 func (n NetboxConfig) String() string {
-	return fmt.Sprintf("NetboxConfig{ApiToken: %s, Hostname: %s, Port: %d, HTTPScheme: %s, ValidateCert: %t, Timeout: %d, Tag: %s, TagColor: %s, RemoveOrphans: %t}", n.ApiToken, n.Hostname, n.Port, n.HTTPScheme, n.ValidateCert, n.Timeout, n.Tag, n.TagColor, n.RemoveOrphans)
+	return fmt.Sprintf("NetboxConfig{ApiToken: %s, Hostname: %s, Port: %d, HTTPScheme: %s, ValidateCert: %t, Timeout: %d, Tag: %s, TagColor: %s, RemoveOrphans: %t}", n.APIToken, n.Hostname, n.Port, n.HTTPScheme, n.ValidateCert, n.Timeout, n.Tag, n.TagColor, n.RemoveOrphans)
 }
 
 type SourceConfig struct {
@@ -71,7 +71,7 @@ type SourceConfig struct {
 	ClusterSiteRelations   []string `yaml:"clusterSiteRelations"`
 	ClusterTenantRelations []string `yaml:"clusterTenantRelations"`
 	HostTenantRelations    []string `yaml:"hostTenantRelations"`
-	VmTenantRelations      []string `yaml:"vmTenantRelations"`
+	VMTenantRelations      []string `yaml:"vmTenantRelations"`
 	VlanGroupRelations     []string `yaml:"vlanGroupRelations"`
 	VlanTenantRelations    []string `yaml:"vlanTenantRelations"`
 
@@ -80,7 +80,7 @@ type SourceConfig struct {
 }
 
 func (s SourceConfig) String() string {
-	return fmt.Sprintf("SourceConfig{Name: %s, Type: %s, HTTPScheme: %s, Hostname: %s, Port: %d, Username: %s, Password: %s, PermittedSubnets: %v, ValidateCert: %t, Tag: %s, TagColor: %s, HostSiteRelations: %v, ClusterSiteRelations: %v, clusterTenantRelations: %v, HostTenantRelations: %v, VmTenantRelations %v, VlanGroupRelations: %v, VlanTenantRelations: %v}", s.Name, s.Type, s.HTTPScheme, s.Hostname, s.Port, s.Username, s.Password, s.PermittedSubnets, s.ValidateCert, s.Tag, s.TagColor, s.HostSiteRelations, s.ClusterSiteRelations, s.ClusterTenantRelations, s.HostTenantRelations, s.VmTenantRelations, s.VlanGroupRelations, s.VlanTenantRelations)
+	return fmt.Sprintf("SourceConfig{Name: %s, Type: %s, HTTPScheme: %s, Hostname: %s, Port: %d, Username: %s, Password: %s, PermittedSubnets: %v, ValidateCert: %t, Tag: %s, TagColor: %s, HostSiteRelations: %v, ClusterSiteRelations: %v, clusterTenantRelations: %v, HostTenantRelations: %v, VmTenantRelations %v, VlanGroupRelations: %v, VlanTenantRelations: %v}", s.Name, s.Type, s.HTTPScheme, s.Hostname, s.Port, s.Username, s.Password, s.PermittedSubnets, s.ValidateCert, s.Tag, s.TagColor, s.HostSiteRelations, s.ClusterSiteRelations, s.ClusterTenantRelations, s.HostTenantRelations, s.VMTenantRelations, s.VlanGroupRelations, s.VlanTenantRelations)
 }
 
 // Validates the user's config for limits and required fields.
@@ -113,7 +113,7 @@ func validateLoggerConfig(config *Config) error {
 // Function that validates NetboxConfig.
 func validateNetboxConfig(config *Config) error {
 	// Validate Netbox config
-	if config.Netbox.ApiToken == "" {
+	if config.Netbox.APIToken == "" {
 		return errors.New("netbox.apiToken: cannot be empty")
 	}
 	if config.Netbox.HTTPScheme != HTTP && config.Netbox.HTTPScheme != HTTPS {
@@ -228,8 +228,8 @@ func validateSourceConfig(config *Config) error {
 				return fmt.Errorf("%s.hostTenantRelations: %s", externalSourceStr, err)
 			}
 		}
-		if len(externalSource.VmTenantRelations) > 0 {
-			err := utils.ValidateRegexRelations(externalSource.VmTenantRelations)
+		if len(externalSource.VMTenantRelations) > 0 {
+			err := utils.ValidateRegexRelations(externalSource.VMTenantRelations)
 			if err != nil {
 				return fmt.Errorf("%s.vmTenantRelations: %s", externalSourceStr, err)
 			}

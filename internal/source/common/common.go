@@ -15,8 +15,8 @@ type Source interface {
 	Sync(*inventory.NetboxInventory) error
 }
 
-// CommonConfig is a common configuration that all sources share.
-type CommonConfig struct {
+// Config is a common configuration that all sources share.
+type Config struct {
 	Logger       *logger.Logger
 	SourceConfig *parser.SourceConfig
 	SourceTags   []*objects.Tag

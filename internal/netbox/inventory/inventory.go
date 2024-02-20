@@ -17,8 +17,8 @@ type NetboxInventory struct {
 	Logger *logger.Logger
 	// NetboxConfig is the Netbox configuration
 	NetboxConfig *parser.NetboxConfig
-	// NetboxApi is the Netbox API object, for communicating with the Netbox API
-	NetboxApi *service.NetboxAPI
+	// NetboxAPI is the Netbox API object, for communicating with the Netbox API
+	NetboxAPI *service.NetboxAPI
 	// SourcePriority: if object is found on multiple sources, which source has the priority for the object attributes.
 	SourcePriority map[string]int
 	// Tags is a list of all tags in the netbox inventory
@@ -29,8 +29,8 @@ type NetboxInventory struct {
 	ContactRolesIndexByName map[string]*objects.ContactRole
 	// ContactsIndexByName is a map of all contacts in the Netbox's inventory, indexed by their names
 	ContactsIndexByName map[string]*objects.Contact
-	// ContactAssignmentsIndexByContentTypeAndObjectIdAndContactIdAndRoleId is a map of all contact assignments indexed by their content type, object id, contact id and role id.
-	ContactAssignmentsIndexByContentTypeAndObjectIdAndContactIdAndRoleId map[string]map[int]map[int]map[int]*objects.ContactAssignment
+	// ContactAssignmentsIndexByContentTypeAndObjectIDAndContactIDAndRoleID is a map of all contact assignments indexed by their content type, object id, contact id and role id.
+	ContactAssignmentsIndexByContentTypeAndObjectIDAndContactIDAndRoleID map[string]map[int]map[int]map[int]*objects.ContactAssignment
 	// SitesIndexByName is a map of all sites in the Netbox's inventory, indexed by their name
 	SitesIndexByName map[string]*objects.Site
 	// ManufacturersIndexByName is a map of all manufacturers in the Netbox's inventory, indexed by their name
@@ -41,15 +41,15 @@ type NetboxInventory struct {
 	TenantsIndexByName map[string]*objects.Tenant
 	// DeviceTypesIndexByModel is a map of all device types in the Netbox's inventory, indexed by their model
 	DeviceTypesIndexByModel map[string]*objects.DeviceType
-	// DevicesIndexByNameAndSiteId is a map of all devices in the Netbox's inventory, indexed by their name, and
+	// DevicesIndexByNameAndSiteID is a map of all devices in the Netbox's inventory, indexed by their name, and
 	// site ID (This is because, netbox constraints: https://github.com/netbox-community/netbox/blob/3d941411d438f77b66d2036edf690c14b459af58/netbox/dcim/models/devices.py#L775)
-	DevicesIndexByNameAndSiteId map[string]map[int]*objects.Device
+	DevicesIndexByNameAndSiteID map[string]map[int]*objects.Device
 	// PrefixesIndexByPrefix is a map of all prefixes in the Netbox's inventory, indexed by their prefix
 	PrefixesIndexByPrefix map[string]*objects.Prefix
 	// VlanGroupsIndexByName is a map of all VlanGroups in the Netbox's inventory, indexed by their name
 	VlanGroupsIndexByName map[string]*objects.VlanGroup
-	// VlansIndexByVlanGroupIdAndVid is a map of all vlans in the Netbox's inventory, indexed by their VlanGroup and vid.
-	VlansIndexByVlanGroupIdAndVid map[int]map[int]*objects.Vlan
+	// VlansIndexByVlanGroupIDAndVID is a map of all vlans in the Netbox's inventory, indexed by their VlanGroup and vid.
+	VlansIndexByVlanGroupIDAndVID map[int]map[int]*objects.Vlan
 	// ClusterGroupsIndexByName is a map of all cluster groups in the Netbox's inventory, indexed by their name
 	ClusterGroupsIndexByName map[string]*objects.ClusterGroup
 	// ClusterTypesIndexByName is a map of all cluster types in the Netbox's inventory, indexed by their name
@@ -62,7 +62,7 @@ type NetboxInventory struct {
 	CustomFieldsIndexByName map[string]*objects.CustomField
 	// InterfacesIndexByDeviceAnName is a map of all interfaces in the inventory, indexed by their's
 	// device id and their name.
-	InterfacesIndexByDeviceIdAndName map[int]map[string]*objects.Interface
+	InterfacesIndexByDeviceIDAndName map[int]map[string]*objects.Interface
 	// VirtualMachinedIndexByName is a map of all virtual machines in the inventory, indexed by their name
 	VMsIndexByName map[string]*objects.VM
 	// VirtualMachineInterfacesIndexByVMAndName is a map of all virtual machine interfaces in the inventory, indexed by their's virtual machine id and their name
@@ -113,23 +113,23 @@ func NewNetboxInventory(logger *logger.Logger, nbConfig *parser.NetboxConfig) *N
 	}
 	// Starts with 0 for easier integration with for loops
 	orphanObjectPriority := map[int]string{
-		0:  service.VlanGroupsApiPath,
-		1:  service.PrefixesApiPath,
-		2:  service.VlansApiPath,
-		3:  service.IpAddressesApiPath,
-		4:  service.InterfacesApiPath,
-		5:  service.VMInterfacesApiPath,
-		6:  service.VirtualMachinesApiPath,
-		7:  service.DevicesApiPath,
-		8:  service.PlatformsApiPath,
-		9:  service.DeviceTypesApiPath,
-		10: service.ManufacturersApiPath,
-		11: service.DeviceRolesApiPath,
-		12: service.ClustersApiPath,
-		13: service.ClusterTypesApiPath,
-		14: service.ClusterGroupsApiPath,
-		15: service.ContactsApiPath,
-		16: service.ContactAssignmentsApiPath,
+		0:  service.VlanGroupsAPIPath,
+		1:  service.PrefixesAPIPath,
+		2:  service.VlansAPIPath,
+		3:  service.IPAddressesAPIPath,
+		4:  service.InterfacesAPIPath,
+		5:  service.VMInterfacesAPIPath,
+		6:  service.VirtualMachinesAPIPath,
+		7:  service.DevicesAPIPath,
+		8:  service.PlatformsAPIPath,
+		9:  service.DeviceTypesAPIPath,
+		10: service.ManufacturersAPIPath,
+		11: service.DeviceRolesAPIPath,
+		12: service.ClustersAPIPath,
+		13: service.ClusterTypesAPIPath,
+		14: service.ClusterGroupsAPIPath,
+		15: service.ContactsAPIPath,
+		16: service.ContactAssignmentsAPIPath,
 	}
 	nbi := &NetboxInventory{Logger: logger, NetboxConfig: nbConfig, SourcePriority: sourcePriority, OrphanManager: make(map[string]map[int]bool), OrphanObjectPriority: orphanObjectPriority}
 	return nbi
@@ -140,7 +140,7 @@ func (nbi *NetboxInventory) Init() error {
 	baseURL := fmt.Sprintf("%s://%s:%d", nbi.NetboxConfig.HTTPScheme, nbi.NetboxConfig.Hostname, nbi.NetboxConfig.Port)
 
 	nbi.Logger.Debug("Initializing Netbox API with baseURL: ", baseURL)
-	nbi.NetboxApi = service.NewNetBoxAPI(nbi.Logger, baseURL, nbi.NetboxConfig.ApiToken, nbi.NetboxConfig.ValidateCert, nbi.NetboxConfig.Timeout)
+	nbi.NetboxAPI = service.NewNetBoxAPI(nbi.Logger, baseURL, nbi.NetboxConfig.APIToken, nbi.NetboxConfig.ValidateCert, nbi.NetboxConfig.Timeout)
 
 	// Order matters. TODO: use parallelization in the future, on the init functions that can be parallelized
 	initFunctions := []func() error{

@@ -20,29 +20,29 @@ type Response[T any] struct {
 }
 
 var type2path = map[reflect.Type]string{
-	reflect.TypeOf((*objects.VlanGroup)(nil)).Elem():         VlanGroupsApiPath,
-	reflect.TypeOf((*objects.Vlan)(nil)).Elem():              VlansApiPath,
-	reflect.TypeOf((*objects.IPAddress)(nil)).Elem():         IpAddressesApiPath,
-	reflect.TypeOf((*objects.ClusterType)(nil)).Elem():       ClusterTypesApiPath,
-	reflect.TypeOf((*objects.ClusterGroup)(nil)).Elem():      ClusterGroupsApiPath,
-	reflect.TypeOf((*objects.Cluster)(nil)).Elem():           ClustersApiPath,
-	reflect.TypeOf((*objects.VM)(nil)).Elem():                VirtualMachinesApiPath,
-	reflect.TypeOf((*objects.VMInterface)(nil)).Elem():       VMInterfacesApiPath,
-	reflect.TypeOf((*objects.Device)(nil)).Elem():            DevicesApiPath,
-	reflect.TypeOf((*objects.DeviceRole)(nil)).Elem():        DeviceRolesApiPath,
-	reflect.TypeOf((*objects.DeviceType)(nil)).Elem():        DeviceTypesApiPath,
-	reflect.TypeOf((*objects.Interface)(nil)).Elem():         InterfacesApiPath,
-	reflect.TypeOf((*objects.Site)(nil)).Elem():              SitesApiPath,
-	reflect.TypeOf((*objects.Manufacturer)(nil)).Elem():      ManufacturersApiPath,
-	reflect.TypeOf((*objects.Platform)(nil)).Elem():          PlatformsApiPath,
-	reflect.TypeOf((*objects.Tenant)(nil)).Elem():            TenantsApiPath,
-	reflect.TypeOf((*objects.ContactGroup)(nil)).Elem():      ContactGroupsApiPath,
-	reflect.TypeOf((*objects.ContactRole)(nil)).Elem():       ContactRolesApiPath,
-	reflect.TypeOf((*objects.Contact)(nil)).Elem():           ContactsApiPath,
-	reflect.TypeOf((*objects.CustomField)(nil)).Elem():       CustomFieldsApiPath,
-	reflect.TypeOf((*objects.Tag)(nil)).Elem():               TagsApiPath,
-	reflect.TypeOf((*objects.ContactAssignment)(nil)).Elem(): ContactAssignmentsApiPath,
-	reflect.TypeOf((*objects.Prefix)(nil)).Elem():            PrefixesApiPath,
+	reflect.TypeOf((*objects.VlanGroup)(nil)).Elem():         VlanGroupsAPIPath,
+	reflect.TypeOf((*objects.Vlan)(nil)).Elem():              VlansAPIPath,
+	reflect.TypeOf((*objects.IPAddress)(nil)).Elem():         IPAddressesAPIPath,
+	reflect.TypeOf((*objects.ClusterType)(nil)).Elem():       ClusterTypesAPIPath,
+	reflect.TypeOf((*objects.ClusterGroup)(nil)).Elem():      ClusterGroupsAPIPath,
+	reflect.TypeOf((*objects.Cluster)(nil)).Elem():           ClustersAPIPath,
+	reflect.TypeOf((*objects.VM)(nil)).Elem():                VirtualMachinesAPIPath,
+	reflect.TypeOf((*objects.VMInterface)(nil)).Elem():       VMInterfacesAPIPath,
+	reflect.TypeOf((*objects.Device)(nil)).Elem():            DevicesAPIPath,
+	reflect.TypeOf((*objects.DeviceRole)(nil)).Elem():        DeviceRolesAPIPath,
+	reflect.TypeOf((*objects.DeviceType)(nil)).Elem():        DeviceTypesAPIPath,
+	reflect.TypeOf((*objects.Interface)(nil)).Elem():         InterfacesAPIPath,
+	reflect.TypeOf((*objects.Site)(nil)).Elem():              SitesAPIPath,
+	reflect.TypeOf((*objects.Manufacturer)(nil)).Elem():      ManufacturersAPIPath,
+	reflect.TypeOf((*objects.Platform)(nil)).Elem():          PlatformsAPIPath,
+	reflect.TypeOf((*objects.Tenant)(nil)).Elem():            TenantsAPIPath,
+	reflect.TypeOf((*objects.ContactGroup)(nil)).Elem():      ContactGroupsAPIPath,
+	reflect.TypeOf((*objects.ContactRole)(nil)).Elem():       ContactRolesAPIPath,
+	reflect.TypeOf((*objects.Contact)(nil)).Elem():           ContactsAPIPath,
+	reflect.TypeOf((*objects.CustomField)(nil)).Elem():       CustomFieldsAPIPath,
+	reflect.TypeOf((*objects.Tag)(nil)).Elem():               TagsAPIPath,
+	reflect.TypeOf((*objects.ContactAssignment)(nil)).Elem(): ContactAssignmentsAPIPath,
+	reflect.TypeOf((*objects.Prefix)(nil)).Elem():            PrefixesAPIPath,
 }
 
 // GetAll queries all objects of type T from Netbox's API.
@@ -91,10 +91,10 @@ func GetAll[T any](api *NetboxAPI, extraParams string) ([]T, error) {
 
 // Patch func patches the object of type T, with the given api path and body.
 // Path of the object (must contain the id), for example /api/dcim/devices/1/.
-func Patch[T any](api *NetboxAPI, objectId int, body map[string]interface{}) (*T, error) {
+func Patch[T any](api *NetboxAPI, objectID int, body map[string]interface{}) (*T, error) {
 	var dummy T // dummy variable for printf
 	path := type2path[reflect.TypeOf(dummy)]
-	path = fmt.Sprintf("%s%d/", path, objectId)
+	path = fmt.Sprintf("%s%d/", path, objectID)
 	api.Logger.Debugf("Patching %T with path %s with data: %v", dummy, path, body)
 
 	requestBody, err := json.Marshal(body)
@@ -128,7 +128,7 @@ func Create[T any](api *NetboxAPI, object *T) (*T, error) {
 	path := type2path[reflect.TypeOf(dummy)]
 	api.Logger.Debugf("Creating %T with path %s with data: %v", dummy, path, object)
 
-	requestBody, err := utils.NetboxJsonMarshal(object)
+	requestBody, err := utils.NetboxJSONMarshal(object)
 	if err != nil {
 		return nil, err
 	}
@@ -174,12 +174,12 @@ func (api *NetboxAPI) BulkDeleteObjects(objectPath string, idSet map[int]bool) e
 
 		// Netbox API supports only JSON request body in the following format:
 		// [ {"id": 1}, {"id": 2}, {"id": 3} ]
-		netboxFormatIds := make([]map[string]int, 0, end-i)
+		netboxFormatIDs := make([]map[string]int, 0, end-i)
 		for _, id := range ids[i:end] {
-			netboxFormatIds = append(netboxFormatIds, map[string]int{"id": id})
+			netboxFormatIDs = append(netboxFormatIDs, map[string]int{"id": id})
 		}
 
-		requestBody, err := json.Marshal(netboxFormatIds)
+		requestBody, err := json.Marshal(netboxFormatIDs)
 		if err != nil {
 			return err
 		}

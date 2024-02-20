@@ -97,7 +97,7 @@ func MatchHostToTenant(nbi *inventory.NetboxInventory, hostName string, hostTena
 // Function that matches Vm from vmName to Tenant using vmTenantRelations.
 //
 // In case that there is not match or hostTenantRelations is nil, it will return nil.
-func MatchVmToTenant(nbi *inventory.NetboxInventory, vmName string, vmTenantRelations map[string]string) (*objects.Tenant, error) {
+func MatchVMToTenant(nbi *inventory.NetboxInventory, vmName string, vmTenantRelations map[string]string) (*objects.Tenant, error) {
 	if vmTenantRelations == nil {
 		return nil, nil
 	}
