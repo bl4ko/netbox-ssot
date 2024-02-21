@@ -343,150 +343,10 @@ func (o *Source) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ovirtsd
 			hostIP = utils.Lookup(hostAddress)
 		}
 
-		var err error
-
-		// First loop through all nics
-		for _, nic := range nics.Slice() {
-			nicID, exists := nic.Id()
-			if !exists {
-				o.Logger.Warning("id for oVirt nic with id ", nicID, " is empty. This should not happen! Skipping...")
-				continue
-			}
-			nicName, exists := nic.Name()
-			if !exists {
-				o.Logger.Warning("name for oVirt nic with id ", nicID, " is empty.")
-			}
-			// var nicType *objects.InterfaceType
-			nicSpeedBips, exists := nic.Speed()
-			if !exists {
-				o.Logger.Warning("speed for oVirt nic with id ", nicID, " is empty.")
-			}
-			nicSpeedKbps := nicSpeedBips / constants.KB
-
-			nicMtu, exists := nic.Mtu()
-			if !exists {
-				o.Logger.Warning("mtu for oVirt nic with id ", nicID, " is empty.")
-			}
-
-			nicComment, _ := nic.Comment()
-
-			var nicEnabled bool
-			ovirtNicStatus, exists := nic.Status()
-			if exists {
-				switch ovirtNicStatus {
-				case ovirtsdk4.NICSTATUS_UP:
-					nicEnabled = true
-				default:
-					nicEnabled = false
-				}
-			}
-
-			// bridged, exists := nic.Bridged() // TODO: bridged interface
-			// if exists {
-			// 	if bridged {
-			// 		// This interface is bridged
-			// 		fmt.Printf("nic[%s] is bridged\n", nicName)
-			// 	}
-			// }
-
-			// Determine nic type (virtual, physical, bond...)
-			var nicType *objects.InterfaceType
-			nicBaseInterface, exists := nic.BaseInterface()
-			if exists {
-				// This interface is a vlan bond. We treat is as a virtual interface
-				nicType = &objects.VirtualInterfaceType
-				parent2child[nicBaseInterface] = append(parent2child[nicBaseInterface], nicID)
-			}
-
-			nicBonding, exists := nic.Bonding()
-			if exists {
-				// Bond interface, we give it a type of LAG
-				nicType = &objects.LAGInterfaceType
-				slaves, exists := nicBonding.Slaves()
-				if exists {
-					for _, slave := range slaves.Slice() {
-						master2slave[nicID] = append(master2slave[nicID], slave.MustId())
-					}
-				}
-			}
-
-			if nicType == nil {
-				// This is a physical interface.
-				nicType = objects.IfaceSpeed2IfaceType[objects.InterfaceSpeed(nicSpeedKbps)]
-				if nicType == nil {
-					nicType = &objects.OtherInterfaceType
-				}
-			}
-
-			var nicVlan *objects.Vlan
-			vlan, exists := nic.Vlan()
-			if exists {
-				vlanID, exists := vlan.Id()
-				if exists {
-					vlanName := o.Networks.Vid2Name[int(vlanID)]
-					// Get vlanGroup from relation
-					vlanGroup, err := common.MatchVlanToGroup(nbi, vlanName, o.VlanGroupRelations)
-					if err != nil {
-						return err
-					}
-					// Get vlan from inventory
-					nicVlan = nbi.VlansIndexByVlanGroupIDAndVID[vlanGroup.ID][int(vlanID)]
-				}
-			}
-
-			var nicTaggedVlans []*objects.Vlan
-			if nicVlan != nil {
-				nicTaggedVlans = []*objects.Vlan{nicVlan}
-			}
-
-			newInterface := &objects.Interface{
-				NetboxObject: objects.NetboxObject{
-					Tags:        o.Config.SourceTags,
-					Description: nicComment,
-					CustomFields: map[string]string{
-						constants.CustomFieldSourceName:   o.SourceConfig.Name,
-						constants.CustomFieldSourceIDName: nicID,
-					},
-				},
-				Device:      nbHost,
-				Name:        nicName,
-				Speed:       objects.InterfaceSpeed(nicSpeedKbps),
-				Status:      nicEnabled,
-				MTU:         int(nicMtu),
-				Type:        nicType,
-				TaggedVlans: nicTaggedVlans,
-			}
-
-			// Extract ip info
-			if nicIPv4, exists := nic.Ip(); exists {
-				if nicAddress, exists := nicIPv4.Address(); exists {
-					mask := 32
-					if nicMask, exists := nicIPv4.Netmask(); exists {
-						mask, err = utils.MaskToBits(nicMask)
-						if err != nil {
-							return fmt.Errorf("mask to bits: %s", err)
-						}
-					}
-					ipv4Address := fmt.Sprintf("%s/%d", nicAddress, mask)
-					nicID2IPv4[nicID] = ipv4Address
-				}
-			}
-			if nicIPv6, exists := nic.Ipv6(); exists {
-				if nicAddress, exists := nicIPv6.Address(); exists {
-					mask := 128
-					if nicMask, exists := nicIPv6.Netmask(); exists {
-						mask, err = utils.MaskToBits(nicMask)
-						if err != nil {
-							return fmt.Errorf("mask to bits: %s", err)
-						}
-					}
-					ipv6Address := fmt.Sprintf("%s/%d", nicAddress, mask)
-					nicID2IPv6[nicID] = ipv6Address
-				}
-			}
-
-			processedNicsIDs[nicID] = true
-			nicID2nic[nicID] = newInterface
+		// First loop, we loop through all the nics and collect all the information
+		err := o.collectHostNicsData(nbHost, nbi, nics, parent2child, master2slave, nicID2nic, processedNicsIDs, nicID2IPv4, nicID2IPv6)
+		if err != nil {
+			return fmt.Errorf("collect host nics data: %s", err)
 		}
 
 		// Second loop to add relations between interfaces (e.g. [eno1, eno2] -> bond1)
@@ -594,6 +454,153 @@ func (o *Source) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ovirtsd
 				return fmt.Errorf("add ipv6 address: %s", err)
 			}
 		}
+	}
+	return nil
+}
+
+func (o *Source) collectHostNicsData(nbHost *objects.Device, nbi *inventory.NetboxInventory, nics *ovirtsdk4.HostNicSlice, parent2child map[string][]string, master2slave map[string][]string, nicID2nic map[string]*objects.Interface, processedNicsIDs map[string]bool, nicID2IPv4 map[string]string, nicID2IPv6 map[string]string) error {
+	for _, nic := range nics.Slice() {
+		nicID, exists := nic.Id()
+		if !exists {
+			o.Logger.Warning("id for oVirt nic with id ", nicID, " is empty. This should not happen! Skipping...")
+			continue
+		}
+		nicName, exists := nic.Name()
+		if !exists {
+			o.Logger.Warning("name for oVirt nic with id ", nicID, " is empty.")
+		}
+		// var nicType *objects.InterfaceType
+		nicSpeedBips, exists := nic.Speed()
+		if !exists {
+			o.Logger.Warning("speed for oVirt nic with id ", nicID, " is empty.")
+		}
+		nicSpeedKbps := nicSpeedBips / constants.KB
+
+		nicMtu, exists := nic.Mtu()
+		if !exists {
+			o.Logger.Warning("mtu for oVirt nic with id ", nicID, " is empty.")
+		}
+
+		nicComment, _ := nic.Comment()
+
+		var nicEnabled bool
+		ovirtNicStatus, exists := nic.Status()
+		if exists {
+			switch ovirtNicStatus {
+			case ovirtsdk4.NICSTATUS_UP:
+				nicEnabled = true
+			default:
+				nicEnabled = false
+			}
+		}
+
+		// bridged, exists := nic.Bridged() // TODO: bridged interface
+		// if exists {
+		// 	if bridged {
+		// 		// This interface is bridged
+		// 		fmt.Printf("nic[%s] is bridged\n", nicName)
+		// 	}
+		// }
+
+		// Determine nic type (virtual, physical, bond...)
+		var nicType *objects.InterfaceType
+		nicBaseInterface, exists := nic.BaseInterface()
+		if exists {
+			// This interface is a vlan bond. We treat is as a virtual interface
+			nicType = &objects.VirtualInterfaceType
+			parent2child[nicBaseInterface] = append(parent2child[nicBaseInterface], nicID)
+		}
+
+		nicBonding, exists := nic.Bonding()
+		if exists {
+			// Bond interface, we give it a type of LAG
+			nicType = &objects.LAGInterfaceType
+			slaves, exists := nicBonding.Slaves()
+			if exists {
+				for _, slave := range slaves.Slice() {
+					master2slave[nicID] = append(master2slave[nicID], slave.MustId())
+				}
+			}
+		}
+
+		if nicType == nil {
+			// This is a physical interface.
+			nicType = objects.IfaceSpeed2IfaceType[objects.InterfaceSpeed(nicSpeedKbps)]
+			if nicType == nil {
+				nicType = &objects.OtherInterfaceType
+			}
+		}
+
+		var nicVlan *objects.Vlan
+		vlan, exists := nic.Vlan()
+		if exists {
+			vlanID, exists := vlan.Id()
+			if exists {
+				vlanName := o.Networks.Vid2Name[int(vlanID)]
+				// Get vlanGroup from relation
+				vlanGroup, err := common.MatchVlanToGroup(nbi, vlanName, o.VlanGroupRelations)
+				if err != nil {
+					return err
+				}
+				// Get vlan from inventory
+				nicVlan = nbi.VlansIndexByVlanGroupIDAndVID[vlanGroup.ID][int(vlanID)]
+			}
+		}
+
+		var nicTaggedVlans []*objects.Vlan
+		if nicVlan != nil {
+			nicTaggedVlans = []*objects.Vlan{nicVlan}
+		}
+
+		newInterface := &objects.Interface{
+			NetboxObject: objects.NetboxObject{
+				Tags:        o.Config.SourceTags,
+				Description: nicComment,
+				CustomFields: map[string]string{
+					constants.CustomFieldSourceName:   o.SourceConfig.Name,
+					constants.CustomFieldSourceIDName: nicID,
+				},
+			},
+			Device:      nbHost,
+			Name:        nicName,
+			Speed:       objects.InterfaceSpeed(nicSpeedKbps),
+			Status:      nicEnabled,
+			MTU:         int(nicMtu),
+			Type:        nicType,
+			TaggedVlans: nicTaggedVlans,
+		}
+
+		var err error
+		// Extract ip info
+		if nicIPv4, exists := nic.Ip(); exists {
+			if nicAddress, exists := nicIPv4.Address(); exists {
+				mask := 32
+				if nicMask, exists := nicIPv4.Netmask(); exists {
+					mask, err = utils.MaskToBits(nicMask)
+					if err != nil {
+						return fmt.Errorf("mask to bits: %s", err)
+					}
+				}
+				ipv4Address := fmt.Sprintf("%s/%d", nicAddress, mask)
+				nicID2IPv4[nicID] = ipv4Address
+			}
+		}
+		if nicIPv6, exists := nic.Ipv6(); exists {
+			if nicAddress, exists := nicIPv6.Address(); exists {
+				mask := 128
+				if nicMask, exists := nicIPv6.Netmask(); exists {
+					mask, err = utils.MaskToBits(nicMask)
+					if err != nil {
+						return fmt.Errorf("mask to bits: %s", err)
+					}
+				}
+				ipv6Address := fmt.Sprintf("%s/%d", nicAddress, mask)
+				nicID2IPv6[nicID] = ipv6Address
+			}
+		}
+
+		processedNicsIDs[nicID] = true
+		nicID2nic[nicID] = newInterface
 	}
 	return nil
 }

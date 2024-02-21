@@ -204,47 +204,55 @@ func validateSourceConfig(config *Config) error {
 		default:
 			return fmt.Errorf("%s.type is not valid", externalSourceStr)
 		}
-		if len(externalSource.HostSiteRelations) > 0 {
-			err := utils.ValidateRegexRelations(externalSource.HostSiteRelations)
-			if err != nil {
-				return fmt.Errorf("%s.hostSiteRelations: %s", externalSourceStr, err)
-			}
+		err := validateSourceConfigRelations(externalSource, externalSourceStr)
+		if err != nil {
+			return err
 		}
-		if len(externalSource.ClusterSiteRelations) > 0 {
-			err := utils.ValidateRegexRelations(externalSource.ClusterSiteRelations)
-			if err != nil {
-				return fmt.Errorf("%s.clusterSiteRelations: %s", externalSourceStr, err)
-			}
+	}
+	return nil
+}
+
+func validateSourceConfigRelations(externalSource *SourceConfig, externalSourceStr string) error {
+	if len(externalSource.HostSiteRelations) > 0 {
+		err := utils.ValidateRegexRelations(externalSource.HostSiteRelations)
+		if err != nil {
+			return fmt.Errorf("%s.hostSiteRelations: %s", externalSourceStr, err)
 		}
-		if len(externalSource.ClusterTenantRelations) > 0 {
-			err := utils.ValidateRegexRelations(externalSource.ClusterTenantRelations)
-			if err != nil {
-				return fmt.Errorf("%s.clusterTenantRelations: %s", externalSourceStr, err)
-			}
+	}
+	if len(externalSource.ClusterSiteRelations) > 0 {
+		err := utils.ValidateRegexRelations(externalSource.ClusterSiteRelations)
+		if err != nil {
+			return fmt.Errorf("%s.clusterSiteRelations: %s", externalSourceStr, err)
 		}
-		if len(externalSource.HostTenantRelations) > 0 {
-			err := utils.ValidateRegexRelations(externalSource.HostTenantRelations)
-			if err != nil {
-				return fmt.Errorf("%s.hostTenantRelations: %s", externalSourceStr, err)
-			}
+	}
+	if len(externalSource.ClusterTenantRelations) > 0 {
+		err := utils.ValidateRegexRelations(externalSource.ClusterTenantRelations)
+		if err != nil {
+			return fmt.Errorf("%s.clusterTenantRelations: %s", externalSourceStr, err)
 		}
-		if len(externalSource.VMTenantRelations) > 0 {
-			err := utils.ValidateRegexRelations(externalSource.VMTenantRelations)
-			if err != nil {
-				return fmt.Errorf("%s.vmTenantRelations: %s", externalSourceStr, err)
-			}
+	}
+	if len(externalSource.HostTenantRelations) > 0 {
+		err := utils.ValidateRegexRelations(externalSource.HostTenantRelations)
+		if err != nil {
+			return fmt.Errorf("%s.hostTenantRelations: %s", externalSourceStr, err)
 		}
-		if len(externalSource.VlanGroupRelations) > 0 {
-			err := utils.ValidateRegexRelations(externalSource.VlanGroupRelations)
-			if err != nil {
-				return fmt.Errorf("%s.vlanGroupRelations: %v", externalSourceStr, err)
-			}
+	}
+	if len(externalSource.VMTenantRelations) > 0 {
+		err := utils.ValidateRegexRelations(externalSource.VMTenantRelations)
+		if err != nil {
+			return fmt.Errorf("%s.vmTenantRelations: %s", externalSourceStr, err)
 		}
-		if len(externalSource.VlanTenantRelations) > 0 {
-			err := utils.ValidateRegexRelations((externalSource.VlanTenantRelations))
-			if err != nil {
-				return fmt.Errorf("%s.vlanTenantRelations: %v", externalSourceStr, err)
-			}
+	}
+	if len(externalSource.VlanGroupRelations) > 0 {
+		err := utils.ValidateRegexRelations(externalSource.VlanGroupRelations)
+		if err != nil {
+			return fmt.Errorf("%s.vlanGroupRelations: %v", externalSourceStr, err)
+		}
+	}
+	if len(externalSource.VlanTenantRelations) > 0 {
+		err := utils.ValidateRegexRelations((externalSource.VlanTenantRelations))
+		if err != nil {
+			return fmt.Errorf("%s.vlanTenantRelations: %v", externalSourceStr, err)
 		}
 	}
 	return nil
