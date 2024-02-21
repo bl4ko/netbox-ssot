@@ -836,14 +836,12 @@ func (o *Source) syncVMInterfaces(nbi *inventory.NetboxInventory, ovirtVM *ovirt
 									// Check if ip is primary
 									if ipVersion == "v4" {
 										vmIP := utils.Lookup(netboxVM.Name)
-										if vmIP != "" {
-											if ipAddress == vmIP {
-												vmCopy := *netboxVM
-												vmCopy.PrimaryIPv4 = newIPAddress
-												_, err := nbi.AddVM(&vmCopy)
-												if err != nil {
-													return fmt.Errorf("adding primary ipv4 address: %s", err)
-												}
+										if vmIP != "" && vmIP == ipAddress || netboxVM.PrimaryIPv4 == nil {
+											vmCopy := *netboxVM
+											vmCopy.PrimaryIPv4 = newIPAddress
+											_, err := nbi.AddVM(&vmCopy)
+											if err != nil {
+												return fmt.Errorf("adding primary ipv4 address: %s", err)
 											}
 										}
 									}
