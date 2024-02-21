@@ -781,8 +781,6 @@ func (vc *Source) syncVms(nbi *inventory.NetboxInventory) error {
 
 // Syncs VM's interfaces to Netbox.
 func (vc *Source) syncVMInterfaces(nbi *inventory.NetboxInventory, vmwareVM mo.VirtualMachine, netboxVM *objects.VM) error {
-	var vmPrimaryIpv4 *objects.IPAddress
-	var vmPrimaryIpv6 *objects.IPAddress
 	var vmDefaultGatewayIpv4 string
 	var vmDefaultGatewayIpv6 string
 
@@ -809,8 +807,6 @@ func (vc *Source) syncVMInterfaces(nbi *inventory.NetboxInventory, vmwareVM mo.V
 			}
 		}
 	}
-
-	nicIps := map[string][]string{}
 
 	for _, vmDevice := range vmwareVM.Config.Hardware.Device {
 		// TODO: Refactor this to avoid hardcoded typecasting. Ensure all types
@@ -842,6 +838,10 @@ func (vc *Source) syncVMInterfaces(nbi *inventory.NetboxInventory, vmwareVM mo.V
 			intConnected := vmEthernetCard.Connectable.Connected
 			intDeviceBackingInfo := vmEthernetCard.Backing
 			intDeviceInfo := vmEthernetCard.DeviceInfo
+			nicIPv4Addresses := []string{}
+			primaryIPv4Address := ""
+			nicIPv6Addresses := []string{}
+			primaryIPv6Address := ""
 			var intMtu int
 			var intNetworkName string
 			var intNetworkPrivate bool
@@ -919,44 +919,23 @@ func (vc *Source) syncVMInterfaces(nbi *inventory.NetboxInventory, vmwareVM mo.V
 				}
 				intConnected = guestNic.Connected
 
-				if _, ok := nicIps[intFullName]; !ok {
-					nicIps[intFullName] = []string{}
-				}
-
 				if guestNic.IpConfig != nil {
 					for _, intIP := range guestNic.IpConfig.IpAddress {
 						intIPAddress := fmt.Sprintf("%s/%d", intIP.IpAddress, intIP.PrefixLength)
-						nicIps[intFullName] = append(nicIps[intFullName], intIPAddress)
-
-						// Check if primary gateways are in the subnet of this IP address
-						// if it matches IP gets chosen as primary ip
-						if vmDefaultGatewayIpv4 != "" && utils.SubnetContainsIPAddress(vmDefaultGatewayIpv4, intIPAddress) {
-							ipDNS := utils.ReverseLookup(intIP.IpAddress)
-							vmPrimaryIpv4 = &objects.IPAddress{
-								NetboxObject: objects.NetboxObject{
-									Tags: vc.Config.SourceTags,
-									CustomFields: map[string]string{
-										constants.CustomFieldSourceName: vc.SourceConfig.Name,
-									},
-								},
-								Address: intIPAddress,
-								Status:  &objects.IPAddressStatusActive,
-								DNSName: ipDNS,
+						ipVersion := utils.GetIPVersion(intIP.IpAddress)
+						switch ipVersion {
+						case constants.IPv4:
+							nicIPv4Addresses = append(nicIPv4Addresses, intIPAddress)
+							if vmDefaultGatewayIpv4 != "" && utils.SubnetContainsIPAddress(vmDefaultGatewayIpv4, intIPAddress) {
+								primaryIPv4Address = intIPAddress
 							}
-						}
-						if vmDefaultGatewayIpv6 != "" && utils.SubnetContainsIPAddress(vmDefaultGatewayIpv6, intIPAddress) {
-							ipDNS := utils.ReverseLookup(intIP.IpAddress)
-							vmPrimaryIpv6 = &objects.IPAddress{
-								NetboxObject: objects.NetboxObject{
-									Tags: vc.Config.SourceTags,
-									CustomFields: map[string]string{
-										constants.CustomFieldSourceName: vc.SourceConfig.Name,
-									},
-								},
-								Address: intIPAddress,
-								Status:  &objects.IPAddressStatusActive,
-								DNSName: ipDNS,
+						case constants.IPv6:
+							nicIPv6Addresses = append(nicIPv6Addresses, intIPAddress)
+							if vmDefaultGatewayIpv6 != "" && utils.SubnetContainsIPAddress(vmDefaultGatewayIpv6, intIPAddress) {
+								primaryIPv6Address = intIPAddress
 							}
+						default:
+							return fmt.Errorf("unknown ip version: %s", intIPAddress)
 						}
 					}
 				}
@@ -1002,29 +981,64 @@ func (vc *Source) syncVMInterfaces(nbi *inventory.NetboxInventory, vmwareVM mo.V
 				return fmt.Errorf("adding VmInterface: %s", err)
 			}
 
-			// Add primary IPs to the netbox
-			if vmPrimaryIpv4 != nil {
-				vmPrimaryIpv4.AssignedObjectType = objects.AssignedObjectTypeVMInterface
-				vmPrimaryIpv4.AssignedObjectID = nbVMInterface.ID
-				vmPrimaryIpv4, err = nbi.AddIPAddress(vmPrimaryIpv4)
-				if err != nil {
-					vc.Logger.Warningf("adding vm's primary ipv4: %s", err)
+			// Setup Primary ipv4 address
+			var nbPrimaryIPv4 *objects.IPAddress
+			if primaryIPv4Address == "" {
+				// Fallback mechanism, we choose the first ipv4 address on the interface
+				if len(nicIPv4Addresses) > 0 {
+					primaryIPv4Address = nicIPv4Addresses[0]
 				}
 			}
-			if vmPrimaryIpv6 != nil {
-				vmPrimaryIpv6.AssignedObjectType = objects.AssignedObjectTypeVMInterface
-				vmPrimaryIpv6.AssignedObjectID = nbVMInterface.ID
-				vmPrimaryIpv6, err = nbi.AddIPAddress(vmPrimaryIpv6)
+			if primaryIPv4Address != "" {
+				nbPrimaryIPv4, err = nbi.AddIPAddress(&objects.IPAddress{
+					NetboxObject: objects.NetboxObject{
+						Tags: vc.Config.SourceTags,
+						CustomFields: map[string]string{
+							constants.CustomFieldSourceName: vc.SourceConfig.Name,
+						},
+					},
+					Address:            primaryIPv4Address,
+					DNSName:            utils.ReverseLookup(primaryIPv4Address),
+					AssignedObjectType: objects.AssignedObjectTypeVMInterface,
+					AssignedObjectID:   nbVMInterface.ID,
+				})
 				if err != nil {
-					vc.Logger.Warningf("adding vm's primary ipv6: %s", err)
+					vc.Logger.Errorf("adding ipv4 address: %s", err)
+				}
+			}
+
+			// Setup Primary ipv6 address
+			var nbPrimaryIPv6 *objects.IPAddress
+			if primaryIPv6Address != "" {
+				// Fallback mechanism, we choose the first ipv6 address on the interface
+				if len(nicIPv6Addresses) > 0 {
+					primaryIPv6Address = nicIPv6Addresses[0]
+				}
+			}
+			if primaryIPv6Address != "" {
+				nbPrimaryIPv6, err = nbi.AddIPAddress(&objects.IPAddress{
+					NetboxObject: objects.NetboxObject{
+						Tags: vc.Config.SourceTags,
+						CustomFields: map[string]string{
+							constants.CustomFieldSourceName: vc.SourceConfig.Name,
+						},
+					},
+					Address:            primaryIPv6Address,
+					DNSName:            utils.ReverseLookup(primaryIPv6Address),
+					AssignedObjectType: objects.AssignedObjectTypeVMInterface,
+					AssignedObjectID:   nbVMInterface.ID,
+				})
+				if err != nil {
+					vc.Logger.Errorf("adding ipv6 address: %s", err)
 				}
 			}
 
 			// Update the vms with primary addresses
-			if vmPrimaryIpv4 != nil && (netboxVM.PrimaryIPv4 == nil || vmPrimaryIpv4.Address != netboxVM.PrimaryIPv4.Address) {
+			if nbPrimaryIPv4 != nil && (netboxVM.PrimaryIPv4 == nil || nbPrimaryIPv4.Address != netboxVM.PrimaryIPv4.Address) || nbPrimaryIPv6 != nil && (netboxVM.PrimaryIPv6 == nil || nbPrimaryIPv6.Address != netboxVM.PrimaryIPv6.Address) {
 				// Shallow copy netboxVm to newNetboxVM
 				newNetboxVM := *netboxVM
-				newNetboxVM.PrimaryIPv4 = vmPrimaryIpv4
+				newNetboxVM.PrimaryIPv4 = nbPrimaryIPv4
+				newNetboxVM.PrimaryIPv6 = nbPrimaryIPv6
 				_, err = nbi.AddVM(&newNetboxVM)
 				if err != nil {
 					vc.Logger.Warningf("adding vm: %s", err)
