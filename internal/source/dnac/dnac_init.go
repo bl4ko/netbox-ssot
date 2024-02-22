@@ -55,20 +55,14 @@ func (ds *Source) InitDevices(c *dnac.Client) error {
 	ds.Vlans = make(map[int]dnac.ResponseDevicesGetDeviceInterfaceVLANsResponse)
 	for _, device := range allDevices {
 		ds.Devices[device.ID] = device
-		err := ds.addVlansForDevice(c, device.ID)
-		if err != nil {
-			return fmt.Errorf("init vlans for device[%s]: %s", device.ID, err)
-		}
+		ds.initVlansForDevice(c, device.ID)
 	}
 	return nil
 }
 
 // Function that gets all vlans for device id.
-func (ds *Source) addVlansForDevice(c *dnac.Client, deviceID string) error {
-	vlans, _, err := c.Devices.GetDeviceInterfaceVLANs(deviceID, nil)
-	if err != nil {
-		return err
-	}
+func (ds *Source) initVlansForDevice(c *dnac.Client, deviceID string) {
+	vlans, _, _ := c.Devices.GetDeviceInterfaceVLANs(deviceID, nil)
 	if vlans != nil {
 		for _, vlan := range *vlans.Response {
 			if vlan.VLANNumber != nil {
@@ -76,7 +70,6 @@ func (ds *Source) addVlansForDevice(c *dnac.Client, deviceID string) error {
 			}
 		}
 	}
-	return nil
 }
 
 func (ds *Source) InitInterfaces(c *dnac.Client) error {
