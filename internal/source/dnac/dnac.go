@@ -32,6 +32,7 @@ type Source struct {
 	InterfaceID2nbInterface map[string]*objects.Interface // InterfaceId -> nbInterface
 
 	// User defined relations
+	HostTenantRelations map[string]string
 	VlanGroupRelations  map[string]string
 	VlanTenantRelations map[string]string
 }
@@ -45,9 +46,11 @@ func (ds *Source) Init() error {
 
 	// Initialize regex relations for this source
 	ds.VlanGroupRelations = utils.ConvertStringsToRegexPairs(ds.SourceConfig.VlanGroupRelations)
-	ds.Logger.Debug("VlanGroupRelations: ", ds.VlanGroupRelations)
+	ds.Logger.Debugf("VlanGroupRelations: %s", ds.VlanGroupRelations)
 	ds.VlanTenantRelations = utils.ConvertStringsToRegexPairs(ds.SourceConfig.VlanTenantRelations)
-	ds.Logger.Debug("VlanTenantRelations: ", ds.VlanTenantRelations)
+	ds.Logger.Debugf("VlanTenantRelations: %s", ds.VlanTenantRelations)
+	ds.HostTenantRelations = utils.ConvertStringsToRegexPairs(ds.SourceConfig.HostTenantRelations)
+	ds.Logger.Debugf("HostTenantRelations: %s", ds.HostTenantRelations)
 
 	// Initialize items from vsphere API to local storage
 	initFunctions := []func(*dnac.Client) error{

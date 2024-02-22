@@ -48,24 +48,24 @@ Example configuration can be found [here](#example-config).
 
 ### Source
 
-| Parameter                       | Description                                                                                                        | Source Type     | Type     | Possible values       | Default    | Required |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------ | --------------- | -------- | --------------------- | ---------- | -------- |
-| `source.name`                   | Name of the data source.                                                                                           | all             | str      | any                   | ""         | Yes      |
-| `source.type`                   | Data source type                                                                                                   | all             | str      | [ovirt, vmware, dnac] | ""         | Yes      |
-| `source.hostname`               | Hostname of the data source                                                                                        | all             | str      | any                   | ""         | Yes      |
-| `source.port`                   | Port of the data source                                                                                            | all             | int      | 0-65536               | 443        | No       |
-| `source.username`               | Username of the data source account.                                                                               | all             | str      | any                   | ""         | Yes      |
-| `source.password`               | Password of the data source account.                                                                               | all             | str      | any                   | ""         | Yes      |
-| `source.validateCert`           | Enforce TLS certificate validation.                                                                                | all             | bool     | [true, false]         | false      | No       |
-| `source.tagColor`               | TagColor for the source tag.                                                                                       | all             | string   | any                   | Predefined | No       |
-| `source.hostSiteRelations`      | Regex relations in format `regex = siteName`, that map each host that satisfies regex to site.                     | [vmware, ovirt] | []string | any                   | []         | No       |
-| `source.clusterSiteRelations`   | Regex relations in format `regex = siteName`, that map each cluster that satisfies regex to site.                  | [vmware, ovirt] | []string | any                   | []         | No       |
-| `source.clusterTenantRelations` | Regex relations in format `regex = tenantName`, that map each cluster that satisfies regex to tenant.              | [vmware, ovirt] | []string | any                   | []         | No       |
-| `source.hostTenantRelations`    | Regex relations in format `regex = tenantName`, that map each host that satisfies regex to tenant.                 | [vmware, ovirt] | []string | any                   | []         | No       |
-| `source.vmTenantRelations`      | Regex relations in format `regex = tenantName`, that map each vm that satisfies regex to tenant.                   | [vmware, ovirt] | []string | any                   | []         | No       |
-| `source.vlanGroupRelations`     | Regex relations in format `regex = vlanGroup`, that map each vlan that satisfies regex to vlanGroup.               | all             | []string | any                   | []         | No       |
-| `source.vlanTenantRelations`    | Regex relations in format `regex = tenantName`, that map each vlan that satisfies regex to tenant.                 | [vmware, ovirt] | []string | any                   | []         | No       |
-| `source.customFieldMappings`    | Mappings of format `customFieldName = option`. Currently, supported options are `contact`, `owner`, `description`. | [vmware ]       | []string | any                   | []         | No       |
+| Parameter                       | Description                                                                                                        | Source Type           | Type     | Possible values       | Default    | Required |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------ | --------------------- | -------- | --------------------- | ---------- | -------- |
+| `source.name`                   | Name of the data source.                                                                                           | all                   | str      | any                   | ""         | Yes      |
+| `source.type`                   | Data source type                                                                                                   | all                   | str      | [ovirt, vmware, dnac] | ""         | Yes      |
+| `source.hostname`               | Hostname of the data source                                                                                        | all                   | str      | any                   | ""         | Yes      |
+| `source.port`                   | Port of the data source                                                                                            | all                   | int      | 0-65536               | 443        | No       |
+| `source.username`               | Username of the data source account.                                                                               | all                   | str      | any                   | ""         | Yes      |
+| `source.password`               | Password of the data source account.                                                                               | all                   | str      | any                   | ""         | Yes      |
+| `source.validateCert`           | Enforce TLS certificate validation.                                                                                | all                   | bool     | [true, false]         | false      | No       |
+| `source.tagColor`               | TagColor for the source tag.                                                                                       | all                   | string   | any                   | Predefined | No       |
+| `source.hostSiteRelations`      | Regex relations in format `regex = siteName`, that map each host that satisfies regex to site.                     | [vmware, ovirt]       | []string | any                   | []         | No       |
+| `source.clusterSiteRelations`   | Regex relations in format `regex = siteName`, that map each cluster that satisfies regex to site.                  | [vmware, ovirt]       | []string | any                   | []         | No       |
+| `source.clusterTenantRelations` | Regex relations in format `regex = tenantName`, that map each cluster that satisfies regex to tenant.              | [vmware, ovirt]       | []string | any                   | []         | No       |
+| `source.hostTenantRelations`    | Regex relations in format `regex = tenantName`, that map each host that satisfies regex to tenant.                 | [vmware, ovirt, dnac] | []string | any                   | []         | No       |
+| `source.vmTenantRelations`      | Regex relations in format `regex = tenantName`, that map each vm that satisfies regex to tenant.                   | [vmware, ovirt]       | []string | any                   | []         | No       |
+| `source.vlanGroupRelations`     | Regex relations in format `regex = vlanGroup`, that map each vlan that satisfies regex to vlanGroup.               | all                   | []string | any                   | []         | No       |
+| `source.vlanTenantRelations`    | Regex relations in format `regex = tenantName`, that map each vlan that satisfies regex to tenant.                 | [vmware, ovirt, dnac] | []string | any                   | []         | No       |
+| `source.customFieldMappings`    | Mappings of format `customFieldName = option`. Currently, supported options are `contact`, `owner`, `description`. | [vmware ]             | []string | any                   | []         | No       |
 
 ### Example config
 
@@ -98,12 +98,34 @@ source:
     hostname: vcenter.example.com
     username: user
     password: "top_secret"
+    clusterSiteRelations: # regex (https://pkg.go.dev/regexp/syntax) cluster name to Site name
+      - .* = ExampleSite
+    hostSiteRelations: # regex (https://pkg.go.dev/regexp/syntax) host name to Site name
+      - .*_NYC = New York
+      - nyc.* = New York
+    customFieldMappings: # Here we define map of our custom field names, to 3 option [email, owner, description]
+      - Mail = email
+      - Creator = owner
+      - Description = description
+
+  - name: testvmare
+    type: vmware
+    hostname: vcenter-test.example.com
+    username: user
+    password: passw0rd
+    customFieldMappings: # Here we define map of our custom field names, to 3 option [email, owner, description]
+      - Email = email
+      - Maintainer = owner
+      - Notes = description
+
 
   - name: dnacenter
     type: dnac
     hostname: dnac.example.com
     username: user
     password: "pa$$w0rd"
+    vlanTenantRelations: # regex Vlan name to Tenant name
+      - .* = MyTenant
 ```
 
 

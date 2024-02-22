@@ -161,6 +161,11 @@ func (ds *Source) SyncDevices(nbi *inventory.NetboxInventory) error {
 			return fmt.Errorf("add device type: %s", err)
 		}
 
+		deviceTenant, err := common.MatchHostToTenant(nbi, device.Hostname, ds.HostTenantRelations)
+		if err != nil {
+			return fmt.Errorf("hostTenant: %s", err)
+		}
+
 		nbDevice, err := nbi.AddDevice(&objects.Device{
 			NetboxObject: objects.NetboxObject{
 				Tags:        ds.Config.SourceTags,
@@ -170,6 +175,7 @@ func (ds *Source) SyncDevices(nbi *inventory.NetboxInventory) error {
 				},
 			},
 			Name:         device.Hostname,
+			Tenant:       deviceTenant,
 			DeviceRole:   deviceRole,
 			SerialNumber: device.SerialNumber,
 			Platform:     platform,
