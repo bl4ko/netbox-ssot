@@ -13,7 +13,7 @@ import (
 )
 
 // Syncs networks received from oVirt API to the netbox.
-func (o *Source) syncNetworks(nbi *inventory.NetboxInventory) error {
+func (o *OVirtSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 	for _, network := range o.Networks.OVirtNetworks {
 		name, exists := network.Name()
 		if !exists {
@@ -57,7 +57,7 @@ func (o *Source) syncNetworks(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
-func (o *Source) syncDatacenters(nbi *inventory.NetboxInventory) error {
+func (o *OVirtSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
 	// First sync oVirt DataCenters as NetBoxClusterGroups
 	for _, datacenter := range o.DataCenters {
 		name, exists := datacenter.Name()
@@ -85,7 +85,7 @@ func (o *Source) syncDatacenters(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
-func (o *Source) syncClusters(nbi *inventory.NetboxInventory) error {
+func (o *OVirtSource) syncClusters(nbi *inventory.NetboxInventory) error {
 	clusterType := &objects.ClusterType{
 		NetboxObject: objects.NetboxObject{
 			Tags: o.Config.SourceTags,
@@ -172,7 +172,7 @@ func (o *Source) syncClusters(nbi *inventory.NetboxInventory) error {
 
 // Host in oVirt is a represented as device in netbox with a
 // custom role Server.
-func (o *Source) syncHosts(nbi *inventory.NetboxInventory) error {
+func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 	for hostID, host := range o.Hosts {
 		hostName, exists := host.Name()
 		if !exists {
@@ -328,7 +328,7 @@ func (o *Source) syncHosts(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
-func (o *Source) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ovirtsdk4.Host, nbHost *objects.Device) error {
+func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ovirtsdk4.Host, nbHost *objects.Device) error {
 	if nics, exists := ovirtHost.Nics(); exists {
 		master2slave := make(map[string][]string) // masterId: [slaveId1, slaveId2, ...]
 		parent2child := make(map[string][]string) // parentId: [childId, ... ]
@@ -458,7 +458,7 @@ func (o *Source) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ovirtsd
 	return nil
 }
 
-func (o *Source) collectHostNicsData(nbHost *objects.Device, nbi *inventory.NetboxInventory, nics *ovirtsdk4.HostNicSlice, parent2child map[string][]string, master2slave map[string][]string, nicID2nic map[string]*objects.Interface, processedNicsIDs map[string]bool, nicID2IPv4 map[string]string, nicID2IPv6 map[string]string) error {
+func (o *OVirtSource) collectHostNicsData(nbHost *objects.Device, nbi *inventory.NetboxInventory, nics *ovirtsdk4.HostNicSlice, parent2child map[string][]string, master2slave map[string][]string, nicID2nic map[string]*objects.Interface, processedNicsIDs map[string]bool, nicID2IPv4 map[string]string, nicID2IPv6 map[string]string) error {
 	for _, nic := range nics.Slice() {
 		nicID, exists := nic.Id()
 		if !exists {
@@ -605,151 +605,19 @@ func (o *Source) collectHostNicsData(nbHost *objects.Device, nbi *inventory.Netb
 	return nil
 }
 
-func (o *Source) syncVms(nbi *inventory.NetboxInventory) error {
-	for vmID, vm := range o.Vms {
-		// VM name, which is used as unique identifier for VMs in Netbox
-		vmName, exists := vm.Name()
-		if !exists {
-			o.Logger.Warning("name for oVirt vm with id ", vmID, " is empty. VM has to have unique name to be synced to netbox. Skipping...")
-		}
-
-		// VM's Cluster
-		var vmCluster *objects.Cluster
-		cluster, exists := vm.Cluster()
-		if exists {
-			if _, ok := o.Clusters[cluster.MustId()]; ok {
-				vmCluster = nbi.ClustersIndexByName[o.Clusters[cluster.MustId()].MustName()]
-			}
-		}
-
-		// Get VM's site,tenant and platform from cluster
-		var vmTenantGroup *objects.TenantGroup
-		var vmTenant *objects.Tenant
-		var vmSite *objects.Site
-		if vmCluster != nil {
-			vmTenantGroup = vmCluster.TenantGroup
-			vmTenant = vmCluster.Tenant
-			vmSite = vmCluster.Site
-		}
-
-		// VM's Status
-		var vmStatus *objects.VMStatus
-		status, exists := vm.Status()
-		if exists {
-			switch status {
-			case ovirtsdk4.VMSTATUS_UP:
-				vmStatus = &objects.VMStatusActive
-			default:
-				vmStatus = &objects.VMStatusOffline
-			}
-		}
-
-		// VM's Host Device (server)
-		var vmHostDevice *objects.Device
-		if host, exists := vm.Host(); exists {
-			if oHost, ok := o.Hosts[host.MustId()]; ok {
-				if oHostName, ok := oHost.Name(); ok {
-					vmHostDevice = nbi.DevicesIndexByNameAndSiteID[oHostName][vmSite.ID]
-				}
-			}
-		}
-
-		// vmVCPUs
-		var vmVCPUs float32
-		if cpuData, exists := vm.Cpu(); exists {
-			if cpuTopology, exists := cpuData.Topology(); exists {
-				if cores, exists := cpuTopology.Cores(); exists {
-					vmVCPUs = float32(cores)
-				}
-			}
-		}
-
-		// Memory
-		var vmMemorySizeBytes int64
-		if memory, exists := vm.Memory(); exists {
-			vmMemorySizeBytes = memory
-		}
-
-		// Disks
-		var vmDiskSizeBytes int64
-		if diskAttachment, exists := vm.DiskAttachments(); exists {
-			for _, diskAttachment := range diskAttachment.Slice() {
-				if ovirtDisk, exists := diskAttachment.Disk(); exists {
-					disk := o.Disks[ovirtDisk.MustId()]
-					if provisionedDiskSize, exists := disk.ProvisionedSize(); exists {
-						vmDiskSizeBytes += provisionedDiskSize
-					}
-				}
-			}
-		}
-
-		// VM's comments
-		var vmComments string
-		if comments, exists := vm.Comment(); exists {
-			vmComments = comments
-		}
-
-		// VM's Platform
-		var vmPlatform *objects.Platform
-		vmOsType := "Generic OS"
-		vmOsVersion := "Generic Version"
-		if guestOs, exists := vm.GuestOperatingSystem(); exists {
-			if guestOsType, exists := guestOs.Distribution(); exists {
-				vmOsType = guestOsType
-			}
-			if guestOsKernel, exists := guestOs.Kernel(); exists {
-				if guestOsVersion, exists := guestOsKernel.Version(); exists {
-					if osFullVersion, exists := guestOsVersion.FullVersion(); exists {
-						vmOsVersion = osFullVersion
-					}
-				}
-			}
-		} else {
-			if os, exists := vm.Os(); exists {
-				if ovirtOsType, exists := os.Type(); exists {
-					vmOsType = ovirtOsType
-				}
-				if ovirtOsVersion, exists := os.Version(); exists {
-					if osFullVersion, exists := ovirtOsVersion.FullVersion(); exists {
-						vmOsVersion = osFullVersion
-					}
-				}
-			}
-		}
-		platformName := utils.GeneratePlatformName(vmOsType, vmOsVersion)
-		vmPlatform, err := nbi.AddPlatform(&objects.Platform{
-			Name: platformName,
-			Slug: utils.Slugify(platformName),
-		})
+func (o *OVirtSource) syncVms(nbi *inventory.NetboxInventory) error {
+	for vmID, ovirtVM := range o.Vms {
+		collectedVM, err := o.extractVMData(nbi, vmID, ovirtVM)
 		if err != nil {
-			return fmt.Errorf("failed adding oVirt vm's Platform %v with error: %s", vmPlatform, err)
+			return err
 		}
 
-		newVM, err := nbi.AddVM(&objects.VM{
-			NetboxObject: objects.NetboxObject{
-				Tags: o.Config.SourceTags,
-				CustomFields: map[string]string{
-					constants.CustomFieldSourceName: o.SourceConfig.Name,
-				},
-			},
-			Name:        vmName,
-			Cluster:     vmCluster,
-			Site:        vmSite,
-			Tenant:      vmTenant,
-			TenantGroup: vmTenantGroup,
-			Status:      vmStatus,
-			Host:        vmHostDevice,
-			Platform:    vmPlatform,
-			Comments:    vmComments,
-			VCPUs:       vmVCPUs,
-			Memory:      int(vmMemorySizeBytes / constants.KiB / constants.KiB),               // MBs
-			Disk:        int(vmDiskSizeBytes / constants.KiB / constants.KiB / constants.KiB), // GBs
-		})
+		nbVM, err := nbi.AddVM(collectedVM)
 		if err != nil {
 			return fmt.Errorf("failed to sync oVirt vm: %v", err)
 		}
 
-		err = o.syncVMInterfaces(nbi, vm, newVM)
+		err = o.syncVMInterfaces(nbi, ovirtVM, nbVM)
 		if err != nil {
 			return fmt.Errorf("failed to sync oVirt vm's interfaces: %v", err)
 		}
@@ -758,8 +626,149 @@ func (o *Source) syncVms(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
+func (o *OVirtSource) extractVMData(nbi *inventory.NetboxInventory, vmID string, vm *ovirtsdk4.Vm) (*objects.VM, error) {
+	// VM name, which is used as unique identifier for VMs in Netbox
+	vmName, exists := vm.Name()
+	if !exists {
+		o.Logger.Warning("name for oVirt vm with id ", vmID, " is empty. VM has to have unique name to be synced to netbox. Skipping...")
+	}
+
+	// VM's Cluster
+	var vmCluster *objects.Cluster
+	cluster, exists := vm.Cluster()
+	if exists {
+		if _, ok := o.Clusters[cluster.MustId()]; ok {
+			vmCluster = nbi.ClustersIndexByName[o.Clusters[cluster.MustId()].MustName()]
+		}
+	}
+
+	// Get VM's site,tenant and platform from cluster
+	var vmTenantGroup *objects.TenantGroup
+	var vmTenant *objects.Tenant
+	var vmSite *objects.Site
+	if vmCluster != nil {
+		vmTenantGroup = vmCluster.TenantGroup
+		vmTenant = vmCluster.Tenant
+		vmSite = vmCluster.Site
+	}
+
+	// VM's Status
+	var vmStatus *objects.VMStatus
+	status, exists := vm.Status()
+	if exists {
+		switch status {
+		case ovirtsdk4.VMSTATUS_UP:
+			vmStatus = &objects.VMStatusActive
+		default:
+			vmStatus = &objects.VMStatusOffline
+		}
+	}
+
+	// VM's Host Device (server)
+	var vmHostDevice *objects.Device
+	if host, exists := vm.Host(); exists {
+		if oHost, ok := o.Hosts[host.MustId()]; ok {
+			if oHostName, ok := oHost.Name(); ok {
+				vmHostDevice = nbi.DevicesIndexByNameAndSiteID[oHostName][vmSite.ID]
+			}
+		}
+	}
+
+	// vmVCPUs
+	var vmVCPUs float32
+	if cpuData, exists := vm.Cpu(); exists {
+		if cpuTopology, exists := cpuData.Topology(); exists {
+			if cores, exists := cpuTopology.Cores(); exists {
+				vmVCPUs = float32(cores)
+			}
+		}
+	}
+
+	// Memory
+	var vmMemorySizeBytes int64
+	if memory, exists := vm.Memory(); exists {
+		vmMemorySizeBytes = memory
+	}
+
+	// Disks
+	var vmDiskSizeBytes int64
+	if diskAttachment, exists := vm.DiskAttachments(); exists {
+		for _, diskAttachment := range diskAttachment.Slice() {
+			if ovirtDisk, exists := diskAttachment.Disk(); exists {
+				disk := o.Disks[ovirtDisk.MustId()]
+				if provisionedDiskSize, exists := disk.ProvisionedSize(); exists {
+					vmDiskSizeBytes += provisionedDiskSize
+				}
+			}
+		}
+	}
+
+	// VM's comments
+	var vmComments string
+	if comments, exists := vm.Comment(); exists {
+		vmComments = comments
+	}
+
+	// VM's Platform
+	var vmPlatform *objects.Platform
+	vmOsType := "Generic OS"
+	vmOsVersion := "Generic Version"
+	if guestOs, exists := vm.GuestOperatingSystem(); exists {
+		if guestOsType, exists := guestOs.Distribution(); exists {
+			vmOsType = guestOsType
+		}
+		if guestOsKernel, exists := guestOs.Kernel(); exists {
+			if guestOsVersion, exists := guestOsKernel.Version(); exists {
+				if osFullVersion, exists := guestOsVersion.FullVersion(); exists {
+					vmOsVersion = osFullVersion
+				}
+			}
+		}
+	} else {
+		if os, exists := vm.Os(); exists {
+			if ovirtOsType, exists := os.Type(); exists {
+				vmOsType = ovirtOsType
+			}
+			if ovirtOsVersion, exists := os.Version(); exists {
+				if osFullVersion, exists := ovirtOsVersion.FullVersion(); exists {
+					vmOsVersion = osFullVersion
+				}
+			}
+		}
+	}
+	platformName := utils.GeneratePlatformName(vmOsType, vmOsVersion)
+	vmPlatform, err := nbi.AddPlatform(&objects.Platform{
+		Name: platformName,
+		Slug: utils.Slugify(platformName),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed adding oVirt vm's Platform %v with error: %s", vmPlatform, err)
+	}
+
+	return &objects.VM{
+		NetboxObject: objects.NetboxObject{
+			Tags: o.Config.SourceTags,
+			CustomFields: map[string]string{
+				constants.CustomFieldSourceName: o.SourceConfig.Name,
+			},
+		},
+		Name:        vmName,
+		Cluster:     vmCluster,
+		Site:        vmSite,
+		Tenant:      vmTenant,
+		TenantGroup: vmTenantGroup,
+		Status:      vmStatus,
+		Host:        vmHostDevice,
+		Platform:    vmPlatform,
+		Comments:    vmComments,
+		VCPUs:       vmVCPUs,
+		Memory:      int(vmMemorySizeBytes / constants.KiB / constants.KiB),               // MBs
+		Disk:        int(vmDiskSizeBytes / constants.KiB / constants.KiB / constants.KiB), // GBs
+	}, nil
+}
+
 // Syncs VM's interfaces to Netbox.
-func (o *Source) syncVMInterfaces(nbi *inventory.NetboxInventory, ovirtVM *ovirtsdk4.Vm, netboxVM *objects.VM) error {
+func (o *OVirtSource) syncVMInterfaces(nbi *inventory.NetboxInventory, ovirtVM *ovirtsdk4.Vm, netboxVM *objects.VM) error {
 	if reportedDevices, exist := ovirtVM.ReportedDevices(); exist {
 		for _, reportedDevice := range reportedDevices.Slice() {
 			if reportedDeviceType, exist := reportedDevice.Type(); exist {

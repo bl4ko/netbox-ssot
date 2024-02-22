@@ -13,7 +13,7 @@ issues:
 linters:
   enable:
     - revive
-    # - gocyclo # TODO: enable in future
+    - gocyclo
     # - dupl # TODO: enable in future
     # - errorlint # TODO: enable in future
     # - gocognit # TODO: enable in future

@@ -12,8 +12,10 @@ import (
 	ovirtsdk4 "github.com/ovirt/go-ovirt"
 )
 
-// Source represents an oVirt source.
-type Source struct {
+// OVirtSource represents an oVirt source.
+//
+//nolint:revive
+type OVirtSource struct {
 	common.Config
 	Disks       map[string]*ovirtsdk4.Disk
 	DataCenters map[string]*ovirtsdk4.DataCenter
@@ -37,7 +39,7 @@ type NetworkData struct {
 }
 
 // Function that initializes state from ovirt api to local storage.
-func (o *Source) Init() error {
+func (o *OVirtSource) Init() error {
 	// Initialize regex relations
 	o.Logger.Debug("Initializing regex relations for oVirt source ", o.SourceConfig.Name)
 	o.HostSiteRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.HostSiteRelations)
@@ -92,7 +94,7 @@ func (o *Source) Init() error {
 }
 
 // Function that syncs all data from oVirt to Netbox.
-func (o *Source) Sync(nbi *inventory.NetboxInventory) error {
+func (o *OVirtSource) Sync(nbi *inventory.NetboxInventory) error {
 	syncFunctions := []func(*inventory.NetboxInventory) error{
 		o.syncNetworks,
 		o.syncDatacenters,

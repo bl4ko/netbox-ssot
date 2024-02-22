@@ -11,7 +11,7 @@ import (
 )
 
 // In vsphere we get vlans from DistributedVirtualPortgroups.
-func (vc *Source) InitNetworks(ctx context.Context, containerView *view.ContainerView) error {
+func (vc *VmwareSource) InitNetworks(ctx context.Context, containerView *view.ContainerView) error {
 	var dvpgs []mo.DistributedVirtualPortgroup
 	err := containerView.Retrieve(ctx, []string{"DistributedVirtualPortgroup"}, []string{"config"}, &dvpgs)
 	if err != nil {
@@ -77,7 +77,7 @@ func (vc *Source) InitNetworks(ctx context.Context, containerView *view.Containe
 	return nil
 }
 
-func (vc *Source) InitDisks(ctx context.Context, containerView *view.ContainerView) error {
+func (vc *VmwareSource) InitDisks(ctx context.Context, containerView *view.ContainerView) error {
 	var disks []mo.Datastore
 	err := containerView.Retrieve(ctx, []string{"Datastore"}, []string{"summary", "host", "vm"}, &disks)
 	if err != nil {
@@ -90,7 +90,7 @@ func (vc *Source) InitDisks(ctx context.Context, containerView *view.ContainerVi
 	return nil
 }
 
-func (vc *Source) InitDataCenters(ctx context.Context, containerView *view.ContainerView) error {
+func (vc *VmwareSource) InitDataCenters(ctx context.Context, containerView *view.ContainerView) error {
 	var datacenters []mo.Datacenter
 	err := containerView.Retrieve(ctx, []string{"Datacenter"}, []string{"name"}, &datacenters)
 	if err != nil {
@@ -103,7 +103,7 @@ func (vc *Source) InitDataCenters(ctx context.Context, containerView *view.Conta
 	return nil
 }
 
-func (vc *Source) InitClusters(ctx context.Context, containerView *view.ContainerView) error {
+func (vc *VmwareSource) InitClusters(ctx context.Context, containerView *view.ContainerView) error {
 	var clusters []mo.ClusterComputeResource
 	err := containerView.Retrieve(ctx, []string{"ClusterComputeResource"}, []string{"summary", "host", "name"}, &clusters)
 	if err != nil {
@@ -120,7 +120,7 @@ func (vc *Source) InitClusters(ctx context.Context, containerView *view.Containe
 	return nil
 }
 
-func (vc *Source) InitHosts(ctx context.Context, containerView *view.ContainerView) error {
+func (vc *VmwareSource) InitHosts(ctx context.Context, containerView *view.ContainerView) error {
 	var hosts []mo.HostSystem
 	err := containerView.Retrieve(ctx, []string{"HostSystem"}, []string{"name", "summary.host", "summary.hardware", "summary.runtime", "summary.config", "vm", "config.network"}, &hosts)
 	if err != nil {
@@ -180,7 +180,7 @@ func (vc *Source) InitHosts(ctx context.Context, containerView *view.ContainerVi
 	return nil
 }
 
-func (vc *Source) InitVms(ctx context.Context, containerView *view.ContainerView) error {
+func (vc *VmwareSource) InitVms(ctx context.Context, containerView *view.ContainerView) error {
 	var vms []mo.VirtualMachine
 	err := containerView.Retrieve(ctx, []string{"VirtualMachine"}, []string{"summary", "name", "runtime", "guest", "config.hardware", "config.guestFullName"}, &vms)
 	if err != nil {

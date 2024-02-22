@@ -18,8 +18,10 @@ import (
 	"github.com/vmware/govmomi/vim25/mo"
 )
 
-// Source represents an vsphere source.
-type Source struct {
+// VmwareSource represents an vsphere source.
+//
+//nolint:revive
+type VmwareSource struct {
 	common.Config
 	// Vmware API data initialized in init functions
 	Disks       map[string]mo.Datastore
@@ -83,7 +85,7 @@ type HostPortgroupData struct {
 	nics    []string
 }
 
-func (vc *Source) Init() error {
+func (vc *VmwareSource) Init() error {
 	// Initialize regex relations
 	vc.Logger.Debug("Initializing regex relations for oVirt source ", vc.SourceConfig.Name)
 	vc.HostSiteRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.HostSiteRelations)
@@ -196,7 +198,7 @@ func (vc *Source) Init() error {
 }
 
 // Function that syncs all data from oVirt to Netbox.
-func (vc *Source) Sync(nbi *inventory.NetboxInventory) error {
+func (vc *VmwareSource) Sync(nbi *inventory.NetboxInventory) error {
 	syncFunctions := []func(*inventory.NetboxInventory) error{
 		vc.syncNetworks,
 		vc.syncDatacenters,
@@ -218,7 +220,7 @@ func (vc *Source) Sync(nbi *inventory.NetboxInventory) error {
 
 // Currently we have to traverse the vsphere tree to get datacenter to cluster relation
 // For other objects relations are available in with containerView.
-func (vc *Source) CreateClusterDataCenterRelation(ctx context.Context, client *vim25.Client) error {
+func (vc *VmwareSource) CreateClusterDataCenterRelation(ctx context.Context, client *vim25.Client) error {
 	finder := find.NewFinder(client, true)
 	datacenters, err := finder.DatacenterList(ctx, "*")
 	if err != nil {
@@ -239,7 +241,7 @@ func (vc *Source) CreateClusterDataCenterRelation(ctx context.Context, client *v
 }
 
 // Creates a map of custom field ids to their names.
-func (vc *Source) CreateCustomFieldRelation(ctx context.Context, client *vim25.Client) error {
+func (vc *VmwareSource) CreateCustomFieldRelation(ctx context.Context, client *vim25.Client) error {
 	cfm, err := object.GetCustomFieldsManager(client)
 	if err != nil {
 		return fmt.Errorf("createCustomFieldRelation: %s", err)

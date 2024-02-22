@@ -45,9 +45,9 @@ func NewSource(config *parser.SourceConfig, logger *logger.Logger, netboxInvento
 
 	switch config.Type {
 	case constants.Ovirt:
-		return &ovirt.Source{Config: commonConfig}, nil
+		return &ovirt.OVirtSource{Config: commonConfig}, nil
 	case constants.Vmware:
-		return &vmware.Source{Config: commonConfig}, nil
+		return &vmware.VmwareSource{Config: commonConfig}, nil
 	case constants.Dnac:
 		return &dnac.Source{Config: commonConfig}, nil
 	default:
