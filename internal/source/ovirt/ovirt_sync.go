@@ -209,7 +209,7 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 
 			hostModel, exists = hwInfo.ProductName()
 			if !exists {
-				hostModel = "Generic Model" // Model is also required for adding device type into netbox
+				hostModel = constants.DefaultModel // Model is also required for adding device type into netbox
 			}
 		} else {
 			o.Logger.Warning("Hardware information for oVirt host ", hostName, " is empty, it can't be identified so it will be skipped.")
@@ -218,7 +218,7 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 
 		var hostManufacturer *objects.Manufacturer
 		if manufacturerName == "" {
-			manufacturerName = "Generic Manufacturer"
+			manufacturerName = constants.DefaultManufacturer
 		}
 		hostManufacturer, err = nbi.AddManufacturer(&objects.Manufacturer{
 			Name: manufacturerName,
@@ -711,8 +711,8 @@ func (o *OVirtSource) extractVMData(nbi *inventory.NetboxInventory, vmID string,
 
 	// VM's Platform
 	var vmPlatform *objects.Platform
-	vmOsType := "Generic OS"
-	vmOsVersion := "Generic Version"
+	vmOsType := constants.DefaultOSName
+	vmOsVersion := constants.DefaultOSVersion
 	if guestOs, exists := vm.GuestOperatingSystem(); exists {
 		if guestOsType, exists := guestOs.Distribution(); exists {
 			vmOsType = guestOsType

@@ -183,7 +183,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		manufacturerName := host.Summary.Hardware.Vendor
 		var hostManufacturer *objects.Manufacturer
 		if manufacturerName == "" {
-			manufacturerName = "Generic Manufacturer"
+			manufacturerName = constants.DefaultManufacturer
 		}
 		hostManufacturer, err = nbi.AddManufacturer(&objects.Manufacturer{
 			Name: manufacturerName,
@@ -673,7 +673,7 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
 			vmPlatformName = vm.Guest.GuestFullName
 		}
 		if vmPlatformName == "" {
-			vmPlatformName = utils.GeneratePlatformName("Generic OS", "Generic Version")
+			vmPlatformName = utils.GeneratePlatformName(constants.DefaultOSName, constants.DefaultOSVersion)
 		}
 		vmPlatform, err := nbi.AddPlatform(&objects.Platform{
 			Name: vmPlatformName,
