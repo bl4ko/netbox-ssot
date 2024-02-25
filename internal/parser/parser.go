@@ -201,6 +201,7 @@ func validateSourceConfig(config *Config) error {
 		case constants.Ovirt:
 		case constants.Vmware:
 		case constants.Dnac:
+		case constants.Proxmox:
 		default:
 			return fmt.Errorf("%s.type is not valid", externalSourceStr)
 		}

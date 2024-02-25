@@ -5,9 +5,17 @@ import "github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 type SourceType string
 
 const (
-	Ovirt  SourceType = "ovirt"
-	Vmware SourceType = "vmware"
-	Dnac   SourceType = "dnac"
+	Ovirt   SourceType = "ovirt"
+	Vmware  SourceType = "vmware"
+	Dnac    SourceType = "dnac"
+	Proxmox SourceType = "proxmox"
+)
+
+const (
+	DefaultManufacturerName = "Generic Manufacturer"
+	DefaultModelName        = "Generic Model"
+	DefaultOSName           = "Generic OS"
+	DefaultOSVersion        = "Generic Version"
 )
 
 const (

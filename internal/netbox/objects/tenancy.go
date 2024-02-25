@@ -21,6 +21,10 @@ type Tenant struct {
 	Group *TenantGroup `json:"group,omitempty"`
 }
 
+func (t Tenant) String() string {
+	return fmt.Sprintf("Tenant{Name: %s}", t.Name)
+}
+
 type ContactGroup struct {
 	NetboxObject
 	// Name is the name of the ContactGroup. This field is required.

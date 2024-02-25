@@ -4,6 +4,7 @@ go 1.21
 
 require (
 	github.com/cisco-en-programmability/dnacenter-go-sdk/v5 v5.0.25
+	github.com/luthermonson/go-proxmox v0.0.0-beta3
 	github.com/ovirt/go-ovirt v4.3.4+incompatible
 	github.com/vmware/govmomi v0.35.0
 	golang.org/x/text v0.14.0
@@ -17,7 +18,6 @@ require (
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/jinzhu/copier v0.4.0 // indirect
-	github.com/luthermonson/go-proxmox v0.0.0-beta3 // indirect
 	github.com/magefile/mage v1.15.0 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	golang.org/x/net v0.21.0 // indirect

@@ -13,6 +13,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
 	"github.com/bl4ko/netbox-ssot/internal/source/dnac"
 	"github.com/bl4ko/netbox-ssot/internal/source/ovirt"
+	"github.com/bl4ko/netbox-ssot/internal/source/proxmox"
 	"github.com/bl4ko/netbox-ssot/internal/source/vmware"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
