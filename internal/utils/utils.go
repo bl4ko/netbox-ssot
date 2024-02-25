@@ -8,6 +8,7 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/logger"
 	"golang.org/x/text/runes"
 	"golang.org/x/text/transform"
@@ -91,10 +92,10 @@ func Alphanumeric(name string) string {
 // multiple objects.
 func GeneratePlatformName(osType string, osVersion string) string {
 	if osType == "" {
-		osType = "Generic OS"
+		osType = constants.DefaultOSName
 	}
 	if osVersion == "" {
-		osVersion = "Generic Version"
+		osVersion = constants.DefaultOSVersion
 	}
 	return fmt.Sprintf("%s %s", osType, osVersion)
 }
