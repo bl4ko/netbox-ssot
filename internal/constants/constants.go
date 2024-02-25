@@ -10,6 +10,13 @@ const (
 	Dnac   SourceType = "dnac"
 )
 
+const (
+	DefaultOSName       string = "Generic OS"
+	DefaultOSVersion    string = "Generic Version"
+	DefaultManufacturer string = "Generic Manufacturer"
+	DefaultModel        string = "Generic Model"
+)
+
 // Default mappings of sources to colors (for tags).
 var DefaultSourceToTagColorMap = map[SourceType]string{
 	Ovirt:  objects.ColorDarkRed,
