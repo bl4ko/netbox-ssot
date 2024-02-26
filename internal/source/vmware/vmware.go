@@ -143,14 +143,6 @@ func (vc *VmwareSource) Init() error {
 		return fmt.Errorf("failed creating containerView: %s", err)
 	}
 
-	// Ensure the containerView is destroyed after we are done with it
-	defer func() {
-		err := containerView.Destroy(ctx)
-		if err != nil {
-			vc.Logger.Errorf("failed destroying containerView: %s", err)
-		}
-	}()
-
 	vc.Logger.Debug("Connection to vmware source ", vc.SourceConfig.Hostname, " established successfully")
 
 	// Create CustomFieldManager to map custom field ids to their names
@@ -185,6 +177,12 @@ func (vc *VmwareSource) Init() error {
 		}
 		duration := time.Since(startTime)
 		vc.Logger.Infof("Successfully initialized %s in %f seconds", utils.ExtractFunctionName(initFunc), duration.Seconds())
+	}
+
+	// Ensure the containerView is destroyed after we are done with it
+	err = containerView.Destroy(ctx)
+	if err != nil {
+		vc.Logger.Errorf("failed destroying containerView: %s", err)
 	}
 
 	err = conn.Logout(ctx)
