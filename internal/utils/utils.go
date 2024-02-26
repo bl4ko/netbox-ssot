@@ -183,7 +183,7 @@ func MatchNamesWithEmails(names []string, emails []string, logger *logger.Logger
 			matches[name] = email
 		} else {
 			// Handle no match or implement additional matching logic
-			logger.Warningf("No direct match found for email: %s\n", email)
+			logger.Warningf("No direct match found for email: %s", email)
 		}
 	}
 	return matches
