@@ -57,3 +57,27 @@ const (
 const (
 	HTTPSDefaultPort = 443
 )
+
+// Names used for netbox objects custom fields attribute.
+const (
+	// Custom Field for matching object with a source. This custom field is important
+	// for priority diff.
+	CustomFieldSourceName        = "source"
+	CustomFieldSourceLabel       = "Source"
+	CustomFieldSourceDescription = "Name of the source from which the object was collected"
+
+	// Custom field for adding source ID for each object.
+	CustomFieldSourceIDName        = "source_id"
+	CustomFieldSourceIDLabel       = "Source ID"
+	CustomFieldSourceIDDescription = "ID of the object on the source API"
+
+	// Custom field dcim.device, so we can add number of cpu cores for each server.
+	CustomFieldHostCPUCoresName        = "host_cpu_cores"
+	CustomFieldHostCPUCoresLabel       = "Host CPU cores"
+	CustomFieldHostCPUCoresDescription = "Number of CPU cores on the host"
+
+	// Custom field for dcim.device, so we can add number of ram for each server.
+	CustomFieldHostMemoryName        = "host_memory"
+	CustomFieldHostMemoryLabel       = "Host memory"
+	CustomFieldHostMemoryDescription = "Amount of memory on the host"
+)

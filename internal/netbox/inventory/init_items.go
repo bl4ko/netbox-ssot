@@ -308,7 +308,7 @@ func (nbi *NetboxInventory) InitSsotCustomFields() error {
 		CustomFieldUIVisible:  &objects.CustomFieldUIVisibleAlways,
 		CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
 		DisplayWeight:         objects.DisplayWeightDefault,
-		Description:           "Source origin of the object",
+		Description:           constants.CustomFieldSourceDescription,
 		SearchWeight:          objects.SearchWeightDefault,
 		ContentTypes:          []string{"dcim.device", "dcim.devicerole", "dcim.devicetype", "dcim.interface", "dcim.location", "dcim.manufacturer", "dcim.platform", "dcim.region", "dcim.site", "ipam.ipaddress", "ipam.vlangroup", "ipam.vlan", "ipam.prefix", "tenancy.tenantgroup", "tenancy.tenant", "tenancy.contact", "tenancy.contactassignment", "tenancy.contactgroup", "tenancy.contactrole", "virtualization.cluster", "virtualization.clustergroup", "virtualization.clustertype", "virtualization.virtualmachine", "virtualization.vminterface"},
 	})
@@ -317,13 +317,13 @@ func (nbi *NetboxInventory) InitSsotCustomFields() error {
 	}
 	err = nbi.AddCustomField(&objects.CustomField{
 		Name:                  constants.CustomFieldSourceIDName,
-		Label:                 constants.CustomFieldSourceLabel,
+		Label:                 constants.CustomFieldSourceIDLabel,
 		Type:                  objects.CustomFieldTypeText,
 		FilterLogic:           objects.FilterLogicLoose,
 		CustomFieldUIVisible:  &objects.CustomFieldUIVisibleAlways,
 		CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
 		DisplayWeight:         objects.DisplayWeightDefault,
-		Description:           "Source ID of the object",
+		Description:           constants.CustomFieldSourceIDDescription,
 		SearchWeight:          objects.SearchWeightDefault,
 		ContentTypes:          []string{"dcim.device", "dcim.devicerole", "dcim.devicetype", "dcim.interface", "dcim.location", "dcim.manufacturer", "dcim.platform", "dcim.region", "dcim.site", "ipam.ipaddress", "ipam.vlangroup", "ipam.vlan", "ipam.prefix", "tenancy.tenantgroup", "tenancy.tenant", "tenancy.contact", "tenancy.contactassignment", "tenancy.contactgroup", "tenancy.contactrole", "virtualization.cluster", "virtualization.clustergroup", "virtualization.clustertype", "virtualization.virtualmachine", "virtualization.vminterface"},
 	})
@@ -338,7 +338,7 @@ func (nbi *NetboxInventory) InitSsotCustomFields() error {
 		CustomFieldUIVisible:  &objects.CustomFieldUIVisibleAlways,
 		CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
 		DisplayWeight:         objects.DisplayWeightDefault,
-		Description:           "Number of CPU cores on the host",
+		Description:           constants.CustomFieldHostCPUCoresDescription,
 		SearchWeight:          objects.SearchWeightDefault,
 		ContentTypes:          []string{"dcim.device"},
 	})
@@ -353,7 +353,7 @@ func (nbi *NetboxInventory) InitSsotCustomFields() error {
 		CustomFieldUIVisible:  &objects.CustomFieldUIVisibleAlways,
 		CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
 		DisplayWeight:         objects.DisplayWeightDefault,
-		Description:           "Amount of memory on the host",
+		Description:           constants.CustomFieldHostMemoryDescription,
 		SearchWeight:          objects.SearchWeightDefault,
 		ContentTypes:          []string{"dcim.device"},
 	})
