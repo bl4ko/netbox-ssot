@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"time"
 )
 
 const (
@@ -39,7 +38,7 @@ func New(dest string, logLevel int, name string) (*Logger, error) {
 		}
 		output = file
 	}
-	return &Logger{log.New(output, "", log.LstdFlags|log.Lshortfile), logLevel, name}, nil
+	return &Logger{log.New(output, "", log.LstdFlags), logLevel, name}, nil
 }
 
 // Custom log output function. It is used to add additional runtime information to the log message.
@@ -55,10 +54,6 @@ func (l *Logger) Output(calldepth int, s string) error {
 
 	// Prepare the log prefix manually to include the standard log flags
 
-	// time prefix for logs
-	now := time.Now()
-	timePrefix := now.Format("2006/01/02 15:04:05")
-
 	// file prefix for logs
 	filePrefix := fmt.Sprintf("%-20s", fmt.Sprintf("%s:%d", file, line))
 	if l.level > DEBUG {
@@ -66,7 +61,7 @@ func (l *Logger) Output(calldepth int, s string) error {
 	}
 
 	// Add your custom logging format
-	logMessage := fmt.Sprintf("%s %s%s", timePrefix, filePrefix, s)
+	logMessage := fmt.Sprintf("%s%s", filePrefix, s)
 
 	// Print to the desired output
 	l.Println(logMessage)
