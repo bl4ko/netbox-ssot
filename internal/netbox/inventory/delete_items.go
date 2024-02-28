@@ -1,6 +1,8 @@
 package inventory
 
-func (nbi *NetboxInventory) DeleteOrphans() error {
+import "context"
+
+func (nbi *NetboxInventory) DeleteOrphans(ctx context.Context) error {
 	// Ensure OrphanObjectPriority and OrphanManager lengths are the same,
 	// if not, there are missing entries somewhere and need to be fixed.
 	if len(nbi.OrphanManager) != len(nbi.OrphanObjectPriority) {
@@ -11,9 +13,9 @@ func (nbi *NetboxInventory) DeleteOrphans() error {
 		objectAPIPath := nbi.OrphanObjectPriority[i]
 		ids := nbi.OrphanManager[objectAPIPath]
 		if len(ids) != 0 {
-			nbi.Logger.Infof("Deleting orphaned objects of type %s", objectAPIPath)
-			nbi.Logger.Debugf("Ids of objects to be deleted: %v", ids)
-			err := nbi.NetboxAPI.BulkDeleteObjects(objectAPIPath, ids)
+			nbi.Logger.Infof(ctx, "Deleting orphaned objects of type %s", objectAPIPath)
+			nbi.Logger.Debugf(ctx, "Ids of objects to be deleted: %v", ids)
+			err := nbi.NetboxAPI.BulkDeleteObjects(ctx, objectAPIPath, ids)
 			if err != nil {
 				return err
 			}

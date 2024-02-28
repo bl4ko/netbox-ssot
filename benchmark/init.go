@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/logger"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
@@ -23,34 +25,35 @@ func main() {
 		fmt.Println("Parser:", err)
 		return
 	}
+	benchmarkCtx := context.WithValue(context.Background(), constants.CtxSourceKey, "benchmark")
 	// Initialize Logger
-	mainLogger, err := logger.New(config.Logger.Dest, config.Logger.Level, "main")
+	mainLogger, err := logger.New(config.Logger.Dest, config.Logger.Level)
 	if err != nil {
 		fmt.Println("Logger:", err)
 		return
 	}
-	inventoryLogger, err := logger.New(config.Logger.Dest, config.Logger.Level, "netboxInventory")
+	inventoryLogger, err := logger.New(config.Logger.Dest, config.Logger.Level)
 	if err != nil {
-		mainLogger.Errorf("inventoryLogger: %s", err)
+		mainLogger.Errorf(benchmarkCtx, "inventoryLogger: %s", err)
 	}
-	nbi := inventory.NewNetboxInventory(inventoryLogger, config.Netbox)
-	mainLogger.Debug("Netbox inventory: ", nbi)
+	nbi := inventory.NewNetboxInventory(benchmarkCtx, inventoryLogger, config.Netbox)
+	mainLogger.Debug(benchmarkCtx, "Netbox inventory: ", nbi)
 
 	err = nbi.Init()
 	if err != nil {
-		mainLogger.Error(err)
+		mainLogger.Error(benchmarkCtx, err)
 		return
 	}
-	initSites(NumberOfSites, nbi)
-	InitManufacturers(NumberOfManufacturers, nbi)
-	InitPlatforms(NumberOfPlatforms, nbi)
-	initContacts(NumberOfContacts, nbi)
+	initSites(benchmarkCtx, NumberOfSites, nbi)
+	InitManufacturers(benchmarkCtx, NumberOfManufacturers, nbi)
+	InitPlatforms(benchmarkCtx, NumberOfPlatforms, nbi)
+	initContacts(benchmarkCtx, NumberOfContacts, nbi)
 }
 
-func initSites(n int, nbi *inventory.NetboxInventory) {
+func initSites(ctx context.Context, n int, nbi *inventory.NetboxInventory) {
 	for i := 0; i < n; i++ {
 		siteName := fmt.Sprintf("Site %d", i)
-		_, err := nbi.AddSite(&objects.Site{
+		_, err := nbi.AddSite(ctx, &objects.Site{
 			Name: siteName,
 			Slug: utils.Slugify(siteName),
 		})
@@ -60,10 +63,10 @@ func initSites(n int, nbi *inventory.NetboxInventory) {
 	}
 }
 
-func initContacts(n int, nbi *inventory.NetboxInventory) {
+func initContacts(ctx context.Context, n int, nbi *inventory.NetboxInventory) {
 	for i := 0; i < n; i++ {
 		contactName := fmt.Sprintf("Contact %d", i)
-		_, err := nbi.AddContact(&objects.Contact{
+		_, err := nbi.AddContact(ctx, &objects.Contact{
 			Name:  contactName,
 			Email: fmt.Sprintf("user%d@example.com", i),
 		})
@@ -73,10 +76,10 @@ func initContacts(n int, nbi *inventory.NetboxInventory) {
 	}
 }
 
-func InitManufacturers(n int, nbi *inventory.NetboxInventory) {
+func InitManufacturers(ctx context.Context, n int, nbi *inventory.NetboxInventory) {
 	for i := 0; i < n; i++ {
 		manufacturerName := fmt.Sprintf("Manufacturer %d", i)
-		_, err := nbi.AddManufacturer(&objects.Manufacturer{
+		_, err := nbi.AddManufacturer(ctx, &objects.Manufacturer{
 			Name: manufacturerName,
 			Slug: utils.Slugify(manufacturerName),
 		})
@@ -86,10 +89,10 @@ func InitManufacturers(n int, nbi *inventory.NetboxInventory) {
 	}
 }
 
-func InitPlatforms(n int, nbi *inventory.NetboxInventory) {
+func InitPlatforms(ctx context.Context, n int, nbi *inventory.NetboxInventory) {
 	for i := 0; i < n; i++ {
 		platformName := fmt.Sprintf("Platform %d", i)
-		_, err := nbi.AddPlatform(&objects.Platform{
+		_, err := nbi.AddPlatform(ctx, &objects.Platform{
 			Name:         platformName,
 			Slug:         utils.Slugify(platformName),
 			Manufacturer: nbi.ManufacturersIndexByName[fmt.Sprintf("Manufacturer %d", i%NumberOfManufacturers)],
@@ -100,10 +103,10 @@ func InitPlatforms(n int, nbi *inventory.NetboxInventory) {
 	}
 }
 
-func InitVMs(n int, nbi *inventory.NetboxInventory) {
+func InitVMs(ctx context.Context, n int, nbi *inventory.NetboxInventory) {
 	for i := 0; i < n; i++ {
 		vmName := fmt.Sprintf("VM %d", i)
-		_, err := nbi.AddVM(&objects.VM{
+		_, err := nbi.AddVM(ctx, &objects.VM{
 			Name: vmName,
 		})
 		if err != nil {

@@ -29,7 +29,7 @@ func (vc *VmwareSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 			return fmt.Errorf("vlanTenant: %s", err)
 		}
 		if len(dvpg.VlanIDs) == 1 && len(dvpg.VlanIDRanges) == 0 {
-			_, err := nbi.AddVlan(&objects.Vlan{
+			_, err := nbi.AddVlan(vc.Ctx, &objects.Vlan{
 				NetboxObject: objects.NetboxObject{
 					Tags: vc.Config.SourceTags,
 					CustomFields: map[string]string{
@@ -63,7 +63,7 @@ func (vc *VmwareSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
 			Name: dc.Name,
 			Slug: utils.Slugify(dc.Name),
 		}
-		_, err := nbi.AddClusterGroup(nbClusterGroup)
+		_, err := nbi.AddClusterGroup(vc.Ctx, nbClusterGroup)
 		if err != nil {
 			return fmt.Errorf("failed to add vmware datacenter %s as Netbox ClusterGroup: %v", dc.Name, err)
 		}
@@ -82,7 +82,7 @@ func (vc *VmwareSource) syncClusters(nbi *inventory.NetboxInventory) error {
 		Name: "Vmware ESXi",
 		Slug: utils.Slugify("Vmware ESXi"),
 	}
-	clusterType, err := nbi.AddClusterType(clusterType)
+	clusterType, err := nbi.AddClusterType(vc.Ctx, clusterType)
 	if err != nil {
 		return fmt.Errorf("failed to add vmware ClusterType: %v", err)
 	}
@@ -136,7 +136,7 @@ func (vc *VmwareSource) syncClusters(nbi *inventory.NetboxInventory) error {
 			Site:   clusterSite,
 			Tenant: clusterTenant,
 		}
-		err := nbi.AddCluster(nbCluster)
+		err := nbi.AddCluster(vc.Ctx, nbCluster)
 		if err != nil {
 			return fmt.Errorf("failed to add vmware cluster %s as Netbox cluster: %v", clusterName, err)
 		}
@@ -185,7 +185,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		if manufacturerName == "" {
 			manufacturerName = constants.DefaultManufacturer
 		}
-		hostManufacturer, err = nbi.AddManufacturer(&objects.Manufacturer{
+		hostManufacturer, err = nbi.AddManufacturer(vc.Ctx, &objects.Manufacturer{
 			Name: manufacturerName,
 			Slug: utils.Slugify(manufacturerName),
 		})
@@ -194,7 +194,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		}
 
 		var hostDeviceType *objects.DeviceType
-		hostDeviceType, err = nbi.AddDeviceType(&objects.DeviceType{
+		hostDeviceType, err = nbi.AddDeviceType(vc.Ctx, &objects.DeviceType{
 			Manufacturer: hostManufacturer,
 			Model:        hostModel,
 			Slug:         utils.Slugify(hostModel),
@@ -215,7 +215,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		osType := host.Summary.Config.Product.Name
 		osVersion := host.Summary.Config.Product.Version
 		platformName := utils.GeneratePlatformName(osType, osVersion)
-		hostPlatform, err = nbi.AddPlatform(&objects.Platform{
+		hostPlatform, err = nbi.AddPlatform(vc.Ctx, &objects.Platform{
 			Name: platformName,
 			Slug: utils.Slugify(platformName),
 		})
@@ -243,7 +243,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 			AssetTag:     hostAssetTag,
 			DeviceType:   hostDeviceType,
 		}
-		nbHost, err = nbi.AddDevice(nbHost)
+		nbHost, err = nbi.AddDevice(vc.Ctx, nbHost)
 		if err != nil {
 			return fmt.Errorf("failed to add vmware host %s with error: %v", host.Name, err)
 		}
@@ -355,7 +355,7 @@ func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetboxInventory, vcH
 					var ok bool
 					newVlan, ok = nbi.VlansIndexByVlanGroupIDAndVID[vlanGroup.ID][portgroupData.vlanID]
 					if !ok {
-						newVlan, err = nbi.AddVlan(&objects.Vlan{
+						newVlan, err = nbi.AddVlan(vc.Ctx, &objects.Vlan{
 							NetboxObject: objects.NetboxObject{
 								Tags: vc.Config.SourceTags,
 								CustomFields: map[string]string{
@@ -404,7 +404,7 @@ func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetboxInventory, vcH
 		}
 
 		// After collecting all of the data add interface to nbi
-		_, err := nbi.AddInterface(&objects.Interface{
+		_, err := nbi.AddInterface(vc.Ctx, &objects.Interface{
 			NetboxObject: objects.NetboxObject{
 				Tags:        vc.Config.SourceTags,
 				Description: pnicDescription,
@@ -437,7 +437,7 @@ func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetboxInventory, vcHo
 			return err
 		}
 
-		nbVnic, err := nbi.AddInterface(hostVnic)
+		nbVnic, err := nbi.AddInterface(vc.Ctx, hostVnic)
 		if err != nil {
 			return err
 		}
@@ -449,7 +449,7 @@ func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetboxInventory, vcHo
 			return fmt.Errorf("mask to bits: %s", err)
 		}
 		ipv4DNS := utils.ReverseLookup(ipv4Address)
-		nbIPv4Address, err := nbi.AddIPAddress(&objects.IPAddress{
+		nbIPv4Address, err := nbi.AddIPAddress(vc.Ctx, &objects.IPAddress{
 			NetboxObject: objects.NetboxObject{
 				Tags: vc.Config.SourceTags,
 				CustomFields: map[string]string{
@@ -473,7 +473,7 @@ func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetboxInventory, vcHo
 				ipv6Address := ipv6Entry.IpAddress
 				ipv6Mask := ipv6Entry.PrefixLength
 				// TODO: Filter out ipv6 addresses
-				nbIPv6Address, err := nbi.AddIPAddress(&objects.IPAddress{
+				nbIPv6Address, err := nbi.AddIPAddress(vc.Ctx, &objects.IPAddress{
 					NetboxObject: objects.NetboxObject{
 						Tags: vc.Config.SourceTags,
 						CustomFields: map[string]string{
@@ -513,7 +513,7 @@ func (vc *VmwareSource) setHostPrimaryIPAddress(nbi *inventory.NetboxInventory, 
 		newHost := *nbHost
 		newHost.PrimaryIPv4 = hostPrimaryIPv4
 		newHost.PrimaryIPv6 = hostPrimaryIPv6
-		_, err := nbi.AddDevice(&newHost)
+		_, err := nbi.AddDevice(vc.Ctx, &newHost)
 		if err != nil {
 			return fmt.Errorf("updating host's primary ip: %s", err)
 		}
@@ -675,7 +675,7 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
 		if vmPlatformName == "" {
 			vmPlatformName = utils.GeneratePlatformName(constants.DefaultOSName, constants.DefaultOSVersion)
 		}
-		vmPlatform, err := nbi.AddPlatform(&objects.Platform{
+		vmPlatform, err := nbi.AddPlatform(vc.Ctx, &objects.Platform{
 			Name: vmPlatformName,
 			Slug: utils.Slugify(vmPlatformName),
 		})
@@ -705,7 +705,7 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
 					} else {
 						fieldName = utils.Alphanumeric(fieldName)
 						if _, ok := nbi.CustomFieldsIndexByName[fieldName]; !ok {
-							err := nbi.AddCustomField(&objects.CustomField{
+							err := nbi.AddCustomField(vc.Ctx, &objects.CustomField{
 								Name:                  fieldName,
 								Type:                  objects.CustomFieldTypeText,
 								CustomFieldUIVisible:  &objects.CustomFieldUIVisibleIfSet,
@@ -732,7 +732,7 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
 			vmComments = vmDescription
 		}
 
-		newVM, err := nbi.AddVM(&objects.VM{
+		newVM, err := nbi.AddVM(vc.Ctx, &objects.VM{
 			NetboxObject: objects.NetboxObject{
 				Tags:         vc.Config.SourceTags,
 				Description:  vmDescription,
@@ -832,7 +832,7 @@ func (vc *VmwareSource) syncVMInterfaces(nbi *inventory.NetboxInventory, vmwareV
 				return err
 			}
 
-			nbVMInterface, err := nbi.AddVMInterface(collectedVMIface)
+			nbVMInterface, err := nbi.AddVMInterface(vc.Ctx, collectedVMIface)
 			if err != nil {
 				return fmt.Errorf("adding VmInterface: %s", err)
 			}
@@ -993,7 +993,7 @@ func (vc *VmwareSource) collectVMInterfaceData(nbi *inventory.NetboxInventory, n
 func (vc *VmwareSource) addVMInterfaceIPs(nbi *inventory.NetboxInventory, nbVMInterface *objects.VMInterface, nicIPv4Addresses []string, nicIPv6Addresses []string, vmIPv4Addresses []*objects.IPAddress, vmIPv6Addresses []*objects.IPAddress) error {
 	// Add all collected ipv4 addresses for the interface to netbox
 	for _, ipv4Address := range nicIPv4Addresses {
-		nbIPv4Address, err := nbi.AddIPAddress(&objects.IPAddress{
+		nbIPv4Address, err := nbi.AddIPAddress(vc.Ctx, &objects.IPAddress{
 			NetboxObject: objects.NetboxObject{
 				Tags: vc.Config.SourceTags,
 				CustomFields: map[string]string{
@@ -1006,14 +1006,14 @@ func (vc *VmwareSource) addVMInterfaceIPs(nbi *inventory.NetboxInventory, nbVMIn
 			AssignedObjectID:   nbVMInterface.ID,
 		})
 		if err != nil {
-			vc.Logger.Warningf("adding ipv4 address: %s", err)
+			vc.Logger.Warningf(vc.Ctx, "adding ipv4 address: %s", err)
 		}
 		vmIPv4Addresses = append(vmIPv4Addresses, nbIPv4Address)
 	}
 
 	// Add all collected ipv6 addresses for the interface to netbox
 	for _, ipv6Address := range nicIPv6Addresses {
-		nbIPv6Address, err := nbi.AddIPAddress(&objects.IPAddress{
+		nbIPv6Address, err := nbi.AddIPAddress(vc.Ctx, &objects.IPAddress{
 			NetboxObject: objects.NetboxObject{
 				Tags: vc.Config.SourceTags,
 				CustomFields: map[string]string{
@@ -1026,7 +1026,7 @@ func (vc *VmwareSource) addVMInterfaceIPs(nbi *inventory.NetboxInventory, nbVMIn
 			AssignedObjectID:   nbVMInterface.ID,
 		})
 		if err != nil {
-			vc.Logger.Warningf("adding ipv6 address: %s", err)
+			vc.Logger.Warningf(vc.Ctx, "adding ipv6 address: %s", err)
 		}
 		vmIPv6Addresses = append(vmIPv6Addresses, nbIPv6Address)
 	}
@@ -1054,7 +1054,7 @@ func (vc *VmwareSource) setVMPrimaryIPAddress(nbi *inventory.NetboxInventory, ne
 		newNetboxVM := *netboxVM
 		newNetboxVM.PrimaryIPv4 = vmIPv4PrimaryAddress
 		newNetboxVM.PrimaryIPv6 = vmIPv6PrimaryAddress
-		_, err := nbi.AddVM(&newNetboxVM)
+		_, err := nbi.AddVM(vc.Ctx, &newNetboxVM)
 		if err != nil {
 			return fmt.Errorf("updating vm's primary ip: %s", err)
 		}
@@ -1066,10 +1066,10 @@ func (vc *VmwareSource) addVMContact(nbi *inventory.NetboxInventory, nbVM *objec
 	// If vm owner name was found we also add contact assignment to the vm
 	var vmMailMapFallback bool
 	if len(vmOwners) > 0 && len(vmOwnerEmails) > 0 && len(vmOwners) != len(vmOwnerEmails) {
-		vc.Logger.Warningf("vm owner names and emails mismatch (len(vmOwnerEmails) != len(vmOwners), using fallback mechanism")
+		vc.Logger.Warningf(vc.Ctx, "vm owner names and emails mismatch (len(vmOwnerEmails) != len(vmOwners), using fallback mechanism")
 		vmMailMapFallback = true
 	}
-	vmOwner2Email := utils.MatchNamesWithEmails(vmOwners, vmOwnerEmails, vc.Logger)
+	vmOwner2Email := utils.MatchNamesWithEmails(vc.Ctx, vmOwners, vmOwnerEmails, vc.Logger)
 	for i, vmOwnerName := range vmOwners {
 		if vmOwnerName != "" {
 			var vmOwnerEmail string
@@ -1083,7 +1083,7 @@ func (vc *VmwareSource) addVMContact(nbi *inventory.NetboxInventory, nbVM *objec
 				}
 			}
 			contact, err := nbi.AddContact(
-				&objects.Contact{
+				vc.Ctx, &objects.Contact{
 					Name:  strings.TrimSpace(vmOwners[i]),
 					Email: vmOwnerEmail,
 				},
@@ -1091,7 +1091,7 @@ func (vc *VmwareSource) addVMContact(nbi *inventory.NetboxInventory, nbVM *objec
 			if err != nil {
 				return fmt.Errorf("creating vm contact: %s", err)
 			}
-			_, err = nbi.AddContactAssignment(&objects.ContactAssignment{
+			_, err = nbi.AddContactAssignment(vc.Ctx, &objects.ContactAssignment{
 				ContentType: "virtualization.virtualmachine",
 				ObjectID:    nbVM.ID,
 				Contact:     contact,

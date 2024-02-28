@@ -2,6 +2,7 @@
 package source
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
@@ -17,9 +18,9 @@ import (
 )
 
 // NewSource creates a Source from the given configuration.
-func NewSource(config *parser.SourceConfig, logger *logger.Logger, netboxInventory *inventory.NetboxInventory) (common.Source, error) {
+func NewSource(ctx context.Context, config *parser.SourceConfig, logger *logger.Logger, netboxInventory *inventory.NetboxInventory) (common.Source, error) {
 	// First we create default tags for the source
-	sourceTag, err := netboxInventory.AddTag(&objects.Tag{
+	sourceTag, err := netboxInventory.AddTag(ctx, &objects.Tag{
 		Name:        config.Tag,
 		Slug:        utils.Slugify("source-" + config.Name),
 		Color:       objects.Color(config.TagColor),
@@ -28,7 +29,7 @@ func NewSource(config *parser.SourceConfig, logger *logger.Logger, netboxInvento
 	if err != nil {
 		return nil, fmt.Errorf("error creating sourceTag: %s", err)
 	}
-	sourceTypeTag, err := netboxInventory.AddTag(&objects.Tag{
+	sourceTypeTag, err := netboxInventory.AddTag(ctx, &objects.Tag{
 		Name:        string(config.Type),
 		Slug:        utils.Slugify("type-" + string(config.Type)),
 		Color:       objects.Color(constants.SourceTypeToTagColorMap[config.Type]),
@@ -41,6 +42,7 @@ func NewSource(config *parser.SourceConfig, logger *logger.Logger, netboxInvento
 		Logger:       logger,
 		SourceConfig: config,
 		SourceTags:   []*objects.Tag{sourceTag, sourceTypeTag},
+		Ctx:          ctx,
 	}
 
 	switch config.Type {
@@ -49,7 +51,7 @@ func NewSource(config *parser.SourceConfig, logger *logger.Logger, netboxInvento
 	case constants.Vmware:
 		return &vmware.VmwareSource{Config: commonConfig}, nil
 	case constants.Dnac:
-		return &dnac.Source{Config: commonConfig}, nil
+		return &dnac.DnacSource{Config: commonConfig}, nil
 	default:
 		return nil, fmt.Errorf("unsupported source type: %s", config.Type)
 	}

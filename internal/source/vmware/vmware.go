@@ -87,26 +87,26 @@ type HostPortgroupData struct {
 
 func (vc *VmwareSource) Init() error {
 	// Initialize regex relations
-	vc.Logger.Debug("Initializing regex relations for oVirt source ", vc.SourceConfig.Name)
+	vc.Logger.Debug(vc.Ctx, "Initializing regex relations for oVirt source ", vc.SourceConfig.Name)
 	vc.HostSiteRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.HostSiteRelations)
-	vc.Logger.Debug("HostSiteRelations: ", vc.HostSiteRelations)
+	vc.Logger.Debug(vc.Ctx, "HostSiteRelations: ", vc.HostSiteRelations)
 	vc.ClusterSiteRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.ClusterSiteRelations)
-	vc.Logger.Debug("ClusterSiteRelations: ", vc.ClusterSiteRelations)
+	vc.Logger.Debug(vc.Ctx, "ClusterSiteRelations: ", vc.ClusterSiteRelations)
 	vc.ClusterTenantRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.ClusterTenantRelations)
-	vc.Logger.Debug("ClusterTenantRelations: ", vc.ClusterTenantRelations)
+	vc.Logger.Debug(vc.Ctx, "ClusterTenantRelations: ", vc.ClusterTenantRelations)
 	vc.HostTenantRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.HostTenantRelations)
-	vc.Logger.Debug("HostTenantRelations: ", vc.HostTenantRelations)
+	vc.Logger.Debug(vc.Ctx, "HostTenantRelations: ", vc.HostTenantRelations)
 	vc.VMTenantRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.VMTenantRelations)
-	vc.Logger.Debug("VmTenantRelations: ", vc.VMTenantRelations)
+	vc.Logger.Debug(vc.Ctx, "VmTenantRelations: ", vc.VMTenantRelations)
 	vc.VlanGroupRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.VlanGroupRelations)
-	vc.Logger.Debug("VlanGroupRelations: ", vc.VlanGroupRelations)
+	vc.Logger.Debug(vc.Ctx, "VlanGroupRelations: ", vc.VlanGroupRelations)
 	vc.VlanTenantRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.VlanTenantRelations)
-	vc.Logger.Debug("VlanTenantRelations: ", vc.VlanTenantRelations)
+	vc.Logger.Debug(vc.Ctx, "VlanTenantRelations: ", vc.VlanTenantRelations)
 	vc.CustomFieldMappings = utils.ConvertStringsToPairs(vc.SourceConfig.CustomFieldMappings)
-	vc.Logger.Debug("CustomFieldMappings: ", vc.CustomFieldMappings)
+	vc.Logger.Debug(vc.Ctx, "CustomFieldMappings: ", vc.CustomFieldMappings)
 
 	// Initialize the connection
-	vc.Logger.Debug("Initializing oVirt source ", vc.SourceConfig.Name)
+	vc.Logger.Debug(vc.Ctx, "Initializing oVirt source ", vc.SourceConfig.Name)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -143,7 +143,7 @@ func (vc *VmwareSource) Init() error {
 		return fmt.Errorf("failed creating containerView: %s", err)
 	}
 
-	vc.Logger.Debug("Connection to vmware source ", vc.SourceConfig.Hostname, " established successfully")
+	vc.Logger.Debug(vc.Ctx, "Connection to vmware source ", vc.SourceConfig.Hostname, " established successfully")
 
 	// Create CustomFieldManager to map custom field ids to their names
 	// This is required to determine which custom field key is used for
@@ -176,13 +176,13 @@ func (vc *VmwareSource) Init() error {
 			return fmt.Errorf("vmware initialization failure: %v", err)
 		}
 		duration := time.Since(startTime)
-		vc.Logger.Infof("Successfully initialized %s in %f seconds", utils.ExtractFunctionName(initFunc), duration.Seconds())
+		vc.Logger.Infof(vc.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionName(initFunc), duration.Seconds())
 	}
 
 	// Ensure the containerView is destroyed after we are done with it
 	err = containerView.Destroy(ctx)
 	if err != nil {
-		vc.Logger.Errorf("failed destroying containerView: %s", err)
+		vc.Logger.Errorf(vc.Ctx, "failed destroying containerView: %s", err)
 	}
 
 	err = conn.Logout(ctx)
@@ -190,7 +190,7 @@ func (vc *VmwareSource) Init() error {
 		return fmt.Errorf("error occurred when ending vmware connection to host %s: %s", vc.SourceConfig.Hostname, err)
 	}
 
-	vc.Logger.Debug("Successfully closed connection to vmware host: ", vc.SourceConfig.Hostname)
+	vc.Logger.Debug(vc.Ctx, "Successfully closed connection to vmware host: ", vc.SourceConfig.Hostname)
 
 	return nil
 }
@@ -211,7 +211,7 @@ func (vc *VmwareSource) Sync(nbi *inventory.NetboxInventory) error {
 			return err
 		}
 		duration := time.Since(startTime)
-		vc.Logger.Infof("Successfully synced %s in %f seconds", utils.ExtractFunctionName(syncFunc), duration.Seconds())
+		vc.Logger.Infof(vc.Ctx, "Successfully synced %s in %f seconds", utils.ExtractFunctionName(syncFunc), duration.Seconds())
 	}
 	return nil
 }

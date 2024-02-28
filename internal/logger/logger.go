@@ -1,14 +1,18 @@
 package logger
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
 	"runtime"
+
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 )
 
+// Default four levels for logging.
 const (
 	DEBUG int = iota
 	INFO
@@ -22,12 +26,10 @@ type Logger struct {
 	*log.Logger
 	// Level of the logger (DEBUG, INFO, WARNING, ERROR).
 	level int
-	// Name of the logger. It will be visible in every log after log level (name)
-	name string
 }
 
 // New creates a new Logger instance, which writes to the specified destination (file) or stdout if dest is empty. It also sets the log level.
-func New(dest string, logLevel int, name string) (*Logger, error) {
+func New(dest string, logLevel int) (*Logger, error) {
 	var output io.Writer
 	if dest == "" {
 		output = os.Stdout
@@ -38,7 +40,7 @@ func New(dest string, logLevel int, name string) (*Logger, error) {
 		}
 		output = file
 	}
-	return &Logger{log.New(output, "", log.LstdFlags), logLevel, name}, nil
+	return &Logger{log.New(output, "", log.LstdFlags), logLevel}, nil
 }
 
 // Custom log output function. It is used to add additional runtime information to the log message.
@@ -68,62 +70,62 @@ func (l *Logger) Output(calldepth int, s string) error {
 	return nil
 }
 
-func (l *Logger) Debug(v ...interface{}) error {
+func (l *Logger) Debug(ctx context.Context, v ...interface{}) error {
 	if l.level <= DEBUG {
-		return l.Output(logCallDepth, fmt.Sprintf("%-7s (%s): %s", "DEBUG", l.name, fmt.Sprint(v...)))
+		return l.Output(logCallDepth, fmt.Sprintf("%-7s (%s): %s", "DEBUG", ctx.Value(constants.CtxSourceKey), fmt.Sprint(v...)))
 	}
 	return nil
 }
 
 // Debugf logs a formatted debug message.
-func (l *Logger) Debugf(format string, v ...interface{}) error {
+func (l *Logger) Debugf(ctx context.Context, format string, v ...interface{}) error {
 	if l.level <= DEBUG {
-		return l.Output(logCallDepth, fmt.Sprintf("%-7s (%s): %s", "DEBUG", l.name, fmt.Sprintf(format, v...)))
+		return l.Output(logCallDepth, fmt.Sprintf("%-7s (%s): %s", "DEBUG", ctx.Value(constants.CtxSourceKey), fmt.Sprintf(format, v...)))
 	}
 	return nil
 }
 
-func (l *Logger) Info(v ...interface{}) error {
+func (l *Logger) Info(ctx context.Context, v ...interface{}) error {
 	if l.level <= INFO {
-		return l.Output(logCallDepth, fmt.Sprintf("%-7s (%s): %s", "INFO", l.name, fmt.Sprint(v...)))
+		return l.Output(logCallDepth, fmt.Sprintf("%-7s (%s): %s", "INFO", ctx.Value(constants.CtxSourceKey), fmt.Sprint(v...)))
 	}
 	return nil
 }
 
 // Infof logs a formatted info message.
-func (l *Logger) Infof(format string, v ...interface{}) error {
+func (l *Logger) Infof(ctx context.Context, format string, v ...interface{}) error {
 	if l.level <= INFO {
-		return l.Output(logCallDepth, fmt.Sprintf("%-7s (%s): %s", "INFO", l.name, fmt.Sprintf(format, v...)))
+		return l.Output(logCallDepth, fmt.Sprintf("%-7s (%s): %s", "INFO", ctx.Value(constants.CtxSourceKey), fmt.Sprintf(format, v...)))
 	}
 	return nil
 }
 
-func (l *Logger) Warning(v ...interface{}) error {
+func (l *Logger) Warning(ctx context.Context, v ...interface{}) error {
 	if l.level <= WARNING {
-		return l.Output(logCallDepth, fmt.Sprintf("%-7s (%s): %s", "WARNING", l.name, fmt.Sprint(v...)))
+		return l.Output(logCallDepth, fmt.Sprintf("%-7s (%s): %s", "WARNING", ctx.Value(constants.CtxSourceKey), fmt.Sprint(v...)))
 	}
 	return nil
 }
 
 // Warningf logs a formatted warning message.
-func (l *Logger) Warningf(format string, v ...interface{}) error {
+func (l *Logger) Warningf(ctx context.Context, format string, v ...interface{}) error {
 	if l.level <= WARNING {
-		return l.Output(logCallDepth, fmt.Sprintf("%-7s (%s): %s", "WARNING", l.name, fmt.Sprintf(format, v...)))
+		return l.Output(logCallDepth, fmt.Sprintf("%-7s (%s): %s", "WARNING", ctx.Value(constants.CtxSourceKey), fmt.Sprintf(format, v...)))
 	}
 	return nil
 }
 
-func (l *Logger) Error(v ...interface{}) error {
+func (l *Logger) Error(ctx context.Context, v ...interface{}) error {
 	if l.level <= ERROR {
-		return l.Output(logCallDepth, fmt.Sprintf("%-7s (%s): %s", "ERROR", l.name, fmt.Sprint(v...)))
+		return l.Output(logCallDepth, fmt.Sprintf("%-7s (%s): %s", "ERROR", ctx.Value(constants.CtxSourceKey), fmt.Sprint(v...)))
 	}
 	return nil
 }
 
 // Errorf logs a formatted error message.
-func (l *Logger) Errorf(format string, v ...interface{}) error {
+func (l *Logger) Errorf(ctx context.Context, format string, v ...interface{}) error {
 	if l.level <= ERROR {
-		return l.Output(logCallDepth, fmt.Sprintf("%-7s (%s): %s", "ERROR", l.name, fmt.Sprintf(format, v...)))
+		return l.Output(logCallDepth, fmt.Sprintf("%-7s (%s): %s", "ERROR", ctx.Value(constants.CtxSourceKey), fmt.Sprintf(format, v...)))
 	}
 	return nil
 }

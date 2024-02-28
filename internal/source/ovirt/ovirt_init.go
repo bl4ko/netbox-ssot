@@ -25,9 +25,9 @@ func (o *OVirtSource) InitNetworks(conn *ovirtsdk4.Connection) error {
 				}
 			}
 		}
-		o.Logger.Debug("Successfully initialized oVirt networks: ", o.Networks)
+		o.Logger.Debug(o.Ctx, "Successfully initialized oVirt networks: ", o.Networks)
 	} else {
-		o.Logger.Warning("Error initializing oVirt networks")
+		o.Logger.Warning(o.Ctx, "Error initializing oVirt networks")
 	}
 	return nil
 }
@@ -43,9 +43,9 @@ func (o *OVirtSource) InitDisks(conn *ovirtsdk4.Connection) error {
 		for _, disk := range disks.Slice() {
 			o.Disks[disk.MustId()] = disk
 		}
-		o.Logger.Debug("Successfully initialized oVirt disks: ", o.Disks)
+		o.Logger.Debug(o.Ctx, "Successfully initialized oVirt disks: ", o.Disks)
 	} else {
-		o.Logger.Warning("Error initializing oVirt disks")
+		o.Logger.Warning(o.Ctx, "Error initializing oVirt disks")
 	}
 	return nil
 }
@@ -60,9 +60,9 @@ func (o *OVirtSource) InitDataCenters(conn *ovirtsdk4.Connection) error {
 		for _, dataCenter := range dataCenters.Slice() {
 			o.DataCenters[dataCenter.MustId()] = dataCenter
 		}
-		o.Logger.Debug("Successfully initialized oVirt data centers: ", o.DataCenters)
+		o.Logger.Debug(o.Ctx, "Successfully initialized oVirt data centers: ", o.DataCenters)
 	} else {
-		o.Logger.Warning("Error initializing oVirt data centers")
+		o.Logger.Warning(o.Ctx, "Error initializing oVirt data centers")
 	}
 	return nil
 }
@@ -78,9 +78,9 @@ func (o *OVirtSource) InitClusters(conn *ovirtsdk4.Connection) error {
 		for _, cluster := range clusters.Slice() {
 			o.Clusters[cluster.MustId()] = cluster
 		}
-		o.Logger.Debug("Successfully initialized oVirt clusters: ", o.Clusters)
+		o.Logger.Debug(o.Ctx, "Successfully initialized oVirt clusters: ", o.Clusters)
 	} else {
-		o.Logger.Warning("Error initializing oVirt clusters")
+		o.Logger.Warning(o.Ctx, "Error initializing oVirt clusters")
 	}
 	return nil
 }
@@ -96,9 +96,9 @@ func (o *OVirtSource) InitHosts(conn *ovirtsdk4.Connection) error {
 		for _, host := range hosts.Slice() {
 			o.Hosts[host.MustId()] = host
 		}
-		o.Logger.Debug("Successfully initialized oVirt hosts: ", hosts)
+		o.Logger.Debug(o.Ctx, "Successfully initialized oVirt hosts: ", hosts)
 	} else {
-		o.Logger.Warning("Error initializing oVirt hosts")
+		o.Logger.Warning(o.Ctx, "Error initializing oVirt hosts")
 	}
 	return nil
 }
@@ -114,9 +114,9 @@ func (o *OVirtSource) InitVms(conn *ovirtsdk4.Connection) error {
 		for _, vm := range vms.Slice() {
 			o.Vms[vm.MustId()] = vm
 		}
-		o.Logger.Debug("Successfully initialized oVirt vms: ", vms)
+		o.Logger.Debug(o.Ctx, "Successfully initialized oVirt vms: ", vms)
 	} else {
-		o.Logger.Warning("Error initializing oVirt vms")
+		o.Logger.Warning(o.Ctx, "Error initializing oVirt vms")
 	}
 	return nil
 }

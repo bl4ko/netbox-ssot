@@ -36,12 +36,12 @@ type APIResponse struct {
 }
 
 // Constructor function for creating a new netBoxAPI instance.
-func NewNetBoxAPI(logger *logger.Logger, baseURL string, apiToken string, validateCert bool, timeout int) *NetboxAPI {
+func NewNetBoxAPI(ctx context.Context, logger *logger.Logger, baseURL string, apiToken string, validateCert bool, timeout int) *NetboxAPI {
 	var client *http.Client
 	if validateCert {
 		client = &http.Client{}
 	} else {
-		logger.Warning("TLS certificate validation is disabled")
+		logger.Warning(ctx, "TLS certificate validation is disabled")
 		client = &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},

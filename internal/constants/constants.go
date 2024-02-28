@@ -81,3 +81,10 @@ const (
 	CustomFieldHostMemoryLabel       = "Host memory"
 	CustomFieldHostMemoryDescription = "Amount of memory on the host"
 )
+
+// Constants used for variables in our contexts.
+type CtxKey int
+
+const (
+	CtxSourceKey CtxKey = iota
+)

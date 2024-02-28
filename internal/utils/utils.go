@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -164,7 +165,7 @@ func removeDiacritics(s string) string {
 //
 // E.g. names = ["John Doe", "Jane Doe"], emails = ["jane.doe@example"]
 // Output: map["Jane Doe"] = "jane.doe@example".
-func MatchNamesWithEmails(names []string, emails []string, logger *logger.Logger) map[string]string {
+func MatchNamesWithEmails(ctx context.Context, names []string, emails []string, logger *logger.Logger) map[string]string {
 	normalizedNames := make(map[string]string) // Map for easy lookup
 	for _, name := range names {
 		// Normalize name: remove diacritics, spaces, and convert to lowercase
@@ -183,7 +184,7 @@ func MatchNamesWithEmails(names []string, emails []string, logger *logger.Logger
 			matches[name] = email
 		} else {
 			// Handle no match or implement additional matching logic
-			logger.Warningf("No direct match found for email: %s", email)
+			logger.Warningf(ctx, "No direct match found for email: %s", email)
 		}
 	}
 	return matches

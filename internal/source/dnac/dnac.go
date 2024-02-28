@@ -12,7 +12,8 @@ import (
 	dnac "github.com/cisco-en-programmability/dnacenter-go-sdk/v5/sdk"
 )
 
-type Source struct {
+//nolint:revive
+type DnacSource struct {
 	common.Config
 
 	// Dnac fetched data. Initialized in init functions.
@@ -37,7 +38,7 @@ type Source struct {
 	VlanTenantRelations map[string]string
 }
 
-func (ds *Source) Init() error {
+func (ds *DnacSource) Init() error {
 	dnacURL := fmt.Sprintf("%s://%s:%d", ds.Config.SourceConfig.HTTPScheme, ds.Config.SourceConfig.Hostname, ds.Config.SourceConfig.Port)
 	Client, err := dnac.NewClientWithOptions(dnacURL, ds.SourceConfig.Username, ds.SourceConfig.Password, "false", strconv.FormatBool(ds.SourceConfig.ValidateCert), nil)
 	if err != nil {
@@ -46,11 +47,11 @@ func (ds *Source) Init() error {
 
 	// Initialize regex relations for this source
 	ds.VlanGroupRelations = utils.ConvertStringsToRegexPairs(ds.SourceConfig.VlanGroupRelations)
-	ds.Logger.Debugf("VlanGroupRelations: %s", ds.VlanGroupRelations)
+	ds.Logger.Debugf(ds.Ctx, "VlanGroupRelations: %s", ds.VlanGroupRelations)
 	ds.VlanTenantRelations = utils.ConvertStringsToRegexPairs(ds.SourceConfig.VlanTenantRelations)
-	ds.Logger.Debugf("VlanTenantRelations: %s", ds.VlanTenantRelations)
+	ds.Logger.Debugf(ds.Ctx, "VlanTenantRelations: %s", ds.VlanTenantRelations)
 	ds.HostTenantRelations = utils.ConvertStringsToRegexPairs(ds.SourceConfig.HostTenantRelations)
-	ds.Logger.Debugf("HostTenantRelations: %s", ds.HostTenantRelations)
+	ds.Logger.Debugf(ds.Ctx, "HostTenantRelations: %s", ds.HostTenantRelations)
 
 	// Initialize items from vsphere API to local storage
 	initFunctions := []func(*dnac.Client) error{
@@ -66,13 +67,13 @@ func (ds *Source) Init() error {
 			return fmt.Errorf("dnac initialization failure: %v", err)
 		}
 		duration := time.Since(startTime)
-		ds.Logger.Infof("Successfully initialized %s in %f seconds", utils.ExtractFunctionName(initFunc), duration.Seconds())
+		ds.Logger.Infof(ds.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionName(initFunc), duration.Seconds())
 	}
 
 	return nil
 }
 
-func (ds *Source) Sync(nbi *inventory.NetboxInventory) error {
+func (ds *DnacSource) Sync(nbi *inventory.NetboxInventory) error {
 	// initialize variables, that are shared between sync functions
 	ds.VID2nbVlan = make(map[int]*objects.Vlan)
 	ds.SiteID2nbSite = make(map[string]*objects.Site)
@@ -93,7 +94,7 @@ func (ds *Source) Sync(nbi *inventory.NetboxInventory) error {
 			return err
 		}
 		duration := time.Since(startTime)
-		ds.Logger.Infof("Successfully synced %s in %f seconds", utils.ExtractFunctionName(syncFunc), duration.Seconds())
+		ds.Logger.Infof(ds.Ctx, "Successfully synced %s in %f seconds", utils.ExtractFunctionName(syncFunc), duration.Seconds())
 	}
 	return nil
 }

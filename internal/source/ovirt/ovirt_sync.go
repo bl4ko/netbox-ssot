@@ -33,7 +33,7 @@ func (o *OVirtSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 				return err
 			}
 			if networkVlanID, exists := networkVlan.Id(); exists {
-				_, err := nbi.AddVlan(&objects.Vlan{
+				_, err := nbi.AddVlan(o.Ctx, &objects.Vlan{
 					NetboxObject: objects.NetboxObject{
 						Description: description,
 						Tags:        o.Config.SourceTags,
@@ -77,7 +77,7 @@ func (o *OVirtSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
 			Name: name,
 			Slug: utils.Slugify(name),
 		}
-		_, err := nbi.AddClusterGroup(nbClusterGroup)
+		_, err := nbi.AddClusterGroup(o.Ctx, nbClusterGroup)
 		if err != nil {
 			return fmt.Errorf("failed to add oVirt data center %s as Netbox cluster group: %v", name, err)
 		}
@@ -96,7 +96,7 @@ func (o *OVirtSource) syncClusters(nbi *inventory.NetboxInventory) error {
 		Name: "oVirt",
 		Slug: "ovirt",
 	}
-	clusterType, err := nbi.AddClusterType(clusterType)
+	clusterType, err := nbi.AddClusterType(o.Ctx, clusterType)
 	if err != nil {
 		return fmt.Errorf("failed to add oVirt cluster type: %v", err)
 	}
@@ -108,14 +108,14 @@ func (o *OVirtSource) syncClusters(nbi *inventory.NetboxInventory) error {
 		}
 		description, exists := cluster.Description()
 		if !exists {
-			o.Logger.Warning("description for oVirt cluster ", clusterName, " is empty.")
+			o.Logger.Warning(o.Ctx, "description for oVirt cluster ", clusterName, " is empty.")
 		}
 		var clusterGroup *objects.ClusterGroup
 		var clusterGroupName string
 		if _, ok := o.DataCenters[cluster.MustDataCenter().MustId()]; ok {
 			clusterGroupName = o.DataCenters[cluster.MustDataCenter().MustId()].MustName()
 		} else {
-			o.Logger.Warning("failed to get datacenter for oVirt cluster ", clusterName)
+			o.Logger.Warning(o.Ctx, "failed to get datacenter for oVirt cluster ", clusterName)
 		}
 		if clusterGroupName != "" {
 			clusterGroup = nbi.ClusterGroupsIndexByName[clusterGroupName]
@@ -162,7 +162,7 @@ func (o *OVirtSource) syncClusters(nbi *inventory.NetboxInventory) error {
 			Site:   clusterSite,
 			Tenant: clusterTenant,
 		}
-		err := nbi.AddCluster(nbCluster)
+		err := nbi.AddCluster(o.Ctx, nbCluster)
 		if err != nil {
 			return fmt.Errorf("failed to add oVirt cluster %s as Netbox cluster: %v", clusterName, err)
 		}
@@ -176,7 +176,7 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 	for hostID, host := range o.Hosts {
 		hostName, exists := host.Name()
 		if !exists {
-			o.Logger.Warningf("name of host with id=%s is empty", hostID)
+			o.Logger.Warningf(o.Ctx, "name of host with id=%s is empty", hostID)
 		}
 		hostCluster := nbi.ClustersIndexByName[o.Clusters[host.MustCluster().MustId()].MustName()]
 
@@ -194,12 +194,12 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		if exists {
 			hostAssetTag, exists = hwInfo.Uuid()
 			if !exists {
-				o.Logger.Warning("Uuid (asset tag) for oVirt host ", hostName, " is empty. Can't identify it, so it will be skipped...")
+				o.Logger.Warning(o.Ctx, "Uuid (asset tag) for oVirt host ", hostName, " is empty. Can't identify it, so it will be skipped...")
 				continue
 			}
 			hostSerialNumber, exists = hwInfo.SerialNumber()
 			if !exists {
-				o.Logger.Warning("Serial number for oVirt host ", hostName, " is empty.")
+				o.Logger.Warning(o.Ctx, "Serial number for oVirt host ", hostName, " is empty.")
 			}
 			manufacturerName, _ = hwInfo.Manufacturer()
 			manufacturerName, err = utils.MatchStringToValue(manufacturerName, objects.ManufacturerMap)
@@ -212,7 +212,7 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 				hostModel = constants.DefaultModel // Model is also required for adding device type into netbox
 			}
 		} else {
-			o.Logger.Warning("Hardware information for oVirt host ", hostName, " is empty, it can't be identified so it will be skipped.")
+			o.Logger.Warning(o.Ctx, "Hardware information for oVirt host ", hostName, " is empty, it can't be identified so it will be skipped.")
 			continue
 		}
 
@@ -220,7 +220,7 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		if manufacturerName == "" {
 			manufacturerName = constants.DefaultManufacturer
 		}
-		hostManufacturer, err = nbi.AddManufacturer(&objects.Manufacturer{
+		hostManufacturer, err = nbi.AddManufacturer(o.Ctx, &objects.Manufacturer{
 			Name: manufacturerName,
 			Slug: utils.Slugify(manufacturerName),
 		})
@@ -229,7 +229,7 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		}
 
 		var hostDeviceType *objects.DeviceType
-		hostDeviceType, err = nbi.AddDeviceType(&objects.DeviceType{
+		hostDeviceType, err = nbi.AddDeviceType(o.Ctx, &objects.DeviceType{
 			Manufacturer: hostManufacturer,
 			Model:        hostModel,
 			Slug:         utils.Slugify(hostModel),
@@ -262,7 +262,7 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 			}
 		}
 		platformName := utils.GeneratePlatformName(osType, osVersion)
-		hostPlatform, err = nbi.AddPlatform(&objects.Platform{
+		hostPlatform, err = nbi.AddPlatform(o.Ctx, &objects.Platform{
 			Name: platformName,
 			Slug: utils.Slugify(platformName),
 		})
@@ -284,7 +284,7 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		if cpu, exists := host.Cpu(); exists {
 			hostCPUCores, exists = cpu.Name()
 			if !exists {
-				o.Logger.Warning("oVirt hostCpuCores of ", hostName, " is empty.")
+				o.Logger.Warning(o.Ctx, "oVirt hostCpuCores of ", hostName, " is empty.")
 			}
 		}
 
@@ -313,7 +313,7 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 			AssetTag:     hostAssetTag,
 			DeviceType:   hostDeviceType,
 		}
-		nbHost, err = nbi.AddDevice(nbHost)
+		nbHost, err = nbi.AddDevice(o.Ctx, nbHost)
 		if err != nil {
 			return fmt.Errorf("failed to add oVirt host %s with error: %v", host.MustName(), err)
 		}
@@ -354,7 +354,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 			var err error
 			masterInterface := nicID2nic[masterID]
 			if _, ok := processedNicsIDs[masterID]; ok {
-				masterInterface, err = nbi.AddInterface(masterInterface)
+				masterInterface, err = nbi.AddInterface(o.Ctx, masterInterface)
 				if err != nil {
 					return fmt.Errorf("failed to add oVirt master interface %s with error: %v", masterInterface.Name, err)
 				}
@@ -364,7 +364,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 			for _, slaveID := range slavesIDs {
 				slaveInterface := nicID2nic[slaveID]
 				slaveInterface.LAG = masterInterface
-				slaveInterface, err := nbi.AddInterface(slaveInterface)
+				slaveInterface, err := nbi.AddInterface(o.Ctx, slaveInterface)
 				if err != nil {
 					return fmt.Errorf("failed to add oVirt slave interface %s with error: %v", slaveInterface.Name, err)
 				}
@@ -377,7 +377,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 		for parent, children := range parent2child {
 			parentInterface := nicID2nic[parent]
 			if _, ok := processedNicsIDs[parent]; ok {
-				parentInterface, err := nbi.AddInterface(parentInterface)
+				parentInterface, err := nbi.AddInterface(o.Ctx, parentInterface)
 				if err != nil {
 					return fmt.Errorf("failed to add oVirt parent interface %s with error: %v", parentInterface.Name, err)
 				}
@@ -387,7 +387,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 			for _, child := range children {
 				childInterface := nicID2nic[child]
 				childInterface.ParentInterface = parentInterface
-				childInterface, err := nbi.AddInterface(childInterface)
+				childInterface, err := nbi.AddInterface(o.Ctx, childInterface)
 				if err != nil {
 					return fmt.Errorf("failed to add oVirt child interface %s with error: %v", childInterface.Name, err)
 				}
@@ -398,7 +398,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 
 		// Fourth loop we check if there are any nics that were not processed
 		for nicID := range processedNicsIDs {
-			nbNic, err := nbi.AddInterface(nicID2nic[nicID])
+			nbNic, err := nbi.AddInterface(o.Ctx, nicID2nic[nicID])
 			if err != nil {
 				return fmt.Errorf("failed to add oVirt interface %s with error: %v", nicID2nic[nicID].Name, err)
 			}
@@ -409,7 +409,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 		for nicID, ipv4 := range nicID2IPv4 {
 			nbNic := nicID2nic[nicID]
 			address := strings.Split(ipv4, "/")[0]
-			nbIPAddress, err := nbi.AddIPAddress(&objects.IPAddress{
+			nbIPAddress, err := nbi.AddIPAddress(o.Ctx, &objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
 					Tags: o.Config.SourceTags,
 					CustomFields: map[string]string{
@@ -428,7 +428,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 			if address == hostIP {
 				hostCopy := *nbHost
 				hostCopy.PrimaryIPv4 = nbIPAddress
-				_, err := nbi.AddDevice(&hostCopy)
+				_, err := nbi.AddDevice(o.Ctx, &hostCopy)
 				if err != nil {
 					return fmt.Errorf("adding primary ipv4 address: %s", err)
 				}
@@ -437,7 +437,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 		for nicID, ipv6 := range nicID2IPv6 {
 			nbNic := nicID2nic[nicID]
 			address := strings.Split(ipv6, "/")[0]
-			_, err := nbi.AddIPAddress(&objects.IPAddress{
+			_, err := nbi.AddIPAddress(o.Ctx, &objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
 					Tags: o.Config.SourceTags,
 					CustomFields: map[string]string{
@@ -462,23 +462,23 @@ func (o *OVirtSource) collectHostNicsData(nbHost *objects.Device, nbi *inventory
 	for _, nic := range nics.Slice() {
 		nicID, exists := nic.Id()
 		if !exists {
-			o.Logger.Warning("id for oVirt nic with id ", nicID, " is empty. This should not happen! Skipping...")
+			o.Logger.Warning(o.Ctx, "id for oVirt nic with id ", nicID, " is empty. This should not happen! Skipping...")
 			continue
 		}
 		nicName, exists := nic.Name()
 		if !exists {
-			o.Logger.Warning("name for oVirt nic with id ", nicID, " is empty.")
+			o.Logger.Warning(o.Ctx, "name for oVirt nic with id ", nicID, " is empty.")
 		}
 		// var nicType *objects.InterfaceType
 		nicSpeedBips, exists := nic.Speed()
 		if !exists {
-			o.Logger.Warning("speed for oVirt nic with id ", nicID, " is empty.")
+			o.Logger.Warning(o.Ctx, "speed for oVirt nic with id ", nicID, " is empty.")
 		}
 		nicSpeedKbps := nicSpeedBips / constants.KB
 
 		nicMtu, exists := nic.Mtu()
 		if !exists {
-			o.Logger.Warning("mtu for oVirt nic with id ", nicID, " is empty.")
+			o.Logger.Warning(o.Ctx, "mtu for oVirt nic with id ", nicID, " is empty.")
 		}
 
 		nicComment, _ := nic.Comment()
@@ -612,7 +612,7 @@ func (o *OVirtSource) syncVms(nbi *inventory.NetboxInventory) error {
 			return err
 		}
 
-		nbVM, err := nbi.AddVM(collectedVM)
+		nbVM, err := nbi.AddVM(o.Ctx, collectedVM)
 		if err != nil {
 			return fmt.Errorf("failed to sync oVirt vm: %v", err)
 		}
@@ -630,7 +630,7 @@ func (o *OVirtSource) extractVMData(nbi *inventory.NetboxInventory, vmID string,
 	// VM name, which is used as unique identifier for VMs in Netbox
 	vmName, exists := vm.Name()
 	if !exists {
-		o.Logger.Warning("name for oVirt vm with id ", vmID, " is empty. VM has to have unique name to be synced to netbox. Skipping...")
+		o.Logger.Warning(o.Ctx, "name for oVirt vm with id ", vmID, " is empty. VM has to have unique name to be synced to netbox. Skipping...")
 	}
 
 	// VM's Cluster
@@ -737,7 +737,7 @@ func (o *OVirtSource) extractVMData(nbi *inventory.NetboxInventory, vmID string,
 		}
 	}
 	platformName := utils.GeneratePlatformName(vmOsType, vmOsVersion)
-	vmPlatform, err := nbi.AddPlatform(&objects.Platform{
+	vmPlatform, err := nbi.AddPlatform(o.Ctx, &objects.Platform{
 		Name: platformName,
 		Slug: utils.Slugify(platformName),
 	})
@@ -777,7 +777,7 @@ func (o *OVirtSource) syncVMInterfaces(nbi *inventory.NetboxInventory, ovirtVM *
 					var vmInterface *objects.VMInterface
 					var err error
 					if reportedDeviceName, exists := reportedDevice.Name(); exists {
-						vmInterface, err = nbi.AddVMInterface(&objects.VMInterface{
+						vmInterface, err = nbi.AddVMInterface(o.Ctx, &objects.VMInterface{
 							NetboxObject: objects.NetboxObject{
 								Tags:        o.Config.SourceTags,
 								Description: reportedDevice.MustDescription(),
@@ -794,7 +794,7 @@ func (o *OVirtSource) syncVMInterfaces(nbi *inventory.NetboxInventory, ovirtVM *
 							return fmt.Errorf("failed to sync oVirt vm's interface %s: %v", reportedDeviceName, err)
 						}
 					} else {
-						o.Logger.Warning("name for oVirt vm's reported device is empty. Skipping...")
+						o.Logger.Warning(o.Ctx, "name for oVirt vm's reported device is empty. Skipping...")
 						continue
 					}
 
@@ -828,7 +828,7 @@ func (o *OVirtSource) syncVMInterfaces(nbi *inventory.NetboxInventory, ovirtVM *
 										}
 									}
 
-									newIPAddress, err := nbi.AddIPAddress(&objects.IPAddress{
+									newIPAddress, err := nbi.AddIPAddress(o.Ctx, &objects.IPAddress{
 										NetboxObject: objects.NetboxObject{
 											Tags: o.Config.SourceTags,
 											CustomFields: map[string]string{
@@ -846,7 +846,7 @@ func (o *OVirtSource) syncVMInterfaces(nbi *inventory.NetboxInventory, ovirtVM *
 									if err != nil {
 										// TODO: return should be here, commented just for now
 										// return fmt.Errorf("failed to sync oVirt vm's interface %s ip %s: %v", vmInterface, ip.MustAddress(), err)
-										o.Logger.Error(fmt.Sprintf("failed to sync oVirt vm's interface %s ip %s: %v", vmInterface, ip.MustAddress(), err))
+										o.Logger.Error(o.Ctx, fmt.Sprintf("failed to sync oVirt vm's interface %s ip %s: %v", vmInterface, ip.MustAddress(), err))
 									}
 
 									// Check if ip is primary
@@ -855,7 +855,7 @@ func (o *OVirtSource) syncVMInterfaces(nbi *inventory.NetboxInventory, ovirtVM *
 										if vmIP != "" && vmIP == ipAddress || netboxVM.PrimaryIPv4 == nil {
 											vmCopy := *netboxVM
 											vmCopy.PrimaryIPv4 = newIPAddress
-											_, err := nbi.AddVM(&vmCopy)
+											_, err := nbi.AddVM(o.Ctx, &vmCopy)
 											if err != nil {
 												return fmt.Errorf("adding primary ipv4 address: %s", err)
 											}

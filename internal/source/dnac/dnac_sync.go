@@ -13,7 +13,7 @@ import (
 )
 
 // Syncs dnac sites to netbox inventory.
-func (ds *Source) SyncSites(nbi *inventory.NetboxInventory) error {
+func (ds *DnacSource) SyncSites(nbi *inventory.NetboxInventory) error {
 	for _, site := range ds.Sites {
 		dnacSite := &objects.Site{
 			NetboxObject: objects.NetboxObject{
@@ -38,7 +38,7 @@ func (ds *Source) SyncSites(nbi *inventory.NetboxInventory) error {
 				}
 			}
 		}
-		nbSite, err := nbi.AddSite(dnacSite)
+		nbSite, err := nbi.AddSite(ds.Ctx, dnacSite)
 		if err != nil {
 			return fmt.Errorf("adding site: %s", err)
 		}
@@ -47,7 +47,7 @@ func (ds *Source) SyncSites(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
-func (ds *Source) SyncVlans(nbi *inventory.NetboxInventory) error {
+func (ds *DnacSource) SyncVlans(nbi *inventory.NetboxInventory) error {
 	for vid, vlan := range ds.Vlans {
 		vlanGroup, err := common.MatchVlanToGroup(nbi, vlan.InterfaceName, ds.VlanGroupRelations)
 		if err != nil {
@@ -57,7 +57,7 @@ func (ds *Source) SyncVlans(nbi *inventory.NetboxInventory) error {
 		if err != nil {
 			return fmt.Errorf("vlanTenant: %s", err)
 		}
-		newVlan, err := nbi.AddVlan(&objects.Vlan{
+		newVlan, err := nbi.AddVlan(ds.Ctx, &objects.Vlan{
 			NetboxObject: objects.NetboxObject{
 				Tags:        ds.Config.SourceTags,
 				Description: vlan.VLANType,
@@ -77,7 +77,7 @@ func (ds *Source) SyncVlans(nbi *inventory.NetboxInventory) error {
 		if vlan.Prefix != "" && vlan.NetworkAddress != "" {
 			// Create prefix for this vlan
 			prefix := fmt.Sprintf("%s/%s", vlan.NetworkAddress, vlan.Prefix)
-			_, err = nbi.AddPrefix(&objects.Prefix{
+			_, err = nbi.AddPrefix(ds.Ctx, &objects.Prefix{
 				NetboxObject: objects.NetboxObject{
 					Tags: ds.Config.SourceTags,
 					CustomFields: map[string]string{
@@ -98,7 +98,7 @@ func (ds *Source) SyncVlans(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
-func (ds *Source) SyncDevices(nbi *inventory.NetboxInventory) error {
+func (ds *DnacSource) SyncDevices(nbi *inventory.NetboxInventory) error {
 	for _, device := range ds.Devices {
 		var description, comments string
 		if device.Description != "" {
@@ -109,7 +109,7 @@ func (ds *Source) SyncDevices(nbi *inventory.NetboxInventory) error {
 			description = "See comments"
 		}
 
-		ciscoManufacturer, err := nbi.AddManufacturer(&objects.Manufacturer{
+		ciscoManufacturer, err := nbi.AddManufacturer(ds.Ctx, &objects.Manufacturer{
 			Name: "Cisco",
 			Slug: utils.Slugify("Cisco"),
 		})
@@ -117,7 +117,7 @@ func (ds *Source) SyncDevices(nbi *inventory.NetboxInventory) error {
 			return fmt.Errorf("failed creating device: %s", err)
 		}
 
-		deviceRole, err := nbi.AddDeviceRole(&objects.DeviceRole{
+		deviceRole, err := nbi.AddDeviceRole(ds.Ctx, &objects.DeviceRole{
 			Name:   device.Family,
 			Slug:   utils.Slugify(device.Family),
 			Color:  objects.ColorAqua,
@@ -132,7 +132,7 @@ func (ds *Source) SyncDevices(nbi *inventory.NetboxInventory) error {
 			platformName = device.PlatformID // Fallback name
 		}
 
-		platform, err := nbi.AddPlatform(&objects.Platform{
+		platform, err := nbi.AddPlatform(ds.Ctx, &objects.Platform{
 			Name:         platformName,
 			Slug:         utils.Slugify(platformName),
 			Manufacturer: ciscoManufacturer,
@@ -144,15 +144,15 @@ func (ds *Source) SyncDevices(nbi *inventory.NetboxInventory) error {
 		var deviceSite *objects.Site
 		var ok bool
 		if deviceSite, ok = ds.SiteID2nbSite[ds.Device2Site[device.ID]]; !ok {
-			ds.Logger.Errorf("DeviceSite is not existing for device %s, this should not happen. This device will be skipped", device.ID)
+			ds.Logger.Errorf(ds.Ctx, "DeviceSite is not existing for device %s, this should not happen. This device will be skipped", device.ID)
 			continue
 		}
 
 		if device.Type == "" {
-			ds.Logger.Errorf("Device type for device %s is empty, this should not happen. This device will be skipped", device.ID)
+			ds.Logger.Errorf(ds.Ctx, "Device type for device %s is empty, this should not happen. This device will be skipped", device.ID)
 		}
 
-		deviceType, err := nbi.AddDeviceType(&objects.DeviceType{
+		deviceType, err := nbi.AddDeviceType(ds.Ctx, &objects.DeviceType{
 			Manufacturer: ciscoManufacturer,
 			Model:        device.Type,
 			Slug:         utils.Slugify(device.Type),
@@ -166,7 +166,7 @@ func (ds *Source) SyncDevices(nbi *inventory.NetboxInventory) error {
 			return fmt.Errorf("hostTenant: %s", err)
 		}
 
-		nbDevice, err := nbi.AddDevice(&objects.Device{
+		nbDevice, err := nbi.AddDevice(ds.Ctx, &objects.Device{
 			NetboxObject: objects.NetboxObject{
 				Tags:        ds.Config.SourceTags,
 				Description: description,
@@ -194,7 +194,7 @@ func (ds *Source) SyncDevices(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
-func (ds *Source) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error {
+func (ds *DnacSource) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error {
 	for ifaceID, iface := range ds.Interfaces {
 		ifaceDescription := iface.Description
 		ifaceDevice := ds.DeviceID2nbDevice[iface.DeviceID]
@@ -208,7 +208,7 @@ func (ds *Source) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error {
 			ifaceDuplex = &objects.DuplexHalf
 		case "":
 		default:
-			ds.Logger.Warningf("Unknown duplex value: %s", iface.Duplex)
+			ds.Logger.Warningf(ds.Ctx, "Unknown duplex value: %s", iface.Duplex)
 		}
 
 		var ifaceStatus bool
@@ -218,12 +218,12 @@ func (ds *Source) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error {
 		case "up":
 			ifaceStatus = true
 		default:
-			ds.Logger.Errorf("wrong interface status: %s", iface.Status)
+			ds.Logger.Errorf(ds.Ctx, "wrong interface status: %s", iface.Status)
 		}
 
 		ifaceSpeed, err := strconv.Atoi(iface.Speed)
 		if err != nil {
-			ds.Logger.Errorf("wrong speed for iface %s", iface.Speed)
+			ds.Logger.Errorf(ds.Ctx, "wrong speed for iface %s", iface.Speed)
 		}
 
 		var ifaceType *objects.InterfaceType
@@ -236,13 +236,13 @@ func (ds *Source) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error {
 		case "Virtual":
 			ifaceType = &objects.VirtualInterfaceType
 		default:
-			ds.Logger.Errorf("Unknown interface type: %s. Skipping this device...", iface.InterfaceType)
+			ds.Logger.Errorf(ds.Ctx, "Unknown interface type: %s. Skipping this device...", iface.InterfaceType)
 			continue
 		}
 
 		ifaceName := iface.PortName
 		if ifaceName == "" {
-			ds.Logger.Errorf("Unknown interface name for iface: %s", ifaceID)
+			ds.Logger.Errorf(ds.Ctx, "Unknown interface name for iface: %s", ifaceID)
 			continue
 		}
 
@@ -251,7 +251,7 @@ func (ds *Source) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error {
 		var ifaceTrunkVlans []*objects.Vlan
 		vid, err := strconv.Atoi(iface.VLANID)
 		if err != nil {
-			ds.Logger.Errorf("Can't parse vid for iface %s", iface.VLANID)
+			ds.Logger.Errorf(ds.Ctx, "Can't parse vid for iface %s", iface.VLANID)
 			continue
 		}
 		switch iface.PortMode {
@@ -263,14 +263,14 @@ func (ds *Source) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error {
 			// TODO: ifaceTrunkVlans = append(ifaceTrunkVlans, ds.Vid2nbVlan[vid])
 		case "dynamic_auto":
 			// TODO: how to handle this mode in netbox
-			ds.Logger.Warningf("vlan mode 'dynamic_auto' is not implemented yet")
+			ds.Logger.Warningf(ds.Ctx, "vlan mode 'dynamic_auto' is not implemented yet")
 		case "routed":
-			ds.Logger.Warningf("vlan mode 'routed' is not implemented yet")
+			ds.Logger.Warningf(ds.Ctx, "vlan mode 'routed' is not implemented yet")
 		default:
-			ds.Logger.Errorf("Unknown interface mode: '%s'", iface.PortMode)
+			ds.Logger.Errorf(ds.Ctx, "Unknown interface mode: '%s'", iface.PortMode)
 		}
 
-		nbIface, err := nbi.AddInterface(&objects.Interface{
+		nbIface, err := nbi.AddInterface(ds.Ctx, &objects.Interface{
 			NetboxObject: objects.NetboxObject{
 				Description: ifaceDescription,
 				Tags:        ds.Config.SourceTags,
@@ -303,7 +303,7 @@ func (ds *Source) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error {
 				}
 				defaultMask = maskBits
 			}
-			nbIPAddress, err := nbi.AddIPAddress(&objects.IPAddress{
+			nbIPAddress, err := nbi.AddIPAddress(ds.Ctx, &objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
 					Tags: ds.Config.SourceTags,
 					CustomFields: map[string]string{
@@ -326,7 +326,7 @@ func (ds *Source) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error {
 			if deviceManagementIP == iface.IPv4Address {
 				deviceCopy := *ifaceDevice
 				deviceCopy.PrimaryIPv4 = nbIPAddress
-				_, err = nbi.AddDevice(&deviceCopy)
+				_, err = nbi.AddDevice(ds.Ctx, &deviceCopy)
 				if err != nil {
 					return fmt.Errorf("adding primary ipv4 address: %s", err)
 				}

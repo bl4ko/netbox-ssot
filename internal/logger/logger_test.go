@@ -2,13 +2,17 @@ package logger
 
 import (
 	"bytes"
+	"context"
 	"strings"
 	"testing"
+
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 )
 
 func TestLoggerCreationForCustomFile(t *testing.T) {
 	// We create logger with dest: "" (stdout) and logLevel: DEBUG
-	logger, err := New("/tmp/test", DEBUG, "test")
+	testCtx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+	logger, err := New("/tmp/test", DEBUG)
 	if err != nil {
 		t.Errorf("Error creating logger: %v", err)
 	}
@@ -17,41 +21,41 @@ func TestLoggerCreationForCustomFile(t *testing.T) {
 		t.Errorf("Logger is nil")
 	}
 
-	err = logger.Info("Test INFO")
+	err = logger.Info(testCtx, "Test INFO")
 	if err != nil {
 		t.Errorf("Error writing to logger on level INFO: %v", err)
 	}
 
 	testString := "info"
-	err = logger.Infof("Test %s", testString)
+	err = logger.Infof(testCtx, "Test %s", testString)
 	if err != nil {
 		t.Errorf("Error writing to logger on level INFO: %v", err)
 	}
 
-	err = logger.Debug("Test DEBUG")
+	err = logger.Debug(testCtx, "Test DEBUG")
 	if err != nil {
 		t.Errorf("Error writing to logger on level DEBUG: %v", err)
 	}
 
-	err = logger.Debugf("Test %s", testString)
+	err = logger.Debugf(testCtx, "Test %s", testString)
 	if err != nil {
 		t.Errorf("Error writing to logger on level DEBUG: %v", err)
 	}
 
-	err = logger.Warning("Test WARNING")
+	err = logger.Warning(testCtx, "Test WARNING")
 	if err != nil {
 		t.Errorf("Error writing to logger on level WARNING: %v", err)
 	}
-	err = logger.Warningf("Test %s", testString)
+	err = logger.Warningf(testCtx, "Test %s", testString)
 	if err != nil {
 		t.Errorf("Error writing to logger on level WARNING: %v", err)
 	}
 
-	err = logger.Error("Test ERROR")
+	err = logger.Error(testCtx, "Test ERROR")
 	if err != nil {
 		t.Errorf("Error writing to logger on level ERROR: %v", err)
 	}
-	err = logger.Errorf("Test %s", testString)
+	err = logger.Errorf(testCtx, "Test %s", testString)
 	if err != nil {
 		t.Errorf("Error writing to logger on level ERROR: %v", err)
 	}
@@ -59,7 +63,8 @@ func TestLoggerCreationForCustomFile(t *testing.T) {
 
 func TestLoggerCreationForStdout(t *testing.T) {
 	// We create logger with dest: "" (stdout) and logLevel: DEBUG
-	logger, err := New("", DEBUG, "test")
+	testCtx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+	logger, err := New("", DEBUG)
 	if err != nil {
 		t.Errorf("Error creating logger: %v", err)
 	}
@@ -68,41 +73,41 @@ func TestLoggerCreationForStdout(t *testing.T) {
 		t.Errorf("Logger is nil")
 	}
 
-	err = logger.Info("Test INFO")
+	err = logger.Info(testCtx, "Test INFO")
 	if err != nil {
 		t.Errorf("Error writing to logger on level INFO: %v", err)
 	}
 
 	testString := "info"
-	err = logger.Infof("Test %s", testString)
+	err = logger.Infof(testCtx, "Test %s", testString)
 	if err != nil {
 		t.Errorf("Error writing to logger on level INFO: %v", err)
 	}
 
-	err = logger.Debug("Test DEBUG")
+	err = logger.Debug(testCtx, "Test DEBUG")
 	if err != nil {
 		t.Errorf("Error writing to logger on level DEBUG: %v", err)
 	}
 
-	err = logger.Debugf("Test %s", testString)
+	err = logger.Debugf(testCtx, "Test %s", testString)
 	if err != nil {
 		t.Errorf("Error writing to logger on level DEBUG: %v", err)
 	}
 
-	err = logger.Warning("Test WARNING")
+	err = logger.Warning(testCtx, "Test WARNING")
 	if err != nil {
 		t.Errorf("Error writing to logger on level WARNING: %v", err)
 	}
-	err = logger.Warningf("Test %s", testString)
+	err = logger.Warningf(testCtx, "Test %s", testString)
 	if err != nil {
 		t.Errorf("Error writing to logger on level WARNING: %v", err)
 	}
 
-	err = logger.Error("Test ERROR")
+	err = logger.Error(testCtx, "Test ERROR")
 	if err != nil {
 		t.Errorf("Error writing to logger on level ERROR: %v", err)
 	}
-	err = logger.Errorf("Test %s", testString)
+	err = logger.Errorf(testCtx, "Test %s", testString)
 	if err != nil {
 		t.Errorf("Error writing to logger on level ERROR: %v", err)
 	}
@@ -111,47 +116,48 @@ func TestLoggerCreationForStdout(t *testing.T) {
 func TestLoggerCreationWithWrongPath(t *testing.T) {
 	// We create logger with dest: "" (stdout) and logLevel: DEBUG
 	wrongFileName := "///wrongPath///"
-	_, err := New(wrongFileName, DEBUG, "test")
+	_, err := New(wrongFileName, DEBUG)
 	if err == nil {
 		t.Errorf("Error creating logger: %v", err)
 	}
 }
 
 func TestHighLoggerLevel(t *testing.T) {
-	l, err := New("", 1, "test")
+	testCtx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+	l, err := New("", 1)
 	if err != nil {
 		t.Errorf("Error creating logger: %v", err)
 	}
 	buffer := new(bytes.Buffer)
 	l.Logger.SetOutput(buffer)
-	l.Debug("Test DEBUG")
-	l.Debugf("Test DEBUG")
+	l.Debug(testCtx, "Test DEBUG")
+	l.Debugf(testCtx, "Test DEBUG")
 	// we need to ensure that the buffer is empty (no output)
 	if buffer.String() != "" {
 		t.Errorf("Buffer should be empty")
 	}
 	l.level = 2
-	l.Info("Test INFO")
-	l.Infof("Test INFO")
+	l.Info(testCtx, "Test INFO")
+	l.Infof(testCtx, "Test INFO")
 	if buffer.String() != "" {
 		t.Errorf("Buffer should be empty")
 	}
 	l.level = 3
-	l.Warning("Test WARNING")
-	l.Warningf("Test WARNING")
+	l.Warning(testCtx, "Test WARNING")
+	l.Warningf(testCtx, "Test WARNING")
 	if buffer.String() != "" {
 		t.Errorf("Buffer should be empty")
 	}
 	l.level = 4
-	l.Error("Test ERROR")
-	l.Errorf("Test ERROR")
+	l.Error(testCtx, "Test ERROR")
+	l.Errorf(testCtx, "Test ERROR")
 	if buffer.String() != "" {
 		t.Errorf("Buffer should be empty")
 	}
 }
 
 func TestLogPrefixForDebugOnly(t *testing.T) {
-	l, err := New("", 1, "test")
+	l, err := New("", 1)
 	if err != nil {
 		t.Errorf("Error creating logger: %v", err)
 	}
@@ -171,7 +177,7 @@ func TestLogPrefixForDebugOnly(t *testing.T) {
 }
 
 func TestOutputUnknownCaller(t *testing.T) {
-	l, err := New("", 0, "test")
+	l, err := New("", 0)
 	if err != nil {
 		t.Errorf("Error creating logger: %v", err)
 	}

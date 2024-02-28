@@ -1,6 +1,7 @@
 package inventory
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -94,8 +95,10 @@ type NetboxInventory struct {
 	// }
 	OrphanObjectPriority map[int]string
 
-	// Tag used by netbox-ssot to mark devices that are managed by it
+	// Tag used by netbox-ssot to mark devices that are managed by it.
 	SsotTag *objects.Tag
+	// Default context for the inventory, we use it to pass sourcename to functions for logging.
+	Ctx context.Context //nolint:containedctx
 }
 
 // Func string representation.
@@ -106,7 +109,7 @@ func (nbi NetboxInventory) String() string {
 // NewNetboxInventory creates a new NetBoxInventory object.
 // It takes a logger and a NetboxConfig as parameters, and returns a pointer to the newly created NetBoxInventory.
 // The logger is used for logging messages, and the NetboxConfig is used to configure the NetBoxInventory.
-func NewNetboxInventory(logger *logger.Logger, nbConfig *parser.NetboxConfig) *NetboxInventory {
+func NewNetboxInventory(ctx context.Context, logger *logger.Logger, nbConfig *parser.NetboxConfig) *NetboxInventory {
 	sourcePriority := make(map[string]int, len(nbConfig.SourcePriority))
 	for i, sourceName := range nbConfig.SourcePriority {
 		sourcePriority[sourceName] = i
@@ -131,7 +134,7 @@ func NewNetboxInventory(logger *logger.Logger, nbConfig *parser.NetboxConfig) *N
 		15: service.ContactsAPIPath,
 		16: service.ContactAssignmentsAPIPath,
 	}
-	nbi := &NetboxInventory{Logger: logger, NetboxConfig: nbConfig, SourcePriority: sourcePriority, OrphanManager: make(map[string]map[int]bool), OrphanObjectPriority: orphanObjectPriority}
+	nbi := &NetboxInventory{Ctx: ctx, Logger: logger, NetboxConfig: nbConfig, SourcePriority: sourcePriority, OrphanManager: make(map[string]map[int]bool), OrphanObjectPriority: orphanObjectPriority}
 	return nbi
 }
 
@@ -139,11 +142,11 @@ func NewNetboxInventory(logger *logger.Logger, nbConfig *parser.NetboxConfig) *N
 func (nbi *NetboxInventory) Init() error {
 	baseURL := fmt.Sprintf("%s://%s:%d", nbi.NetboxConfig.HTTPScheme, nbi.NetboxConfig.Hostname, nbi.NetboxConfig.Port)
 
-	nbi.Logger.Debug("Initializing Netbox API with baseURL: ", baseURL)
-	nbi.NetboxAPI = service.NewNetBoxAPI(nbi.Logger, baseURL, nbi.NetboxConfig.APIToken, nbi.NetboxConfig.ValidateCert, nbi.NetboxConfig.Timeout)
+	nbi.Logger.Debug(nbi.Ctx, "Initializing Netbox API with baseURL: ", baseURL)
+	nbi.NetboxAPI = service.NewNetBoxAPI(nbi.Ctx, nbi.Logger, baseURL, nbi.NetboxConfig.APIToken, nbi.NetboxConfig.ValidateCert, nbi.NetboxConfig.Timeout)
 
 	// Order matters. TODO: use parallelization in the future, on the init functions that can be parallelized
-	initFunctions := []func() error{
+	initFunctions := []func(context.Context) error{
 		nbi.InitCustomFields,
 		nbi.InitSsotCustomFields,
 		nbi.InitTags,
@@ -174,11 +177,11 @@ func (nbi *NetboxInventory) Init() error {
 	}
 	for _, initFunc := range initFunctions {
 		startTime := time.Now()
-		if err := initFunc(); err != nil {
+		if err := initFunc(nbi.Ctx); err != nil {
 			return fmt.Errorf("%s: %s", err, utils.ExtractFunctionName(initFunc))
 		}
 		duration := time.Since(startTime)
-		nbi.Logger.Infof("Successfully initialized %s in %f seconds", utils.ExtractFunctionName(initFunc), duration.Seconds())
+		nbi.Logger.Infof(nbi.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionName(initFunc), duration.Seconds())
 	}
 
 	return nil

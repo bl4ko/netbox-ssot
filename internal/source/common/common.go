@@ -1,6 +1,8 @@
 package common
 
 import (
+	"context"
+
 	"github.com/bl4ko/netbox-ssot/internal/logger"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
@@ -20,4 +22,5 @@ type Config struct {
 	Logger       *logger.Logger
 	SourceConfig *parser.SourceConfig
 	SourceTags   []*objects.Tag
+	Ctx          context.Context //nolint:containedctx
 }
