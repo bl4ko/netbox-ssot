@@ -21,7 +21,7 @@ func TestValidConfig(t *testing.T) {
 			HTTPScheme:    "https",
 			Port:          666,
 			ValidateCert:  false, // Default
-			Timeout:       constants.DefaultTimeout,
+			Timeout:       constants.DefaultAPITimeout,
 			Tag:           "netbox-ssot", // Default
 			TagColor:      "00add8",      // Default
 			RemoveOrphans: true,          // Default

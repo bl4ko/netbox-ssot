@@ -64,7 +64,7 @@ func (o *OVirtSource) Init() error {
 		Password(o.SourceConfig.Password).
 		Insecure(!o.SourceConfig.ValidateCert).
 		Compress(true).
-		Timeout(time.Second * constants.DefaultTimeout).
+		Timeout(time.Second * constants.DefaultAPITimeout).
 		Build()
 	if err != nil {
 		return fmt.Errorf("failed to create oVirt connection: %v", err)

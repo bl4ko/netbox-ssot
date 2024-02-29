@@ -275,7 +275,7 @@ func ParseConfig(filename string) (*Config, error) {
 		Netbox: &NetboxConfig{
 			HTTPScheme:    "https",
 			Port:          constants.HTTPSDefaultPort,
-			Timeout:       constants.DefaultTimeout,
+			Timeout:       constants.DefaultAPITimeout,
 			RemoveOrphans: true,
 		},
 		Sources: []SourceConfig{},
