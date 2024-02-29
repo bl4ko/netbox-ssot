@@ -3,6 +3,7 @@ package inventory
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/bl4ko/netbox-ssot/internal/logger"
@@ -71,6 +72,30 @@ type NetboxInventory struct {
 	// IPAdressesIndexByAddress is a map of all IP addresses in the inventory, indexed by their address
 	IPAdressesIndexByAddress map[string]*objects.IPAddress
 
+	// We also store locks for all objects, so inventory can be updated by multiple parallel goroutines
+	TagsLock               sync.Mutex
+	SitesLock              sync.Mutex
+	ContactRolesLock       sync.Mutex
+	ContactGroupsLock      sync.Mutex
+	ContactsLock           sync.Mutex
+	ContactAssignmentsLock sync.Mutex
+	CustomFieldsLock       sync.Mutex
+	ClusterGroupsLock      sync.Mutex
+	ClusterTypesLock       sync.Mutex
+	ClustersLock           sync.Mutex
+	DeviceRolesLock        sync.Mutex
+	ManufacturersLock      sync.Mutex
+	DeviceTypesLock        sync.Mutex
+	PlatformsLock          sync.Mutex
+	DevicesLock            sync.Mutex
+	VlanGroupsLock         sync.Mutex
+	VlansLock              sync.Mutex
+	InterfacesLock         sync.Mutex
+	VMsLock                sync.Mutex
+	VMInterfacesLock       sync.Mutex
+	IPAddressesLock        sync.Mutex
+	PrefixesLock           sync.Mutex
+
 	// Orphan manager is a map of objectAPIPath to a set of managed ids for that object type.
 	//
 	// {
@@ -102,7 +127,7 @@ type NetboxInventory struct {
 }
 
 // Func string representation.
-func (nbi NetboxInventory) String() string {
+func (nbi *NetboxInventory) String() string {
 	return fmt.Sprintf("NetBoxInventory{Logger: %+v, NetboxConfig: %+v...}", nbi.Logger, nbi.NetboxConfig)
 }
 
