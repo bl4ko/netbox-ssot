@@ -184,7 +184,7 @@ func MatchNamesWithEmails(ctx context.Context, names []string, emails []string, 
 			matches[name] = email
 		} else {
 			// Handle no match or implement additional matching logic
-			logger.Warningf(ctx, "No direct match found for email: %s", email)
+			logger.Debugf(ctx, "No direct match found for email: %s", email)
 		}
 	}
 	return matches

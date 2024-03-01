@@ -281,9 +281,9 @@ func (ds *DnacSource) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error
 				// TODO: ifaceTrunkVlans = append(ifaceTrunkVlans, ds.Vid2nbVlan[vid])
 			case "dynamic_auto":
 				// TODO: how to handle this mode in netbox
-				ds.Logger.Warningf(ds.Ctx, "vlan mode 'dynamic_auto' is not implemented yet")
+				ds.Logger.Debugf(ds.Ctx, "vlan mode 'dynamic_auto' is not implemented yet")
 			case "routed":
-				ds.Logger.Warningf(ds.Ctx, "vlan mode 'routed' is not implemented yet")
+				ds.Logger.Debugf(ds.Ctx, "vlan mode 'routed' is not implemented yet")
 			default:
 				ds.Logger.Errorf(ds.Ctx, "Unknown interface mode: '%s'", iface.PortMode)
 			}
