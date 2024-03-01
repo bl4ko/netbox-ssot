@@ -86,134 +86,144 @@ type HostPortgroupData struct {
 }
 
 func (vc *VmwareSource) Init() error {
-	// Initialize regex relations
-	vc.Logger.Debug(vc.Ctx, "Initializing regex relations for oVirt source ", vc.SourceConfig.Name)
-	vc.HostSiteRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.HostSiteRelations)
-	vc.Logger.Debug(vc.Ctx, "HostSiteRelations: ", vc.HostSiteRelations)
-	vc.ClusterSiteRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.ClusterSiteRelations)
-	vc.Logger.Debug(vc.Ctx, "ClusterSiteRelations: ", vc.ClusterSiteRelations)
-	vc.ClusterTenantRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.ClusterTenantRelations)
-	vc.Logger.Debug(vc.Ctx, "ClusterTenantRelations: ", vc.ClusterTenantRelations)
-	vc.HostTenantRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.HostTenantRelations)
-	vc.Logger.Debug(vc.Ctx, "HostTenantRelations: ", vc.HostTenantRelations)
-	vc.VMTenantRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.VMTenantRelations)
-	vc.Logger.Debug(vc.Ctx, "VmTenantRelations: ", vc.VMTenantRelations)
-	vc.VlanGroupRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.VlanGroupRelations)
-	vc.Logger.Debug(vc.Ctx, "VlanGroupRelations: ", vc.VlanGroupRelations)
-	vc.VlanTenantRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.VlanTenantRelations)
-	vc.Logger.Debug(vc.Ctx, "VlanTenantRelations: ", vc.VlanTenantRelations)
-	vc.CustomFieldMappings = utils.ConvertStringsToPairs(vc.SourceConfig.CustomFieldMappings)
-	vc.Logger.Debug(vc.Ctx, "CustomFieldMappings: ", vc.CustomFieldMappings)
+	select {
+	case <-vc.Ctx.Done():
+		return fmt.Errorf("goroutine ended by context")
+	default:
+		// Initialize regex relations
+		vc.Logger.Debug(vc.Ctx, "Initializing regex relations for oVirt source ", vc.SourceConfig.Name)
+		vc.HostSiteRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.HostSiteRelations)
+		vc.Logger.Debug(vc.Ctx, "HostSiteRelations: ", vc.HostSiteRelations)
+		vc.ClusterSiteRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.ClusterSiteRelations)
+		vc.Logger.Debug(vc.Ctx, "ClusterSiteRelations: ", vc.ClusterSiteRelations)
+		vc.ClusterTenantRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.ClusterTenantRelations)
+		vc.Logger.Debug(vc.Ctx, "ClusterTenantRelations: ", vc.ClusterTenantRelations)
+		vc.HostTenantRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.HostTenantRelations)
+		vc.Logger.Debug(vc.Ctx, "HostTenantRelations: ", vc.HostTenantRelations)
+		vc.VMTenantRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.VMTenantRelations)
+		vc.Logger.Debug(vc.Ctx, "VmTenantRelations: ", vc.VMTenantRelations)
+		vc.VlanGroupRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.VlanGroupRelations)
+		vc.Logger.Debug(vc.Ctx, "VlanGroupRelations: ", vc.VlanGroupRelations)
+		vc.VlanTenantRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.VlanTenantRelations)
+		vc.Logger.Debug(vc.Ctx, "VlanTenantRelations: ", vc.VlanTenantRelations)
+		vc.CustomFieldMappings = utils.ConvertStringsToPairs(vc.SourceConfig.CustomFieldMappings)
+		vc.Logger.Debug(vc.Ctx, "CustomFieldMappings: ", vc.CustomFieldMappings)
 
-	// Initialize the connection
-	vc.Logger.Debug(vc.Ctx, "Initializing oVirt source ", vc.SourceConfig.Name)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+		// Initialize the connection
+		vc.Logger.Debug(vc.Ctx, "Initializing oVirt source ", vc.SourceConfig.Name)
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
 
-	// Correctly handle backslashes in username and password
-	escapedUsername := url.PathEscape(vc.SourceConfig.Username)
-	escapedPassword := url.PathEscape(vc.SourceConfig.Password)
+		// Correctly handle backslashes in username and password
+		escapedUsername := url.PathEscape(vc.SourceConfig.Username)
+		escapedPassword := url.PathEscape(vc.SourceConfig.Password)
 
-	vcURL := fmt.Sprintf("%s://%s:%s@%s:%d/sdk", vc.SourceConfig.HTTPScheme, escapedUsername, escapedPassword, vc.SourceConfig.Hostname, vc.SourceConfig.Port)
+		vcURL := fmt.Sprintf("%s://%s:%s@%s:%d/sdk", vc.SourceConfig.HTTPScheme, escapedUsername, escapedPassword, vc.SourceConfig.Hostname, vc.SourceConfig.Port)
 
-	url, err := url.Parse(vcURL)
-	if err != nil {
-		return fmt.Errorf("failed parsing url for %s with error %s", vc.SourceConfig.Hostname, err)
-	}
-
-	conn, err := govmomi.NewClient(ctx, url, !vc.SourceConfig.ValidateCert)
-	if err != nil {
-		return fmt.Errorf("failed creating a govmomi client with an error: %s", err)
-	}
-
-	// View manager is used to create and manage views. Views are a mechanism in vSphere
-	// to group and manage objects in the inventory.
-	viewManager := view.NewManager(conn.Client)
-
-	// viewType specifies the types of objects to be included in our container view.
-	// Each string in this slice represents a different vSphere Managed Object type.
-	viewType := []string{
-		"Datastore", "Datacenter", "ClusterComputeResource", "HostSystem", "VirtualMachine", "Network",
-	}
-
-	// A container view is a subset of the vSphere inventory, focusing on the specified
-	// object types, making it easier to manage and retrieve data for these objects.
-	containerView, err := viewManager.CreateContainerView(ctx, conn.Client.ServiceContent.RootFolder, viewType, true)
-	if err != nil {
-		return fmt.Errorf("failed creating containerView: %s", err)
-	}
-
-	vc.Logger.Debug(vc.Ctx, "Connection to vmware source ", vc.SourceConfig.Hostname, " established successfully")
-
-	// Create CustomFieldManager to map custom field ids to their names
-	// This is required to determine which custom field key is used for
-	// which custom field name (e.g.g 202 -> vm owner, 203 -> vm description...)
-	err = vc.CreateCustomFieldRelation(ctx, conn.Client)
-	if err != nil {
-		return fmt.Errorf("create custom field relation failed: %s", err)
-	}
-
-	// Find relation between data centers and clusters. Currently we have to manually traverse
-	// the tree to get this relation.
-	err = vc.CreateClusterDataCenterRelation(ctx, conn.Client)
-	if err != nil {
-		return fmt.Errorf("create cluster datacenter relation failed: %s", err)
-	}
-
-	// Initialize items from vsphere API to local storage
-	initFunctions := []func(context.Context, *view.ContainerView) error{
-		vc.InitNetworks,
-		vc.InitDisks,
-		vc.InitDataCenters,
-		vc.InitClusters,
-		vc.InitHosts,
-		vc.InitVms,
-	}
-
-	for _, initFunc := range initFunctions {
-		startTime := time.Now()
-		if err := initFunc(ctx, containerView); err != nil {
-			return fmt.Errorf("vmware initialization failure: %v", err)
+		url, err := url.Parse(vcURL)
+		if err != nil {
+			return fmt.Errorf("failed parsing url for %s with error %s", vc.SourceConfig.Hostname, err)
 		}
-		duration := time.Since(startTime)
-		vc.Logger.Infof(vc.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionName(initFunc), duration.Seconds())
+
+		conn, err := govmomi.NewClient(ctx, url, !vc.SourceConfig.ValidateCert)
+		if err != nil {
+			return fmt.Errorf("failed creating a govmomi client with an error: %s", err)
+		}
+
+		// View manager is used to create and manage views. Views are a mechanism in vSphere
+		// to group and manage objects in the inventory.
+		viewManager := view.NewManager(conn.Client)
+
+		// viewType specifies the types of objects to be included in our container view.
+		// Each string in this slice represents a different vSphere Managed Object type.
+		viewType := []string{
+			"Datastore", "Datacenter", "ClusterComputeResource", "HostSystem", "VirtualMachine", "Network",
+		}
+
+		// A container view is a subset of the vSphere inventory, focusing on the specified
+		// object types, making it easier to manage and retrieve data for these objects.
+		containerView, err := viewManager.CreateContainerView(ctx, conn.Client.ServiceContent.RootFolder, viewType, true)
+		if err != nil {
+			return fmt.Errorf("failed creating containerView: %s", err)
+		}
+
+		vc.Logger.Debug(vc.Ctx, "Connection to vmware source ", vc.SourceConfig.Hostname, " established successfully")
+
+		// Create CustomFieldManager to map custom field ids to their names
+		// This is required to determine which custom field key is used for
+		// which custom field name (e.g.g 202 -> vm owner, 203 -> vm description...)
+		err = vc.CreateCustomFieldRelation(ctx, conn.Client)
+		if err != nil {
+			return fmt.Errorf("create custom field relation failed: %s", err)
+		}
+
+		// Find relation between data centers and clusters. Currently we have to manually traverse
+		// the tree to get this relation.
+		err = vc.CreateClusterDataCenterRelation(ctx, conn.Client)
+		if err != nil {
+			return fmt.Errorf("create cluster datacenter relation failed: %s", err)
+		}
+
+		// Initialize items from vsphere API to local storage
+		initFunctions := []func(context.Context, *view.ContainerView) error{
+			vc.InitNetworks,
+			vc.InitDisks,
+			vc.InitDataCenters,
+			vc.InitClusters,
+			vc.InitHosts,
+			vc.InitVms,
+		}
+
+		for _, initFunc := range initFunctions {
+			startTime := time.Now()
+			if err := initFunc(ctx, containerView); err != nil {
+				return fmt.Errorf("vmware initialization failure: %v", err)
+			}
+			duration := time.Since(startTime)
+			vc.Logger.Infof(vc.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionName(initFunc), duration.Seconds())
+		}
+
+		// Ensure the containerView is destroyed after we are done with it
+		err = containerView.Destroy(ctx)
+		if err != nil {
+			vc.Logger.Errorf(vc.Ctx, "failed destroying containerView: %s", err)
+		}
+
+		err = conn.Logout(ctx)
+		if err != nil {
+			return fmt.Errorf("error occurred when ending vmware connection to host %s: %s", vc.SourceConfig.Hostname, err)
+		}
+
+		vc.Logger.Debug(vc.Ctx, "Successfully closed connection to vmware host: ", vc.SourceConfig.Hostname)
+
+		return nil
 	}
-
-	// Ensure the containerView is destroyed after we are done with it
-	err = containerView.Destroy(ctx)
-	if err != nil {
-		vc.Logger.Errorf(vc.Ctx, "failed destroying containerView: %s", err)
-	}
-
-	err = conn.Logout(ctx)
-	if err != nil {
-		return fmt.Errorf("error occurred when ending vmware connection to host %s: %s", vc.SourceConfig.Hostname, err)
-	}
-
-	vc.Logger.Debug(vc.Ctx, "Successfully closed connection to vmware host: ", vc.SourceConfig.Hostname)
-
-	return nil
 }
 
 // Function that syncs all data from oVirt to Netbox.
 func (vc *VmwareSource) Sync(nbi *inventory.NetboxInventory) error {
-	syncFunctions := []func(*inventory.NetboxInventory) error{
-		vc.syncNetworks,
-		vc.syncDatacenters,
-		vc.syncClusters,
-		vc.syncHosts,
-		vc.syncVms,
-	}
-	for _, syncFunc := range syncFunctions {
-		startTime := time.Now()
-		err := syncFunc(nbi)
-		if err != nil {
-			return err
+	select {
+	case <-vc.Ctx.Done():
+		return fmt.Errorf("goroutine stopped by context")
+	default:
+		syncFunctions := []func(*inventory.NetboxInventory) error{
+			vc.syncNetworks,
+			vc.syncDatacenters,
+			vc.syncClusters,
+			vc.syncHosts,
+			vc.syncVms,
 		}
-		duration := time.Since(startTime)
-		vc.Logger.Infof(vc.Ctx, "Successfully synced %s in %f seconds", utils.ExtractFunctionName(syncFunc), duration.Seconds())
+		for _, syncFunc := range syncFunctions {
+			startTime := time.Now()
+			err := syncFunc(nbi)
+			if err != nil {
+				return err
+			}
+			duration := time.Since(startTime)
+			vc.Logger.Infof(vc.Ctx, "Successfully synced %s in %f seconds", utils.ExtractFunctionName(syncFunc), duration.Seconds())
+		}
+		return nil
 	}
-	return nil
 }
 
 // Currently we have to traverse the vsphere tree to get datacenter to cluster relation

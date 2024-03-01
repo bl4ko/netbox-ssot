@@ -11,6 +11,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/parser"
 	"github.com/bl4ko/netbox-ssot/internal/source"
+	"github.com/bl4ko/netbox-ssot/internal/source/common"
 )
 
 func main() {
@@ -27,6 +28,7 @@ func main() {
 	// Create our main context
 	mainCtx := context.Background()
 	mainCtx = context.WithValue(mainCtx, constants.CtxSourceKey, "main")
+	mainCtx, cancel := context.WithCancel(mainCtx)
 
 	// Initialize Logger
 	ssotLogger, err := logger.New(config.Logger.Dest, config.Logger.Level)
@@ -54,47 +56,57 @@ func main() {
 	}
 	ssotLogger.Debug(mainCtx, "Netbox inventory initialized: ", netboxInventory)
 
+	// Variable to store if the run was successful. If it wasn't we don't remove orphans.
+	successfullRun := true
+
 	// Go through all sources and sync data
 	var wg sync.WaitGroup
 	for i := range config.Sources {
+		sourceConfig := &config.Sources[i]
+		ssotLogger.Info(mainCtx, "Processing source ", sourceConfig.Name, "...")
+		sourceCtx := context.WithValue(mainCtx, constants.CtxSourceKey, sourceConfig.Name)
+		source, err := source.NewSource(sourceCtx, sourceConfig, ssotLogger, netboxInventory)
+		if err != nil {
+			ssotLogger.Error(sourceCtx, err)
+			return
+		}
+		ssotLogger.Infof(sourceCtx, "Successfully created source %s", constants.CheckMark)
+		ssotLogger.Debugf(sourceCtx, "Source content: %s", source)
 		wg.Add(1)
-		go func(i int) {
+		// Run each source in parallel
+		go func(sourceCtx context.Context, source common.Source) {
 			defer wg.Done()
-			sourceConfig := &config.Sources[i]
-			ssotLogger.Info(mainCtx, "Processing source ", sourceConfig.Name, "...")
+			select {
+			case <-sourceCtx.Done():
+				ssotLogger.Infof(sourceCtx, "Signal received closing source")
+			default:
+				// Source initialization
+				ssotLogger.Info(sourceCtx, "Initializing source")
+				err = source.Init()
+				if err != nil {
+					ssotLogger.Error(sourceCtx, err)
+					successfullRun = false
+					cancel()
+					return
+				}
+				ssotLogger.Infof(sourceCtx, "Successfully initialized source %s", constants.CheckMark)
 
-			sourceCtx := context.WithValue(context.Background(), constants.CtxSourceKey, sourceConfig.Name)
-			source, err := source.NewSource(sourceCtx, sourceConfig, ssotLogger, netboxInventory)
-			if err != nil {
-				ssotLogger.Error(sourceCtx, err)
-				return
+				// Source synchronization
+				ssotLogger.Info(sourceCtx, "Syncing source...")
+				err = source.Sync(netboxInventory)
+				if err != nil {
+					ssotLogger.Error(sourceCtx, err)
+					cancel()
+					return
+				}
+				ssotLogger.Infof(sourceCtx, "Source synced successfully %s", constants.CheckMark)
 			}
-			ssotLogger.Infof(sourceCtx, "Successfully created source %s", constants.CheckMark)
-			ssotLogger.Debugf(sourceCtx, "Source content: %s", source)
-
-			// Run each source in parallel
-			ssotLogger.Info(sourceCtx, "Initializing source")
-			err = source.Init()
-			if err != nil {
-				ssotLogger.Error(sourceCtx, err)
-				return
-			}
-			ssotLogger.Infof(sourceCtx, "Successfully initialized source %s", constants.CheckMark)
-
-			// Source synchronization
-			ssotLogger.Info(sourceCtx, "Syncing source...")
-			err = source.Sync(netboxInventory)
-			if err != nil {
-				ssotLogger.Error(sourceCtx, err)
-				return
-			}
-			ssotLogger.Infof(sourceCtx, "Source synced successfully %s", constants.CheckMark)
-		}(i)
+		}(sourceCtx, source)
 	}
 	wg.Wait()
 
 	// Orphan manager cleanup
-	if config.Netbox.RemoveOrphans {
+	if config.Netbox.RemoveOrphans && successfullRun {
 		ssotLogger.Info(mainCtx, "Cleaning up orphaned objects...")
 		err = netboxInventory.DeleteOrphans(mainCtx)
 		if err != nil {
@@ -106,8 +118,14 @@ func main() {
 		ssotLogger.Info(mainCtx, "Skipping removing orphaned objects...")
 	}
 
+	// End the context if it hasn't been yet
+	cancel()
 	duration := time.Since(startTime)
 	minutes := int(duration.Minutes())
 	seconds := int((duration - time.Duration(minutes)*time.Minute).Seconds())
-	ssotLogger.Infof(mainCtx, "%s Syncing took %d min %d sec in total", constants.Rocket, minutes, seconds)
+	if successfullRun {
+		ssotLogger.Infof(mainCtx, "%s Syncing took %d min %d sec in total", constants.Rocket, minutes, seconds)
+	} else {
+		ssotLogger.Fatalf("%s syncing was unsuccessful", constants.WarningSign)
+	}
 }
