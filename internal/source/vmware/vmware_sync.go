@@ -894,7 +894,7 @@ func (vc *VmwareSource) syncVMInterfaces(nbi *inventory.NetboxInventory, vmwareV
 					return fmt.Errorf("adding VmInterface: %s", err)
 				}
 
-				err = vc.addVMInterfaceIPs(nbi, nbVMInterface, nicIPv4Addresses, nicIPv6Addresses, vmIPv4Addresses, vmIPv6Addresses)
+				vmIPv4Addresses, vmIPv6Addresses, err = vc.addVMInterfaceIPs(nbi, nbVMInterface, nicIPv4Addresses, nicIPv6Addresses, vmIPv4Addresses, vmIPv6Addresses)
 				if err != nil {
 					return err
 				}
@@ -1052,10 +1052,10 @@ func (vc *VmwareSource) collectVMInterfaceData(nbi *inventory.NetboxInventory, n
 }
 
 // Function that adds all collected IPs for the vm's interface to netbox.
-func (vc *VmwareSource) addVMInterfaceIPs(nbi *inventory.NetboxInventory, nbVMInterface *objects.VMInterface, nicIPv4Addresses []string, nicIPv6Addresses []string, vmIPv4Addresses []*objects.IPAddress, vmIPv6Addresses []*objects.IPAddress) error {
+func (vc *VmwareSource) addVMInterfaceIPs(nbi *inventory.NetboxInventory, nbVMInterface *objects.VMInterface, nicIPv4Addresses []string, nicIPv6Addresses []string, vmIPv4Addresses []*objects.IPAddress, vmIPv6Addresses []*objects.IPAddress) ([]*objects.IPAddress, []*objects.IPAddress, error) {
 	select {
 	case <-vc.Ctx.Done():
-		return fmt.Errorf("goroutine ended with context")
+		return nil, nil, fmt.Errorf("goroutine ended with context")
 	default:
 		// Add all collected ipv4 addresses for the interface to netbox
 		for _, ipv4Address := range nicIPv4Addresses {
@@ -1096,7 +1096,7 @@ func (vc *VmwareSource) addVMInterfaceIPs(nbi *inventory.NetboxInventory, nbVMIn
 			}
 			vmIPv6Addresses = append(vmIPv6Addresses, nbIPv6Address)
 		}
-		return nil
+		return vmIPv4Addresses, vmIPv6Addresses, nil
 	}
 }
 
