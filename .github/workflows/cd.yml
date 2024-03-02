@@ -44,4 +44,6 @@ jobs:
           tags: |
             bl4ko/netbox-ssot:latest
             bl4ko/netbox-ssot:${{ github.ref_name }}
+            ghcr.io/bl4ko/netbox-ssot:latest
+            ghcr.io/bl4ko/netbox-ssot:${{ github.ref_name }}
           push: true
