@@ -28,7 +28,6 @@ func main() {
 	// Create our main context
 	mainCtx := context.Background()
 	mainCtx = context.WithValue(mainCtx, constants.CtxSourceKey, "main")
-	mainCtx, cancel := context.WithCancel(mainCtx)
 
 	// Initialize Logger
 	ssotLogger, err := logger.New(config.Logger.Dest, config.Logger.Level)
@@ -58,6 +57,8 @@ func main() {
 
 	// Variable to store if the run was successful. If it wasn't we don't remove orphans.
 	successfullRun := true
+	// Variable to store failed sources
+	encounteredErrors := map[string]bool{}
 
 	// Go through all sources and sync data
 	var wg sync.WaitGroup
@@ -76,31 +77,32 @@ func main() {
 		// Run each source in parallel
 		go func(sourceCtx context.Context, source common.Source) {
 			defer wg.Done()
-			select {
-			case <-sourceCtx.Done():
-				ssotLogger.Infof(sourceCtx, "Signal received closing source")
-			default:
-				// Source initialization
-				ssotLogger.Info(sourceCtx, "Initializing source")
-				err = source.Init()
-				if err != nil {
-					ssotLogger.Error(sourceCtx, err)
-					successfullRun = false
-					cancel()
-					return
-				}
-				ssotLogger.Infof(sourceCtx, "Successfully initialized source %s", constants.CheckMark)
-
-				// Source synchronization
-				ssotLogger.Info(sourceCtx, "Syncing source...")
-				err = source.Sync(netboxInventory)
-				if err != nil {
-					ssotLogger.Error(sourceCtx, err)
-					cancel()
-					return
-				}
-				ssotLogger.Infof(sourceCtx, "Source synced successfully %s", constants.CheckMark)
+			sourceName, ok := sourceCtx.Value(constants.CtxSourceKey).(string)
+			if !ok {
+				ssotLogger.Errorf(sourceCtx, "source ctx value is not set")
+				return
 			}
+			// Source initialization
+			ssotLogger.Info(sourceCtx, "Initializing source")
+			err = source.Init()
+			if err != nil {
+				ssotLogger.Error(sourceCtx, err)
+				successfullRun = false
+				encounteredErrors[sourceName] = true
+				return
+			}
+			ssotLogger.Infof(sourceCtx, "Successfully initialized source %s", constants.CheckMark)
+
+			// Source synchronization
+			ssotLogger.Info(sourceCtx, "Syncing source...")
+			err = source.Sync(netboxInventory)
+			if err != nil {
+				successfullRun = false
+				ssotLogger.Error(sourceCtx, err)
+				encounteredErrors[sourceName] = true
+				return
+			}
+			ssotLogger.Infof(sourceCtx, "Source synced successfully %s", constants.CheckMark)
 		}(sourceCtx, source)
 	}
 	wg.Wait()
@@ -118,14 +120,14 @@ func main() {
 		ssotLogger.Info(mainCtx, "Skipping removing orphaned objects...")
 	}
 
-	// End the context if it hasn't been yet
-	cancel()
 	duration := time.Since(startTime)
 	minutes := int(duration.Minutes())
 	seconds := int((duration - time.Duration(minutes)*time.Minute).Seconds())
 	if successfullRun {
 		ssotLogger.Infof(mainCtx, "%s Syncing took %d min %d sec in total", constants.Rocket, minutes, seconds)
 	} else {
-		ssotLogger.Fatalf("%s syncing was unsuccessful", constants.WarningSign)
+		for source := range encounteredErrors {
+			ssotLogger.Infof(mainCtx, "%s syncing of source %s failed", constants.WarningSign, source)
+		}
 	}
 }

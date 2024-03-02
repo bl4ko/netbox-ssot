@@ -39,71 +39,61 @@ type DnacSource struct {
 }
 
 func (ds *DnacSource) Init() error {
-	select {
-	case <-ds.Ctx.Done():
-		return fmt.Errorf("goroutine ended by context")
-	default:
-		dnacURL := fmt.Sprintf("%s://%s:%d", ds.Config.SourceConfig.HTTPScheme, ds.Config.SourceConfig.Hostname, ds.Config.SourceConfig.Port)
-		Client, err := dnac.NewClientWithOptions(dnacURL, ds.SourceConfig.Username, ds.SourceConfig.Password, "false", strconv.FormatBool(ds.SourceConfig.ValidateCert), nil)
-		if err != nil {
-			return fmt.Errorf("creating dnac client: %s", err)
-		}
-
-		// Initialize regex relations for this source
-		ds.VlanGroupRelations = utils.ConvertStringsToRegexPairs(ds.SourceConfig.VlanGroupRelations)
-		ds.Logger.Debugf(ds.Ctx, "VlanGroupRelations: %s", ds.VlanGroupRelations)
-		ds.VlanTenantRelations = utils.ConvertStringsToRegexPairs(ds.SourceConfig.VlanTenantRelations)
-		ds.Logger.Debugf(ds.Ctx, "VlanTenantRelations: %s", ds.VlanTenantRelations)
-		ds.HostTenantRelations = utils.ConvertStringsToRegexPairs(ds.SourceConfig.HostTenantRelations)
-		ds.Logger.Debugf(ds.Ctx, "HostTenantRelations: %s", ds.HostTenantRelations)
-
-		// Initialize items from vsphere API to local storage
-		initFunctions := []func(*dnac.Client) error{
-			ds.InitSites,
-			ds.InitMemberships,
-			ds.InitDevices,
-			ds.InitInterfaces,
-		}
-
-		for _, initFunc := range initFunctions {
-			startTime := time.Now()
-			if err := initFunc(Client); err != nil {
-				return fmt.Errorf("dnac initialization failure: %v", err)
-			}
-			duration := time.Since(startTime)
-			ds.Logger.Infof(ds.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionName(initFunc), duration.Seconds())
-		}
-		return nil
+	dnacURL := fmt.Sprintf("%s://%s:%d", ds.Config.SourceConfig.HTTPScheme, ds.Config.SourceConfig.Hostname, ds.Config.SourceConfig.Port)
+	Client, err := dnac.NewClientWithOptions(dnacURL, ds.SourceConfig.Username, ds.SourceConfig.Password, "false", strconv.FormatBool(ds.SourceConfig.ValidateCert), nil)
+	if err != nil {
+		return fmt.Errorf("creating dnac client: %s", err)
 	}
+
+	// Initialize regex relations for this source
+	ds.VlanGroupRelations = utils.ConvertStringsToRegexPairs(ds.SourceConfig.VlanGroupRelations)
+	ds.Logger.Debugf(ds.Ctx, "VlanGroupRelations: %s", ds.VlanGroupRelations)
+	ds.VlanTenantRelations = utils.ConvertStringsToRegexPairs(ds.SourceConfig.VlanTenantRelations)
+	ds.Logger.Debugf(ds.Ctx, "VlanTenantRelations: %s", ds.VlanTenantRelations)
+	ds.HostTenantRelations = utils.ConvertStringsToRegexPairs(ds.SourceConfig.HostTenantRelations)
+	ds.Logger.Debugf(ds.Ctx, "HostTenantRelations: %s", ds.HostTenantRelations)
+
+	// Initialize items from vsphere API to local storage
+	initFunctions := []func(*dnac.Client) error{
+		ds.InitSites,
+		ds.InitMemberships,
+		ds.InitDevices,
+		ds.InitInterfaces,
+	}
+
+	for _, initFunc := range initFunctions {
+		startTime := time.Now()
+		if err := initFunc(Client); err != nil {
+			return fmt.Errorf("dnac initialization failure: %v", err)
+		}
+		duration := time.Since(startTime)
+		ds.Logger.Infof(ds.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionName(initFunc), duration.Seconds())
+	}
+	return nil
 }
 
 func (ds *DnacSource) Sync(nbi *inventory.NetboxInventory) error {
-	select {
-	case <-ds.Ctx.Done():
-		return fmt.Errorf("goroutine ended by context")
-	default:
-		// initialize variables, that are shared between sync functions
-		ds.VID2nbVlan = make(map[int]*objects.Vlan)
-		ds.SiteID2nbSite = make(map[string]*objects.Site)
-		ds.DeviceID2nbDevice = make(map[string]*objects.Device)
-		ds.InterfaceID2nbInterface = make(map[string]*objects.Interface)
+	// initialize variables, that are shared between sync functions
+	ds.VID2nbVlan = make(map[int]*objects.Vlan)
+	ds.SiteID2nbSite = make(map[string]*objects.Site)
+	ds.DeviceID2nbDevice = make(map[string]*objects.Device)
+	ds.InterfaceID2nbInterface = make(map[string]*objects.Interface)
 
-		syncFunctions := []func(*inventory.NetboxInventory) error{
-			ds.SyncSites,
-			ds.SyncVlans,
-			ds.SyncDevices,
-			ds.SyncDeviceInterfaces,
-		}
-
-		for _, syncFunc := range syncFunctions {
-			startTime := time.Now()
-			err := syncFunc(nbi)
-			if err != nil {
-				return err
-			}
-			duration := time.Since(startTime)
-			ds.Logger.Infof(ds.Ctx, "Successfully synced %s in %f seconds", utils.ExtractFunctionName(syncFunc), duration.Seconds())
-		}
-		return nil
+	syncFunctions := []func(*inventory.NetboxInventory) error{
+		ds.SyncSites,
+		ds.SyncVlans,
+		ds.SyncDevices,
+		ds.SyncDeviceInterfaces,
 	}
+
+	for _, syncFunc := range syncFunctions {
+		startTime := time.Now()
+		err := syncFunc(nbi)
+		if err != nil {
+			return err
+		}
+		duration := time.Since(startTime)
+		ds.Logger.Infof(ds.Ctx, "Successfully synced %s in %f seconds", utils.ExtractFunctionName(syncFunc), duration.Seconds())
+	}
+	return nil
 }
