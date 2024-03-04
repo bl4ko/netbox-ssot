@@ -73,6 +73,7 @@ type NetboxInventory struct {
 	IPAdressesIndexByAddress map[string]*objects.IPAddress
 
 	// We also store locks for all objects, so inventory can be updated by multiple parallel goroutines
+	TenantsLock            sync.Mutex
 	TagsLock               sync.Mutex
 	SitesLock              sync.Mutex
 	ContactRolesLock       sync.Mutex

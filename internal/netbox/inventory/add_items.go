@@ -46,6 +46,8 @@ func (nbi *NetboxInventory) AddTag(ctx context.Context, newTag *objects.Tag) (*o
 // AddContact adds a contact to the local netbox inventory.
 func (nbi *NetboxInventory) AddTenant(ctx context.Context, newTenant *objects.Tenant) (*objects.Tenant, error) {
 	newTenant.Tags = append(newTenant.Tags, nbi.SsotTag)
+	nbi.TenantsLock.Lock()
+	defer nbi.TenantsLock.Unlock()
 	if _, ok := nbi.TenantsIndexByName[newTenant.Name]; ok {
 		oldTenant := nbi.TenantsIndexByName[newTenant.Name]
 		diffMap, err := utils.JSONDiffMapExceptID(newTenant, oldTenant, false, nbi.SourcePriority)
@@ -247,20 +249,20 @@ func (nbi *NetboxInventory) AddContactAssignment(ctx context.Context, newCA *obj
 	return nbi.ContactAssignmentsIndexByContentTypeAndObjectIDAndContactIDAndRoleID[newCA.ContentType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID], nil
 }
 
-func (nbi *NetboxInventory) AddCustomField(ctx context.Context, newCf *objects.CustomField) error {
+func (nbi *NetboxInventory) AddCustomField(ctx context.Context, newCf *objects.CustomField) (*objects.CustomField, error) {
 	nbi.CustomFieldsLock.Lock()
 	defer nbi.CustomFieldsLock.Unlock()
 	if _, ok := nbi.CustomFieldsIndexByName[newCf.Name]; ok {
 		oldCustomField := nbi.CustomFieldsIndexByName[newCf.Name]
 		diffMap, err := utils.JSONDiffMapExceptID(newCf, oldCustomField, false, nbi.SourcePriority)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if len(diffMap) > 0 {
 			nbi.Logger.Debug(ctx, "Custom field ", newCf.Name, " already exists in Netbox but is out of date. Patching it... ")
 			patchedCf, err := service.Patch[objects.CustomField](ctx, nbi.NetboxAPI, oldCustomField.ID, diffMap)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			nbi.CustomFieldsIndexByName[newCf.Name] = patchedCf
 		} else {
@@ -268,13 +270,13 @@ func (nbi *NetboxInventory) AddCustomField(ctx context.Context, newCf *objects.C
 		}
 	} else {
 		nbi.Logger.Debug(ctx, "Custom field ", newCf.Name, " does not exist in Netbox. Creating it...")
-		newCf, err := service.Create[objects.CustomField](ctx, nbi.NetboxAPI, newCf)
+		createdCf, err := service.Create[objects.CustomField](ctx, nbi.NetboxAPI, newCf)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		nbi.CustomFieldsIndexByName[newCf.Name] = newCf
+		nbi.CustomFieldsIndexByName[createdCf.Name] = createdCf
 	}
-	return nil
+	return nbi.CustomFieldsIndexByName[newCf.Name], nil
 }
 
 func (nbi *NetboxInventory) AddClusterGroup(ctx context.Context, newCg *objects.ClusterGroup) (*objects.ClusterGroup, error) {
@@ -345,7 +347,7 @@ func (nbi *NetboxInventory) AddClusterType(ctx context.Context, newClusterType *
 	return newClusterType, nil
 }
 
-func (nbi *NetboxInventory) AddCluster(ctx context.Context, newCluster *objects.Cluster) error {
+func (nbi *NetboxInventory) AddCluster(ctx context.Context, newCluster *objects.Cluster) (*objects.Cluster, error) {
 	newCluster.Tags = append(newCluster.Tags, nbi.SsotTag)
 
 	nbi.ClustersLock.Lock()
@@ -356,13 +358,13 @@ func (nbi *NetboxInventory) AddCluster(ctx context.Context, newCluster *objects.
 		delete(nbi.OrphanManager[service.ClustersAPIPath], oldCluster.ID)
 		diffMap, err := utils.JSONDiffMapExceptID(newCluster, oldCluster, false, nbi.SourcePriority)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if len(diffMap) > 0 {
 			nbi.Logger.Debug(ctx, "Cluster ", newCluster.Name, " already exists in Netbox but is out of date. Patching it...")
 			patchedCluster, err := service.Patch[objects.Cluster](ctx, nbi.NetboxAPI, oldCluster.ID, diffMap)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			nbi.ClustersIndexByName[newCluster.Name] = patchedCluster
 		} else {
@@ -370,13 +372,13 @@ func (nbi *NetboxInventory) AddCluster(ctx context.Context, newCluster *objects.
 		}
 	} else {
 		nbi.Logger.Debug(ctx, "Cluster ", newCluster.Name, " does not exist in Netbox. Creating it...")
-		newCluster, err := service.Create[objects.Cluster](ctx, nbi.NetboxAPI, newCluster)
+		createdCluster, err := service.Create[objects.Cluster](ctx, nbi.NetboxAPI, newCluster)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		nbi.ClustersIndexByName[newCluster.Name] = newCluster
+		nbi.ClustersIndexByName[createdCluster.Name] = createdCluster
 	}
-	return nil
+	return nbi.ClustersIndexByName[newCluster.Name], nil
 }
 
 func (nbi *NetboxInventory) AddDeviceRole(ctx context.Context, newDeviceRole *objects.DeviceRole) (*objects.DeviceRole, error) {

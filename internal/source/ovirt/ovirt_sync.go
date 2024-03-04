@@ -161,7 +161,7 @@ func (o *OVirtSource) syncClusters(nbi *inventory.NetboxInventory) error {
 			Site:   clusterSite,
 			Tenant: clusterTenant,
 		}
-		err := nbi.AddCluster(o.Ctx, nbCluster)
+		_, err := nbi.AddCluster(o.Ctx, nbCluster)
 		if err != nil {
 			return fmt.Errorf("failed to add oVirt cluster %s as Netbox cluster: %v", clusterName, err)
 		}

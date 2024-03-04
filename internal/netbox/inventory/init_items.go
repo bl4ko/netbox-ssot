@@ -301,7 +301,7 @@ func (nbi *NetboxInventory) InitCustomFields(ctx context.Context) error {
 // - host_memory
 // - sourceId - this is used to store the ID of the source object in Netbox (interfaces).
 func (nbi *NetboxInventory) InitSsotCustomFields(ctx context.Context) error {
-	err := nbi.AddCustomField(ctx, &objects.CustomField{
+	_, err := nbi.AddCustomField(ctx, &objects.CustomField{
 		Name:                  constants.CustomFieldSourceName,
 		Label:                 constants.CustomFieldSourceLabel,
 		Type:                  objects.CustomFieldTypeText,
@@ -316,7 +316,7 @@ func (nbi *NetboxInventory) InitSsotCustomFields(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	err = nbi.AddCustomField(ctx, &objects.CustomField{
+	_, err = nbi.AddCustomField(ctx, &objects.CustomField{
 		Name:                  constants.CustomFieldSourceIDName,
 		Label:                 constants.CustomFieldSourceIDLabel,
 		Type:                  objects.CustomFieldTypeText,
@@ -331,7 +331,7 @@ func (nbi *NetboxInventory) InitSsotCustomFields(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	err = nbi.AddCustomField(ctx, &objects.CustomField{
+	_, err = nbi.AddCustomField(ctx, &objects.CustomField{
 		Name:                  constants.CustomFieldHostCPUCoresName,
 		Label:                 constants.CustomFieldHostCPUCoresLabel,
 		Type:                  objects.CustomFieldTypeText,
@@ -346,7 +346,7 @@ func (nbi *NetboxInventory) InitSsotCustomFields(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	err = nbi.AddCustomField(ctx, &objects.CustomField{
+	_, err = nbi.AddCustomField(ctx, &objects.CustomField{
 		Name:                  constants.CustomFieldHostMemoryName,
 		Label:                 constants.CustomFieldHostMemoryLabel,
 		Type:                  objects.CustomFieldTypeText,

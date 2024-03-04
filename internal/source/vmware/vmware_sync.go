@@ -136,7 +136,7 @@ func (vc *VmwareSource) syncClusters(nbi *inventory.NetboxInventory) error {
 			Site:   clusterSite,
 			Tenant: clusterTenant,
 		}
-		err := nbi.AddCluster(vc.Ctx, nbCluster)
+		_, err := nbi.AddCluster(vc.Ctx, nbCluster)
 		if err != nil {
 			return fmt.Errorf("failed to add vmware cluster %s as Netbox cluster: %v", clusterName, err)
 		}
@@ -708,7 +708,7 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
 					} else {
 						fieldName = utils.Alphanumeric(fieldName)
 						if _, ok := nbi.CustomFieldsIndexByName[fieldName]; !ok {
-							err := nbi.AddCustomField(vc.Ctx, &objects.CustomField{
+							_, err := nbi.AddCustomField(vc.Ctx, &objects.CustomField{
 								Name:                  fieldName,
 								Type:                  objects.CustomFieldTypeText,
 								CustomFieldUIVisible:  &objects.CustomFieldUIVisibleIfSet,
