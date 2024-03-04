@@ -12,11 +12,11 @@ Currently, the supported external data sources types are:
 - [`ovirt`](https://www.ovirt.org/)
 - [`vmware`](https://www.vmware.com/products/vcenter.html)
 - [`dnac`](https://www.cisco.com/site/us/en/products/networking/catalyst-center/index.html)
+- [`proxmox`](https://www.proxmox.com/en/)
 
 > [!WARNING]
 > **This project is still under heavy development, use with caution.**
 > Works with `netbox>=3.7.x`.
-
 
 ## Configuration
 
@@ -84,15 +84,25 @@ netbox:
   hostname: "netbox.example.com"
   port: 443
   timeout: 30
-  sourcePriority: ["Test oVirt", "prodvmware", "dnacenter", "testvmware"] # Not required, but recommended
+  sourcePriority: ["olvm", "prodvmware", "prodprox", "dnacenter", "testvmware"] # Not required, but recommended
 
 source:
-  - name: "Test oVirt"
-    type: "ovirt"
-    hostname: "ovirt.example.com"
+  - name: olvm
+    type: ovirt
+    hostname: ovirt.example.com
     port: 443
     username: "admin"
     password: "topsecret"
+
+  - name: prodprox
+    type: proxmox
+    username: svc@pve
+    password: changeme
+    hostname: 192.168.1.254
+    port: 8006
+    validateCert: false
+    clusterSiteRelations:
+     - .* = Site
 
   - name: prodvmware
     type: vmware
@@ -128,7 +138,6 @@ source:
     vlanTenantRelations:
       - .* = MyTenant
 ```
-
 
 ## Deployment
 
