@@ -53,6 +53,8 @@ func NewSource(ctx context.Context, config *parser.SourceConfig, logger *logger.
 		return &vmware.VmwareSource{Config: commonConfig}, nil
 	case constants.Dnac:
 		return &dnac.DnacSource{Config: commonConfig}, nil
+	case constants.Proxmox:
+		return &proxmox.ProxmoxSource{Config: commonConfig}, nil
 	default:
 		return nil, fmt.Errorf("unsupported source type: %s", config.Type)
 	}

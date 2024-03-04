@@ -42,21 +42,21 @@ type ProxmoxSource struct {
 // Function that collects all data from Proxmox API and stores it in ProxmoxSource struct.
 func (ps *ProxmoxSource) Init() error {
 	// Initialize regex relations
-	ps.Logger.Debug("Initializing regex relations for oVirt source ", ps.SourceConfig.Name)
+	ps.Logger.Debug(ps.Ctx, "Initializing regex relations for oVirt source ", ps.SourceConfig.Name)
 	ps.HostSiteRelations = utils.ConvertStringsToRegexPairs(ps.SourceConfig.HostSiteRelations)
-	ps.Logger.Debug("HostSiteRelations: ", ps.HostSiteRelations)
+	ps.Logger.Debug(ps.Ctx, "HostSiteRelations: ", ps.HostSiteRelations)
 	ps.ClusterSiteRelations = utils.ConvertStringsToRegexPairs(ps.SourceConfig.ClusterSiteRelations)
-	ps.Logger.Debug("ClusterSiteRelations: ", ps.ClusterSiteRelations)
+	ps.Logger.Debug(ps.Ctx, "ClusterSiteRelations: ", ps.ClusterSiteRelations)
 	ps.ClusterTenantRelations = utils.ConvertStringsToRegexPairs(ps.SourceConfig.ClusterTenantRelations)
-	ps.Logger.Debug("ClusterTenantRelations: ", ps.ClusterTenantRelations)
+	ps.Logger.Debug(ps.Ctx, "ClusterTenantRelations: ", ps.ClusterTenantRelations)
 	ps.HostTenantRelations = utils.ConvertStringsToRegexPairs(ps.SourceConfig.HostTenantRelations)
-	ps.Logger.Debug("HostTenantRelations: ", ps.HostTenantRelations)
+	ps.Logger.Debug(ps.Ctx, "HostTenantRelations: ", ps.HostTenantRelations)
 	ps.VMTenantRelations = utils.ConvertStringsToRegexPairs(ps.SourceConfig.VMTenantRelations)
-	ps.Logger.Debug("VmTenantRelations: ", ps.VMTenantRelations)
+	ps.Logger.Debug(ps.Ctx, "VmTenantRelations: ", ps.VMTenantRelations)
 	ps.VlanGroupRelations = utils.ConvertStringsToRegexPairs(ps.SourceConfig.VlanGroupRelations)
-	ps.Logger.Debug("VlanGroupRelations: ", ps.VlanGroupRelations)
+	ps.Logger.Debug(ps.Ctx, "VlanGroupRelations: ", ps.VlanGroupRelations)
 	ps.VlanTenantRelations = utils.ConvertStringsToRegexPairs(ps.SourceConfig.VlanTenantRelations)
-	ps.Logger.Debug("VlanTenantRelations: ", ps.VlanTenantRelations)
+	ps.Logger.Debug(ps.Ctx, "VlanTenantRelations: ", ps.VlanTenantRelations)
 
 	// Initialize the connection
 	credentials := proxmox.Credentials{
@@ -90,7 +90,7 @@ func (ps *ProxmoxSource) Init() error {
 			return fmt.Errorf("proxmox initialization failure: %v", err)
 		}
 		duration := time.Since(startTime)
-		ps.Logger.Infof("Successfully initialized %s in %f seconds", utils.ExtractFunctionName(initFunc), duration.Seconds())
+		ps.Logger.Infof(ps.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionName(initFunc), duration.Seconds())
 	}
 
 	return nil
@@ -101,6 +101,7 @@ func (ps *ProxmoxSource) Sync(nbi *inventory.NetboxInventory) error {
 	syncFunctions := []func(*inventory.NetboxInventory) error{
 		ps.syncCluster,
 		ps.syncNodes,
+		ps.syncVMs,
 	}
 	for _, syncFunc := range syncFunctions {
 		startTime := time.Now()
@@ -109,7 +110,7 @@ func (ps *ProxmoxSource) Sync(nbi *inventory.NetboxInventory) error {
 			return err
 		}
 		duration := time.Since(startTime)
-		ps.Logger.Infof("Successfully synced %s in %f seconds", utils.ExtractFunctionName(syncFunc), duration.Seconds())
+		ps.Logger.Infof(ps.Ctx, "Successfully synced %s in %f seconds", utils.ExtractFunctionName(syncFunc), duration.Seconds())
 	}
 	return nil
 }

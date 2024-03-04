@@ -12,13 +12,6 @@ const (
 )
 
 const (
-	DefaultManufacturerName = "Generic Manufacturer"
-	DefaultModelName        = "Generic Model"
-	DefaultOSName           = "Generic OS"
-	DefaultOSVersion        = "Generic Version"
-)
-
-const (
 	DefaultOSName       string = "Generic OS"
 	DefaultOSVersion    string = "Generic Version"
 	DefaultManufacturer string = "Generic Manufacturer"
