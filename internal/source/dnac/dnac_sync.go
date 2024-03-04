@@ -49,11 +49,11 @@ func (ds *DnacSource) SyncSites(nbi *inventory.NetboxInventory) error {
 
 func (ds *DnacSource) SyncVlans(nbi *inventory.NetboxInventory) error {
 	for vid, vlan := range ds.Vlans {
-		vlanGroup, err := common.MatchVlanToGroup(nbi, vlan.InterfaceName, ds.VlanGroupRelations)
+		vlanGroup, err := common.MatchVlanToGroup(ds.Ctx, nbi, vlan.InterfaceName, ds.VlanGroupRelations)
 		if err != nil {
 			return fmt.Errorf("vlanGroup: %s", err)
 		}
-		vlanTenant, err := common.MatchVlanToTenant(nbi, vlan.InterfaceName, ds.VlanTenantRelations)
+		vlanTenant, err := common.MatchVlanToTenant(ds.Ctx, nbi, vlan.InterfaceName, ds.VlanTenantRelations)
 		if err != nil {
 			return fmt.Errorf("vlanTenant: %s", err)
 		}
@@ -161,7 +161,7 @@ func (ds *DnacSource) SyncDevices(nbi *inventory.NetboxInventory) error {
 			return fmt.Errorf("add device type: %s", err)
 		}
 
-		deviceTenant, err := common.MatchHostToTenant(nbi, device.Hostname, ds.HostTenantRelations)
+		deviceTenant, err := common.MatchHostToTenant(ds.Ctx, nbi, device.Hostname, ds.HostTenantRelations)
 		if err != nil {
 			return fmt.Errorf("hostTenant: %s", err)
 		}

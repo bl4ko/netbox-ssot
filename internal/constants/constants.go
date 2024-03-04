@@ -89,3 +89,10 @@ type CtxKey int
 const (
 	CtxSourceKey CtxKey = iota
 )
+
+const (
+	UntaggedVID = 0
+	DefaultVID  = 1
+	MaxVID      = 4094
+	TaggedVID   = 4095
+)

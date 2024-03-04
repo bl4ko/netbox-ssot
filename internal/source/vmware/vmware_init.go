@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/vmware/govmomi/view"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
@@ -40,8 +40,8 @@ func (vc *VmwareSource) InitNetworks(ctx context.Context, containerView *view.Co
 					case item.Start == item.End:
 						vlanIDs = append(vlanIDs, int(item.Start))
 						vlanIDRanges = append(vlanIDRanges, fmt.Sprintf("%d", item.Start))
-					case item.Start == objects.UntaggedVID && item.End == objects.MaxVID:
-						vlanIDs = append(vlanIDs, objects.TaggedVID)
+					case item.Start == constants.UntaggedVID && item.End == constants.MaxVID:
+						vlanIDs = append(vlanIDs, constants.TaggedVID)
 						vlanIDRanges = append(vlanIDRanges, fmt.Sprintf("%d-%d", item.Start, item.End))
 					default:
 						for vlan := item.Start; vlan <= item.End; vlan++ {
@@ -60,7 +60,7 @@ func (vc *VmwareSource) InitNetworks(ctx context.Context, containerView *view.Co
 			}
 
 			for _, vid := range vlanIDs {
-				if vid == objects.UntaggedVID || vid == objects.TaggedVID {
+				if vid == constants.UntaggedVID || vid == constants.TaggedVID {
 					continue
 				}
 				vc.Networks.Vid2Name[vid] = dvpg.Config.Name

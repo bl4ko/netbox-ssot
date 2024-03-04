@@ -44,6 +44,36 @@ func (nbi *NetboxInventory) AddTag(ctx context.Context, newTag *objects.Tag) (*o
 }
 
 // AddContact adds a contact to the local netbox inventory.
+func (nbi *NetboxInventory) AddTenant(ctx context.Context, newTenant *objects.Tenant) (*objects.Tenant, error) {
+	newTenant.Tags = append(newTenant.Tags, nbi.SsotTag)
+	if _, ok := nbi.TenantsIndexByName[newTenant.Name]; ok {
+		oldTenant := nbi.TenantsIndexByName[newTenant.Name]
+		diffMap, err := utils.JSONDiffMapExceptID(newTenant, oldTenant, false, nbi.SourcePriority)
+		if err != nil {
+			return nil, err
+		}
+		if len(diffMap) > 0 {
+			nbi.Logger.Debug(ctx, "Tenant ", newTenant.Name, " already exists in Netbox but is out of date. Patching it... ")
+			patchedTenant, err := service.Patch[objects.Tenant](ctx, nbi.NetboxAPI, oldTenant.ID, diffMap)
+			if err != nil {
+				return nil, err
+			}
+			nbi.TenantsIndexByName[newTenant.Name] = patchedTenant
+		} else {
+			nbi.Logger.Debug(ctx, "Tenant ", newTenant.Name, " already exists in Netbox and is up to date...")
+		}
+	} else {
+		nbi.Logger.Debug(ctx, "Tenant ", newTenant.Name, " does not exist in Netbox. Creating it...")
+		createdContact, err := service.Create[objects.Tenant](ctx, nbi.NetboxAPI, newTenant)
+		if err != nil {
+			return nil, err
+		}
+		nbi.TenantsIndexByName[newTenant.Name] = createdContact
+	}
+	return nbi.TenantsIndexByName[newTenant.Name], nil
+}
+
+// AddContact adds a contact to the local netbox inventory.
 func (nbi *NetboxInventory) AddSite(ctx context.Context, newSite *objects.Site) (*objects.Site, error) {
 	newSite.Tags = append(newSite.Tags, nbi.SsotTag)
 

@@ -23,12 +23,12 @@ func (o *OVirtSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 		// TODO: handle other networks
 		if networkVlan, exists := network.Vlan(); exists {
 			// Get vlanGroup from relation
-			vlanGroup, err := common.MatchVlanToGroup(nbi, name, o.VlanGroupRelations)
+			vlanGroup, err := common.MatchVlanToGroup(o.Ctx, nbi, name, o.VlanGroupRelations)
 			if err != nil {
 				return err
 			}
 			// Get tenant from relation
-			vlanTenant, err := common.MatchVlanToTenant(nbi, name, o.VlanTenantRelations)
+			vlanTenant, err := common.MatchVlanToTenant(o.Ctx, nbi, name, o.VlanTenantRelations)
 			if err != nil {
 				return err
 			}
@@ -179,11 +179,11 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		}
 		hostCluster := nbi.ClustersIndexByName[o.Clusters[host.MustCluster().MustId()].MustName()]
 
-		hostSite, err := common.MatchHostToSite(nbi, hostName, o.HostSiteRelations)
+		hostSite, err := common.MatchHostToSite(o.Ctx, nbi, hostName, o.HostSiteRelations)
 		if err != nil {
 			return fmt.Errorf("hostSite: %s", err)
 		}
-		hostTenant, err := common.MatchHostToTenant(nbi, hostName, o.HostTenantRelations)
+		hostTenant, err := common.MatchHostToTenant(o.Ctx, nbi, hostName, o.HostTenantRelations)
 		if err != nil {
 			return fmt.Errorf("hostTenant: %s", err)
 		}
@@ -536,7 +536,7 @@ func (o *OVirtSource) collectHostNicsData(nbHost *objects.Device, nbi *inventory
 			if exists {
 				vlanName := o.Networks.Vid2Name[int(vlanID)]
 				// Get vlanGroup from relation
-				vlanGroup, err := common.MatchVlanToGroup(nbi, vlanName, o.VlanGroupRelations)
+				vlanGroup, err := common.MatchVlanToGroup(o.Ctx, nbi, vlanName, o.VlanGroupRelations)
 				if err != nil {
 					return err
 				}

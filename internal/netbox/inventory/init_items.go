@@ -498,7 +498,7 @@ func (nbi *NetboxInventory) InitDefaultVlanGroup(ctx context.Context) error {
 		Name:   objects.DefaultVlanGroupName,
 		Slug:   utils.Slugify(objects.DefaultVlanGroupName),
 		MinVid: 1,
-		MaxVid: objects.MaxVID,
+		MaxVid: constants.MaxVID,
 	})
 	if err != nil {
 		return fmt.Errorf("init default vlan group: %s", err)
