@@ -17,6 +17,9 @@ on:
 jobs:
   build_and_push:
     runs-on: ubuntu-latest
+    permissions: # Permissions for GITHUB_TOKEN
+      contents: read
+      packages: write
     steps:
       - name: Login to dockerhub
         uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3
