@@ -17,20 +17,21 @@ func (nbi *NetboxInventory) InitTags(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	nbi.Tags = make([]*objects.Tag, len(nbTags))
+	nbi.TagsIndexByName = make(map[string]*objects.Tag)
 	for i := range nbTags {
-		nbi.Tags[i] = &nbTags[i]
+		tag := nbTags[i]
+		nbi.TagsIndexByName[tag.Name] = &tag
 	}
-	nbi.Logger.Debug(ctx, "Successfully collected tags from Netbox: ", nbi.Tags)
+	nbi.Logger.Debug(ctx, "Successfully collected tags from Netbox: ", nbi.TagsIndexByName)
 
 	// Custom tag for all netbox objects
-	ssotTags, err := service.GetAll[objects.Tag](ctx, nbi.NetboxAPI, "&name=netbox-ssot")
+	ssotTags, err := service.GetAll[objects.Tag](ctx, nbi.NetboxAPI, fmt.Sprintf("&name=%s", constants.DefaultSourceName))
 	if err != nil {
 		return err
 	}
 	if len(ssotTags) == 0 {
 		nbi.Logger.Info(ctx, "Tag netbox-ssot not found in Netbox. Creating it now...")
-		newTag := objects.Tag{Name: "netbox-ssot", Slug: "netbox-ssot", Description: "Tag used by netbox-ssot to mark devices that are managed by it", Color: "00add8"}
+		newTag := objects.Tag{Name: constants.DefaultSourceName, Slug: constants.DefaultSourceName, Description: "Tag used by netbox-ssot to mark devices that are managed by it", Color: "00add8"}
 		ssotTag, err := service.Create[objects.Tag](ctx, nbi.NetboxAPI, &newTag)
 		if err != nil {
 			return err

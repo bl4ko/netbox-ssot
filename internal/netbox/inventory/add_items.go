@@ -2,7 +2,6 @@ package inventory
 
 import (
 	"context"
-	"slices"
 
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/service"
@@ -11,39 +10,36 @@ import (
 
 // AddTag adds the newTag from source sourceName to the local inventory.
 func (nbi *NetboxInventory) AddTag(ctx context.Context, newTag *objects.Tag) (*objects.Tag, error) {
-	existingTagIndex := slices.IndexFunc(nbi.Tags, func(t *objects.Tag) bool {
-		return t.Name == newTag.Name
-	})
-
 	nbi.TagsLock.Lock()
 	defer nbi.TagsLock.Unlock()
-	if existingTagIndex == -1 {
+	if _, ok := nbi.TagsIndexByName[newTag.Name]; ok {
+		oldTag := nbi.TagsIndexByName[newTag.Name]
+		diffMap, err := utils.JSONDiffMapExceptID(newTag, oldTag, false, nbi.SourcePriority)
+		if err != nil {
+			return nil, err
+		}
+		if len(diffMap) > 0 {
+			nbi.Logger.Debug(ctx, "Tag ", newTag.Name, " already exists in Netbox but is out of date. Patching it... ")
+			patchedTag, err := service.Patch[objects.Tag](ctx, nbi.NetboxAPI, oldTag.ID, diffMap)
+			if err != nil {
+				return nil, err
+			}
+			nbi.TagsIndexByName[newTag.Name] = patchedTag
+		} else {
+			nbi.Logger.Debug(ctx, "Tag ", newTag.Name, " already exists in Netbox and is up to date...")
+		}
+	} else {
 		nbi.Logger.Debug(ctx, "Tag ", newTag.Name, " does not exist in Netbox. Creating it...")
 		createdTag, err := service.Create[objects.Tag](ctx, nbi.NetboxAPI, newTag)
 		if err != nil {
 			return nil, err
 		}
-		nbi.Tags = append(nbi.Tags, createdTag)
-		return createdTag, nil
+		nbi.TagsIndexByName[newTag.Name] = createdTag
 	}
-	nbi.Logger.Debug(ctx, "Tag ", newTag.Name, " already exists in Netbox...")
-	oldTag := nbi.Tags[existingTagIndex]
-	diffMap, err := utils.JSONDiffMapExceptID(newTag, oldTag, false, nbi.SourcePriority)
-	if err != nil {
-		return nil, err
-	}
-	if len(diffMap) > 0 {
-		patchedTag, err := service.Patch[objects.Tag](ctx, nbi.NetboxAPI, oldTag.ID, diffMap)
-		if err != nil {
-			return nil, err
-		}
-		nbi.Tags[existingTagIndex] = patchedTag
-		return patchedTag, nil
-	}
-	return oldTag, nil
+	return nbi.TagsIndexByName[newTag.Name], nil
 }
 
-// AddContact adds a contact to the local netbox inventory.
+// AddTenants adds a new tenant to the local netbox inventory.
 func (nbi *NetboxInventory) AddTenant(ctx context.Context, newTenant *objects.Tenant) (*objects.Tenant, error) {
 	newTenant.Tags = append(newTenant.Tags, nbi.SsotTag)
 	nbi.TenantsLock.Lock()
@@ -66,11 +62,11 @@ func (nbi *NetboxInventory) AddTenant(ctx context.Context, newTenant *objects.Te
 		}
 	} else {
 		nbi.Logger.Debug(ctx, "Tenant ", newTenant.Name, " does not exist in Netbox. Creating it...")
-		createdContact, err := service.Create[objects.Tenant](ctx, nbi.NetboxAPI, newTenant)
+		createdTag, err := service.Create[objects.Tenant](ctx, nbi.NetboxAPI, newTenant)
 		if err != nil {
 			return nil, err
 		}
-		nbi.TenantsIndexByName[newTenant.Name] = createdContact
+		nbi.TenantsIndexByName[newTenant.Name] = createdTag
 	}
 	return nbi.TenantsIndexByName[newTenant.Name], nil
 }
