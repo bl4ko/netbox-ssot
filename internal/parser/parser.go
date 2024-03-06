@@ -129,7 +129,7 @@ func validateNetboxConfig(config *Config) error {
 		return errors.New("netbox.timeout: cannot be negative")
 	}
 	if config.Netbox.Tag == "" {
-		config.Netbox.Tag = "netbox-ssot"
+		config.Netbox.Tag = constants.DefaultSourceName
 	}
 	if config.Netbox.TagColor == "" {
 		config.Netbox.TagColor = "00add8"

@@ -50,19 +50,19 @@ var type2path = map[reflect.Type]string{
 // It is querying objects via pagination of limit=100.
 //
 // extraParams in a string format of: &extraParam1=...&extraParam2=...
-func GetAll[T any](ctx context.Context, api *NetboxAPI, extraParams string) ([]T, error) {
+func GetAll[T any](ctx context.Context, netboxClient *NetboxClient, extraParams string) ([]T, error) {
 	var allResults []T
 	var dummy T // Dummy variable for extracting type of generic
 	path := type2path[reflect.TypeOf(dummy)]
 	limit := 100
 	offset := 0
 
-	api.Logger.Debugf(ctx, "Getting all %T from Netbox", dummy)
+	netboxClient.Logger.Debugf(ctx, "Getting all %T from Netbox", dummy)
 
 	for {
-		api.Logger.Debugf(ctx, "Getting %T with limit=%d and offset=%d", dummy, limit, offset)
+		netboxClient.Logger.Debugf(ctx, "Getting %T with limit=%d and offset=%d", dummy, limit, offset)
 		queryPath := fmt.Sprintf("%s?limit=%d&offset=%d%s", path, limit, offset, extraParams)
-		response, err := api.doRequest(MethodGet, queryPath, nil)
+		response, err := netboxClient.doRequest(MethodGet, queryPath, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -85,18 +85,18 @@ func GetAll[T any](ctx context.Context, api *NetboxAPI, extraParams string) ([]T
 		offset += limit
 	}
 
-	api.Logger.Debugf(ctx, "Successfully received all %T: %v", dummy, allResults)
+	netboxClient.Logger.Debugf(ctx, "Successfully received all %T: %v", dummy, allResults)
 
 	return allResults, nil
 }
 
 // Patch func patches the object of type T, with the given api path and body.
 // Path of the object (must contain the id), for example /api/dcim/devices/1/.
-func Patch[T any](ctx context.Context, api *NetboxAPI, objectID int, body map[string]interface{}) (*T, error) {
+func Patch[T any](ctx context.Context, netboxClient *NetboxClient, objectID int, body map[string]interface{}) (*T, error) {
 	var dummy T // dummy variable for printf
 	path := type2path[reflect.TypeOf(dummy)]
 	path = fmt.Sprintf("%s%d/", path, objectID)
-	api.Logger.Debugf(ctx, "Patching %T with path %s with data: %v", dummy, path, body)
+	netboxClient.Logger.Debugf(ctx, "Patching %T with path %s with data: %v", dummy, path, body)
 
 	requestBody, err := json.Marshal(body)
 	if err != nil {
@@ -104,7 +104,7 @@ func Patch[T any](ctx context.Context, api *NetboxAPI, objectID int, body map[st
 	}
 
 	requestBodyBuffer := bytes.NewBuffer(requestBody)
-	response, err := api.doRequest(MethodPatch, path, requestBodyBuffer)
+	response, err := netboxClient.doRequest(MethodPatch, path, requestBodyBuffer)
 	if err != nil {
 		return nil, err
 	}
@@ -119,15 +119,15 @@ func Patch[T any](ctx context.Context, api *NetboxAPI, objectID int, body map[st
 		return nil, err
 	}
 
-	api.Logger.Debugf(ctx, "Successfully patched %T: %v", dummy, objectResponse)
+	netboxClient.Logger.Debugf(ctx, "Successfully patched %T: %v", dummy, objectResponse)
 	return &objectResponse, nil
 }
 
 // Create func creates the new NetboxObject of type T, with the given api path and body.
-func Create[T any](ctx context.Context, api *NetboxAPI, object *T) (*T, error) {
+func Create[T any](ctx context.Context, netboxClient *NetboxClient, object *T) (*T, error) {
 	var dummy T // dummy variable for printf
 	path := type2path[reflect.TypeOf(dummy)]
-	api.Logger.Debugf(ctx, "Creating %T with path %s with data: %v", dummy, path, object)
+	netboxClient.Logger.Debugf(ctx, "Creating %T with path %s with data: %v", dummy, path, object)
 
 	requestBody, err := utils.NetboxJSONMarshal(object)
 	if err != nil {
@@ -135,7 +135,7 @@ func Create[T any](ctx context.Context, api *NetboxAPI, object *T) (*T, error) {
 	}
 
 	requestBodyBuffer := bytes.NewBuffer(requestBody)
-	response, err := api.doRequest(MethodPost, path, requestBodyBuffer)
+	response, err := netboxClient.doRequest(MethodPost, path, requestBodyBuffer)
 	if err != nil {
 		return nil, err
 	}
@@ -150,14 +150,14 @@ func Create[T any](ctx context.Context, api *NetboxAPI, object *T) (*T, error) {
 		return nil, err
 	}
 
-	api.Logger.Debugf(ctx, "Successfully created %T: %v", dummy, objectResponse)
+	netboxClient.Logger.Debugf(ctx, "Successfully created %T: %v", dummy, objectResponse)
 	return &objectResponse, nil
 }
 
 // Function that deletes object on path objectPath.
 // It deletes objects in pages of 50 so we don't stress
 // the API too much.
-func (api *NetboxAPI) BulkDeleteObjects(ctx context.Context, objectPath string, idSet map[int]bool) error {
+func (api *NetboxClient) BulkDeleteObjects(ctx context.Context, objectPath string, idSet map[int]bool) error {
 	const pageSize = 50
 
 	// Convert the map to a slice for easier slicing.

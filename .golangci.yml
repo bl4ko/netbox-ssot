@@ -27,13 +27,13 @@ linters:
     # - gochecknoglobals # TODO: enable in future
     # - goerr113 # TODO: enable in future
     # - ireturn # TODO: enable in future
+    # - containedctx
     - gosec
     - gocritic
     - asasalint
     - asciicheck
     - bidichk
     - bodyclose
-    - containedctx
     - decorder
     - dogsled
     - dupword

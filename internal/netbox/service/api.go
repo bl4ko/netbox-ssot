@@ -10,13 +10,13 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/logger"
 )
 
-// NetboxAPI is a service used for communicating with the Netbox API.
+// NetboxClient is a service used for communicating with the Netbox API.
 // It is created via constructor func newNetboxAPI().
-type NetboxAPI struct {
+type NetboxClient struct {
 	Logger     *logger.Logger
 	HTTPClient *http.Client
 	BaseURL    string
-	APIKey     string
+	APIToken   string
 	Timeout    int // in seconds
 	MaxRetires int
 }
@@ -36,7 +36,7 @@ type APIResponse struct {
 }
 
 // Constructor function for creating a new netBoxAPI instance.
-func NewNetBoxAPI(ctx context.Context, logger *logger.Logger, baseURL string, apiToken string, validateCert bool, timeout int) *NetboxAPI {
+func NewNetboxClient(ctx context.Context, logger *logger.Logger, baseURL string, apiToken string, validateCert bool, timeout int) *NetboxClient {
 	var client *http.Client
 	if validateCert {
 		client = &http.Client{}
@@ -48,16 +48,16 @@ func NewNetBoxAPI(ctx context.Context, logger *logger.Logger, baseURL string, ap
 			},
 		}
 	}
-	return &NetboxAPI{
+	return &NetboxClient{
 		HTTPClient: client,
 		Logger:     logger,
 		BaseURL:    baseURL,
-		APIKey:     apiToken,
+		APIToken:   apiToken,
 		Timeout:    timeout,
 	}
 }
 
-func (api *NetboxAPI) doRequest(method string, path string, body io.Reader) (*APIResponse, error) {
+func (api *NetboxClient) doRequest(method string, path string, body io.Reader) (*APIResponse, error) {
 	ctx, cancelCtx := context.WithTimeout(context.Background(), time.Second*time.Duration(api.Timeout))
 	defer cancelCtx()
 
@@ -67,7 +67,7 @@ func (api *NetboxAPI) doRequest(method string, path string, body io.Reader) (*AP
 	}
 
 	// We add necessary headers to the request
-	req.Header.Add("Authorization", "Token "+api.APIKey)
+	req.Header.Add("Authorization", "Token "+api.APIToken)
 	req.Header.Add("Content-Type", "application/json")
 
 	resp, err := api.HTTPClient.Do(req)

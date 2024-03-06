@@ -20,11 +20,11 @@ type NetboxInventory struct {
 	// NetboxConfig is the Netbox configuration
 	NetboxConfig *parser.NetboxConfig
 	// NetboxAPI is the Netbox API object, for communicating with the Netbox API
-	NetboxAPI *service.NetboxAPI
+	NetboxAPI *service.NetboxClient
 	// SourcePriority: if object is found on multiple sources, which source has the priority for the object attributes.
 	SourcePriority map[string]int
-	// Tags is a list of all tags in the netbox inventory
-	Tags []*objects.Tag
+	// TagsIndexByName is a map of all tags in the Netbox's inventory, indexed by their name
+	TagsIndexByName map[string]*objects.Tag
 	// ContactGroupsIndexByName is a map of all contact groups indexed by their names.
 	ContactGroupsIndexByName map[string]*objects.ContactGroup
 	// ContactRolesIndexByName is a map of all contact roles indexed by their names.
@@ -169,7 +169,7 @@ func (nbi *NetboxInventory) Init() error {
 	baseURL := fmt.Sprintf("%s://%s:%d", nbi.NetboxConfig.HTTPScheme, nbi.NetboxConfig.Hostname, nbi.NetboxConfig.Port)
 
 	nbi.Logger.Debug(nbi.Ctx, "Initializing Netbox API with baseURL: ", baseURL)
-	nbi.NetboxAPI = service.NewNetBoxAPI(nbi.Ctx, nbi.Logger, baseURL, nbi.NetboxConfig.APIToken, nbi.NetboxConfig.ValidateCert, nbi.NetboxConfig.Timeout)
+	nbi.NetboxAPI = service.NewNetboxClient(nbi.Ctx, nbi.Logger, baseURL, nbi.NetboxConfig.APIToken, nbi.NetboxConfig.ValidateCert, nbi.NetboxConfig.Timeout)
 
 	// Order matters. TODO: use parallelization in the future, on the init functions that can be parallelized
 	initFunctions := []func(context.Context) error{

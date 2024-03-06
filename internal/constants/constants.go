@@ -11,6 +11,8 @@ const (
 	Proxmox SourceType = "proxmox"
 )
 
+const DefaultSourceName = "netbox-ssot"
+
 const (
 	DefaultOSName       string = "Generic OS"
 	DefaultOSVersion    string = "Generic Version"

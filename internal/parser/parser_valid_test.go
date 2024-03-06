@@ -8,7 +8,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/constants"
 )
 
-func TestValidConfig(t *testing.T) {
+func TestValidonfig(t *testing.T) {
 	filename := filepath.Join("testdata", "valid_config.yaml")
 	want := &Config{
 		Logger: &LoggerConfig{
@@ -22,9 +22,9 @@ func TestValidConfig(t *testing.T) {
 			Port:          666,
 			ValidateCert:  false, // Default
 			Timeout:       constants.DefaultAPITimeout,
-			Tag:           "netbox-ssot", // Default
-			TagColor:      "00add8",      // Default
-			RemoveOrphans: true,          // Default
+			Tag:           constants.DefaultSourceName, // Default
+			TagColor:      "00add8",                    // Default
+			RemoveOrphans: true,                        // Default
 		},
 		Sources: []SourceConfig{
 			{
