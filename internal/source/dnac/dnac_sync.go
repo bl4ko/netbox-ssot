@@ -166,6 +166,11 @@ func (ds *DnacSource) SyncDevices(nbi *inventory.NetboxInventory) error {
 			return fmt.Errorf("hostTenant: %s", err)
 		}
 
+		deviceStatus := &objects.DeviceStatusActive
+		if device.ReachabilityStatus == "Unreachable" {
+			deviceStatus = &objects.DeviceStatusOffline
+		}
+
 		nbDevice, err := nbi.AddDevice(ds.Ctx, &objects.Device{
 			NetboxObject: objects.NetboxObject{
 				Tags:        ds.Config.SourceTags,
@@ -175,6 +180,7 @@ func (ds *DnacSource) SyncDevices(nbi *inventory.NetboxInventory) error {
 				},
 			},
 			Name:         device.Hostname,
+			Status:       deviceStatus,
 			Tenant:       deviceTenant,
 			DeviceRole:   deviceRole,
 			SerialNumber: device.SerialNumber,
