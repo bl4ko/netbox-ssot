@@ -157,8 +157,8 @@ func NewNetboxInventory(ctx context.Context, logger *logger.Logger, nbConfig *pa
 		12: service.ClustersAPIPath,
 		13: service.ClusterTypesAPIPath,
 		14: service.ClusterGroupsAPIPath,
-		15: service.ContactsAPIPath,
-		16: service.ContactAssignmentsAPIPath,
+		15: service.ContactAssignmentsAPIPath,
+		16: service.ContactsAPIPath,
 	}
 	nbi := &NetboxInventory{Ctx: ctx, Logger: logger, NetboxConfig: nbConfig, SourcePriority: sourcePriority, OrphanManager: make(map[string]map[int]bool), OrphanObjectPriority: orphanObjectPriority}
 	return nbi
