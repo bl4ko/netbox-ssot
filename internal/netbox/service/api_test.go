@@ -40,6 +40,14 @@ func CreateMockServer() *httptest.Server {
 		}
 	})
 
+	handler.HandleFunc(fmt.Sprintf("%s?limit=100&offset=0", TagsAPIPath), func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, err := io.WriteString(w, TagsResponse)
+		if err != nil {
+			log.Printf("Error writing response")
+		}
+	})
+
 	handler.HandleFunc("/api/read-error", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError) // or any relevant status
 		//nolint:all
