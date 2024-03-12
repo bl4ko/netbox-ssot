@@ -43,7 +43,7 @@ Example configuration can be found [here](#example-config).
 | `netbox.apiToken`       | Netbox [API token](https://demo.netbox.dev/static/docs/rest-api/authentication/).                                                             | str      | Any valid token | ""            | Yes      |
 | `netbox.hostname`       | Hostname of your netbox instance (e.g `netbox.example.com`).                                                                                  | str      | Valid hostname  | ""            | Yes      |
 | `netbox.port`           | Port of your netbox instance.                                                                                                                 | int      | 0-65536         | 443           | No       |
-| `netbox.HTTPScheme`     | HTTP scheme of your netbox instance.                                                                                                          | str      | [http, https]   | https         | No       |
+| `netbox.httpScheme`     | HTTP scheme of your netbox instance.                                                                                                          | str      | [http, https]   | https         | No       |
 | `netbox.validateCert`   | Validate the TLS certificate of your netbox instance.                                                                                         | bool     | [true, false]   | false         | No       |
 | `netbox.timeout`        | Max timeout for api call of your netbox instance.                                                                                             | int      | >=0             | 30            | No       |
 | `netbox.removeOrphans`  | Automatically remove all objects tagged with **netbox-ssot** which, were not found on the sources, during this iteration.                     | bool     | [true, false]   | true          | No       |
@@ -82,6 +82,7 @@ logger:
 netbox:
   apiToken: "el1aof2azu6n50ks5zcenp3..."
   hostname: "netbox.example.com"
+  httpScheme: http
   port: 443
   timeout: 30
   sourcePriority: ["olvm", "prodvmware", "prodprox", "dnacenter", "testvmware"] # Not required, but recommended
