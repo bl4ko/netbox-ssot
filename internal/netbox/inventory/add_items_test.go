@@ -2,21 +2,24 @@ package inventory
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"os"
 	"reflect"
 	"sync"
 	"testing"
 
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/logger"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/service"
 )
 
 var MockInventory = &NetboxInventory{
 	Logger:          &logger.Logger{Logger: log.New(os.Stdout, "", log.LstdFlags)},
 	TagsIndexByName: make(map[string]*objects.Tag),
 	TagsLock:        sync.Mutex{},
-	NetboxAPI:       nil, // TODO
+	NetboxAPI:       service.MockNetboxClient,
 }
 
 func TestNetboxInventory_AddTag(t *testing.T) {
@@ -28,26 +31,35 @@ func TestNetboxInventory_AddTag(t *testing.T) {
 		name    string
 		nbi     *NetboxInventory
 		args    args
-		want    *objects.Tag
+		want    string
 		wantErr bool
 	}{
-		// {
-		// 	name: "Test new tag add",
-		// 	nbi:  MockInventory,
-		// 	args: args{ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "test"), newTag: &objects.Tag{Name: "new tag", Description: "New Tag", Color: objects.ColorBlack, Slug: "new_tag"}},
-		// 	want: &objects.Tag{Name: "new tag", Description: "New Tag", Color: objects.ColorBlack, Slug: "new_tag"},
-		// },
+		{
+			name: "Test new tag add",
+			nbi:  MockInventory,
+			args: args{ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "test"), newTag: &objects.Tag{Name: "new tag", Description: "New Tag", Color: objects.ColorBlack, Slug: "new_tag"}},
+			want: service.TagCreateResponse,
+		},
 	}
 
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+
 	for _, tt := range tests {
+		service.MockNetboxClient.BaseURL = mockServer.URL
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.nbi.AddTag(tt.args.ctx, tt.args.newTag)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NetboxInventory.AddTag() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NetboxInventory.AddTag() = %v, want %v", got, tt.want)
+			var wantTag objects.Tag
+			err = json.Unmarshal([]byte(tt.want), &wantTag)
+			if err != nil {
+				t.Errorf("unmarshal test data: %s", err)
+			}
+			if !reflect.DeepEqual(got, &wantTag) {
+				t.Errorf("NetboxInventory.AddTag() = %v, want %v", got, wantTag)
 			}
 		})
 	}

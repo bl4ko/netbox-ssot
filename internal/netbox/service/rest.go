@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"reflect"
 
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
@@ -21,29 +22,29 @@ type Response[T any] struct {
 }
 
 var type2path = map[reflect.Type]string{
-	reflect.TypeOf((*objects.VlanGroup)(nil)).Elem():         VlanGroupsAPIPath,
-	reflect.TypeOf((*objects.Vlan)(nil)).Elem():              VlansAPIPath,
-	reflect.TypeOf((*objects.IPAddress)(nil)).Elem():         IPAddressesAPIPath,
-	reflect.TypeOf((*objects.ClusterType)(nil)).Elem():       ClusterTypesAPIPath,
-	reflect.TypeOf((*objects.ClusterGroup)(nil)).Elem():      ClusterGroupsAPIPath,
-	reflect.TypeOf((*objects.Cluster)(nil)).Elem():           ClustersAPIPath,
-	reflect.TypeOf((*objects.VM)(nil)).Elem():                VirtualMachinesAPIPath,
-	reflect.TypeOf((*objects.VMInterface)(nil)).Elem():       VMInterfacesAPIPath,
-	reflect.TypeOf((*objects.Device)(nil)).Elem():            DevicesAPIPath,
-	reflect.TypeOf((*objects.DeviceRole)(nil)).Elem():        DeviceRolesAPIPath,
-	reflect.TypeOf((*objects.DeviceType)(nil)).Elem():        DeviceTypesAPIPath,
-	reflect.TypeOf((*objects.Interface)(nil)).Elem():         InterfacesAPIPath,
-	reflect.TypeOf((*objects.Site)(nil)).Elem():              SitesAPIPath,
-	reflect.TypeOf((*objects.Manufacturer)(nil)).Elem():      ManufacturersAPIPath,
-	reflect.TypeOf((*objects.Platform)(nil)).Elem():          PlatformsAPIPath,
-	reflect.TypeOf((*objects.Tenant)(nil)).Elem():            TenantsAPIPath,
-	reflect.TypeOf((*objects.ContactGroup)(nil)).Elem():      ContactGroupsAPIPath,
-	reflect.TypeOf((*objects.ContactRole)(nil)).Elem():       ContactRolesAPIPath,
-	reflect.TypeOf((*objects.Contact)(nil)).Elem():           ContactsAPIPath,
-	reflect.TypeOf((*objects.CustomField)(nil)).Elem():       CustomFieldsAPIPath,
-	reflect.TypeOf((*objects.Tag)(nil)).Elem():               TagsAPIPath,
-	reflect.TypeOf((*objects.ContactAssignment)(nil)).Elem(): ContactAssignmentsAPIPath,
-	reflect.TypeOf((*objects.Prefix)(nil)).Elem():            PrefixesAPIPath,
+	reflect.TypeOf((*objects.VlanGroup)(nil)).Elem():         constants.VlanGroupsAPIPath,
+	reflect.TypeOf((*objects.Vlan)(nil)).Elem():              constants.VlansAPIPath,
+	reflect.TypeOf((*objects.IPAddress)(nil)).Elem():         constants.IPAddressesAPIPath,
+	reflect.TypeOf((*objects.ClusterType)(nil)).Elem():       constants.ClusterTypesAPIPath,
+	reflect.TypeOf((*objects.ClusterGroup)(nil)).Elem():      constants.ClusterGroupsAPIPath,
+	reflect.TypeOf((*objects.Cluster)(nil)).Elem():           constants.ClustersAPIPath,
+	reflect.TypeOf((*objects.VM)(nil)).Elem():                constants.VirtualMachinesAPIPath,
+	reflect.TypeOf((*objects.VMInterface)(nil)).Elem():       constants.VMInterfacesAPIPath,
+	reflect.TypeOf((*objects.Device)(nil)).Elem():            constants.DevicesAPIPath,
+	reflect.TypeOf((*objects.DeviceRole)(nil)).Elem():        constants.DeviceRolesAPIPath,
+	reflect.TypeOf((*objects.DeviceType)(nil)).Elem():        constants.DeviceTypesAPIPath,
+	reflect.TypeOf((*objects.Interface)(nil)).Elem():         constants.InterfacesAPIPath,
+	reflect.TypeOf((*objects.Site)(nil)).Elem():              constants.SitesAPIPath,
+	reflect.TypeOf((*objects.Manufacturer)(nil)).Elem():      constants.ManufacturersAPIPath,
+	reflect.TypeOf((*objects.Platform)(nil)).Elem():          constants.PlatformsAPIPath,
+	reflect.TypeOf((*objects.Tenant)(nil)).Elem():            constants.TenantsAPIPath,
+	reflect.TypeOf((*objects.ContactGroup)(nil)).Elem():      constants.ContactGroupsAPIPath,
+	reflect.TypeOf((*objects.ContactRole)(nil)).Elem():       constants.ContactRolesAPIPath,
+	reflect.TypeOf((*objects.Contact)(nil)).Elem():           constants.ContactsAPIPath,
+	reflect.TypeOf((*objects.CustomField)(nil)).Elem():       constants.CustomFieldsAPIPath,
+	reflect.TypeOf((*objects.Tag)(nil)).Elem():               constants.TagsAPIPath,
+	reflect.TypeOf((*objects.ContactAssignment)(nil)).Elem(): constants.ContactAssignmentsAPIPath,
+	reflect.TypeOf((*objects.Prefix)(nil)).Elem():            constants.PrefixesAPIPath,
 }
 
 // GetAll queries all objects of type T from Netbox's API.

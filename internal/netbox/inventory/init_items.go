@@ -67,12 +67,12 @@ func (nbi *NetboxInventory) InitContacts(ctx context.Context) error {
 	}
 	// We also create an index of contacts by name for easier access
 	nbi.ContactsIndexByName = make(map[string]*objects.Contact)
-	nbi.OrphanManager[service.ContactsAPIPath] = make(map[int]bool, len(nbContacts))
+	nbi.OrphanManager[constants.ContactsAPIPath] = make(map[int]bool, len(nbContacts))
 	for i := range nbContacts {
 		contact := &nbContacts[i]
 		nbi.ContactsIndexByName[contact.Name] = contact
 		if slices.IndexFunc(contact.Tags, func(t *objects.Tag) bool { return t.Slug == nbi.SsotTag.Slug }) >= 0 {
-			nbi.OrphanManager[service.ContactsAPIPath][contact.ID] = true
+			nbi.OrphanManager[constants.ContactsAPIPath][contact.ID] = true
 		}
 	}
 	nbi.Logger.Debug(ctx, "Successfully collected contacts from Netbox: ", nbi.ContactsIndexByName)
@@ -102,7 +102,7 @@ func (nbi *NetboxInventory) InitContactAssignments(ctx context.Context) error {
 	}
 	// We also create an index of contacts by name for easier access
 	nbi.ContactAssignmentsIndexByContentTypeAndObjectIDAndContactIDAndRoleID = make(map[string]map[int]map[int]map[int]*objects.ContactAssignment)
-	nbi.OrphanManager[service.ContactAssignmentsAPIPath] = make(map[int]bool, len(nbCAs))
+	nbi.OrphanManager[constants.ContactAssignmentsAPIPath] = make(map[int]bool, len(nbCAs))
 	debugIDs := map[int]bool{} // Netbox pagination bug duplicates
 	for i := range nbCAs {
 		cA := &nbCAs[i]
@@ -121,7 +121,7 @@ func (nbi *NetboxInventory) InitContactAssignments(ctx context.Context) error {
 		}
 		nbi.ContactAssignmentsIndexByContentTypeAndObjectIDAndContactIDAndRoleID[cA.ContentType][cA.ObjectID][cA.Contact.ID][cA.Role.ID] = cA
 		if slices.IndexFunc(cA.Tags, func(t *objects.Tag) bool { return t.Slug == nbi.SsotTag.Slug }) >= 0 {
-			nbi.OrphanManager[service.ContactAssignmentsAPIPath][cA.ID] = true
+			nbi.OrphanManager[constants.ContactAssignmentsAPIPath][cA.ID] = true
 		}
 	}
 	nbi.Logger.Debug(ctx, "Successfully collected contacts from Netbox: ", nbi.ContactsIndexByName)
@@ -187,13 +187,13 @@ func (nbi *NetboxInventory) InitManufacturers(ctx context.Context) error {
 	// Initialize internal index of manufacturers by name
 	nbi.ManufacturersIndexByName = make(map[string]*objects.Manufacturer)
 	// OrphanManager takes care of all manufacturers created by netbox-ssot
-	nbi.OrphanManager[service.ManufacturersAPIPath] = make(map[int]bool)
+	nbi.OrphanManager[constants.ManufacturersAPIPath] = make(map[int]bool)
 
 	for i := range nbManufacturers {
 		manufacturer := &nbManufacturers[i]
 		nbi.ManufacturersIndexByName[manufacturer.Name] = manufacturer
 		if slices.IndexFunc(manufacturer.Tags, func(t *objects.Tag) bool { return t.Slug == nbi.SsotTag.Slug }) >= 0 {
-			nbi.OrphanManager[service.ManufacturersAPIPath][manufacturer.ID] = true
+			nbi.OrphanManager[constants.ManufacturersAPIPath][manufacturer.ID] = true
 		}
 	}
 
@@ -210,12 +210,12 @@ func (nbi *NetboxInventory) InitPlatforms(ctx context.Context) error {
 	// Initialize internal index of platforms by name
 	nbi.PlatformsIndexByName = make(map[string]*objects.Platform)
 	// OrphanManager takes care of all platforms created by netbox-ssot
-	nbi.OrphanManager[service.PlatformsAPIPath] = make(map[int]bool, 0)
+	nbi.OrphanManager[constants.PlatformsAPIPath] = make(map[int]bool, 0)
 
 	for i, platform := range nbPlatforms {
 		nbi.PlatformsIndexByName[platform.Name] = &nbPlatforms[i]
 		if slices.IndexFunc(platform.Tags, func(t *objects.Tag) bool { return t.Slug == nbi.SsotTag.Slug }) >= 0 {
-			nbi.OrphanManager[service.PlatformsAPIPath][platform.ID] = true
+			nbi.OrphanManager[constants.PlatformsAPIPath][platform.ID] = true
 		}
 	}
 
@@ -232,7 +232,7 @@ func (nbi *NetboxInventory) InitDevices(ctx context.Context) error {
 	// Initialize internal index of devices by Name and SiteId
 	nbi.DevicesIndexByNameAndSiteID = make(map[string]map[int]*objects.Device)
 	// OrphanManager takes care of all devices created by netbox-ssot
-	nbi.OrphanManager[service.DevicesAPIPath] = make(map[int]bool)
+	nbi.OrphanManager[constants.DevicesAPIPath] = make(map[int]bool)
 
 	for i, device := range nbDevices {
 		if nbi.DevicesIndexByNameAndSiteID[device.Name] == nil {
@@ -240,7 +240,7 @@ func (nbi *NetboxInventory) InitDevices(ctx context.Context) error {
 		}
 		nbi.DevicesIndexByNameAndSiteID[device.Name][device.Site.ID] = &nbDevices[i]
 		if slices.IndexFunc(device.Tags, func(t *objects.Tag) bool { return t.Slug == nbi.SsotTag.Slug }) >= 0 {
-			nbi.OrphanManager[service.DevicesAPIPath][device.ID] = true
+			nbi.OrphanManager[constants.DevicesAPIPath][device.ID] = true
 		}
 	}
 
@@ -258,13 +258,13 @@ func (nbi *NetboxInventory) InitDeviceRoles(ctx context.Context) error {
 	// We also create an index of device roles by name for easier access
 	nbi.DeviceRolesIndexByName = make(map[string]*objects.DeviceRole)
 	// OrphanManager takes care of all device roles created by netbox-ssot
-	nbi.OrphanManager[service.DeviceRolesAPIPath] = make(map[int]bool, 0)
+	nbi.OrphanManager[constants.DeviceRolesAPIPath] = make(map[int]bool, 0)
 
 	for i := range nbDeviceRoles {
 		deviceRole := &nbDeviceRoles[i]
 		nbi.DeviceRolesIndexByName[deviceRole.Name] = deviceRole
 		if slices.IndexFunc(deviceRole.Tags, func(t *objects.Tag) bool { return t.Slug == nbi.SsotTag.Slug }) >= 0 {
-			nbi.OrphanManager[service.DeviceRolesAPIPath][deviceRole.ID] = true
+			nbi.OrphanManager[constants.DeviceRolesAPIPath][deviceRole.ID] = true
 		}
 	}
 
@@ -374,13 +374,13 @@ func (nbi *NetboxInventory) InitClusterGroups(ctx context.Context) error {
 	// Initialize internal index of cluster groups by name
 	nbi.ClusterGroupsIndexByName = make(map[string]*objects.ClusterGroup)
 	// OrphanManager takes care of all cluster groups created by netbox-ssot
-	nbi.OrphanManager[service.ClusterGroupsAPIPath] = make(map[int]bool, 0)
+	nbi.OrphanManager[constants.DeviceRolesAPIPath] = make(map[int]bool, 0)
 
 	for i := range nbClusterGroups {
 		clusterGroup := &nbClusterGroups[i]
 		nbi.ClusterGroupsIndexByName[clusterGroup.Name] = clusterGroup
 		if slices.IndexFunc(clusterGroup.Tags, func(t *objects.Tag) bool { return t.Slug == nbi.SsotTag.Slug }) >= 0 {
-			nbi.OrphanManager[service.ClusterGroupsAPIPath][clusterGroup.ID] = true
+			nbi.OrphanManager[constants.DeviceRolesAPIPath][clusterGroup.ID] = true
 		}
 	}
 	nbi.Logger.Debug(ctx, "Successfully collected cluster groups from Netbox: ", nbi.ClusterGroupsIndexByName)
@@ -397,13 +397,13 @@ func (nbi *NetboxInventory) InitClusterTypes(ctx context.Context) error {
 	// Initialize internal index of cluster types by name
 	nbi.ClusterTypesIndexByName = make(map[string]*objects.ClusterType)
 	// OrphanManager takes care of all cluster types created by netbox-ssot
-	nbi.OrphanManager[service.ClusterTypesAPIPath] = make(map[int]bool, 0)
+	nbi.OrphanManager[constants.ClusterTypesAPIPath] = make(map[int]bool, 0)
 
 	for i := range nbClusterTypes {
 		clusterType := &nbClusterTypes[i]
 		nbi.ClusterTypesIndexByName[clusterType.Name] = clusterType
 		if slices.IndexFunc(clusterType.Tags, func(t *objects.Tag) bool { return t.Slug == nbi.SsotTag.Slug }) >= 0 {
-			nbi.OrphanManager[service.ClusterTypesAPIPath][clusterType.ID] = true
+			nbi.OrphanManager[constants.ClusterTypesAPIPath][clusterType.ID] = true
 		}
 	}
 
@@ -421,13 +421,13 @@ func (nbi *NetboxInventory) InitClusters(ctx context.Context) error {
 	// Initialize internal index of clusters by name
 	nbi.ClustersIndexByName = make(map[string]*objects.Cluster)
 	// OrphanManager takes care of all clusters created by netbox-ssot
-	nbi.OrphanManager[service.ClustersAPIPath] = make(map[int]bool, 0)
+	nbi.OrphanManager[constants.ClustersAPIPath] = make(map[int]bool, 0)
 
 	for i := range nbClusters {
 		cluster := &nbClusters[i]
 		nbi.ClustersIndexByName[cluster.Name] = cluster
 		if slices.IndexFunc(cluster.Tags, func(t *objects.Tag) bool { return t.Slug == nbi.SsotTag.Slug }) >= 0 {
-			nbi.OrphanManager[service.ClustersAPIPath][cluster.ID] = true
+			nbi.OrphanManager[constants.ClustersAPIPath][cluster.ID] = true
 		}
 	}
 
@@ -444,13 +444,13 @@ func (nbi *NetboxInventory) InitDeviceTypes(ctx context.Context) error {
 	// Initialize internal index of device types by model
 	nbi.DeviceTypesIndexByModel = make(map[string]*objects.DeviceType)
 	// OrphanManager takes care of all device types created by netbox-ssot
-	nbi.OrphanManager[service.DeviceTypesAPIPath] = make(map[int]bool, 0)
+	nbi.OrphanManager[constants.DeviceTypesAPIPath] = make(map[int]bool, 0)
 
 	for i := range nbDeviceTypes {
 		deviceType := &nbDeviceTypes[i]
 		nbi.DeviceTypesIndexByModel[deviceType.Model] = deviceType
 		if slices.IndexFunc(deviceType.Tags, func(t *objects.Tag) bool { return t.Slug == nbi.SsotTag.Slug }) >= 0 {
-			nbi.OrphanManager[service.DeviceTypesAPIPath][deviceType.ID] = true
+			nbi.OrphanManager[constants.DeviceTypesAPIPath][deviceType.ID] = true
 		}
 	}
 
@@ -468,7 +468,7 @@ func (nbi *NetboxInventory) InitInterfaces(ctx context.Context) error {
 	// Initialize internal index of interfaces by device id and name
 	nbi.InterfacesIndexByDeviceIDAndName = make(map[int]map[string]*objects.Interface)
 	// OrphanManager takes care of all interfaces created by netbox-ssot
-	nbi.OrphanManager[service.InterfacesAPIPath] = make(map[int]bool, 0)
+	nbi.OrphanManager[constants.InterfacesAPIPath] = make(map[int]bool, 0)
 
 	for i := range nbInterfaces {
 		intf := &nbInterfaces[i]
@@ -477,7 +477,7 @@ func (nbi *NetboxInventory) InitInterfaces(ctx context.Context) error {
 		}
 		nbi.InterfacesIndexByDeviceIDAndName[intf.Device.ID][intf.Name] = intf
 		if slices.IndexFunc(intf.Tags, func(t *objects.Tag) bool { return t.Slug == nbi.SsotTag.Slug }) >= 0 {
-			nbi.OrphanManager[service.InterfacesAPIPath][intf.ID] = true
+			nbi.OrphanManager[constants.InterfacesAPIPath][intf.ID] = true
 		}
 	}
 
@@ -517,13 +517,13 @@ func (nbi *NetboxInventory) InitVlanGroups(ctx context.Context) error {
 	// Initialize internal index of vlans by name
 	nbi.VlanGroupsIndexByName = make(map[string]*objects.VlanGroup)
 	// Add VlanGroups to orphan manager
-	nbi.OrphanManager[service.VlanGroupsAPIPath] = make(map[int]bool, 0)
+	nbi.OrphanManager[constants.VlanGroupsAPIPath] = make(map[int]bool, 0)
 
 	for i := range nbVlanGroups {
 		vlanGroup := &nbVlanGroups[i]
 		nbi.VlanGroupsIndexByName[vlanGroup.Name] = vlanGroup
 		if slices.IndexFunc(vlanGroup.Tags, func(t *objects.Tag) bool { return t.Slug == nbi.SsotTag.Slug }) >= 0 {
-			nbi.OrphanManager[service.VlanGroupsAPIPath][vlanGroup.ID] = true
+			nbi.OrphanManager[constants.VlanGroupsAPIPath][vlanGroup.ID] = true
 		}
 	}
 
@@ -541,7 +541,7 @@ func (nbi *NetboxInventory) InitVlans(ctx context.Context) error {
 	// Initialize internal index of vlans by VlanGroupId and Vid
 	nbi.VlansIndexByVlanGroupIDAndVID = make(map[int]map[int]*objects.Vlan)
 	// Add vlans to orphan manager
-	nbi.OrphanManager[service.VlansAPIPath] = make(map[int]bool, 0)
+	nbi.OrphanManager[constants.VlansAPIPath] = make(map[int]bool, 0)
 
 	for i := range nbVlans {
 		vlan := &nbVlans[i]
@@ -559,7 +559,7 @@ func (nbi *NetboxInventory) InitVlans(ctx context.Context) error {
 		}
 		nbi.VlansIndexByVlanGroupIDAndVID[vlan.Group.ID][vlan.Vid] = vlan
 		if slices.IndexFunc(vlan.Tags, func(t *objects.Tag) bool { return t.Slug == nbi.SsotTag.Slug }) >= 0 {
-			nbi.OrphanManager[service.VlansAPIPath][vlan.ID] = true
+			nbi.OrphanManager[constants.VlansAPIPath][vlan.ID] = true
 		}
 	}
 
@@ -577,13 +577,13 @@ func (nbi *NetboxInventory) InitVMs(ctx context.Context) error {
 	// Initialize internal index of VMs by name
 	nbi.VMsIndexByName = make(map[string]*objects.VM)
 	// Add VMs to orphan manager
-	nbi.OrphanManager[service.VirtualMachinesAPIPath] = make(map[int]bool, 0)
+	nbi.OrphanManager[constants.VirtualMachinesAPIPath] = make(map[int]bool, 0)
 
 	for i := range nbVMs {
 		vm := &nbVMs[i]
 		nbi.VMsIndexByName[vm.Name] = vm
 		if slices.IndexFunc(vm.Tags, func(t *objects.Tag) bool { return t.Slug == nbi.SsotTag.Slug }) >= 0 {
-			nbi.OrphanManager[service.VirtualMachinesAPIPath][vm.ID] = true
+			nbi.OrphanManager[constants.VirtualMachinesAPIPath][vm.ID] = true
 		}
 	}
 
@@ -601,7 +601,7 @@ func (nbi *NetboxInventory) InitVMInterfaces(ctx context.Context) error {
 	// Initialize internal index of VM interfaces by VM id and name
 	nbi.VMInterfacesIndexByVMIdAndName = make(map[int]map[string]*objects.VMInterface)
 	// Add VMInterfaces to orphan manager
-	nbi.OrphanManager[service.VMInterfacesAPIPath] = make(map[int]bool)
+	nbi.OrphanManager[constants.VMInterfacesAPIPath] = make(map[int]bool)
 
 	for i := range nbVMInterfaces {
 		vmIntf := &nbVMInterfaces[i]
@@ -610,7 +610,7 @@ func (nbi *NetboxInventory) InitVMInterfaces(ctx context.Context) error {
 		}
 		nbi.VMInterfacesIndexByVMIdAndName[vmIntf.VM.ID][vmIntf.Name] = vmIntf
 		if slices.IndexFunc(vmIntf.Tags, func(t *objects.Tag) bool { return t.Slug == nbi.SsotTag.Slug }) >= 0 {
-			nbi.OrphanManager[service.VMInterfacesAPIPath][vmIntf.ID] = true
+			nbi.OrphanManager[constants.VMInterfacesAPIPath][vmIntf.ID] = true
 		}
 	}
 
@@ -628,13 +628,13 @@ func (nbi *NetboxInventory) InitIPAddresses(ctx context.Context) error {
 	// Initializes internal index of IP addresses by address
 	nbi.IPAdressesIndexByAddress = make(map[string]*objects.IPAddress)
 	// Add IP addresses to orphan manager
-	nbi.OrphanManager[service.IPAddressesAPIPath] = make(map[int]bool, 0)
+	nbi.OrphanManager[constants.IPAddressesAPIPath] = make(map[int]bool, 0)
 
 	for i := range ipAddresses {
 		ipAddr := &ipAddresses[i]
 		nbi.IPAdressesIndexByAddress[ipAddr.Address] = ipAddr
 		if slices.IndexFunc(ipAddr.Tags, func(t *objects.Tag) bool { return t.Slug == nbi.SsotTag.Slug }) >= 0 {
-			nbi.OrphanManager[service.IPAddressesAPIPath][ipAddr.ID] = true
+			nbi.OrphanManager[constants.IPAddressesAPIPath][ipAddr.ID] = true
 		}
 	}
 
@@ -652,13 +652,13 @@ func (nbi *NetboxInventory) InitPrefixes(ctx context.Context) error {
 	// Initializes internal index of prefixes by prefix
 	nbi.PrefixesIndexByPrefix = make(map[string]*objects.Prefix)
 	// Add prefixes to orphan manager
-	nbi.OrphanManager[service.PrefixesAPIPath] = make(map[int]bool, 0)
+	nbi.OrphanManager[constants.PrefixesAPIPath] = make(map[int]bool, 0)
 
 	for i := range prefixes {
 		prefix := &prefixes[i]
 		nbi.PrefixesIndexByPrefix[prefix.Prefix] = prefix
 		if slices.IndexFunc(prefix.Tags, func(t *objects.Tag) bool { return t.Slug == nbi.SsotTag.Slug }) >= 0 {
-			nbi.OrphanManager[service.PrefixesAPIPath][prefix.ID] = true
+			nbi.OrphanManager[constants.PrefixesAPIPath][prefix.ID] = true
 		}
 	}
 

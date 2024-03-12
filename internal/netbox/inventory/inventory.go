@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/logger"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/service"
@@ -142,23 +143,22 @@ func NewNetboxInventory(ctx context.Context, logger *logger.Logger, nbConfig *pa
 	}
 	// Starts with 0 for easier integration with for loops
 	orphanObjectPriority := map[int]string{
-		0:  service.VlanGroupsAPIPath,
-		1:  service.PrefixesAPIPath,
-		2:  service.VlansAPIPath,
-		3:  service.IPAddressesAPIPath,
-		4:  service.InterfacesAPIPath,
-		5:  service.VMInterfacesAPIPath,
-		6:  service.VirtualMachinesAPIPath,
-		7:  service.DevicesAPIPath,
-		8:  service.PlatformsAPIPath,
-		9:  service.DeviceTypesAPIPath,
-		10: service.ManufacturersAPIPath,
-		11: service.DeviceRolesAPIPath,
-		12: service.ClustersAPIPath,
-		13: service.ClusterTypesAPIPath,
-		14: service.ClusterGroupsAPIPath,
-		15: service.ContactAssignmentsAPIPath,
-		16: service.ContactsAPIPath,
+		0:  constants.VlanGroupsAPIPath,
+		1:  constants.PrefixesAPIPath,
+		2:  constants.VlansAPIPath,
+		3:  constants.IPAddressesAPIPath,
+		4:  constants.InterfacesAPIPath,
+		5:  constants.VMInterfacesAPIPath,
+		6:  constants.VirtualMachinesAPIPath,
+		7:  constants.DevicesAPIPath,
+		8:  constants.PlatformsAPIPath,
+		9:  constants.DeviceTypesAPIPath,
+		10: constants.ManufacturersAPIPath,
+		11: constants.DeviceRolesAPIPath,
+		12: constants.ClustersAPIPath,
+		13: constants.ClusterTypesAPIPath,
+		14: constants.ContactAssignmentsAPIPath,
+		15: constants.ContactsAPIPath,
 	}
 	nbi := &NetboxInventory{Ctx: ctx, Logger: logger, NetboxConfig: nbConfig, SourcePriority: sourcePriority, OrphanManager: make(map[string]map[int]bool), OrphanObjectPriority: orphanObjectPriority}
 	return nbi

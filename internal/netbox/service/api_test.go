@@ -3,116 +3,15 @@ package service
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"net/http/httptest"
 	"reflect"
 	"testing"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/logger"
 )
-
-// Hardcoded api return values.
-const (
-	VersionResponse = "{\"django-version\": \"4.2.10\"}"
-	TagsResponse    = "{\"count\":2,\"next\":null,\"previous\":null,\"results\":[{\"id\":34,\"url\":\"http://netbox.example.com/api/extras/tags/34/\",\"display\":\"Source: proxmox\",\"name\":\"Source: proxmox\",\"slug\":\"source-proxmox\",\"color\":\"9e9e9e\",\"description\":\"Automatically created tag by netbox-ssot for source proxmox\",\"object_types\":[],\"tagged_items\":115,\"created\":\"2024-02-25T16:52:51.691729Z\",\"last_updated\":\"2024-02-25T16:52:51.691743Z\"},{\"id\":1,\"url\":\"http://netbox.example.com/api/extras/tags/1/\",\"display\":\"netbox-ssot\",\"name\":\"netbox-ssot\",\"slug\":\"netbox-ssot\",\"color\":\"00add8\",\"description\":\"Tag used by netbox-ssot to mark devices that are managed by it\",\"object_types\":[],\"tagged_items\":134,\"created\":\"2024-02-11T16:23:17.082244Z\",\"last_updated\":\"2024-02-11T16:23:17.082257Z\"}]}"
-)
-
-func CreateMockServer() *httptest.Server {
-	handler := http.NewServeMux()
-	// Define handler for a specific path e.g., "/api/path"
-	handler.HandleFunc("/api/status/", func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, err := io.WriteString(w, VersionResponse) // Mock JSON Response
-		if err != nil {
-			log.Printf("Error writing response: %v", err)
-		}
-	})
-
-	handler.HandleFunc(TagsAPIPath, func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, err := io.WriteString(w, TagsResponse)
-		if err != nil {
-			log.Printf("Error writing response")
-		}
-	})
-
-	handler.HandleFunc(fmt.Sprintf("%s?limit=100&offset=0", TagsAPIPath), func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, err := io.WriteString(w, TagsResponse)
-		if err != nil {
-			log.Printf("Error writing response")
-		}
-	})
-
-	handler.HandleFunc("/api/read-error", func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError) // or any relevant status
-		//nolint:all
-		w.(http.Flusher).Flush() // Flush the headers to client
-		// Do not write any body, let the client read from the FaultyReader
-	})
-	// Wildcard handler for all other paths
-	handler.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusNotFound)
-		_, err := io.WriteString(w, `{"error": "page not found"}`)
-		if err != nil {
-			log.Printf("Error writing response: %v", err)
-		}
-	})
-	// More handlers can be added here for different paths or methods
-	return httptest.NewServer(handler)
-}
-
-var MockNetboxClient = &NetboxClient{
-	HTTPClient: &http.Client{},
-	Logger:     &logger.Logger{Logger: log.Default()},
-	BaseURL:    "",
-	APIToken:   "testtoken",
-	Timeout:    constants.DefaultAPITimeout,
-}
-
-var FailingMockNetboxClient = &NetboxClient{
-	HTTPClient: &http.Client{Transport: &FailingHTTPClient{}},
-	Logger:     &logger.Logger{Logger: log.Default()},
-	BaseURL:    "",
-	APIToken:   "testtoken",
-	Timeout:    constants.DefaultAPITimeout,
-}
-
-type FailingHTTPClient struct{}
-
-func (m *FailingHTTPClient) RoundTrip(_ *http.Request) (*http.Response, error) {
-	// Return an error to simulate a failure in the HTTP request
-	return nil, fmt.Errorf("mock error")
-}
-
-var MockNetboxClientWithReadError = &NetboxClient{
-	HTTPClient: &http.Client{Transport: &FailingHTTPClientRead{}},
-	Logger:     &logger.Logger{Logger: log.Default()},
-	BaseURL:    "",
-	APIToken:   "testtoken",
-	Timeout:    constants.DefaultAPITimeout,
-}
-
-type FailingHTTPClientRead struct{}
-
-func (m *FailingHTTPClientRead) RoundTrip(_ *http.Request) (*http.Response, error) {
-	// Simulate a response with a FaultyReader as its Body
-	return &http.Response{
-		StatusCode: http.StatusInternalServerError,
-		Body:       io.NopCloser(&FaultyReader{}),
-		Header:     make(http.Header),
-	}, nil
-}
-
-type FaultyReader struct{}
-
-func (m *FaultyReader) Read(_ []byte) (n int, err error) {
-	return 0, fmt.Errorf("mock read error")
-}
 
 func TestNewNetBoxAPI(t *testing.T) {
 	type args struct {
