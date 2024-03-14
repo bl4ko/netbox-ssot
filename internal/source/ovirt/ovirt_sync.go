@@ -773,6 +773,12 @@ func (o *OVirtSource) syncVMInterfaces(nbi *inventory.NetboxInventory, ovirtVM *
 					// We add interface to the list
 					var vmInterface *objects.VMInterface
 					var err error
+					vmInterfaceMac := ""
+					if macAddressObj, exists := reportedDevice.Mac(); exists {
+						if macAddress, exists := macAddressObj.Address(); exists {
+							vmInterfaceMac = macAddress
+						}
+					}
 					if reportedDeviceName, exists := reportedDevice.Name(); exists {
 						vmInterface, err = nbi.AddVMInterface(o.Ctx, &objects.VMInterface{
 							NetboxObject: objects.NetboxObject{
@@ -784,7 +790,7 @@ func (o *OVirtSource) syncVMInterfaces(nbi *inventory.NetboxInventory, ovirtVM *
 							},
 							VM:         netboxVM,
 							Name:       reportedDeviceName,
-							MACAddress: strings.ToUpper(reportedDevice.MustMac().MustAddress()),
+							MACAddress: strings.ToUpper(vmInterfaceMac),
 							Enabled:    true, // TODO
 						})
 						if err != nil {
