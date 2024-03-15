@@ -157,8 +157,9 @@ func NewNetboxInventory(ctx context.Context, logger *logger.Logger, nbConfig *pa
 		11: constants.DeviceRolesAPIPath,
 		12: constants.ClustersAPIPath,
 		13: constants.ClusterTypesAPIPath,
-		14: constants.ContactAssignmentsAPIPath,
-		15: constants.ContactsAPIPath,
+		14: constants.ClusterGroupsAPIPath,
+		15: constants.ContactAssignmentsAPIPath,
+		16: constants.ContactsAPIPath,
 	}
 	nbi := &NetboxInventory{Ctx: ctx, Logger: logger, NetboxConfig: nbConfig, SourcePriority: sourcePriority, OrphanManager: make(map[string]map[int]bool), OrphanObjectPriority: orphanObjectPriority}
 	return nbi
@@ -183,6 +184,7 @@ func (nbi *NetboxInventory) Init() error {
 		nbi.InitContactAssignments,
 		nbi.InitTenants,
 		nbi.InitSites,
+		nbi.InitDefaultSite,
 		nbi.InitManufacturers,
 		nbi.InitPlatforms,
 		nbi.InitDevices,

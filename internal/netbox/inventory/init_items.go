@@ -178,6 +178,26 @@ func (nbi *NetboxInventory) InitSites(ctx context.Context) error {
 	return nil
 }
 
+// InitDefaultSite inits default site, which is used for hosts that have no corresponding site.
+// This is because site is required for adding new hosts.
+func (nbi *NetboxInventory) InitDefaultSite(ctx context.Context) error {
+	_, err := nbi.AddSite(ctx, &objects.Site{
+		NetboxObject: objects.NetboxObject{
+			Tags:        []*objects.Tag{nbi.SsotTag},
+			Description: "Default netbox-ssot site used for all hosts, that have no site matched.",
+			CustomFields: map[string]string{
+				constants.CustomFieldSourceName: nbi.SsotTag.Name,
+			},
+		},
+		Name: constants.DefaultSite,
+		Slug: utils.Slugify(constants.DefaultSite),
+	})
+	if err != nil {
+		return fmt.Errorf("init default site: %s", err)
+	}
+	return nil
+}
+
 // Collects all manufacturers from Netbox API and store them in NetBoxInventory.
 func (nbi *NetboxInventory) InitManufacturers(ctx context.Context) error {
 	nbManufacturers, err := service.GetAll[objects.Manufacturer](ctx, nbi.NetboxAPI, "")
@@ -374,13 +394,13 @@ func (nbi *NetboxInventory) InitClusterGroups(ctx context.Context) error {
 	// Initialize internal index of cluster groups by name
 	nbi.ClusterGroupsIndexByName = make(map[string]*objects.ClusterGroup)
 	// OrphanManager takes care of all cluster groups created by netbox-ssot
-	nbi.OrphanManager[constants.DeviceRolesAPIPath] = make(map[int]bool, 0)
+	nbi.OrphanManager[constants.ClusterGroupsAPIPath] = make(map[int]bool, 0)
 
 	for i := range nbClusterGroups {
 		clusterGroup := &nbClusterGroups[i]
 		nbi.ClusterGroupsIndexByName[clusterGroup.Name] = clusterGroup
 		if slices.IndexFunc(clusterGroup.Tags, func(t *objects.Tag) bool { return t.Slug == nbi.SsotTag.Slug }) >= 0 {
-			nbi.OrphanManager[constants.DeviceRolesAPIPath][clusterGroup.ID] = true
+			nbi.OrphanManager[constants.ClusterGroupsAPIPath][clusterGroup.ID] = true
 		}
 	}
 	nbi.Logger.Debug(ctx, "Successfully collected cluster groups from Netbox: ", nbi.ClusterGroupsIndexByName)
