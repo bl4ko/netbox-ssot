@@ -2,6 +2,7 @@ package inventory
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
@@ -514,6 +515,9 @@ func (nbi *NetboxInventory) AddDevice(ctx context.Context, newDevice *objects.De
 	nbi.DevicesLock.Lock()
 	defer nbi.DevicesLock.Unlock()
 	newDevice.Tags = append(newDevice.Tags, nbi.SsotTag)
+	if newDevice.Site == nil {
+		return nil, fmt.Errorf("device %s is not assigned to a site, but it should be", newDevice)
+	}
 	if _, ok := nbi.DevicesIndexByNameAndSiteID[newDevice.Name][newDevice.Site.ID]; ok {
 		oldDevice := nbi.DevicesIndexByNameAndSiteID[newDevice.Name][newDevice.Site.ID]
 		delete(nbi.OrphanManager[constants.DevicesAPIPath], oldDevice.ID)

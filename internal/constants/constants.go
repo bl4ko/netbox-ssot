@@ -3,10 +3,11 @@ package constants
 type SourceType string
 
 const (
-	Ovirt   SourceType = "ovirt"
-	Vmware  SourceType = "vmware"
-	Dnac    SourceType = "dnac"
-	Proxmox SourceType = "proxmox"
+	Ovirt    SourceType = "ovirt"
+	Vmware   SourceType = "vmware"
+	Dnac     SourceType = "dnac"
+	Proxmox  SourceType = "proxmox"
+	PaloAlto SourceType = "paloalto"
 )
 
 const DefaultSourceName = "netbox-ssot"
@@ -53,16 +54,18 @@ const (
 
 // Default mappings of sources to colors (for tags).
 var DefaultSourceToTagColorMap = map[SourceType]string{
-	Ovirt:  ColorDarkRed,
-	Vmware: ColorLightGreen,
-	Dnac:   ColorLightBlue,
+	Ovirt:    ColorDarkRed,
+	Vmware:   ColorLightGreen,
+	Dnac:     ColorLightBlue,
+	PaloAlto: ColorDarkOrange,
 }
 
 // Object for mapping source type to tag color.
 var SourceTypeToTagColorMap = map[SourceType]string{
-	Ovirt:  ColorRed,
-	Vmware: ColorGreen,
-	Dnac:   ColorBlue,
+	Ovirt:    ColorRed,
+	Vmware:   ColorGreen,
+	Dnac:     ColorBlue,
+	PaloAlto: ColorOrange,
 }
 
 const (

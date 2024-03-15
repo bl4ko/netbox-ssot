@@ -13,6 +13,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
 	"github.com/bl4ko/netbox-ssot/internal/source/dnac"
 	"github.com/bl4ko/netbox-ssot/internal/source/ovirt"
+	"github.com/bl4ko/netbox-ssot/internal/source/paloalto"
 	"github.com/bl4ko/netbox-ssot/internal/source/proxmox"
 	"github.com/bl4ko/netbox-ssot/internal/source/vmware"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
@@ -55,6 +56,8 @@ func NewSource(ctx context.Context, config *parser.SourceConfig, logger *logger.
 		return &dnac.DnacSource{Config: commonConfig}, nil
 	case constants.Proxmox:
 		return &proxmox.ProxmoxSource{Config: commonConfig}, nil
+	case constants.PaloAlto:
+		return &paloalto.PaloAltoSource{Config: commonConfig}, nil
 	default:
 		return nil, fmt.Errorf("unsupported source type: %s", config.Type)
 	}

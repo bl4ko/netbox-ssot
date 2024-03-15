@@ -3,6 +3,7 @@ module github.com/bl4ko/netbox-ssot
 go 1.21
 
 require (
+	github.com/PaloAltoNetworks/pango v0.10.2
 	github.com/cisco-en-programmability/dnacenter-go-sdk/v5 v5.0.25
 	github.com/luthermonson/go-proxmox v0.0.0-beta5
 	github.com/ovirt/go-ovirt v4.3.4+incompatible
