@@ -128,7 +128,7 @@ func MatchVlanToTenant(ctx context.Context, nbi *inventory.NetboxInventory, vlan
 
 // Function that matches Host from hostName to Site using hostSiteRelations.
 //
-// In case that there is not match or hostSiteRelations is nil, it will return nil.
+// In case that there is not match or hostSiteRelations is nil, it will return default site.
 func MatchHostToSite(ctx context.Context, nbi *inventory.NetboxInventory, hostName string, hostSiteRelations map[string]string) (*objects.Site, error) {
 	if hostSiteRelations == nil {
 		return nil, nil
@@ -151,7 +151,7 @@ func MatchHostToSite(ctx context.Context, nbi *inventory.NetboxInventory, hostNa
 		}
 		return site, nil
 	}
-	return nil, nil
+	return nbi.SitesIndexByName[constants.DefaultSite], nil
 }
 
 // Function that matches Host from hostName to Tenant using hostTenantRelations.

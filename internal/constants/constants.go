@@ -18,6 +18,7 @@ const (
 	DefaultOSVersion    string = "Generic Version"
 	DefaultManufacturer string = "Generic Manufacturer"
 	DefaultModel        string = "Generic Model"
+	DefaultSite         string = "DefaultSite"
 )
 
 // Default mappings of sources to colors (for tags).
