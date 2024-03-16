@@ -2,25 +2,13 @@ package inventory
 
 import (
 	"context"
-	"encoding/json"
-	"log"
-	"os"
 	"reflect"
-	"sync"
 	"testing"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
-	"github.com/bl4ko/netbox-ssot/internal/logger"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/service"
 )
-
-var MockInventory = &NetboxInventory{
-	Logger:          &logger.Logger{Logger: log.New(os.Stdout, "", log.LstdFlags)},
-	TagsIndexByName: make(map[string]*objects.Tag),
-	TagsLock:        sync.Mutex{},
-	NetboxAPI:       service.MockNetboxClient,
-}
 
 func TestNetboxInventory_AddTag(t *testing.T) {
 	type args struct {
@@ -31,35 +19,45 @@ func TestNetboxInventory_AddTag(t *testing.T) {
 		name    string
 		nbi     *NetboxInventory
 		args    args
-		want    string
+		want    *objects.Tag
 		wantErr bool
 	}{
 		{
-			name: "Test new tag add",
+			name: "Test add new tag",
 			nbi:  MockInventory,
 			args: args{ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "test"), newTag: &objects.Tag{Name: "new tag", Description: "New Tag", Color: constants.ColorBlack, Slug: "new_tag"}},
-			want: service.TagCreateResponse,
+			want: &service.MockTagCreateResponse,
+		},
+		{
+			name: "Test update existing tag",
+			nbi:  MockInventory,
+			args: args{ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "test"), newTag: &objects.Tag{Name: "existing_tag1", Description: "New Tag", Color: constants.ColorBlack, Slug: "new_tag"}},
+			want: &service.MockTagPatchResponse,
+		},
+		{
+			name: "Test add the same tag",
+			nbi:  MockInventory,
+			args: args{ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "test"), newTag: MockExistingTags["existing_tag2"]},
+			want: MockExistingTags["existing_tag2"],
 		},
 	}
 
 	mockServer := service.CreateMockServer()
 	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
 
 	for _, tt := range tests {
-		service.MockNetboxClient.BaseURL = mockServer.URL
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.nbi.AddTag(tt.args.ctx, tt.args.newTag)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NetboxInventory.AddTag() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			var wantTag objects.Tag
-			err = json.Unmarshal([]byte(tt.want), &wantTag)
 			if err != nil {
 				t.Errorf("unmarshal test data: %s", err)
 			}
-			if !reflect.DeepEqual(got, &wantTag) {
-				t.Errorf("NetboxInventory.AddTag() = %v, want %v", got, wantTag)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NetboxInventory.AddTag() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -77,8 +75,29 @@ func TestNetboxInventory_AddTenant(t *testing.T) {
 		want    *objects.Tenant
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test add new tenant",
+			nbi:  MockInventory,
+			args: args{ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "test"), newTenant: &objects.Tenant{Name: "new tenant", Slug: "new_tenant"}},
+			want: &service.MockTenantCreateResponse,
+		},
+		{
+			name: "Test update existing tenant",
+			nbi:  MockInventory,
+			args: args{ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "test"), newTenant: &objects.Tenant{Name: "existing_tenant1", Slug: "new_tenant"}},
+			want: &service.MockTenantPatchResponse,
+		},
+		{
+			name: "Test add the same tenant",
+			nbi:  MockInventory,
+			args: args{ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "test"), newTenant: &objects.Tenant{Name: "existing_tenant2"}},
+			want: MockExistingTenants["existing_tenant2"],
+		},
 	}
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.nbi.AddTenant(tt.args.ctx, tt.args.newTenant)
@@ -105,8 +124,29 @@ func TestNetboxInventory_AddSite(t *testing.T) {
 		want    *objects.Site
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test add new site",
+			nbi:  MockInventory,
+			args: args{ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "test"), newSite: &objects.Site{Name: "new site", Slug: "new_site"}},
+			want: &service.MockSiteCreateResponse,
+		},
+		{
+			name: "Test update existing site",
+			nbi:  MockInventory,
+			args: args{ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "test"), newSite: &objects.Site{Name: "existing_site1", Slug: "new_site"}},
+			want: &service.MockSitePatchResponse,
+		},
+		{
+			name: "Test add the same site",
+			nbi:  MockInventory,
+			args: args{ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "test"), newSite: &objects.Site{Name: "existing_site2"}},
+			want: MockExistingSites["existing_site2"],
+		},
 	}
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.nbi.AddSite(tt.args.ctx, tt.args.newSite)

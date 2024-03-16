@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"reflect"
 	"testing"
 
@@ -77,7 +76,7 @@ func TestPatch(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    string
+		want    *objects.Tag
 		wantErr bool
 	}{
 		{
@@ -91,7 +90,7 @@ func TestPatch(t *testing.T) {
 				},
 			},
 			// See predefined values in api_test for mockserver
-			want:    TagPatchResponse,
+			want:    &MockTagPatchResponse,
 			wantErr: false,
 		},
 	}
@@ -105,14 +104,11 @@ func TestPatch(t *testing.T) {
 				t.Errorf("GetAll() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			// Parse the object
-			var wantTag objects.Tag
-			err = json.Unmarshal([]byte(tt.want), &wantTag)
 			if err != nil {
 				t.Errorf("marshal tag patch response: %s", err)
 			}
-			if !reflect.DeepEqual(response, &wantTag) {
-				t.Errorf("Patch() = %v, want %v", response, wantTag)
+			if !reflect.DeepEqual(response, tt.want) {
+				t.Errorf("Patch() = %v, want %v", response, tt.want)
 			}
 		})
 	}
@@ -122,12 +118,12 @@ func TestCreate(t *testing.T) {
 	type args struct {
 		ctx    context.Context
 		api    *NetboxClient
-		object string
+		object *objects.Tag
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    string
+		want    *objects.Tag
 		wantErr bool
 	}{
 		{
@@ -135,10 +131,10 @@ func TestCreate(t *testing.T) {
 			args: args{
 				ctx:    context.WithValue(context.Background(), constants.CtxSourceKey, "test"),
 				api:    MockNetboxClient,
-				object: TagCreateResponse,
+				object: &MockTagCreateResponse,
 			},
 			// See predefined values in api_test for mockserver
-			want:    TagPatchResponse,
+			want:    &MockTagCreateResponse,
 			wantErr: false,
 		},
 	}
@@ -147,18 +143,13 @@ func TestCreate(t *testing.T) {
 		defer mockServer.Close()
 		MockNetboxClient.BaseURL = mockServer.URL
 		t.Run(tt.name, func(t *testing.T) {
-			var newTag objects.Tag
-			err := json.Unmarshal([]byte(tt.args.object), &newTag)
-			if err != nil {
-				t.Errorf("unmarshal tag: %s", err)
-			}
-			response, err := Create[objects.Tag](tt.args.ctx, tt.args.api, &newTag)
+			response, err := Create(tt.args.ctx, tt.args.api, tt.args.object)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetAll() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(response, &newTag) {
-				t.Errorf("Patch() = %v, want %v", response, newTag)
+			if !reflect.DeepEqual(response, tt.want) {
+				t.Errorf("Patch() = %v, want %v", response, tt.want)
 			}
 		})
 	}
@@ -174,7 +165,6 @@ func TestBulkDeleteObjects(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    string
 		wantErr bool
 	}{
 		{
@@ -186,7 +176,6 @@ func TestBulkDeleteObjects(t *testing.T) {
 				api:        MockNetboxClient,
 			},
 			// See predefined values in api_test for mockserver
-			want:    TagPatchResponse,
 			wantErr: false,
 		},
 	}

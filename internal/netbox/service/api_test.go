@@ -94,7 +94,7 @@ func TestNetboxAPI_doRequest(t *testing.T) {
 				path:   "/api/status/",
 				body:   nil,
 			},
-			want:    &APIResponse{StatusCode: http.StatusOK, Body: []byte(VersionResponse)},
+			want:    &APIResponse{StatusCode: http.StatusOK, Body: []byte(MockVersionResponseJSON)},
 			wantErr: false,
 		},
 		{
