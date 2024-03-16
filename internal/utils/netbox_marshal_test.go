@@ -169,13 +169,13 @@ func TestNetboxJsonMarshalWithChoiceAttr(t *testing.T) {
 // 		NetboxObject: objects.NetboxObject{
 // 			Tags: []*objects.Tag{
 // 				&objects.Tag{
-// 					Id: 4,
+// 					ID: 4,
 // 				},
 // 				&objects.Tag{
-// 					Id: 22,
+// 					ID: 22,
 // 				},
 // 				&objects.Tag{
-// 					Id: 14,
+// 					ID: 14,
 // 				},
 // 			},
 // 			Description: "10GB/s pNIC (vSwitch0)",

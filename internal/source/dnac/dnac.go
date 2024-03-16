@@ -17,20 +17,20 @@ type DnacSource struct {
 	common.Config
 
 	// Dnac fetched data. Initialized in init functions.
-	Sites      map[string]dnac.ResponseSitesGetSiteResponse                // SiteId -> Site
-	Devices    map[string]dnac.ResponseDevicesGetDeviceListResponse        // DeviceId -> Device
-	Interfaces map[string]dnac.ResponseDevicesGetAllInterfacesResponse     // InterfaceId -> Interface
-	Vlans      map[int]dnac.ResponseDevicesGetDeviceInterfaceVLANsResponse // VlanId -> Vlan
+	Sites      map[string]dnac.ResponseSitesGetSiteResponse                // SiteID -> Site
+	Devices    map[string]dnac.ResponseDevicesGetDeviceListResponse        // DeviceID -> Device
+	Interfaces map[string]dnac.ResponseDevicesGetAllInterfacesResponse     // InterfaceID -> Interface
+	Vlans      map[int]dnac.ResponseDevicesGetDeviceInterfaceVLANsResponse // VlanID -> Vlan
 	// Relations between dnac data. Initialized in init functions.
-	Site2Devices          map[string]map[string]bool // Site Id - > set of device Ids
-	Device2Site           map[string]string          // Device Id -> Site Id
-	DeviceID2InterfaceIDs map[string][]string        // DeviceId -> []InterfaceID
+	Site2Devices          map[string]map[string]bool // Site ID - > set of device IDs
+	Device2Site           map[string]string          // Device ID -> Site ID
+	DeviceID2InterfaceIDs map[string][]string        // DeviceID -> []InterfaceID
 
 	// Netbox related data for easier access. Initialized in sync functions.
-	VID2nbVlan              map[int]*objects.Vlan         // VlanId -> nbVlan
-	SiteID2nbSite           map[string]*objects.Site      // SiteId -> nbSite
-	DeviceID2nbDevice       map[string]*objects.Device    // DeviceId -> nbDevice
-	InterfaceID2nbInterface map[string]*objects.Interface // InterfaceId -> nbInterface
+	VID2nbVlan              map[int]*objects.Vlan         // VlanID -> nbVlan
+	SiteID2nbSite           map[string]*objects.Site      // SiteID -> nbSite
+	DeviceID2nbDevice       map[string]*objects.Device    // DeviceID -> nbDevice
+	InterfaceID2nbInterface map[string]*objects.Interface // InterfaceID -> nbInterface
 
 	// User defined relations
 	HostTenantRelations map[string]string

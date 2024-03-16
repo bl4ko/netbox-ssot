@@ -57,7 +57,7 @@ type IPAddress struct {
 }
 
 func (ip IPAddress) String() string {
-	return fmt.Sprintf("IPAddress{Id: %d, Address: %s, Status: %s, DNSName: %s}", ip.ID, ip.Address, ip.Status, ip.DNSName)
+	return fmt.Sprintf("IPAddress{ID: %d, Address: %s, Status: %s, DNSName: %s}", ip.ID, ip.Address, ip.Status, ip.DNSName)
 }
 
 const (
@@ -110,7 +110,7 @@ type Vlan struct {
 }
 
 func (v Vlan) String() string {
-	return fmt.Sprintf("Vlan{Id: %d, Name: %s, Vid: %d, Status: %s}", v.ID, v.Name, v.Vid, v.Status)
+	return fmt.Sprintf("Vlan{ID: %d, Name: %s, Vid: %d, Status: %s}", v.ID, v.Name, v.Vid, v.Status)
 }
 
 type IPRange struct {

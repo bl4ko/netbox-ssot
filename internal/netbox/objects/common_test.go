@@ -50,7 +50,7 @@ func TestNetboxObject_String(t *testing.T) {
 					constants.CustomFieldSourceName: "test",
 				},
 			},
-			want: fmt.Sprintf("Id: %d, Tags: %s, Description: %s", 1, []*Tag{
+			want: fmt.Sprintf("ID: %d, Tags: %s, Description: %s", 1, []*Tag{
 				{Name: "Test tag1"}, {Name: "Test tag2"},
 			}, "Test description"),
 		},

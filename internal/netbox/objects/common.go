@@ -33,5 +33,5 @@ type NetboxObject struct {
 }
 
 func (n NetboxObject) String() string {
-	return fmt.Sprintf("Id: %d, Tags: %s, Description: %s", n.ID, n.Tags, n.Description)
+	return fmt.Sprintf("ID: %d, Tags: %s, Description: %s", n.ID, n.Tags, n.Description)
 }

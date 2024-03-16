@@ -1,6 +1,9 @@
 package objects
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestTenant_String(t *testing.T) {
 	tests := []struct {
@@ -8,7 +11,13 @@ func TestTenant_String(t *testing.T) {
 		tr   Tenant
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test tenant correct string",
+			tr: Tenant{
+				Name: "Test tenant",
+			},
+			want: "Tenant{Name: Test tenant}",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -25,7 +34,13 @@ func TestContactRole_String(t *testing.T) {
 		cr   ContactRole
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test contact role correct string",
+			cr: ContactRole{
+				Name: "Test contact role",
+			},
+			want: "ContactRole{Name: Test contact role}",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -59,7 +74,23 @@ func TestContactAssignment_String(t *testing.T) {
 		ca   ContactAssignment
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test contact assignment correct string",
+			ca: ContactAssignment{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+				ContentType: "virtualization.virtual_machine",
+				Contact: &Contact{
+					Name: "Test contact",
+				},
+				Role: &ContactRole{
+					Name: "Test contact role",
+				},
+				ObjectID: 5,
+			},
+			want: fmt.Sprintf("ContactAssignment{ContentType: %s, ObjectID: %d, %v, %v}", "virtualization.virtual_machine", 5, Contact{Name: "Test contact"}, ContactRole{Name: "Test contact role"}),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

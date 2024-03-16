@@ -108,7 +108,7 @@ func JSONDiffMapExceptID(newObj, existingObj interface{}, resetFields bool, sour
 		if fieldName == "NetboxObject" {
 			netboxObjectDiffMap, err := JSONDiffMapExceptID(newObject.Field(i).Interface(), existingObject.Field(i).Interface(), resetFields, source2priority)
 			if err != nil {
-				return nil, fmt.Errorf("error processing JsonDiffMapExceptId when processing NetboxObject %s", err)
+				return nil, fmt.Errorf("error processing JsonDiffMapExceptID when processing NetboxObject %s", err)
 			}
 			for k, v := range netboxObjectDiffMap {
 				diff[k] = v
@@ -153,19 +153,19 @@ func JSONDiffMapExceptID(newObj, existingObj interface{}, resetFields bool, sour
 		case reflect.Slice:
 			err := addSliceDiff(newObjectField, existingObjectField, jsonTag, hasPriority, diff)
 			if err != nil {
-				return nil, fmt.Errorf("error processing JsonDiffMapExceptId when processing slice %s", err)
+				return nil, fmt.Errorf("error processing JsonDiffMapExceptID when processing slice %s", err)
 			}
 
 		case reflect.Struct:
 			err := addStructDiff(newObjectField, existingObjectField, jsonTag, hasPriority, diff)
 			if err != nil {
-				return nil, fmt.Errorf("error processing JsonDiffMapExceptId when processing struct %s", err)
+				return nil, fmt.Errorf("error processing JsonDiffMapExceptID when processing struct %s", err)
 			}
 
 		case reflect.Map:
 			err := addMapDiff(newObjectField, existingObjectField, jsonTag, hasPriority, diff)
 			if err != nil {
-				return nil, fmt.Errorf("error processing JsonDiffMapExceptId when processing map %s", err)
+				return nil, fmt.Errorf("error processing JsonDiffMapExceptID when processing map %s", err)
 			}
 
 		default:

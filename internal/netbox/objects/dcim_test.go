@@ -1,6 +1,9 @@
 package objects
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestSite_String(t *testing.T) {
 	tests := []struct {
@@ -8,7 +11,16 @@ func TestSite_String(t *testing.T) {
 		s    Site
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Correct string output for site",
+			s: Site{
+				Name:      "Test site",
+				Slug:      "test_site",
+				Latitude:  68.034,
+				Longitude: 69.324,
+			},
+			want: "Site{Name: Test site}",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -25,6 +37,17 @@ func TestPlatform_String(t *testing.T) {
 		p    Platform
 		want string
 	}{
+		{
+			name: "Correct string output for platform",
+			p: Platform{
+				Name: "TestPlatform",
+				Slug: "testplatform",
+				Manufacturer: &Manufacturer{
+					Name: "TestManufacturer",
+				},
+			},
+			want: fmt.Sprintf("Platform{Name: %s, Manufacturer: %s}", "TestPlatform", Manufacturer{Name: "TestManufacturer"}),
+		},
 		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
@@ -42,7 +65,14 @@ func TestManufacturer_String(t *testing.T) {
 		m    Manufacturer
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Correct string representation of manufacturer",
+			m: Manufacturer{
+				Name: "Test manufacturer",
+				Slug: "test_manufacturer",
+			},
+			want: "Manufacturer{Name: Test manufacturer}",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -59,7 +89,16 @@ func TestDeviceType_String(t *testing.T) {
 		dt   DeviceType
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Correct string representation of DeviceType",
+			dt: DeviceType{
+				Manufacturer: &Manufacturer{
+					Name: "Test manufacturer",
+				},
+				Model: "test model",
+			},
+			want: fmt.Sprintf("DeviceType{Manufacturer: %s, Model: %s}", "Test manufacturer", "test model"),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -76,7 +115,13 @@ func TestDeviceRole_String(t *testing.T) {
 		dr   DeviceRole
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Correct string representation of Device Role",
+			dr: DeviceRole{
+				Name: "Test device-role",
+			},
+			want: "DeviceRole{Name: Test device-role}",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -93,7 +138,25 @@ func TestDevice_String(t *testing.T) {
 		d    Device
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Correct string representation of Device",
+			d: Device{
+				Name: "Test device",
+				DeviceType: &DeviceType{
+					Manufacturer: &Manufacturer{
+						Name: "Test manufacturer",
+					},
+					Model: "test model",
+				},
+				DeviceRole: &DeviceRole{
+					Name: "Test device-role",
+				},
+				Site: &Site{
+					Name: "Test site",
+				},
+			},
+			want: fmt.Sprintf("Device{Name: %s, %s, %s, %s}", "Test device", "DeviceType{Manufacturer: Test manufacturer, Model: test model}", "DeviceRole{Name: Test device-role}", "Site{Name: Test site}"),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -110,7 +173,29 @@ func TestInterface_String(t *testing.T) {
 		i    Interface
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Correct string representation of Interface",
+			i: Interface{
+				Name: "Test interface",
+				Type: &OtherInterfaceType,
+				Device: &Device{
+					Name: "Test device",
+					DeviceType: &DeviceType{
+						Manufacturer: &Manufacturer{
+							Name: "Test manufacturer",
+						},
+						Model: "test model",
+					},
+					DeviceRole: &DeviceRole{
+						Name: "Test device-role",
+					},
+					Site: &Site{
+						Name: "Test site",
+					},
+				},
+			},
+			want: fmt.Sprintf("Interface{Name: %s, Device: %s, Type: %s}", "Test interface", "Test device", OtherInterfaceType.Label),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

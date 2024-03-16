@@ -8,7 +8,18 @@ func TestIPAddress_String(t *testing.T) {
 		ip   IPAddress
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test ip address correct string",
+			ip: IPAddress{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+				Address: "172.18.19.20",
+				Status:  &IPAddressStatusActive,
+				DNSName: "test.example.com",
+			},
+			want: "IPAddress{ID: 1, Address: 172.18.19.20, Status: active, DNSName: test.example.com}",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -25,7 +36,15 @@ func TestVlanGroup_String(t *testing.T) {
 		vg   VlanGroup
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test vlan group correct string",
+			vg: VlanGroup{
+				Name:   "Test vlan group",
+				MinVid: 1,
+				MaxVid: 4094,
+			},
+			want: "VlanGroup{Name: Test vlan group, MinVid: 1, MaxVid: 4094}",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -42,7 +61,18 @@ func TestVlan_String(t *testing.T) {
 		v    Vlan
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test vlan correct string",
+			v: Vlan{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+				Name:   "Test vlan",
+				Vid:    10,
+				Status: &VlanStatusActive,
+			},
+			want: "Vlan{ID: 1, Name: Test vlan, Vid: 10, Status: active}",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -59,7 +89,13 @@ func TestPrefix_String(t *testing.T) {
 		p    Prefix
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test prefix correct string",
+			p: Prefix{
+				Prefix: "172.18.19.20/24",
+			},
+			want: "Prefix{Prefix: 172.18.19.20/24}",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

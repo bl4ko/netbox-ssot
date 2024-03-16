@@ -15,7 +15,7 @@ type Tag struct {
 }
 
 func (t Tag) String() string {
-	return fmt.Sprintf("Tag{Id: %d, Name: %s, Slug: %s, Color: %s, Description: %s}", t.ID, t.Name, t.Slug, t.Color, t.Description)
+	return fmt.Sprintf("Tag{Name: %s, Description: %s}", t.Name, t.Description)
 }
 
 // CustomFieldTypes are predefined netbox's types for CustomFields.
@@ -93,5 +93,5 @@ type CustomField struct {
 }
 
 func (cf CustomField) String() string {
-	return fmt.Sprintf("CustomField{Id: %d, Name: %s, Label: %s, ...}", cf.ID, cf.Name, cf.Label)
+	return fmt.Sprintf("CustomField{ID: %d, Name: %s}", cf.ID, cf.Name)
 }

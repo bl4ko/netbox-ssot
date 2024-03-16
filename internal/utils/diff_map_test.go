@@ -85,10 +85,10 @@ func TestPrimaryAttributesDiff(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			outputDiff, err := JSONDiffMapExceptID(tt.newStruct, tt.existingStruct, tt.resetFields, nil)
 			if err != nil {
-				t.Errorf("JsonDiffMapExceptId() error = %v", err)
+				t.Errorf("JsonDiffMapExceptID() error = %v", err)
 			}
 			if !reflect.DeepEqual(outputDiff, tt.expectedDiff) {
-				t.Errorf("JsonDiffMapExceptId() = %v, want %v", outputDiff, tt.expectedDiff)
+				t.Errorf("JsonDiffMapExceptID() = %v, want %v", outputDiff, tt.expectedDiff)
 			}
 		})
 	}
@@ -152,10 +152,10 @@ func TestChoicesAttributesDiff(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			outputDiff, err := JSONDiffMapExceptID(tt.newStruct, tt.existingStruct, tt.resetFields, nil)
 			if err != nil {
-				t.Errorf("JsonDiffMapExceptId() error = %v", err)
+				t.Errorf("JsonDiffMapExceptID() error = %v", err)
 			}
 			if !reflect.DeepEqual(outputDiff, tt.expectedDiff) {
-				t.Errorf("JsonDiffMapExceptId() = %v, want %v", outputDiff, tt.expectedDiff)
+				t.Errorf("JsonDiffMapExceptID() = %v, want %v", outputDiff, tt.expectedDiff)
 			}
 		})
 	}
@@ -228,10 +228,10 @@ func TestStructAttributeDiff(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			outputDiff, err := JSONDiffMapExceptID(tt.newStruct, tt.existingStruct, tt.resetFields, nil)
 			if err != nil {
-				t.Errorf("JsonDiffMapExceptId() error = %v", err)
+				t.Errorf("JsonDiffMapExceptID() error = %v", err)
 			}
 			if !reflect.DeepEqual(outputDiff, tt.expectedDiff) {
-				t.Errorf("JsonDiffMapExceptId() = %v, want %v", outputDiff, tt.expectedDiff)
+				t.Errorf("JsonDiffMapExceptID() = %v, want %v", outputDiff, tt.expectedDiff)
 			}
 		})
 	}
@@ -310,10 +310,10 @@ func TestSliceAttributeDiff(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			outputDiff, err := JSONDiffMapExceptID(tt.newStruct, tt.existingStruct, tt.resetFields, nil)
 			if err != nil {
-				t.Errorf("JsonDiffMapExceptId() error = %v", err)
+				t.Errorf("JsonDiffMapExceptID() error = %v", err)
 			}
 			if !reflect.DeepEqual(outputDiff, tt.expectedDiff) {
-				t.Errorf("JsonDiffMapExceptId() = %v, want %v", outputDiff, tt.expectedDiff)
+				t.Errorf("JsonDiffMapExceptID() = %v, want %v", outputDiff, tt.expectedDiff)
 			}
 		})
 	}
@@ -417,10 +417,10 @@ func TestMapAttributeDiff(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			outputDiff, err := JSONDiffMapExceptID(tt.newStruct, tt.existingStruct, tt.resetFields, nil)
 			if err != nil {
-				t.Errorf("JsonDiffMapExceptId() error = %v", err)
+				t.Errorf("JsonDiffMapExceptID() error = %v", err)
 			}
 			if !reflect.DeepEqual(outputDiff, tt.expectedDiff) {
-				t.Errorf("JsonDiffMapExceptId() = %v, want %v", outputDiff, tt.expectedDiff)
+				t.Errorf("JsonDiffMapExceptID() = %v, want %v", outputDiff, tt.expectedDiff)
 			}
 		})
 	}
@@ -520,10 +520,10 @@ func TestPriorityMergeDiff(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			outputDiff, err := JSONDiffMapExceptID(tt.newStruct, tt.existingStruct, tt.resetFields, tt.sourcePriority)
 			if err != nil {
-				t.Errorf("JsonDiffMapExceptId() error = %v", err)
+				t.Errorf("JsonDiffMapExceptID() error = %v", err)
 			}
 			if !reflect.DeepEqual(outputDiff, tt.expectedDiff) {
-				t.Errorf("JsonDiffMapExceptId() = %v, want %v", outputDiff, tt.expectedDiff)
+				t.Errorf("JsonDiffMapExceptID() = %v, want %v", outputDiff, tt.expectedDiff)
 			}
 		})
 	}

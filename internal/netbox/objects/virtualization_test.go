@@ -8,7 +8,13 @@ func TestClusterType_String(t *testing.T) {
 		ct   ClusterType
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test cluster type correct string",
+			ct: ClusterType{
+				Name: "Test cluster type",
+			},
+			want: "ClusterType{Name: Test cluster type}",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -25,7 +31,14 @@ func TestCluster_String(t *testing.T) {
 		c    Cluster
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test cluster correct string",
+			c: Cluster{
+				Name: "Test cluster",
+				Type: &ClusterType{Name: "ovirt"},
+			},
+			want: "Cluster{Name: Test cluster, Type: ovirt}",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -42,7 +55,16 @@ func TestVM_String(t *testing.T) {
 		vm   VM
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test vm correct string",
+			vm: VM{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+				Name: "Test vm",
+			},
+			want: "VM{ID: 1, Name: Test vm}",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -59,7 +81,14 @@ func TestVMInterface_String(t *testing.T) {
 		vmi  VMInterface
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test vm interface correct string",
+			vmi: VMInterface{
+				Name: "Test vm interface",
+				VM:   &VM{NetboxObject: NetboxObject{ID: 1}, Name: "Test vm"},
+			},
+			want: "VMInterface{Name: Test vm interface, VM: Test vm}",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
