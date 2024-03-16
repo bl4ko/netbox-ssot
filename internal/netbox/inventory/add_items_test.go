@@ -37,7 +37,7 @@ func TestNetboxInventory_AddTag(t *testing.T) {
 		{
 			name: "Test new tag add",
 			nbi:  MockInventory,
-			args: args{ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "test"), newTag: &objects.Tag{Name: "new tag", Description: "New Tag", Color: objects.ColorBlack, Slug: "new_tag"}},
+			args: args{ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "test"), newTag: &objects.Tag{Name: "new tag", Description: "New Tag", Color: constants.ColorBlack, Slug: "new_tag"}},
 			want: service.TagCreateResponse,
 		},
 	}

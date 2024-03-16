@@ -2,14 +2,16 @@ package objects
 
 import (
 	"fmt"
+
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 )
 
 type Tag struct {
-	ID          int    `json:"id,omitempty"`
-	Name        string `json:"name,omitempty"`
-	Slug        string `json:"slug,omitempty"`
-	Color       Color  `json:"color,omitempty"`
-	Description string `json:"description,omitempty"`
+	ID          int             `json:"id,omitempty"`
+	Name        string          `json:"name,omitempty"`
+	Slug        string          `json:"slug,omitempty"`
+	Color       constants.Color `json:"color,omitempty"`
+	Description string          `json:"description,omitempty"`
 }
 
 func (t Tag) String() string {

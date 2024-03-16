@@ -1,7 +1,5 @@
 package constants
 
-import "github.com/bl4ko/netbox-ssot/internal/netbox/objects"
-
 type SourceType string
 
 const (
@@ -21,18 +19,50 @@ const (
 	DefaultSite         string = "DefaultSite"
 )
 
+type Color string
+
+const (
+	ColorDarkRed    = "aa1409"
+	ColorRed        = "f44336"
+	ColorPink       = "e91e63"
+	ColorRose       = "ffe4e1"
+	ColorFuchsia    = "ff66ff"
+	ColorPurple     = "9c27b0"
+	ColorDarkPurple = "673ab7"
+	ColorIndigo     = "3f51b5"
+	ColorBlue       = "2196f3"
+	ColorLightBlue  = "03a9f4"
+	ColorCyan       = "00bcd4"
+	ColorTeal       = "009688"
+	ColorAqua       = "00ffff"
+	ColorDarkGreen  = "2f6a31"
+	ColorGreen      = "4caf50"
+	ColorLightGreen = "8bc34a"
+	ColorLime       = "cddc39"
+	ColorYellow     = "ffeb3b"
+	ColorAmber      = "ffc107"
+	ColorOrange     = "ff9800"
+	ColorDarkOrange = "ff5722"
+	ColorBrown      = "795548"
+	ColorLightGrey  = "c0c0c0"
+	ColorGrey       = "9e9e9e"
+	ColorDarkGrey   = "607d8b"
+	ColorBlack      = "111111"
+	ColorWhite      = "ffffff"
+)
+
 // Default mappings of sources to colors (for tags).
 var DefaultSourceToTagColorMap = map[SourceType]string{
-	Ovirt:  objects.ColorDarkRed,
-	Vmware: objects.ColorLightGreen,
-	Dnac:   objects.ColorLightBlue,
+	Ovirt:  ColorDarkRed,
+	Vmware: ColorLightGreen,
+	Dnac:   ColorLightBlue,
 }
 
 // Object for mapping source type to tag color.
 var SourceTypeToTagColorMap = map[SourceType]string{
-	Ovirt:  objects.ColorRed,
-	Vmware: objects.ColorGreen,
-	Dnac:   objects.ColorBlue,
+	Ovirt:  ColorRed,
+	Vmware: ColorGreen,
+	Dnac:   ColorBlue,
 }
 
 const (
