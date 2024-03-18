@@ -1,5 +1,11 @@
 # Netbox-SSOT
 
+[![Go](https://github.com/bl4ko/netbox-ssot/actions/workflows/ci.yml/badge.svg)](https://github.com/bl4ko/netbox-ssot/actions/workflows/ci.yml)
+![GitHub last commit](https://img.shields.io/github/last-commit/bl4ko/netbox-ssot)
+![GitHub Tag](https://img.shields.io/github/v/tag/bl4ko/netbox-ssot)
+[![codecov](https://codecov.io/gh/bl4ko/netbox-ssot/graph/badge.svg?token=W0GQQKS6BP)](https://codecov.io/gh/bl4ko/netbox-ssot)
+![GitHub License](https://img.shields.io/github/license/bl4ko/netbox-ssot)
+
 Netbox-ssot is a small but powerful microservice designed to
 keep your Netbox instance in sync with external data sources.
 
