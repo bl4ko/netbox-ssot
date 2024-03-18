@@ -12,31 +12,21 @@ import (
 // to get the hostname. If the reverse lookup fails, it returns an empty string.
 func ReverseLookup(ipAddress string) string {
 	names, err := net.LookupAddr(ipAddress)
-	if err != nil {
+	if err != nil || len(names) == 0 {
 		return ""
 	}
-
-	if len(names) > 0 {
-		domain := strings.TrimSuffix(names[0], ".")
-		return domain
-	}
-
-	return ""
+	domain := strings.TrimSuffix(names[0], ".")
+	return domain
 }
 
 // Function that receives hostname and performs a forward lookup
 // to get the IP address. If the forward lookup fails, it returns an empty string.
 func Lookup(hostname string) string {
 	ips, err := net.LookupIP(hostname)
-	if err != nil {
+	if err != nil || len(ips) == 0 {
 		return ""
 	}
-
-	if len(ips) > 0 {
-		return ips[0].String()
-	}
-
-	return ""
+	return ips[0].String()
 }
 
 // Function that converts string representation of ipv4 mask (e.g. 255.255.255.128) to
@@ -77,4 +67,21 @@ func SubnetContainsIPAddress(ipAddress string, subnet string) bool {
 		return false
 	}
 	return ipnet.Contains(ip)
+}
+
+// VerifySubnet checks if a given subnet is valid.
+func VerifySubnet(subnet string) bool {
+	_, _, err := net.ParseCIDR(subnet)
+	return err == nil
+}
+
+// SubnetsContainIPAddress checks if array of subnets contain,
+// the ip address.
+func SubnetsContainIPAddress(ipAddress string, subnets []string) bool {
+	for _, subnet := range subnets {
+		if SubnetContainsIPAddress(ipAddress, subnet) {
+			return true
+		}
+	}
+	return false
 }
