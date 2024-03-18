@@ -49,14 +49,14 @@ jobs:
 
       - name: Test with Go
         if: steps.changed-files.outputs.any_modified == 'true'
-        run: go test ./... -json > TestResults-${{ matrix.go-version }}.json
+        run: go test -race -coverprofile=coverage.txt -covermode=atomic ./...
 
-      - name: Upload Go test results
-        if: steps.changed-files.outputs.any_modified == 'true'
-        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4.0.1
         with:
-          name: Go-results-${{ matrix.go-version }}
-          path: TestResults-${{ matrix.go-version }}.json
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: cover.txt
+          slug: bl4ko/netbox-ssot
 
   vulnerabilities:
     name: Check for vulnerabilities
@@ -77,13 +77,13 @@ jobs:
             go.sum
             .dockerignore
             Dockerfile
-      
+
       # https://github.com/aquasecurity/trivy-action?tab=readme-ov-file#scan-ci-pipeline
       - name: Build an image from Dockerfile
         if: steps.changed-files.outputs.any_modified == 'true'
         run: |
           docker build -t netbox-ssot:${{ github.sha }} .
-      
+
       - name: Run Trivy vulnerability scanner
         if: steps.changed-files.outputs.any_modified == 'true'
         uses: aquasecurity/trivy-action@master
