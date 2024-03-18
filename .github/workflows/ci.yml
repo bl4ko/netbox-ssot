@@ -1,4 +1,4 @@
-name: Run tests and upload results
+name: Continious integration
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   tests:
-    name: Run tests
+    name: Run tests and upload results
     runs-on: ubuntu-latest
     strategy:
       matrix:

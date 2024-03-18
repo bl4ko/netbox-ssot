@@ -1,5 +1,5 @@
-name: gitleaks
-on: 
+name: Check for git secrets with Gitleaks
+on:
   pull_request:
     branches:
       - main
