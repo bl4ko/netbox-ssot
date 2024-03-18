@@ -53,7 +53,7 @@ jobs:
 
       - name: Upload coverage reports to Codecov
         if: steps.changed-files.outputs.any_modified == 'true'
-        uses: codecov/codecov-action@v4.0.1
+        uses: codecov/codecov-action@54bcd8715eee62d40e33596ef5e8f0f48dbbccab # v4.1.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: cover.txt
