@@ -407,28 +407,30 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 		for nicID, ipv4 := range nicID2IPv4 {
 			nbNic := nicID2nic[nicID]
 			address := strings.Split(ipv4, "/")[0]
-			nbIPAddress, err := nbi.AddIPAddress(o.Ctx, &objects.IPAddress{
-				NetboxObject: objects.NetboxObject{
-					Tags: o.Config.SourceTags,
-					CustomFields: map[string]string{
-						constants.CustomFieldSourceName: o.SourceConfig.Name,
+			if !utils.SubnetsContainIPAddress(address, o.SourceConfig.IgnoredSubnets) {
+				nbIPAddress, err := nbi.AddIPAddress(o.Ctx, &objects.IPAddress{
+					NetboxObject: objects.NetboxObject{
+						Tags: o.Config.SourceTags,
+						CustomFields: map[string]string{
+							constants.CustomFieldSourceName: o.SourceConfig.Name,
+						},
 					},
-				},
-				Address:            ipv4,
-				Status:             &objects.IPAddressStatusActive, // TODO
-				DNSName:            utils.ReverseLookup(address),
-				AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
-				AssignedObjectID:   nbNic.ID,
-			})
-			if err != nil {
-				return fmt.Errorf("add ipv4 address: %s", err)
-			}
-			if address == hostIP {
-				hostCopy := *nbHost
-				hostCopy.PrimaryIPv4 = nbIPAddress
-				_, err := nbi.AddDevice(o.Ctx, &hostCopy)
+					Address:            ipv4,
+					Status:             &objects.IPAddressStatusActive, // TODO
+					DNSName:            utils.ReverseLookup(address),
+					AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
+					AssignedObjectID:   nbNic.ID,
+				})
 				if err != nil {
-					return fmt.Errorf("adding primary ipv4 address: %s", err)
+					return fmt.Errorf("add ipv4 address: %s", err)
+				}
+				if address == hostIP {
+					hostCopy := *nbHost
+					hostCopy.PrimaryIPv4 = nbIPAddress
+					_, err := nbi.AddDevice(o.Ctx, &hostCopy)
+					if err != nil {
+						return fmt.Errorf("adding primary ipv4 address: %s", err)
+					}
 				}
 			}
 		}
@@ -831,36 +833,38 @@ func (o *OVirtSource) syncVMInterfaces(nbi *inventory.NetboxInventory, ovirtVM *
 										}
 									}
 
-									newIPAddress, err := nbi.AddIPAddress(o.Ctx, &objects.IPAddress{
-										NetboxObject: objects.NetboxObject{
-											Tags: o.Config.SourceTags,
-											CustomFields: map[string]string{
-												constants.CustomFieldSourceName: o.SourceConfig.Name,
+									if !utils.SubnetsContainIPAddress(ipAddress, o.SourceConfig.IgnoredSubnets) {
+										newIPAddress, err := nbi.AddIPAddress(o.Ctx, &objects.IPAddress{
+											NetboxObject: objects.NetboxObject{
+												Tags: o.Config.SourceTags,
+												CustomFields: map[string]string{
+													constants.CustomFieldSourceName: o.SourceConfig.Name,
+												},
 											},
-										},
-										Address:            ipAddress + ipMask,
-										Tenant:             netboxVM.Tenant,
-										Status:             &objects.IPAddressStatusActive,
-										DNSName:            hostname,
-										AssignedObjectType: objects.AssignedObjectTypeVMInterface,
-										AssignedObjectID:   vmInterface.ID,
-									})
+											Address:            ipAddress + ipMask,
+											Tenant:             netboxVM.Tenant,
+											Status:             &objects.IPAddressStatusActive,
+											DNSName:            hostname,
+											AssignedObjectType: objects.AssignedObjectTypeVMInterface,
+											AssignedObjectID:   vmInterface.ID,
+										})
 
-									if err != nil {
-										// TODO: return should be here, commented just for now
-										// return fmt.Errorf("failed to sync oVirt vm's interface %s ip %s: %v", vmInterface, ip.MustAddress(), err)
-										o.Logger.Error(o.Ctx, fmt.Sprintf("failed to sync oVirt vm's interface %s ip %s: %v", vmInterface, ip.MustAddress(), err))
-									}
+										if err != nil {
+											// TODO: return should be here, commented just for now
+											// return fmt.Errorf("failed to sync oVirt vm's interface %s ip %s: %v", vmInterface, ip.MustAddress(), err)
+											o.Logger.Error(o.Ctx, fmt.Sprintf("failed to sync oVirt vm's interface %s ip %s: %v", vmInterface, ip.MustAddress(), err))
+										}
 
-									// Check if ip is primary
-									if ipVersion == "v4" {
-										vmIP := utils.Lookup(netboxVM.Name)
-										if vmIP != "" && vmIP == ipAddress || netboxVM.PrimaryIPv4 == nil {
-											vmCopy := *netboxVM
-											vmCopy.PrimaryIPv4 = newIPAddress
-											_, err := nbi.AddVM(o.Ctx, &vmCopy)
-											if err != nil {
-												return fmt.Errorf("adding primary ipv4 address: %s", err)
+										// Check if ip is primary
+										if ipVersion == "v4" {
+											vmIP := utils.Lookup(netboxVM.Name)
+											if vmIP != "" && vmIP == ipAddress || netboxVM.PrimaryIPv4 == nil {
+												vmCopy := *netboxVM
+												vmCopy.PrimaryIPv4 = newIPAddress
+												_, err := nbi.AddVM(o.Ctx, &vmCopy)
+												if err != nil {
+													return fmt.Errorf("adding primary ipv4 address: %s", err)
+												}
 											}
 										}
 									}

@@ -35,7 +35,7 @@ func TestValidonfig(t *testing.T) {
 				Hostname:   "testolvm.example.com",
 				Username:   "admin@internal",
 				Password:   "adminpass",
-				PermittedSubnets: []string{
+				IgnoredSubnets: []string{
 					"172.16.0.0/12",
 					"192.168.0.0/16",
 					"fd00::/8",
@@ -52,7 +52,7 @@ func TestValidonfig(t *testing.T) {
 				Hostname:   "ovirt.example.com",
 				Username:   "admin",
 				Password:   "adminpass",
-				PermittedSubnets: []string{
+				IgnoredSubnets: []string{
 					"172.16.0.0/12",
 				},
 				ValidateCert: false,

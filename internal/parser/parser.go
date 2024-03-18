@@ -54,17 +54,17 @@ func (n NetboxConfig) String() string {
 }
 
 type SourceConfig struct {
-	Name             string               `yaml:"name"`
-	Type             constants.SourceType `yaml:"type"`
-	HTTPScheme       HTTPScheme           `yaml:"httpScheme"`
-	Hostname         string               `yaml:"hostname"`
-	Port             int                  `yaml:"port"`
-	Username         string               `yaml:"username"`
-	Password         string               `yaml:"password"`
-	PermittedSubnets []string             `yaml:"permittedSubnets"`
-	ValidateCert     bool                 `yaml:"validateCert"`
-	Tag              string               `yaml:"tag"`
-	TagColor         string               `yaml:"tagColor"`
+	Name           string               `yaml:"name"`
+	Type           constants.SourceType `yaml:"type"`
+	HTTPScheme     HTTPScheme           `yaml:"httpScheme"`
+	Hostname       string               `yaml:"hostname"`
+	Port           int                  `yaml:"port"`
+	Username       string               `yaml:"username"`
+	Password       string               `yaml:"password"`
+	ValidateCert   bool                 `yaml:"validateCert"`
+	Tag            string               `yaml:"tag"`
+	TagColor       string               `yaml:"tagColor"`
+	IgnoredSubnets []string             `yaml:"ignoredSubnets"`
 
 	// Relations
 	HostSiteRelations      []string `yaml:"hostSiteRelations"`
@@ -80,7 +80,7 @@ type SourceConfig struct {
 }
 
 func (s SourceConfig) String() string {
-	return fmt.Sprintf("SourceConfig{Name: %s, Type: %s, HTTPScheme: %s, Hostname: %s, Port: %d, Username: %s, Password: %s, PermittedSubnets: %v, ValidateCert: %t, Tag: %s, TagColor: %s, HostSiteRelations: %v, ClusterSiteRelations: %v, clusterTenantRelations: %v, HostTenantRelations: %v, VmTenantRelations %v, VlanGroupRelations: %v, VlanTenantRelations: %v}", s.Name, s.Type, s.HTTPScheme, s.Hostname, s.Port, s.Username, s.Password, s.PermittedSubnets, s.ValidateCert, s.Tag, s.TagColor, s.HostSiteRelations, s.ClusterSiteRelations, s.ClusterTenantRelations, s.HostTenantRelations, s.VMTenantRelations, s.VlanGroupRelations, s.VlanTenantRelations)
+	return fmt.Sprintf("SourceConfig{Name: %s, Type: %s, HTTPScheme: %s, Hostname: %s, Port: %d, Username: %s, Password: %s, PermittedSubnets: %v, ValidateCert: %t, Tag: %s, TagColor: %s, HostSiteRelations: %v, ClusterSiteRelations: %v, clusterTenantRelations: %v, HostTenantRelations: %v, VmTenantRelations %v, VlanGroupRelations: %v, VlanTenantRelations: %v}", s.Name, s.Type, s.HTTPScheme, s.Hostname, s.Port, s.Username, s.Password, s.IgnoredSubnets, s.ValidateCert, s.Tag, s.TagColor, s.HostSiteRelations, s.ClusterSiteRelations, s.ClusterTenantRelations, s.HostTenantRelations, s.VMTenantRelations, s.VlanGroupRelations, s.VlanTenantRelations)
 }
 
 // Validates the user's config for limits and required fields.
@@ -208,6 +208,13 @@ func validateSourceConfig(config *Config) error {
 		err := validateSourceConfigRelations(externalSource, externalSourceStr)
 		if err != nil {
 			return err
+		}
+		if len(externalSource.IgnoredSubnets) > 0 {
+			for _, ignoredSubnet := range externalSource.IgnoredSubnets {
+				if !utils.VerifySubnet(ignoredSubnet) {
+					return fmt.Errorf("%s.ignoredSubnets wrong format: %s", externalSourceStr, ignoredSubnet)
+				}
+			}
 		}
 	}
 	return nil

@@ -299,7 +299,7 @@ func (ds *DnacSource) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error
 		}
 
 		// Add IP address to the interface
-		if iface.IPv4Address != "" {
+		if iface.IPv4Address != "" && !utils.SubnetsContainIPAddress(iface.IPv4Address, ds.SourceConfig.IgnoredSubnets) {
 			defaultMask := 32
 			if iface.IPv4Mask != "" {
 				maskBits, err := utils.MaskToBits(iface.IPv4Mask)

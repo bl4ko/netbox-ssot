@@ -218,30 +218,32 @@ func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *ob
 		}
 
 		for _, ipAddress := range vmNetwork.IPAddresses {
-			nbIPAddress, err := nbi.AddIPAddress(ps.Ctx, &objects.IPAddress{
-				NetboxObject: objects.NetboxObject{
-					Tags: ps.SourceTags,
-					CustomFields: map[string]string{
-						constants.CustomFieldSourceName: ps.SourceConfig.Name,
+			if !utils.SubnetsContainIPAddress(ipAddress.IPAddress, ps.SourceConfig.IgnoredSubnets) {
+				nbIPAddress, err := nbi.AddIPAddress(ps.Ctx, &objects.IPAddress{
+					NetboxObject: objects.NetboxObject{
+						Tags: ps.SourceTags,
+						CustomFields: map[string]string{
+							constants.CustomFieldSourceName: ps.SourceConfig.Name,
+						},
 					},
-				},
-				Address:            fmt.Sprintf("%s/%d", ipAddress.IPAddress, ipAddress.Prefix),
-				DNSName:            utils.ReverseLookup(ipAddress.IPAddress),
-				Tenant:             nbVM.Tenant,
-				AssignedObjectType: objects.AssignedObjectTypeVMInterface,
-				AssignedObjectID:   nbVMIface.ID,
-				Status:             &objects.IPAddressStatusActive, //TODO: this is hardcoded
-			})
-			if err != nil {
-				return fmt.Errorf("add ip address: %s", err)
-			}
-			switch ipAddress.IPAddressType {
-			case "ipv4":
-				vmIPv4Addresses = append(vmIPv4Addresses, nbIPAddress)
-			case "ipv6":
-				vmIPv6Addresses = append(vmIPv6Addresses, nbIPAddress)
-			default:
-				ps.Logger.Warningf(ps.Ctx, "wrong IP type: %s", ipAddress.IPAddressType)
+					Address:            fmt.Sprintf("%s/%d", ipAddress.IPAddress, ipAddress.Prefix),
+					DNSName:            utils.ReverseLookup(ipAddress.IPAddress),
+					Tenant:             nbVM.Tenant,
+					AssignedObjectType: objects.AssignedObjectTypeVMInterface,
+					AssignedObjectID:   nbVMIface.ID,
+					Status:             &objects.IPAddressStatusActive, //TODO: this is hardcoded
+				})
+				if err != nil {
+					return fmt.Errorf("add ip address: %s", err)
+				}
+				switch ipAddress.IPAddressType {
+				case "ipv4":
+					vmIPv4Addresses = append(vmIPv4Addresses, nbIPAddress)
+				case "ipv6":
+					vmIPv6Addresses = append(vmIPv6Addresses, nbIPAddress)
+				default:
+					ps.Logger.Warningf(ps.Ctx, "wrong IP type: %s", ipAddress.IPAddressType)
+				}
 			}
 		}
 	}

@@ -445,31 +445,33 @@ func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetboxInventory, vcHo
 			return err
 		}
 
-		// Get IPv4 address for this vnic. TODO: filter
+		// Get IPv4 address for this vnic
 		ipv4Address := vnic.Spec.Ip.IpAddress
-		ipv4MaskBits, err := utils.MaskToBits(vnic.Spec.Ip.SubnetMask)
-		if err != nil {
-			return fmt.Errorf("mask to bits: %s", err)
-		}
-		ipv4DNS := utils.ReverseLookup(ipv4Address)
-		nbIPv4Address, err := nbi.AddIPAddress(vc.Ctx, &objects.IPAddress{
-			NetboxObject: objects.NetboxObject{
-				Tags: vc.Config.SourceTags,
-				CustomFields: map[string]string{
-					constants.CustomFieldSourceName: vc.SourceConfig.Name,
+		if !utils.SubnetsContainIPAddress(ipv4Address, vc.SourceConfig.IgnoredSubnets) { // Filter out ignored
+			ipv4MaskBits, err := utils.MaskToBits(vnic.Spec.Ip.SubnetMask)
+			if err != nil {
+				return fmt.Errorf("mask to bits: %s", err)
+			}
+			ipv4DNS := utils.ReverseLookup(ipv4Address)
+			nbIPv4Address, err := nbi.AddIPAddress(vc.Ctx, &objects.IPAddress{
+				NetboxObject: objects.NetboxObject{
+					Tags: vc.Config.SourceTags,
+					CustomFields: map[string]string{
+						constants.CustomFieldSourceName: vc.SourceConfig.Name,
+					},
 				},
-			},
-			Address:            fmt.Sprintf("%s/%d", ipv4Address, ipv4MaskBits),
-			Status:             &objects.IPAddressStatusActive, // TODO
-			DNSName:            ipv4DNS,
-			Tenant:             nbHost.Tenant,
-			AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
-			AssignedObjectID:   nbVnic.ID,
-		})
-		if err != nil {
-			return err
+				Address:            fmt.Sprintf("%s/%d", ipv4Address, ipv4MaskBits),
+				Status:             &objects.IPAddressStatusActive, // TODO
+				DNSName:            ipv4DNS,
+				Tenant:             nbHost.Tenant,
+				AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
+				AssignedObjectID:   nbVnic.ID,
+			})
+			if err != nil {
+				return err
+			}
+			hostIPv4Addresses = append(hostIPv4Addresses, nbIPv4Address)
 		}
-		hostIPv4Addresses = append(hostIPv4Addresses, nbIPv4Address)
 
 		if vnic.Spec.Ip.IpV6Config != nil {
 			for _, ipv6Entry := range vnic.Spec.Ip.IpV6Config.IpV6Address {
@@ -992,22 +994,24 @@ func (vc *VmwareSource) collectVMInterfaceData(nbi *inventory.NetboxInventory, n
 func (vc *VmwareSource) addVMInterfaceIPs(nbi *inventory.NetboxInventory, nbVMInterface *objects.VMInterface, nicIPv4Addresses []string, nicIPv6Addresses []string, vmIPv4Addresses []*objects.IPAddress, vmIPv6Addresses []*objects.IPAddress) ([]*objects.IPAddress, []*objects.IPAddress) {
 	// Add all collected ipv4 addresses for the interface to netbox
 	for _, ipv4Address := range nicIPv4Addresses {
-		nbIPv4Address, err := nbi.AddIPAddress(vc.Ctx, &objects.IPAddress{
-			NetboxObject: objects.NetboxObject{
-				Tags: vc.Config.SourceTags,
-				CustomFields: map[string]string{
-					constants.CustomFieldSourceName: vc.SourceConfig.Name,
+		if !utils.SubnetsContainIPAddress(ipv4Address, vc.SourceConfig.IgnoredSubnets) {
+			nbIPv4Address, err := nbi.AddIPAddress(vc.Ctx, &objects.IPAddress{
+				NetboxObject: objects.NetboxObject{
+					Tags: vc.Config.SourceTags,
+					CustomFields: map[string]string{
+						constants.CustomFieldSourceName: vc.SourceConfig.Name,
+					},
 				},
-			},
-			Address:            ipv4Address,
-			DNSName:            utils.ReverseLookup(ipv4Address),
-			AssignedObjectType: objects.AssignedObjectTypeVMInterface,
-			AssignedObjectID:   nbVMInterface.ID,
-		})
-		if err != nil {
-			vc.Logger.Warningf(vc.Ctx, "adding ipv4 address: %s", err)
+				Address:            ipv4Address,
+				DNSName:            utils.ReverseLookup(ipv4Address),
+				AssignedObjectType: objects.AssignedObjectTypeVMInterface,
+				AssignedObjectID:   nbVMInterface.ID,
+			})
+			if err != nil {
+				vc.Logger.Warningf(vc.Ctx, "adding ipv4 address: %s", err)
+			}
+			vmIPv4Addresses = append(vmIPv4Addresses, nbIPv4Address)
 		}
-		vmIPv4Addresses = append(vmIPv4Addresses, nbIPv4Address)
 	}
 
 	// Add all collected ipv6 addresses for the interface to netbox

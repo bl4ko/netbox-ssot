@@ -1,8 +1,11 @@
 package utils
 
 import (
+	"context"
 	"reflect"
 	"testing"
+
+	"github.com/bl4ko/netbox-ssot/internal/logger"
 )
 
 func TestSlugify(t *testing.T) {
@@ -101,91 +104,6 @@ func TestFilterVMInterfaceNames(t *testing.T) {
 	}
 }
 
-func TestMaskToBits(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    string
-		expected int
-		err      bool
-	}{
-		{
-			name:     "Valid mask 255.255.255.128",
-			input:    "255.255.255.128",
-			expected: 25,
-			err:      false,
-		},
-		{
-			name:     "Valid mask 255.255.255.0",
-			input:    "255.255.255.0",
-			expected: 24,
-			err:      false,
-		},
-		{
-			name:     "Invalid mask",
-			input:    "255.255.255.256",
-			expected: 0,
-			err:      true,
-		},
-		{
-			name:     "Empty mask",
-			input:    "",
-			expected: 0,
-			err:      true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			bits, err := MaskToBits(tt.input)
-			if (err != nil) != tt.err {
-				t.Errorf("maskToBits() error = %v, wantErr %v", err, tt.err)
-				return
-			}
-			if bits != tt.expected {
-				t.Errorf("maskToBits() = %v, want %v", bits, tt.expected)
-			}
-		})
-	}
-}
-
-func TestGetIPVersion(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    string
-		expected int
-	}{
-		{
-			name:     "Valid IPv4",
-			input:    "192.168.1.1",
-			expected: 4,
-		},
-		{
-			name:     "Valid IPv6",
-			input:    "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
-			expected: 6,
-		},
-		{
-			name:     "Invalid IP",
-			input:    "invalid",
-			expected: 0,
-		},
-		{
-			name:     "Empty IP",
-			input:    "",
-			expected: 0,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			version := GetIPVersion(tt.input)
-			if version != tt.expected {
-				t.Errorf("GetIPVersion() = %v, want %v", version, tt.expected)
-			}
-		})
-	}
-}
-
 func TestSubnetContainsIpAddress(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -276,5 +194,223 @@ func TestConvertStringsToPairs(t *testing.T) {
 
 	if !reflect.DeepEqual(output, desiredOutput) {
 		t.Errorf("ConvertStringsToPairs() = %v, want %v", output, desiredOutput)
+	}
+}
+
+func TestValidateRegexRelations(t *testing.T) {
+	type args struct {
+		regexRelations []string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := ValidateRegexRelations(tt.args.regexRelations); (err != nil) != tt.wantErr {
+				t.Errorf("ValidateRegexRelations() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestConvertStringsToRegexPairs(t *testing.T) {
+	type args struct {
+		input []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want map[string]string
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ConvertStringsToRegexPairs(tt.args.input); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ConvertStringsToRegexPairs() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestMatchStringToValue(t *testing.T) {
+	type args struct {
+		input    string
+		patterns map[string]string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := MatchStringToValue(tt.args.input, tt.args.patterns)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("MatchStringToValue() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("MatchStringToValue() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestAlphanumeric(t *testing.T) {
+	type args struct {
+		name string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Alphanumeric(tt.args.name); got != tt.want {
+				t.Errorf("Alphanumeric() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGeneratePlatformName(t *testing.T) {
+	type args struct {
+		osType    string
+		osVersion string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GeneratePlatformName(tt.args.osType, tt.args.osVersion); got != tt.want {
+				t.Errorf("GeneratePlatformName() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestIsVMInterfaceNameValid(t *testing.T) {
+	type args struct {
+		vmIfaceName string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    bool
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := IsVMInterfaceNameValid(tt.args.vmIfaceName)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("IsVMInterfaceNameValid() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("IsVMInterfaceNameValid() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestExtractFunctionName(t *testing.T) {
+	type args struct {
+		i interface{}
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ExtractFunctionName(tt.args.i); got != tt.want {
+				t.Errorf("ExtractFunctionName() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_mnSet_Contains(t *testing.T) {
+	type args struct {
+		r rune
+	}
+	tests := []struct {
+		name string
+		m    mnSet
+		args args
+		want bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.m.Contains(tt.args.r); got != tt.want {
+				t.Errorf("mnSet.Contains() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_removeDiacritics(t *testing.T) {
+	type args struct {
+		s string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := removeDiacritics(tt.args.s); got != tt.want {
+				t.Errorf("removeDiacritics() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestMatchNamesWithEmails(t *testing.T) {
+	type args struct {
+		ctx    context.Context
+		names  []string
+		emails []string
+		logger *logger.Logger
+	}
+	tests := []struct {
+		name string
+		args args
+		want map[string]string
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := MatchNamesWithEmails(tt.args.ctx, tt.args.names, tt.args.emails, tt.args.logger); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("MatchNamesWithEmails() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

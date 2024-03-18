@@ -189,3 +189,55 @@ func TestNetboxJsonMarshalWithChoiceAttr(t *testing.T) {
 // 		TaggedVlans: ,
 // 	}
 // }
+
+func TestNetboxJSONMarshal(t *testing.T) {
+	type args struct {
+		obj interface{}
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    []byte
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NetboxJSONMarshal(tt.args.obj)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NetboxJSONMarshal() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NetboxJSONMarshal() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestStructToNetboxJSONMap(t *testing.T) {
+	type args struct {
+		obj interface{}
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    map[string]interface{}
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := StructToNetboxJSONMap(tt.args.obj)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("StructToNetboxJSONMap() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("StructToNetboxJSONMap() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

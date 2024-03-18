@@ -528,3 +528,187 @@ func TestPriorityMergeDiff(t *testing.T) {
 		})
 	}
 }
+
+func Test_isChoiceEmbedded(t *testing.T) {
+	type args struct {
+		v reflect.Value
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isChoiceEmbedded(tt.args.v); got != tt.want {
+				t.Errorf("isChoiceEmbedded() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_choiceValue(t *testing.T) {
+	type args struct {
+		v reflect.Value
+	}
+	tests := []struct {
+		name string
+		args args
+		want interface{}
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := choiceValue(tt.args.v); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("choiceValue() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_hasPriorityOver(t *testing.T) {
+	type args struct {
+		newObj          reflect.Value
+		existingObj     reflect.Value
+		source2priority map[string]int
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := hasPriorityOver(tt.args.newObj, tt.args.existingObj, tt.args.source2priority); got != tt.want {
+				t.Errorf("hasPriorityOver() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestJSONDiffMapExceptID(t *testing.T) {
+	type args struct {
+		newObj          interface{}
+		existingObj     interface{}
+		resetFields     bool
+		source2priority map[string]int
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    map[string]interface{}
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := JSONDiffMapExceptID(tt.args.newObj, tt.args.existingObj, tt.args.resetFields, tt.args.source2priority)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("JSONDiffMapExceptID() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("JSONDiffMapExceptID() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_addSliceDiff(t *testing.T) {
+	type args struct {
+		newSlice      reflect.Value
+		existingSlice reflect.Value
+		jsonTag       string
+		hasPriority   bool
+		diffMap       map[string]interface{}
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := addSliceDiff(tt.args.newSlice, tt.args.existingSlice, tt.args.jsonTag, tt.args.hasPriority, tt.args.diffMap); (err != nil) != tt.wantErr {
+				t.Errorf("addSliceDiff() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_addStructDiff(t *testing.T) {
+	type args struct {
+		newObj      reflect.Value
+		existingObj reflect.Value
+		jsonTag     string
+		hasPriority bool
+		diffMap     map[string]interface{}
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := addStructDiff(tt.args.newObj, tt.args.existingObj, tt.args.jsonTag, tt.args.hasPriority, tt.args.diffMap); (err != nil) != tt.wantErr {
+				t.Errorf("addStructDiff() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_addMapDiff(t *testing.T) {
+	type args struct {
+		newMap      reflect.Value
+		existingMap reflect.Value
+		jsonTag     string
+		hasPriority bool
+		diffMap     map[string]interface{}
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := addMapDiff(tt.args.newMap, tt.args.existingMap, tt.args.jsonTag, tt.args.hasPriority, tt.args.diffMap); (err != nil) != tt.wantErr {
+				t.Errorf("addMapDiff() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_addPrimaryDiff(t *testing.T) {
+	type args struct {
+		newField      reflect.Value
+		existingField reflect.Value
+		jsonTag       string
+		hasPriority   bool
+		diffMap       map[string]interface{}
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(_ *testing.T) {
+			addPrimaryDiff(tt.args.newField, tt.args.existingField, tt.args.jsonTag, tt.args.hasPriority, tt.args.diffMap)
+		})
+	}
+}
