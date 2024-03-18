@@ -2,9 +2,12 @@ package utils
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"reflect"
 	"testing"
 
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/logger"
 )
 
@@ -206,7 +209,27 @@ func TestValidateRegexRelations(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test valid regex relations",
+			args: args{
+				regexRelations: []string{"disney.* = disney", "p([a-z]+)ch = peach"},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Test missing equal sign in regex relations",
+			args: args{
+				regexRelations: []string{"disney.* = disney", "p([a-z]+)ch peach"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Test wrong regex relations",
+			args: args{
+				regexRelations: []string{"a(b(c = disney", "p([a-z]+)ch = peach"},
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -226,7 +249,15 @@ func TestConvertStringsToRegexPairs(t *testing.T) {
 		args args
 		want map[string]string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "TEst conversion of strings to regex pairs",
+			args: args{
+				input: []string{
+					"regex1 = value1", "regex2 = value2", "regex3 = value3",
+				},
+			},
+			want: map[string]string{"regex1": "value1", "regex2": "value2", "regex3": "value3"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -248,7 +279,17 @@ func TestMatchStringToValue(t *testing.T) {
 		want    string
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Match string to value error",
+			args: args{
+				input: "can't see me",
+				patterns: map[string]string{
+					"$$$wrongregex\\": "wrong",
+				},
+			},
+			want:    "",
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -273,7 +314,13 @@ func TestAlphanumeric(t *testing.T) {
 		args args
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test alphanumeric conversion",
+			args: args{
+				name: "Fix-me99 now",
+			},
+			want: "fixme99_now",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -294,7 +341,14 @@ func TestGeneratePlatformName(t *testing.T) {
 		args args
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test generation of platform name with empty parameters",
+			args: args{
+				osType:    "",
+				osVersion: "",
+			},
+			want: fmt.Sprintf("%s %s", constants.DefaultOSName, constants.DefaultOSVersion),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -315,7 +369,14 @@ func TestIsVMInterfaceNameValid(t *testing.T) {
 		want    bool
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test IsVMInterfaceNameValid works for all vm names",
+			args: args{
+				vmIfaceName: "\\$\\$\\",
+			},
+			want:    true,
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -336,15 +397,38 @@ func TestExtractFunctionName(t *testing.T) {
 		i interface{}
 	}
 	tests := []struct {
-		name string
-		args args
-		want string
+		name        string
+		args        args
+		want        string
+		shouldPanic bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test valid extract function name",
+			args: args{
+				i: TestExtractFunctionName,
+			},
+			want:        "TestExtractFunctionName",
+			shouldPanic: false,
+		},
+		{
+			name: "Test panic for non-function",
+			args: args{
+				i: "not a function",
+			},
+			want:        "", // Irrelevant for a panic scenario
+			shouldPanic: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := ExtractFunctionName(tt.args.i); got != tt.want {
+			defer func() {
+				if r := recover(); (r != nil) != tt.shouldPanic {
+					t.Errorf("ExtractFunctionName panicked = %v, want %v", r != nil, tt.shouldPanic)
+				}
+			}()
+
+			got := ExtractFunctionName(tt.args.i)
+			if got != tt.want && !tt.shouldPanic {
 				t.Errorf("ExtractFunctionName() = %v, want %v", got, tt.want)
 			}
 		})
@@ -404,7 +488,28 @@ func TestMatchNamesWithEmails(t *testing.T) {
 		args args
 		want map[string]string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test MatchNamesWithEmails match name",
+			args: args{
+				ctx:    context.WithValue(context.Background(), constants.CtxSourceKey, "test"),
+				names:  []string{"John Doe", "Jane Doe"},
+				emails: []string{"john.doe@example.com"},
+				logger: &logger.Logger{Logger: log.Default()},
+			},
+			want: map[string]string{
+				"John Doe": "john.doe@example.com",
+			},
+		},
+		{
+			name: "Test MatchNamesWithEmails no match name",
+			args: args{
+				ctx:    context.WithValue(context.Background(), constants.CtxSourceKey, "test"),
+				names:  []string{"Jane Doe"},
+				emails: []string{"john.doe@example.com"},
+				logger: &logger.Logger{Logger: log.Default()},
+			},
+			want: map[string]string{},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
