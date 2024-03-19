@@ -290,6 +290,10 @@ func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetboxInventory, vcH
 		if err != nil {
 			return err
 		}
+		if utils.FilterInterfaceName(hostPnic.Name, vc.SourceConfig.InterfaceFilter) {
+			vc.Logger.Debugf(vc.Ctx, "interface %s is filtered out with interfaceFilter %s", hostPnic.Name, vc.SourceConfig.InterfaceFilter)
+			continue
+		}
 		// After collecting all of the data add interface to nbi
 		_, err = nbi.AddInterface(vc.Ctx, hostPnic)
 		if err != nil {
@@ -438,6 +442,11 @@ func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetboxInventory, vcHo
 		hostVnic, err := vc.collectHostVirtualNicData(nbi, nbHost, vcHost, vnic)
 		if err != nil {
 			return err
+		}
+
+		if utils.FilterInterfaceName(hostVnic.Name, vc.SourceConfig.InterfaceFilter) {
+			vc.Logger.Debugf(vc.Ctx, "interface %s is filtered out with interfaceFilter %s", hostVnic.Name, vc.SourceConfig.InterfaceFilter)
+			continue
 		}
 
 		nbVnic, err := nbi.AddInterface(vc.Ctx, hostVnic)
@@ -835,6 +844,12 @@ func (vc *VmwareSource) syncVMInterfaces(nbi *inventory.NetboxInventory, vmwareV
 			nicIPv4Addresses, nicIPv6Addresses, collectedVMIface, err := vc.collectVMInterfaceData(nbi, netboxVM, vmwareVM, vmEthernetCard)
 			if err != nil {
 				return err
+			}
+
+			// Apply filter to VMIface name
+			if utils.FilterInterfaceName(collectedVMIface.Name, vc.SourceConfig.InterfaceFilter) {
+				vc.Logger.Debugf(vc.Ctx, "interface %s is filtered out with interfaceFilter %s", collectedVMIface.Name, vc.SourceConfig.InterfaceFilter)
+				continue
 			}
 
 			nbVMInterface, err := nbi.AddVMInterface(vc.Ctx, collectedVMIface)

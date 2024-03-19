@@ -130,6 +130,10 @@ func (ps *ProxmoxSource) syncNodeNetworks(nbi *inventory.NetboxInventory, node *
 			active = true
 		}
 		nbHost := ps.NetboxNodes[node.Name]
+		if utils.FilterInterfaceName(nodeNetwork.Iface, ps.SourceConfig.InterfaceFilter) {
+			ps.Logger.Debugf(ps.Ctx, "interface %s is filtered out with interfaceFilter %s", nodeNetwork.Iface, ps.SourceConfig.InterfaceFilter)
+			continue
+		}
 		_, err := nbi.AddInterface(ps.Ctx, &objects.Interface{
 			NetboxObject: objects.NetboxObject{
 				Tags: ps.Config.SourceTags,
@@ -202,6 +206,10 @@ func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *ob
 	vmIPv4Addresses := make([]*objects.IPAddress, 0)
 	vmIPv6Addresses := make([]*objects.IPAddress, 0)
 	for _, vmNetwork := range ps.VMNetworks[nbVM.Name] {
+		if utils.FilterInterfaceName(vmNetwork.Name, ps.SourceConfig.InterfaceFilter) {
+			ps.Logger.Debugf(ps.Ctx, "interface %s is filtered out with interface filter %s", vmNetwork.Name, ps.SourceConfig.InterfaceFilter)
+			continue
+		}
 		nbVMIface, err := nbi.AddVMInterface(ps.Ctx, &objects.VMInterface{
 			NetboxObject: objects.NetboxObject{
 				Tags: ps.SourceTags,

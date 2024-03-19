@@ -71,6 +71,7 @@ Example configuration can be found [here](#example-config).
 | `source.validateCert`           | Enforce TLS certificate validation.                                                                                | all             | bool     | [true, false]         | false      | No       |
 | `source.tagColor`               | TagColor for the source tag.                                                                                       | all             | string   | any                   | Predefined | No       |
 | `source.ignoredSubnets`         | List of subnets, which will be ignored (e.g. IPs won't be synced).                                                 | all             | []string | any                   | []         | No       |
+| `source.interfaceFilter`        | Regex representation of interface names to be ignored (e.g. `(cali\|vxlan\|flannel\|[a-f0-9]{15})`)                | all             | string   | any                   | []         | No       |
 | `source.hostSiteRelations`      | Regex relations in format `regex = siteName`, that map each host that satisfies regex to site.                     | [vmware, ovirt] | []string | any                   | []         | No       |
 | `source.clusterSiteRelations`   | Regex relations in format `regex = siteName`, that map each cluster that satisfies regex to site.                  | [vmware, ovirt] | []string | any                   | []         | No       |
 | `source.clusterTenantRelations` | Regex relations in format `regex = tenantName`, that map each cluster that satisfies regex to tenant.              | [vmware, ovirt] | []string | any                   | []         | No       |
@@ -102,6 +103,7 @@ source:
     port: 443
     username: "admin"
     password: "topsecret"
+    interfaceFilter: (cali|vxlan|flannel|docker|[a-f0-9]{15})
 
   - name: prodprox
     type: proxmox

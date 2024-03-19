@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
@@ -54,17 +55,18 @@ func (n NetboxConfig) String() string {
 }
 
 type SourceConfig struct {
-	Name           string               `yaml:"name"`
-	Type           constants.SourceType `yaml:"type"`
-	HTTPScheme     HTTPScheme           `yaml:"httpScheme"`
-	Hostname       string               `yaml:"hostname"`
-	Port           int                  `yaml:"port"`
-	Username       string               `yaml:"username"`
-	Password       string               `yaml:"password"`
-	ValidateCert   bool                 `yaml:"validateCert"`
-	Tag            string               `yaml:"tag"`
-	TagColor       string               `yaml:"tagColor"`
-	IgnoredSubnets []string             `yaml:"ignoredSubnets"`
+	Name            string               `yaml:"name"`
+	Type            constants.SourceType `yaml:"type"`
+	HTTPScheme      HTTPScheme           `yaml:"httpScheme"`
+	Hostname        string               `yaml:"hostname"`
+	Port            int                  `yaml:"port"`
+	Username        string               `yaml:"username"`
+	Password        string               `yaml:"password"`
+	ValidateCert    bool                 `yaml:"validateCert"`
+	Tag             string               `yaml:"tag"`
+	TagColor        string               `yaml:"tagColor"`
+	IgnoredSubnets  []string             `yaml:"ignoredSubnets"`
+	InterfaceFilter string               `yaml:"interfaceFilter"`
 
 	// Relations
 	HostSiteRelations      []string `yaml:"hostSiteRelations"`
@@ -215,6 +217,11 @@ func validateSourceConfig(config *Config) error {
 					return fmt.Errorf("%s.ignoredSubnets wrong format: %s", externalSourceStr, ignoredSubnet)
 				}
 			}
+		}
+		// Try to compile interfaceFilter
+		_, err = regexp.Compile(externalSource.InterfaceFilter)
+		if err != nil {
+			return fmt.Errorf("%s.interfaceFilter wrong format: %s", externalSourceStr, err)
 		}
 	}
 	return nil

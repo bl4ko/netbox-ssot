@@ -64,49 +64,6 @@ func TestSlugify(t *testing.T) {
 	}
 }
 
-func TestFilterVMInterfaceNames(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    []string
-		expected []string
-	}{
-		{
-			name:     "No interfaces",
-			input:    []string{},
-			expected: []string{},
-		},
-		{
-			name:     "No VM interfaces",
-			input:    []string{"eth0", "eth1", "eth2"},
-			expected: []string{"eth0", "eth1", "eth2"},
-		},
-		{
-			name:     "One VM interface",
-			input:    []string{"eth0", "docker0", "eth1", "cali7839a755dc1"},
-			expected: []string{"eth0", "eth1"},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			filteredSlice := make([]string, 0)
-			for _, iface := range tt.input {
-				filtered, err := IsVMInterfaceNameValid(iface)
-				if err != nil {
-					t.Errorf("FilterVMInterfaceNames() error = %v", err)
-				}
-				if filtered == true {
-					filteredSlice = append(filteredSlice, iface)
-				}
-			}
-
-			if !reflect.DeepEqual(filteredSlice, tt.expected) {
-				t.Errorf("FilterVMInterfaceNames() = %v, want %v", filteredSlice, tt.expected)
-			}
-		})
-	}
-}
-
 func TestSubnetContainsIpAddress(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -364,27 +321,21 @@ func TestIsVMInterfaceNameValid(t *testing.T) {
 		vmIfaceName string
 	}
 	tests := []struct {
-		name    string
-		args    args
-		want    bool
-		wantErr bool
+		name string
+		args args
+		want bool
 	}{
 		{
 			name: "Test IsVMInterfaceNameValid works for all vm names",
 			args: args{
 				vmIfaceName: "\\$\\$\\",
 			},
-			want:    true,
-			wantErr: false,
+			want: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := IsVMInterfaceNameValid(tt.args.vmIfaceName)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("IsVMInterfaceNameValid() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			got := FilterInterfaceName("docker", "docker")
 			if got != tt.want {
 				t.Errorf("IsVMInterfaceNameValid() = %v, want %v", got, tt.want)
 			}
@@ -515,6 +466,50 @@ func TestMatchNamesWithEmails(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := MatchNamesWithEmails(tt.args.ctx, tt.args.names, tt.args.emails, tt.args.logger); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("MatchNamesWithEmails() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestFilterInterfaceName(t *testing.T) {
+	type args struct {
+		ifaceName   string
+		ifaceFilter string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "Test filter out interface",
+			args: args{
+				ifaceName:   "docker0",
+				ifaceFilter: "^(docker|veth)\\w*",
+			},
+			want: true,
+		},
+		{
+			name: "Test don't filter out interface",
+			args: args{
+				ifaceName:   "eth5",
+				ifaceFilter: "^(docker|veth)\\w*",
+			},
+			want: false,
+		},
+		{
+			name: "Test don't filter when empty filter",
+			args: args{
+				ifaceName:   "eth5",
+				ifaceFilter: "",
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := FilterInterfaceName(tt.args.ifaceName, tt.args.ifaceFilter); got != tt.want {
+				t.Errorf("FilterInterfaceName() = %v, want %v", got, tt.want)
 			}
 		})
 	}

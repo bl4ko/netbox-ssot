@@ -101,24 +101,14 @@ func GeneratePlatformName(osType string, osVersion string) string {
 	return fmt.Sprintf("%s %s", osType, osVersion)
 }
 
-// Function that returns true if the given string
-// representing an virtual machine interface name is valid and false otherwise.
-// Valid interface names are the ones that pass regex filtering.
-func IsVMInterfaceNameValid(vmIfaceName string) (bool, error) {
-	ifaceFilter := map[string]string{
-		"^(docker|cali|flannel|veth|br-|cni|tun|tap|lo|virbr|vxlan|wg|kube-bridge|kube-ipvs)\\w*": "yes",
+// Function that returns true if the given interface name should be
+// filtered out, or false if it shouldn't be.
+func FilterInterfaceName(ifaceName string, ifaceFilter string) bool {
+	if ifaceFilter == "" {
+		return false
 	}
-
-	ifaceName, err := MatchStringToValue(vmIfaceName, ifaceFilter)
-	if err != nil {
-		return false, err
-	}
-
-	if ifaceName == "yes" {
-		return false, nil
-	}
-
-	return true, nil
+	compiledFilter := regexp.MustCompile(ifaceFilter)
+	return compiledFilter.MatchString(ifaceName)
 }
 
 // ExtractFunctionName attempts to extract the name of a function regardless of its signature.

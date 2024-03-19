@@ -468,7 +468,15 @@ func (o *OVirtSource) collectHostNicsData(nbHost *objects.Device, nbi *inventory
 		nicName, exists := nic.Name()
 		if !exists {
 			o.Logger.Warning(o.Ctx, "name for oVirt nic with id ", nicID, " is empty.")
+			continue
 		}
+
+		// Filter out interfaces with user provided filter
+		if utils.FilterInterfaceName(nicName, o.SourceConfig.InterfaceFilter) {
+			o.Logger.Debugf(o.Ctx, "interface %s is filtered out with interfaceFilter %s", nicName, o.SourceConfig.InterfaceFilter)
+			continue
+		}
+
 		// var nicType *objects.InterfaceType
 		nicSpeedBips, exists := nic.Speed()
 		if !exists {
@@ -782,6 +790,10 @@ func (o *OVirtSource) syncVMInterfaces(nbi *inventory.NetboxInventory, ovirtVM *
 						}
 					}
 					if reportedDeviceName, exists := reportedDevice.Name(); exists {
+						if utils.FilterInterfaceName(reportedDeviceName, o.SourceConfig.InterfaceFilter) {
+							o.Logger.Debugf(o.Ctx, "interface %s is filtered out with interfaceFilter %s", reportedDeviceName, o.SourceConfig.InterfaceFilter)
+							continue
+						}
 						vmInterface, err = nbi.AddVMInterface(o.Ctx, &objects.VMInterface{
 							NetboxObject: objects.NetboxObject{
 								Tags:        o.Config.SourceTags,
@@ -807,16 +819,6 @@ func (o *OVirtSource) syncVMInterfaces(nbi *inventory.NetboxInventory, ovirtVM *
 						for _, ip := range reportedDeviceIps.Slice() {
 							if ipAddress, exists := ip.Address(); exists {
 								if ipVersion, exists := ip.Version(); exists {
-									// Filter IPs, we won't sync IPs from specific interfaces
-									// like docker, flannel, calico, etc. interfaces
-									valid, err := utils.IsVMInterfaceNameValid(vmInterface.Name)
-									if err != nil {
-										return fmt.Errorf("failed to match oVirt vm's interface %s to a Netbox interface filter: %v", vmInterface.Name, err)
-									}
-									if !valid {
-										continue
-									}
-
 									// Try to do reverse lookup of IP to get DNS name
 									hostname := utils.ReverseLookup(ipAddress)
 

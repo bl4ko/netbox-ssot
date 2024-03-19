@@ -251,6 +251,11 @@ func (ds *DnacSource) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error
 			continue
 		}
 
+		if utils.FilterInterfaceName(ifaceName, ds.SourceConfig.InterfaceFilter) {
+			ds.Logger.Errorf(ds.Ctx, "interface %s is filtered out with interfaceFilter %s", ifaceName, ds.SourceConfig.InterfaceFilter)
+			continue
+		}
+
 		var ifaceMode *objects.InterfaceMode
 		var ifaceAccessVlan *objects.Vlan
 		var ifaceTrunkVlans []*objects.Vlan
