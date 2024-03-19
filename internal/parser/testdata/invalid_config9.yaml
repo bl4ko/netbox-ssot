@@ -1,0 +1,8 @@
+logger:
+  level: 4 # Wrong log level
+  dest: "test"
+
+netbox:
+  apiToken: "netbox-token"
+  port: 666
+  hostname: netbox.example.com

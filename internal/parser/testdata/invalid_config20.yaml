@@ -1,0 +1,20 @@
+logger:
+  level: 2
+  dest: "test"
+
+netbox:
+  apiToken: "netbox-token"
+  port: 666
+  hostname: netbox.example.com
+  httpScheme: "http"
+
+source:
+  - name: wrong
+    type: ovirt
+    hostname: testolvm.example.com
+    username: "test"
+    password: "test"
+    ignoredSubnets:
+      - 192.168.1.24/20
+      - 172.16.0.1/16
+      - 172.16.0.1 # Wrong format

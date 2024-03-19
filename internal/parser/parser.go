@@ -148,7 +148,7 @@ func validateNetboxConfig(config *Config) error {
 	}
 	if len(config.Netbox.SourcePriority) > 0 {
 		if len(config.Netbox.SourcePriority) != len(config.Sources) {
-			return fmt.Errorf("netbox.sourcePriority: len(config.Netbox.SourcePriority != len(config.Sources))")
+			return fmt.Errorf("netbox.sourcePriority: len(config.Netbox.SourcePriority != len(config.Sources)")
 		}
 		for _, sourceName := range config.Netbox.SourcePriority {
 			contains := false
@@ -159,7 +159,7 @@ func validateNetboxConfig(config *Config) error {
 				}
 			}
 			if !contains {
-				return fmt.Errorf("netbox.sourcePriority: source[%s] doesn't exist in sources array", sourceName)
+				return fmt.Errorf("netbox.sourcePriority: source[%s] doesn't exist in the sources array", sourceName)
 			}
 		}
 	}
@@ -172,26 +172,26 @@ func validateSourceConfig(config *Config) error {
 		externalSource := &config.Sources[i]
 		externalSourceStr := "source[" + externalSource.Name + "]"
 		if externalSource.Name == "" {
-			return fmt.Errorf("%s: name cannot be empty", externalSourceStr)
+			return fmt.Errorf("%s.name: cannot be empty", externalSourceStr)
 		}
 		if externalSource.HTTPScheme == "" {
 			externalSource.HTTPScheme = "https"
 		} else if externalSource.HTTPScheme != HTTP && externalSource.HTTPScheme != HTTPS {
-			return fmt.Errorf("%s.httpScheme must be either http or https. Is %s", externalSourceStr, string(externalSource.HTTPScheme))
+			return fmt.Errorf("%s.httpScheme: must be either http or https. Is %s", externalSourceStr, string(externalSource.HTTPScheme))
 		}
 		if externalSource.Hostname == "" {
-			return fmt.Errorf("%s: hostname cannot be empty", externalSourceStr)
+			return fmt.Errorf("%s.hostname: cannot be empty", externalSourceStr)
 		}
 		if externalSource.Port == 0 {
 			externalSource.Port = 443
 		} else if externalSource.Port < 0 || externalSource.Port > 65535 {
-			return fmt.Errorf("%s: port must be between 0 and 65535. Is %d", externalSourceStr, externalSource.Port)
+			return fmt.Errorf("%s.port: must be between 0 and 65535. Is %d", externalSourceStr, externalSource.Port)
 		}
 		if externalSource.Username == "" {
-			return fmt.Errorf("%s: username cannot be empty", externalSourceStr)
+			return fmt.Errorf("%s.username: cannot be empty", externalSourceStr)
 		}
 		if externalSource.Password == "" {
-			return fmt.Errorf("%s: password cannot be empty", externalSourceStr)
+			return fmt.Errorf("%s.password: cannot be empty", externalSourceStr)
 		}
 		if externalSource.Tag == "" {
 			externalSource.Tag = fmt.Sprintf("Source: %s", externalSource.Name)
@@ -214,14 +214,14 @@ func validateSourceConfig(config *Config) error {
 		if len(externalSource.IgnoredSubnets) > 0 {
 			for _, ignoredSubnet := range externalSource.IgnoredSubnets {
 				if !utils.VerifySubnet(ignoredSubnet) {
-					return fmt.Errorf("%s.ignoredSubnets wrong format: %s", externalSourceStr, ignoredSubnet)
+					return fmt.Errorf("%s.ignoredSubnets: wrong format: %s", externalSourceStr, ignoredSubnet)
 				}
 			}
 		}
 		// Try to compile interfaceFilter
 		_, err = regexp.Compile(externalSource.InterfaceFilter)
 		if err != nil {
-			return fmt.Errorf("%s.interfaceFilter wrong format: %s", externalSourceStr, err)
+			return fmt.Errorf("%s.interfaceFilter: wrong format: %s", externalSourceStr, err)
 		}
 	}
 	return nil

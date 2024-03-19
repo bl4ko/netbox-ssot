@@ -1,0 +1,23 @@
+logger:
+  level: 2
+  dest: ""
+
+netbox:
+  apiToken: "netbox-token"
+  port: 666
+  hostname: netbox.example.com
+
+source:
+  - name: dnacenter
+    type: dnac
+    httpScheme: http
+    hostname: dnac.example.com
+    username: admin@internal
+    password: adminpass
+
+  - name: prodprox
+    type: proxmox
+    hostname: proxmox.example.com
+    username: admin
+    port: 80
+    password: adminpass

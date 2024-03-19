@@ -1,0 +1,8 @@
+logger:
+  dest: "test"
+
+netbox:
+  apiToken: "dummytoken"
+  port: 666
+  hostname: netbox.example.com
+  timeout: -1

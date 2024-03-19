@@ -1,0 +1,7 @@
+logger:
+  dest: "test"
+
+netbox:
+  apiToken: "" # cannot be empty
+  port: 666
+  hostname: netbox.example.com

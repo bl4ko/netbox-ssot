@@ -1,0 +1,9 @@
+logger:
+  level: "2dasf" # decoder error
+  dest: "test"
+
+netbox:
+  apiToken: "netbox-token"
+  port: 666
+  hostname: netbox.example.com
+  httpScheme: "http"

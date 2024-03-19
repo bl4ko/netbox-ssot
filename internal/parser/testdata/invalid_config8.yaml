@@ -1,0 +1,16 @@
+logger:
+  level: 2
+  dest: "test"
+
+netbox:
+  apiToken: "netbox-token"
+  port: 666
+  hostname: netbox.example.com
+
+source:
+  - name: testolvm
+    type: ovirt
+    hostname: testolvm.example.com
+    username: admin@internal
+    password: adminpass
+    port: 1111111 # wrong port number

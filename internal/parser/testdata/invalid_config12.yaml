@@ -1,0 +1,8 @@
+logger:
+  dest: "test"
+
+netbox:
+  apiToken: dummy
+  port: 666
+  hostname: netbox.example.com
+  tagColor: fffffff

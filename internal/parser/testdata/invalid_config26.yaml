@@ -1,0 +1,18 @@
+logger:
+  level: 2
+  dest: "test"
+
+netbox:
+  apiToken: "netbox-token"
+  port: 666
+  hostname: netbox.example.com
+  httpScheme: "http"
+
+source:
+  - name: wrong
+    type: ovirt
+    hostname: testolvm.example.com
+    username: "test"
+    password: "test"
+    vmTenantRelations:
+      - (wrong() = wwrong
