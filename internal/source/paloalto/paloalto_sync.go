@@ -121,6 +121,10 @@ func (pas *PaloAltoSource) SyncInterfaces(nbi *inventory.NetboxInventory) error 
 			}
 		}
 
+		var ifaceVdcs []*objects.VirtualDeviceContext
+		if vdc := pas.getVirtualDeviceContext(nbi, iface.Name); vdc != nil {
+			ifaceVdcs = []*objects.VirtualDeviceContext{vdc}
+		}
 		nbIface, err := nbi.AddInterface(pas.Ctx, &objects.Interface{
 			NetboxObject: objects.NetboxObject{
 				Tags:        pas.SourceTags,
@@ -132,7 +136,7 @@ func (pas *PaloAltoSource) SyncInterfaces(nbi *inventory.NetboxInventory) error 
 			Device: pas.NBFirewall,
 			MTU:    iface.Mtu,
 			Speed:  ifaceLinkSpeed,
-			Vdcs:   []*objects.VirtualDeviceContext{pas.getVirtualDeviceContext(nbi, iface.Name)},
+			Vdcs:   ifaceVdcs,
 		})
 		if err != nil {
 			return fmt.Errorf("add interface %s", err)
@@ -173,6 +177,10 @@ func (pas *PaloAltoSource) SyncInterfaces(nbi *inventory.NetboxInventory) error 
 				subIfaceVlans = append(subIfaceVlans, subIfaceVlan)
 				subifaceMode = &objects.InterfaceModeTagged
 			}
+			var vdcs []*objects.VirtualDeviceContext
+			if vdc := pas.getVirtualDeviceContext(nbi, subIfaceName); vdc != nil {
+				vdcs = []*objects.VirtualDeviceContext{vdc}
+			}
 			nbSubIface, err := nbi.AddInterface(pas.Ctx, &objects.Interface{
 				NetboxObject: objects.NetboxObject{
 					Tags:        pas.SourceTags,
@@ -185,7 +193,7 @@ func (pas *PaloAltoSource) SyncInterfaces(nbi *inventory.NetboxInventory) error 
 				TaggedVlans:     subIfaceVlans,
 				ParentInterface: nbIface,
 				MTU:             subIface.Mtu,
-				Vdcs:            []*objects.VirtualDeviceContext{pas.getVirtualDeviceContext(nbi, subIfaceName)},
+				Vdcs:            vdcs,
 			})
 			if err != nil {
 				return fmt.Errorf("add subinterface: %s", err)
