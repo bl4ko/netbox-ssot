@@ -148,14 +148,15 @@ func (pas *PaloAltoSource) SyncInterfaces(nbi *inventory.NetboxInventory) error 
 			if subIfaceName == "" {
 				continue
 			}
-			var subIfaceVlan *objects.Vlan
+			subIfaceVlans := []*objects.Vlan{}
+			var subifaceMode *objects.InterfaceMode
 			if subIface.Tag != 0 {
 				// Extract Vlan
 				vlanGroup, err := common.MatchVlanToGroup(pas.Ctx, nbi, fmt.Sprintf("Vlan%d", subIface.Tag), pas.VlanGroupRelations)
 				if err != nil {
 					return fmt.Errorf("match vlan to group: %s", err)
 				}
-				subIfaceVlan, err = nbi.AddVlan(pas.Ctx, &objects.Vlan{
+				subIfaceVlan, err := nbi.AddVlan(pas.Ctx, &objects.Vlan{
 					NetboxObject: objects.NetboxObject{
 						Tags:        pas.SourceTags,
 						Description: subIface.Comment,
@@ -169,6 +170,8 @@ func (pas *PaloAltoSource) SyncInterfaces(nbi *inventory.NetboxInventory) error 
 					return fmt.Errorf("add vlan: %s", err)
 				}
 				ifaceVlans = append(ifaceVlans, subIfaceVlan)
+				subIfaceVlans = append(subIfaceVlans, subIfaceVlan)
+				subifaceMode = &objects.InterfaceModeTagged
 			}
 			nbSubIface, err := nbi.AddInterface(pas.Ctx, &objects.Interface{
 				NetboxObject: objects.NetboxObject{
@@ -178,8 +181,8 @@ func (pas *PaloAltoSource) SyncInterfaces(nbi *inventory.NetboxInventory) error 
 				Name:            subIface.Name,
 				Type:            &objects.VirtualInterfaceType,
 				Device:          pas.NBFirewall,
-				Mode:            &objects.InterfaceModeTagged,
-				TaggedVlans:     []*objects.Vlan{subIfaceVlan},
+				Mode:            subifaceMode,
+				TaggedVlans:     subIfaceVlans,
 				ParentInterface: nbIface,
 				MTU:             subIface.Mtu,
 				Vdcs:            []*objects.VirtualDeviceContext{pas.getVirtualDeviceContext(nbi, subIfaceName)},
