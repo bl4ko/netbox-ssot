@@ -11,75 +11,84 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
-func (pas *PaloAltoSource) SyncDevices(nbi *inventory.NetboxInventory) error {
-	pas.DeviceName2NbDevice = make(map[string]*objects.Device)
-	for _, device := range pas.Devices {
-		deviceRole, err := nbi.AddDeviceRole(pas.Ctx, &objects.DeviceRole{
-			Name:   "VirtualRouter",
-			Slug:   utils.Slugify("VirtualRouter"),
-			Color:  constants.ColorOrange,
-			VMRole: false,
-		})
-		if err != nil {
-			return fmt.Errorf("create device role: %s", err)
-		}
-		deviceSite, err := common.MatchHostToSite(pas.Ctx, nbi, device.Name, pas.HostSiteRelations)
-		if err != nil {
-			return fmt.Errorf("match host to site: %s", err)
-		}
-		deviceTenant, err := common.MatchHostToTenant(pas.Ctx, nbi, device.Name, pas.HostSiteRelations)
-		if err != nil {
-			return fmt.Errorf("match host to tenant: %s", err)
-		}
-		genericManufacturer, err := nbi.AddManufacturer(pas.Ctx, &objects.Manufacturer{
-			Name: constants.DefaultManufacturer,
-			Slug: utils.Slugify(constants.DefaultManufacturer),
-		})
-		if err != nil {
-			return fmt.Errorf("new manufacturer: %s", err)
-		}
-		platformName := utils.GeneratePlatformName(constants.DefaultOSName, constants.DefaultOSVersion)
-		platform, err := nbi.AddPlatform(pas.Ctx, &objects.Platform{
-			Name:         platformName,
-			Slug:         utils.Slugify(platformName),
-			Manufacturer: genericManufacturer,
-		})
-		if err != nil {
-			return fmt.Errorf("adding platform: %s", err)
-		}
-		deviceType, err := nbi.AddDeviceType(pas.Ctx, &objects.DeviceType{
-			Manufacturer: genericManufacturer,
-			Model:        constants.DefaultModel,
-			Slug:         utils.Slugify(genericManufacturer.Name + constants.DefaultModel),
-		})
-		if err != nil {
-			return fmt.Errorf("add device type: %s", err)
-		}
-		nbDevice, err := nbi.AddDevice(pas.Ctx, &objects.Device{
-			NetboxObject: objects.NetboxObject{
-				Tags: pas.Config.SourceTags,
-				CustomFields: map[string]string{
-					constants.CustomFieldSourceName: pas.SourceConfig.Name,
-				},
-			},
-			Name:       device.Name,
-			Site:       deviceSite,
-			Tenant:     deviceTenant,
-			Status:     &objects.DeviceStatusActive,
-			Platform:   platform,
-			DeviceRole: deviceRole,
-			DeviceType: deviceType,
-		})
-		if err != nil {
-			return fmt.Errorf("add device: %s", err)
-		}
-		pas.DeviceName2NbDevice[device.Name] = nbDevice
+// Sync device creates default device in netbox representing Paloalto firewall.
+func (pas *PaloAltoSource) SyncDevice(nbi *inventory.NetboxInventory) error {
+	deviceName := pas.SystemInfo["devicename"]
+	if deviceName == "" {
+		return fmt.Errorf("can't extract device name from system info")
 	}
+	deviceSerialNumber := pas.SystemInfo["serial"]
+	deviceModel := pas.SystemInfo["model"]
+	if deviceModel == "" {
+		pas.Logger.Warningf(pas.Ctx, "model field in system info is empty. Using fallback mechanism.")
+		deviceModel = constants.DefaultModel
+	}
+	deviceManufacturer, err := nbi.AddManufacturer(pas.Ctx, &objects.Manufacturer{
+		Name: "Palo Alto Networks, Inc.",
+		Slug: utils.Slugify("Palo Alto Networks, Inc."),
+	})
+	if err != nil {
+		return fmt.Errorf("failed adding manufacturer: %s", err)
+	}
+	deviceType, err := nbi.AddDeviceType(pas.Ctx, &objects.DeviceType{
+		Manufacturer: deviceManufacturer,
+		Model:        deviceModel,
+		Slug:         utils.Slugify(deviceManufacturer.Name + deviceModel),
+	})
+	if err != nil {
+		return fmt.Errorf("add device type: %s", err)
+	}
+
+	deviceTenant, err := common.MatchHostToTenant(pas.Ctx, nbi, deviceName, pas.HostTenantRelations)
+	if err != nil {
+		return fmt.Errorf("match host to tenant: %s", err)
+	}
+
+	deviceRole, err := nbi.AddDeviceRole(pas.Ctx, &objects.DeviceRole{
+		Name:   constants.DeviceRoleFirewall,
+		Slug:   utils.Slugify(constants.DeviceRoleFirewall),
+		Color:  constants.DeviceRoleFirewallColor,
+		VMRole: false,
+	})
+	if err != nil {
+		return fmt.Errorf("add DeviceRole: %s", err)
+	}
+	deviceSite, err := common.MatchHostToSite(pas.Ctx, nbi, deviceName, pas.HostSiteRelations)
+	if err != nil {
+		return fmt.Errorf("match host to site: %s", err)
+	}
+	devicePlatformName := fmt.Sprintf("PAN-OS %s", pas.SystemInfo["sw-version"])
+	devicePlatform, err := nbi.AddPlatform(pas.Ctx, &objects.Platform{
+		Name:         devicePlatformName,
+		Slug:         utils.Slugify(devicePlatformName),
+		Manufacturer: deviceManufacturer,
+	})
+	if err != nil {
+		return fmt.Errorf("add platform: %s", err)
+	}
+	NBDevice, err := nbi.AddDevice(pas.Ctx, &objects.Device{
+		NetboxObject: objects.NetboxObject{
+			Tags: pas.SourceTags,
+		},
+		Name:         deviceName,
+		Site:         deviceSite,
+		DeviceRole:   deviceRole,
+		Status:       &objects.DeviceStatusActive,
+		DeviceType:   deviceType,
+		Tenant:       deviceTenant,
+		Platform:     devicePlatform,
+		SerialNumber: deviceSerialNumber,
+	})
+	if err != nil {
+		return fmt.Errorf("add device: %s", err)
+	}
+
+	pas.NBFirewall = NBDevice
 	return nil
 }
 
 func (pas *PaloAltoSource) SyncInterfaces(nbi *inventory.NetboxInventory) error {
-	for _, iface := range pas.Interfaces {
+	for _, iface := range pas.Ifaces {
 		if iface.Name == "" {
 			pas.Logger.Debugf(pas.Ctx, "empty interface name. Skipping...")
 			continue
@@ -87,10 +96,6 @@ func (pas *PaloAltoSource) SyncInterfaces(nbi *inventory.NetboxInventory) error 
 		if utils.FilterInterfaceName(iface.Name, pas.SourceConfig.InterfaceFilter) {
 			pas.Logger.Debugf(pas.Ctx, "interface %s is filtered out with interface filter %s", iface.Name, pas.SourceConfig.InterfaceFilter)
 			continue
-		}
-		ifaceDeviceName, ok := pas.Interface2Router[iface.Name]
-		if !ok {
-			pas.Logger.Warningf(pas.Ctx, "no matched device for iface %s", iface.Name)
 		}
 		var ifaceLinkSpeed objects.InterfaceSpeed
 		ifaceType := &objects.OtherInterfaceType
@@ -116,46 +121,144 @@ func (pas *PaloAltoSource) SyncInterfaces(nbi *inventory.NetboxInventory) error 
 			}
 		}
 
-		ifaceDevice := pas.DeviceName2NbDevice[ifaceDeviceName]
 		nbIface, err := nbi.AddInterface(pas.Ctx, &objects.Interface{
 			NetboxObject: objects.NetboxObject{
 				Tags:        pas.SourceTags,
 				Description: iface.Comment,
-				CustomFields: map[string]string{
-					constants.CustomFieldSourceName: pas.SourceConfig.Name,
-				},
 			},
 			Name:   iface.Name,
 			Type:   ifaceType,
 			Duplex: ifaceDuplex,
-			Device: ifaceDevice,
+			Device: pas.NBFirewall,
 			MTU:    iface.Mtu,
 			Speed:  ifaceLinkSpeed,
+			Vdcs:   []*objects.VirtualDeviceContext{pas.getVirtualDeviceContext(nbi, iface.Name)},
 		})
 		if err != nil {
 			return fmt.Errorf("add interface %s", err)
 		}
 
 		if len(iface.StaticIps) > 0 {
-			err := pas.syncIPs(nbi, nbIface, iface.StaticIps)
+			pas.syncIPs(nbi, nbIface, iface.StaticIps)
+		}
+
+		ifaceVlans := []*objects.Vlan{}
+		for _, subIface := range pas.Iface2SubIfaces[iface.Name] {
+			subIfaceName := subIface.Name
+			if subIfaceName == "" {
+				continue
+			}
+			var subIfaceVlan *objects.Vlan
+			if subIface.Tag != 0 {
+				// Extract Vlan
+				vlanGroup, err := common.MatchVlanToGroup(pas.Ctx, nbi, fmt.Sprintf("Vlan%d", subIface.Tag), pas.VlanGroupRelations)
+				if err != nil {
+					return fmt.Errorf("match vlan to group: %s", err)
+				}
+				subIfaceVlan, err = nbi.AddVlan(pas.Ctx, &objects.Vlan{
+					NetboxObject: objects.NetboxObject{
+						Tags:        pas.SourceTags,
+						Description: subIface.Comment,
+					},
+					Status: &objects.VlanStatusActive,
+					Name:   fmt.Sprintf("Vlan%d", subIface.Tag),
+					Vid:    subIface.Tag,
+					Group:  vlanGroup,
+				})
+				if err != nil {
+					return fmt.Errorf("add vlan: %s", err)
+				}
+				ifaceVlans = append(ifaceVlans, subIfaceVlan)
+			}
+			nbSubIface, err := nbi.AddInterface(pas.Ctx, &objects.Interface{
+				NetboxObject: objects.NetboxObject{
+					Tags:        pas.SourceTags,
+					Description: subIface.Comment,
+				},
+				Name:            subIface.Name,
+				Type:            &objects.VirtualInterfaceType,
+				Device:          pas.NBFirewall,
+				Mode:            &objects.InterfaceModeTagged,
+				TaggedVlans:     []*objects.Vlan{subIfaceVlan},
+				ParentInterface: nbIface,
+				MTU:             subIface.Mtu,
+				Vdcs:            []*objects.VirtualDeviceContext{pas.getVirtualDeviceContext(nbi, subIfaceName)},
+			})
 			if err != nil {
-				return fmt.Errorf("interface ip sync: %s", err)
+				return fmt.Errorf("add subinterface: %s", err)
+			}
+			if len(subIface.StaticIps) > 0 {
+				pas.syncIPs(nbi, nbSubIface, subIface.StaticIps)
+			}
+		}
+
+		if len(ifaceVlans) > 0 {
+			nbIfaceUpdate := *nbIface
+			nbIfaceUpdate.Mode = &objects.InterfaceModeTagged
+			nbIfaceUpdate.TaggedVlans = ifaceVlans
+			_, err = nbi.AddInterface(pas.Ctx, &nbIfaceUpdate)
+			if err != nil {
+				pas.Logger.Errorf(pas.Ctx, "updating ifaceVlans: %s", err)
 			}
 		}
 	}
 	return nil
 }
 
-func (pas *PaloAltoSource) syncIPs(nbi *inventory.NetboxInventory, nbIface *objects.Interface, ips []string) error {
+func (pas *PaloAltoSource) syncIPs(nbi *inventory.NetboxInventory, nbIface *objects.Interface, ips []string) {
 	for _, ipAddress := range ips {
-		_, err := nbi.AddIPAddress(pas.Ctx, &objects.IPAddress{
-			Address:            ipAddress,
-			AssignedObjectID:   nbIface.ID,
-			AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
+		if !utils.SubnetsContainIPAddress(ipAddress, pas.SourceConfig.IgnoredSubnets) {
+			dnsName := utils.ReverseLookup(ipAddress)
+			_, err := nbi.AddIPAddress(pas.Ctx, &objects.IPAddress{
+				NetboxObject: objects.NetboxObject{
+					Tags: pas.SourceTags,
+				},
+				Address:            ipAddress,
+				AssignedObjectID:   nbIface.ID,
+				DNSName:            dnsName,
+				AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
+			})
+			if err != nil {
+				pas.Logger.Errorf(pas.Ctx, "adding ip address %s failed with error: %s", ipAddress, err)
+				continue
+			}
+			prefix, err := utils.ExtractPrefixFromIPAddress(ipAddress)
+			if err != nil {
+				pas.Logger.Warningf(pas.Ctx, "extract prefix from address: %s", err)
+			} else {
+				_, err = nbi.AddPrefix(pas.Ctx, &objects.Prefix{
+					Prefix: prefix,
+				})
+				if err != nil {
+					pas.Logger.Errorf(pas.Ctx, "adding prefix: %s", err)
+				}
+			}
+		}
+	}
+}
+
+func (pas *PaloAltoSource) SyncSecurityZones(nbi *inventory.NetboxInventory) error {
+	for _, securityZone := range pas.SecurityZones {
+		_, err := nbi.AddVirtualDeviceContext(pas.Ctx, &objects.VirtualDeviceContext{
+			NetboxObject: objects.NetboxObject{
+				Tags: pas.SourceTags,
+			},
+			Name:   securityZone.Name,
+			Device: pas.NBFirewall,
+			Status: &objects.VDCStatusActive,
 		})
 		if err != nil {
-			return fmt.Errorf("add ip address: %s", err)
+			return fmt.Errorf("add VirtualDeviceContext: %s", err)
 		}
 	}
 	return nil
+}
+
+func (pas *PaloAltoSource) getVirtualDeviceContext(nbi *inventory.NetboxInventory, ifaceName string) *objects.VirtualDeviceContext {
+	var virtualDeviceContext *objects.VirtualDeviceContext
+	zoneName := pas.Iface2SecurityZone[ifaceName]
+	if vdc, ok := nbi.VirtualDeviceContextsIndexByNameAndDeviceID[zoneName][pas.NBFirewall.ID]; ok {
+		virtualDeviceContext = vdc
+	}
+	return virtualDeviceContext
 }

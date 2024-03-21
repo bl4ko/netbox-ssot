@@ -92,6 +92,11 @@ func (ps *ProxmoxSource) syncNodes(nbi *inventory.NetboxInventory) error {
 			return fmt.Errorf("adding host device type: %s", err)
 		}
 
+		hostDeviceRole, err := nbi.AddDeviceRole(ps.Ctx, &objects.DeviceRole{Name: constants.DeviceRoleServer, Slug: utils.Slugify(constants.DeviceRoleServer), Color: constants.DeviceRoleServerColor, VMRole: false})
+		if err != nil {
+			return err
+		}
+
 		nbHost, err := nbi.AddDevice(ps.Ctx, &objects.Device{
 			NetboxObject: objects.NetboxObject{
 				Tags: ps.Config.SourceTags,
@@ -102,7 +107,7 @@ func (ps *ProxmoxSource) syncNodes(nbi *inventory.NetboxInventory) error {
 				},
 			},
 			Name:       node.Name,
-			DeviceRole: nbi.DeviceRolesIndexByName["Server"],
+			DeviceRole: hostDeviceRole,
 			Site:       hostSite,
 			Tenant:     hostTenant,
 			Cluster:    ps.NetboxCluster,

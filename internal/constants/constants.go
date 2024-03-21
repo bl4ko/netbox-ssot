@@ -120,6 +120,15 @@ const (
 	CustomFieldHostMemoryDescription = "Amount of memory on the host"
 )
 
+// Device Role constants.
+const (
+	DeviceRoleFirewall      = "Firewall"
+	DeviceRoleFirewallColor = "f57842"
+
+	DeviceRoleServer      = "Server"
+	DeviceRoleServerColor = "00add8"
+)
+
 // Constants used for variables in our contexts.
 type CtxKey int
 
@@ -137,31 +146,37 @@ const (
 // Here all mappings are defined so we don't hardcode api paths of objects
 // in our code.
 const (
+	// Tenancy paths.
 	ContactGroupsAPIPath      = "/api/tenancy/contact-groups/"
 	ContactRolesAPIPath       = "/api/tenancy/contact-roles/"
 	ContactsAPIPath           = "/api/tenancy/contacts/"
 	TenantsAPIPath            = "/api/tenancy/tenants/"
 	ContactAssignmentsAPIPath = "/api/tenancy/contact-assignments/"
 
+	// IPAM paths.
 	PrefixesAPIPath    = "/api/ipam/prefixes/"
 	VlanGroupsAPIPath  = "/api/ipam/vlan-groups/"
 	VlansAPIPath       = "/api/ipam/vlans/"
 	IPAddressesAPIPath = "/api/ipam/ip-addresses/"
 
+	// Virtualization paths.
 	ClusterTypesAPIPath    = "/api/virtualization/cluster-types/"
 	ClusterGroupsAPIPath   = "/api/virtualization/cluster-groups/"
 	ClustersAPIPath        = "/api/virtualization/clusters/"
 	VirtualMachinesAPIPath = "/api/virtualization/virtual-machines/"
 	VMInterfacesAPIPath    = "/api/virtualization/interfaces/"
 
-	DevicesAPIPath       = "/api/dcim/devices/"
-	DeviceRolesAPIPath   = "/api/dcim/device-roles/"
-	DeviceTypesAPIPath   = "/api/dcim/device-types/"
-	InterfacesAPIPath    = "/api/dcim/interfaces/"
-	SitesAPIPath         = "/api/dcim/sites/"
-	ManufacturersAPIPath = "/api/dcim/manufacturers/"
-	PlatformsAPIPath     = "/api/dcim/platforms/"
+	// DCIM paths.
+	DevicesAPIPath               = "/api/dcim/devices/"
+	DeviceRolesAPIPath           = "/api/dcim/device-roles/"
+	DeviceTypesAPIPath           = "/api/dcim/device-types/"
+	InterfacesAPIPath            = "/api/dcim/interfaces/"
+	SitesAPIPath                 = "/api/dcim/sites/"
+	ManufacturersAPIPath         = "/api/dcim/manufacturers/"
+	PlatformsAPIPath             = "/api/dcim/platforms/"
+	VirtualDeviceContextsAPIPath = "/api/dcim/virtual-device-contexts/"
 
+	// Extras paths.
 	CustomFieldsAPIPath = "/api/extras/custom-fields/"
 	TagsAPIPath         = "/api/extras/tags/"
 )

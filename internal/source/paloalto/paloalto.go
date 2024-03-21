@@ -8,6 +8,8 @@ import (
 	"github.com/PaloAltoNetworks/pango/netw/interface/eth"
 	"github.com/PaloAltoNetworks/pango/netw/interface/subinterface/layer3"
 	"github.com/PaloAltoNetworks/pango/netw/routing/router"
+	"github.com/PaloAltoNetworks/pango/netw/zone"
+	"github.com/PaloAltoNetworks/pango/vsys"
 	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
@@ -19,13 +21,17 @@ import (
 type PaloAltoSource struct {
 	common.Config
 	// Paloalto data. Initialized in init functions.
-	Interface2Router        map[string]string         // Iface name -> Router name
-	Interfaces              map[string]eth.Entry      // Iface name -> Iface
-	Interface2Subinterfaces map[string][]layer3.Entry // Iface name -> Subinterfaces
-	Devices                 map[string]router.Entry   // Router name -> router
+	SystemInfo          map[string]string         // Map storing system information
+	VirtualSystems      map[string]vsys.Entry     // VirtualSystem name -> VirtualSystem
+	SecurityZones       map[string]zone.Entry     // SecurityZone name -> SecurityZone
+	Iface2SecurityZone  map[string]string         // Iface name -> SecurityZone name
+	Iface2VirtualRouter map[string]string         // Iface name -> VirtualRouter name
+	Ifaces              map[string]eth.Entry      // Iface name -> Iface
+	Iface2SubIfaces     map[string][]layer3.Entry // Iface name -> SubIfaces
+	VirtualRouters      map[string]router.Entry   // VirtualRouter name -> VirutalRouter
 
-	// Netbox related data for easier access. Initialized in sync functions.
-	DeviceName2NbDevice map[string]*objects.Device
+	// NBFirewall representing paloalto firewall created in syncDevice func.
+	NBFirewall *objects.Device
 
 	// User defined relation
 	HostTenantRelations map[string]string
@@ -62,8 +68,10 @@ func (pas *PaloAltoSource) Init() error {
 	pas.Logger.Debugf(pas.Ctx, "HostSiteRelations: %s", pas.HostSiteRelations)
 
 	initFunctions := []func(*pango.Firewall) error{
+		pas.InitSystemInfo,
+		pas.InitVirtualSystems,
 		pas.InitInterfaces,
-		pas.InitDevices,
+		pas.InitVirtualRouters,
 	}
 	for _, initFunc := range initFunctions {
 		startTime := time.Now()
@@ -78,7 +86,8 @@ func (pas *PaloAltoSource) Init() error {
 
 func (pas *PaloAltoSource) Sync(nbi *inventory.NetboxInventory) error {
 	syncFunctions := []func(*inventory.NetboxInventory) error{
-		pas.SyncDevices,
+		pas.SyncDevice,
+		pas.SyncSecurityZones,
 		pas.SyncInterfaces,
 	}
 

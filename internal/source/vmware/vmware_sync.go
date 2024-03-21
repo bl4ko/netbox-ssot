@@ -226,6 +226,11 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		hostCPUCores := host.Summary.Hardware.NumCpuCores
 		hostMemGB := host.Summary.Hardware.MemorySize / constants.KiB / constants.KiB / constants.KiB
 
+		hostDeviceRole, err := nbi.AddDeviceRole(vc.Ctx, &objects.DeviceRole{Name: constants.DeviceRoleServer, Slug: utils.Slugify(constants.DeviceRoleServer), Color: constants.DeviceRoleServerColor, VMRole: false})
+		if err != nil {
+			return err
+		}
+
 		nbHost := &objects.Device{
 			NetboxObject: objects.NetboxObject{Tags: vc.Config.SourceTags, CustomFields: map[string]string{
 				constants.CustomFieldSourceName:       vc.SourceConfig.Name,
@@ -235,7 +240,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 			Name:         hostName,
 			Status:       hostStatus,
 			Platform:     hostPlatform,
-			DeviceRole:   nbi.DeviceRolesIndexByName["Server"],
+			DeviceRole:   hostDeviceRole,
 			Site:         hostSite,
 			Tenant:       hostTenant,
 			Cluster:      hostCluster,

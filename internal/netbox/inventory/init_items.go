@@ -268,6 +268,31 @@ func (nbi *NetboxInventory) InitDevices(ctx context.Context) error {
 	return nil
 }
 
+// Collect all devices from Netbox API and store them in the NetBoxInventory.
+func (nbi *NetboxInventory) InitVirtualDeviceContexts(ctx context.Context) error {
+	nbVirtualDeviceContexts, err := service.GetAll[objects.VirtualDeviceContext](ctx, nbi.NetboxAPI, "")
+	if err != nil {
+		return err
+	}
+	// Initialize internal index of devices by Name and SiteId
+	nbi.VirtualDeviceContextsIndexByNameAndDeviceID = make(map[string]map[int]*objects.VirtualDeviceContext)
+	// OrphanManager takes care of all devices created by netbox-ssot
+	nbi.OrphanManager[constants.VirtualDeviceContextsAPIPath] = make(map[int]bool)
+
+	for i, virtualDeviceContext := range nbVirtualDeviceContexts {
+		if nbi.VirtualDeviceContextsIndexByNameAndDeviceID[virtualDeviceContext.Name] == nil {
+			nbi.VirtualDeviceContextsIndexByNameAndDeviceID[virtualDeviceContext.Name] = make(map[int]*objects.VirtualDeviceContext)
+		}
+		nbi.VirtualDeviceContextsIndexByNameAndDeviceID[virtualDeviceContext.Name][virtualDeviceContext.Device.ID] = &nbVirtualDeviceContexts[i]
+		if slices.IndexFunc(virtualDeviceContext.Tags, func(t *objects.Tag) bool { return t.Slug == nbi.SsotTag.Slug }) >= 0 {
+			nbi.OrphanManager[constants.VirtualDeviceContextsAPIPath][virtualDeviceContext.ID] = true
+		}
+	}
+
+	nbi.Logger.Debug(ctx, "Successfully collected VirtualDeviceContexts from Netbox: ", nbi.VirtualDeviceContextsIndexByNameAndDeviceID)
+	return nil
+}
+
 // Collects all deviceRoles from Netbox API and store them in the
 // NetBoxInventory.
 func (nbi *NetboxInventory) InitDeviceRoles(ctx context.Context) error {
@@ -289,15 +314,6 @@ func (nbi *NetboxInventory) InitDeviceRoles(ctx context.Context) error {
 	}
 
 	nbi.Logger.Debug(ctx, "Successfully collected device roles from Netbox: ", nbi.DeviceRolesIndexByName)
-	return nil
-}
-
-// Ensures that attribute ServerDeviceRole is proper initialized.
-func (nbi *NetboxInventory) InitServerDeviceRole(ctx context.Context) error {
-	_, err := nbi.AddDeviceRole(ctx, &objects.DeviceRole{Name: "Server", Slug: "server", Color: "00add8", VMRole: true})
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -332,7 +348,7 @@ func (nbi *NetboxInventory) InitSsotCustomFields(ctx context.Context) error {
 		DisplayWeight:         objects.DisplayWeightDefault,
 		Description:           constants.CustomFieldSourceDescription,
 		SearchWeight:          objects.SearchWeightDefault,
-		ContentTypes:          []string{"dcim.device", "dcim.devicerole", "dcim.devicetype", "dcim.interface", "dcim.location", "dcim.manufacturer", "dcim.platform", "dcim.region", "dcim.site", "ipam.ipaddress", "ipam.vlangroup", "ipam.vlan", "ipam.prefix", "tenancy.tenantgroup", "tenancy.tenant", "tenancy.contact", "tenancy.contactassignment", "tenancy.contactgroup", "tenancy.contactrole", "virtualization.cluster", "virtualization.clustergroup", "virtualization.clustertype", "virtualization.virtualmachine", "virtualization.vminterface"},
+		ContentTypes:          []string{"dcim.device", "dcim.devicerole", "dcim.devicetype", "dcim.interface", "dcim.location", "dcim.manufacturer", "dcim.platform", "dcim.region", "dcim.site", "dcim.virtualdevicecontext", "ipam.ipaddress", "ipam.vlangroup", "ipam.vlan", "ipam.prefix", "tenancy.tenantgroup", "tenancy.tenant", "tenancy.contact", "tenancy.contactassignment", "tenancy.contactgroup", "tenancy.contactrole", "virtualization.cluster", "virtualization.clustergroup", "virtualization.clustertype", "virtualization.virtualmachine", "virtualization.vminterface"},
 	})
 	if err != nil {
 		return err

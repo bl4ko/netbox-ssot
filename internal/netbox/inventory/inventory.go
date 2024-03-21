@@ -47,6 +47,8 @@ type NetboxInventory struct {
 	// DevicesIndexByNameAndSiteID is a map of all devices in the Netbox's inventory, indexed by their name, and
 	// site ID (This is because, netbox constraints: https://github.com/netbox-community/netbox/blob/3d941411d438f77b66d2036edf690c14b459af58/netbox/dcim/models/devices.py#L775)
 	DevicesIndexByNameAndSiteID map[string]map[int]*objects.Device
+	// VirtualDeviceContextsIndexByNameAndDeviceID is a map of all virtual device contexts in the Netbox's inventory indexed by their name and device ID.
+	VirtualDeviceContextsIndexByNameAndDeviceID map[string]map[int]*objects.VirtualDeviceContext
 	// PrefixesIndexByPrefix is a map of all prefixes in the Netbox's inventory, indexed by their prefix
 	PrefixesIndexByPrefix map[string]*objects.Prefix
 	// VlanGroupsIndexByName is a map of all VlanGroups in the Netbox's inventory, indexed by their name
@@ -147,19 +149,20 @@ func NewNetboxInventory(ctx context.Context, logger *logger.Logger, nbConfig *pa
 		1:  constants.PrefixesAPIPath,
 		2:  constants.VlansAPIPath,
 		3:  constants.IPAddressesAPIPath,
-		4:  constants.InterfacesAPIPath,
-		5:  constants.VMInterfacesAPIPath,
-		6:  constants.VirtualMachinesAPIPath,
-		7:  constants.DevicesAPIPath,
-		8:  constants.PlatformsAPIPath,
-		9:  constants.DeviceTypesAPIPath,
-		10: constants.ManufacturersAPIPath,
-		11: constants.DeviceRolesAPIPath,
-		12: constants.ClustersAPIPath,
-		13: constants.ClusterTypesAPIPath,
-		14: constants.ClusterGroupsAPIPath,
-		15: constants.ContactAssignmentsAPIPath,
-		16: constants.ContactsAPIPath,
+		4:  constants.VirtualDeviceContextsAPIPath,
+		5:  constants.InterfacesAPIPath,
+		6:  constants.VMInterfacesAPIPath,
+		7:  constants.VirtualMachinesAPIPath,
+		8:  constants.DevicesAPIPath,
+		9:  constants.PlatformsAPIPath,
+		10: constants.DeviceTypesAPIPath,
+		11: constants.ManufacturersAPIPath,
+		12: constants.DeviceRolesAPIPath,
+		13: constants.ClustersAPIPath,
+		14: constants.ClusterTypesAPIPath,
+		15: constants.ClusterGroupsAPIPath,
+		16: constants.ContactAssignmentsAPIPath,
+		17: constants.ContactsAPIPath,
 	}
 	nbi := &NetboxInventory{Ctx: ctx, Logger: logger, NetboxConfig: nbConfig, SourcePriority: sourcePriority, OrphanManager: make(map[string]map[int]bool), OrphanObjectPriority: orphanObjectPriority}
 	return nbi
@@ -188,6 +191,7 @@ func (nbi *NetboxInventory) Init() error {
 		nbi.InitManufacturers,
 		nbi.InitPlatforms,
 		nbi.InitDevices,
+		nbi.InitVirtualDeviceContexts,
 		nbi.InitInterfaces,
 		nbi.InitIPAddresses,
 		nbi.InitVlanGroups,
@@ -195,7 +199,6 @@ func (nbi *NetboxInventory) Init() error {
 		nbi.InitPrefixes,
 		nbi.InitVlans,
 		nbi.InitDeviceRoles,
-		nbi.InitServerDeviceRole,
 		nbi.InitDeviceTypes,
 		nbi.InitClusterGroups,
 		nbi.InitClusterTypes,

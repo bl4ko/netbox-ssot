@@ -479,8 +479,8 @@ func (nbi *NetboxInventory) AddDeviceType(ctx context.Context, newDeviceType *ob
 }
 
 func (nbi *NetboxInventory) AddPlatform(ctx context.Context, newPlatform *objects.Platform) (*objects.Platform, error) {
-	newPlatform.Tags = append(newPlatform.Tags, nbi.SsotTag)
 	nbi.PlatformsLock.Lock()
+	newPlatform.Tags = append(newPlatform.Tags, nbi.SsotTag)
 	defer nbi.PlatformsLock.Unlock()
 	if _, ok := nbi.PlatformsIndexByName[newPlatform.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
@@ -515,6 +515,7 @@ func (nbi *NetboxInventory) AddDevice(ctx context.Context, newDevice *objects.De
 	nbi.DevicesLock.Lock()
 	defer nbi.DevicesLock.Unlock()
 	newDevice.Tags = append(newDevice.Tags, nbi.SsotTag)
+	addSourceNameCustomField(ctx, &newDevice.NetboxObject)
 	if newDevice.Site == nil {
 		return nil, fmt.Errorf("device %s is not assigned to a site, but it should be", newDevice)
 	}
@@ -547,6 +548,46 @@ func (nbi *NetboxInventory) AddDevice(ctx context.Context, newDevice *objects.De
 		nbi.DevicesIndexByNameAndSiteID[newDevice.Name][newDevice.Site.ID] = newDevice
 	}
 	return nbi.DevicesIndexByNameAndSiteID[newDevice.Name][newDevice.Site.ID], nil
+}
+
+// AddVirtualDeviceContext adds new virtual device context to the local inventory.
+func (nbi *NetboxInventory) AddVirtualDeviceContext(ctx context.Context, newVDC *objects.VirtualDeviceContext) (*objects.VirtualDeviceContext, error) {
+	nbi.DevicesLock.Lock()
+	defer nbi.DevicesLock.Unlock()
+	newVDC.Tags = append(newVDC.Tags, nbi.SsotTag)
+	if newVDC.Device == nil {
+		return nil, fmt.Errorf("VirtualDeviceContext %s is not assigned to a device, but it should be", newVDC)
+	}
+	addSourceNameCustomField(ctx, &newVDC.NetboxObject)
+	if _, ok := nbi.VirtualDeviceContextsIndexByNameAndDeviceID[newVDC.Name][newVDC.Device.ID]; ok {
+		oldVDC := nbi.VirtualDeviceContextsIndexByNameAndDeviceID[newVDC.Name][newVDC.Device.ID]
+		delete(nbi.OrphanManager[constants.VirtualDeviceContextsAPIPath], oldVDC.ID)
+		diffMap, err := utils.JSONDiffMapExceptID(newVDC, oldVDC, false, nbi.SourcePriority)
+		if err != nil {
+			return nil, err
+		}
+		if len(diffMap) > 0 {
+			nbi.Logger.Debug(ctx, "VirtualDeviceContext ", newVDC.Name, " already exists in Netbox but is out of date. Patching it...")
+			patchedVDC, err := service.Patch[objects.VirtualDeviceContext](ctx, nbi.NetboxAPI, oldVDC.ID, diffMap)
+			if err != nil {
+				return nil, err
+			}
+			nbi.VirtualDeviceContextsIndexByNameAndDeviceID[newVDC.Name][newVDC.Device.ID] = patchedVDC
+		} else {
+			nbi.Logger.Debug(ctx, "VirtualDeviceContext ", newVDC.Name, " already exists in Netbox and is up to date...")
+		}
+	} else {
+		nbi.Logger.Debug(ctx, "VirtualDeviceContext ", newVDC.Name, " does not exist in Netbox. Creating it...")
+		newDevice, err := service.Create[objects.VirtualDeviceContext](ctx, nbi.NetboxAPI, newVDC)
+		if err != nil {
+			return nil, err
+		}
+		if nbi.VirtualDeviceContextsIndexByNameAndDeviceID[newDevice.Name] == nil {
+			nbi.VirtualDeviceContextsIndexByNameAndDeviceID[newDevice.Name] = make(map[int]*objects.VirtualDeviceContext)
+		}
+		nbi.VirtualDeviceContextsIndexByNameAndDeviceID[newDevice.Name][newDevice.Device.ID] = newDevice
+	}
+	return nbi.VirtualDeviceContextsIndexByNameAndDeviceID[newVDC.Name][newVDC.Device.ID], nil
 }
 
 func (nbi *NetboxInventory) AddVlanGroup(ctx context.Context, newVlanGroup *objects.VlanGroup) (*objects.VlanGroup, error) {
@@ -586,6 +627,7 @@ func (nbi *NetboxInventory) AddVlan(ctx context.Context, newVlan *objects.Vlan) 
 	nbi.VlansLock.Lock()
 	defer nbi.VlansLock.Unlock()
 	newVlan.Tags = append(newVlan.Tags, nbi.SsotTag)
+	addSourceNameCustomField(ctx, &newVlan.NetboxObject)
 	if _, ok := nbi.VlansIndexByVlanGroupIDAndVID[newVlan.Group.ID][newVlan.Vid]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
 		oldVlan := nbi.VlansIndexByVlanGroupIDAndVID[newVlan.Group.ID][newVlan.Vid]
@@ -622,6 +664,7 @@ func (nbi *NetboxInventory) AddInterface(ctx context.Context, newInterface *obje
 	nbi.InterfacesLock.Lock()
 	defer nbi.InterfacesLock.Unlock()
 	newInterface.Tags = append(newInterface.Tags, nbi.SsotTag)
+	addSourceNameCustomField(ctx, &newInterface.NetboxObject)
 	if _, ok := nbi.InterfacesIndexByDeviceIDAndName[newInterface.Device.ID][newInterface.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
 		delete(nbi.OrphanManager[constants.InterfacesAPIPath], nbi.InterfacesIndexByDeviceIDAndName[newInterface.Device.ID][newInterface.Name].ID)
@@ -658,6 +701,7 @@ func (nbi *NetboxInventory) AddVM(ctx context.Context, newVM *objects.VM) (*obje
 	nbi.VMsLock.Lock()
 	defer nbi.VMsLock.Unlock()
 	newVM.Tags = append(newVM.Tags, nbi.SsotTag)
+	addSourceNameCustomField(ctx, &newVM.NetboxObject)
 	if _, ok := nbi.VMsIndexByName[newVM.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
 		delete(nbi.OrphanManager[constants.VirtualMachinesAPIPath], nbi.VMsIndexByName[newVM.Name].ID)
@@ -728,6 +772,7 @@ func (nbi *NetboxInventory) AddIPAddress(ctx context.Context, newIPAddress *obje
 	newIPAddress.Tags = append(newIPAddress.Tags, nbi.SsotTag)
 	nbi.IPAddressesLock.Lock()
 	defer nbi.IPAddressesLock.Unlock()
+	addSourceNameCustomField(ctx, &newIPAddress.NetboxObject)
 	if _, ok := nbi.IPAdressesIndexByAddress[newIPAddress.Address]; ok {
 		// Delete id from orphan manager, because it still exists in the sources
 		delete(nbi.OrphanManager[constants.IPAddressesAPIPath], nbi.IPAdressesIndexByAddress[newIPAddress.Address].ID)
@@ -794,4 +839,12 @@ func (nbi *NetboxInventory) AddPrefix(ctx context.Context, newPrefix *objects.Pr
 		return newPrefix, nil
 	}
 	return nbi.PrefixesIndexByPrefix[newPrefix.Prefix], nil
+}
+
+// Helper function that adds source name to custom field of the netbox object.
+func addSourceNameCustomField(ctx context.Context, netboxObject *objects.NetboxObject) {
+	if netboxObject.CustomFields == nil {
+		netboxObject.CustomFields = make(map[string]string)
+	}
+	netboxObject.CustomFields[constants.CustomFieldSourceName] = ctx.Value(constants.CtxSourceKey).(string) //nolint
 }

@@ -205,3 +205,28 @@ func TestInterface_String(t *testing.T) {
 		})
 	}
 }
+
+func TestVirtualDeviceContext_String(t *testing.T) {
+	tests := []struct {
+		name string
+		vdc  VirtualDeviceContext
+		want string
+	}{
+		{
+			name: "Correct string representation of virtual device context",
+			vdc: VirtualDeviceContext{
+				Name:   "test",
+				Device: &Device{Name: "testdevice"},
+				Status: &VDCStatusActive,
+			},
+			want: fmt.Sprintf("VirtualDeviceContext{Name: %s, Device: %s, Status: %s}", "test", &Device{Name: "testdevice"}, &VDCStatusActive),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.vdc.String(); got != tt.want {
+				t.Errorf("VirtualDeviceContext.String() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

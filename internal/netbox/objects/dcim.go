@@ -442,8 +442,44 @@ type Interface struct {
 	TaggedVlans []*Vlan `json:"tagged_vlans,omitempty"`
 	// UntaggedVlan
 	UntaggedVlan *Vlan `json:"untagged_vlan,omitempty"`
+	// VirtualDeviceContexts
+	Vdcs []*VirtualDeviceContext `json:"vdcs,omitempty"`
 }
 
 func (i Interface) String() string {
 	return fmt.Sprintf("Interface{Name: %s, Device: %s, Type: %s}", i.Name, i.Device.Name, i.Type.Label)
+}
+
+// Virtual Device Context status.
+type VDCStatus struct {
+	Choice
+}
+
+var (
+	VDCStatusActive  = VDCStatus{Choice{Value: "active", Label: "Active"}}
+	VDCStatusPlanned = VDCStatus{Choice{Value: "planned", Label: "Planned"}}
+	VDCStatusOffline = VDCStatus{Choice{Value: "offline", Label: "Offline"}}
+)
+
+// VirtualDeviceContext represents extra virtual context within a device.
+type VirtualDeviceContext struct {
+	NetboxObject
+	// Name of the VirtualDeviceContext. This field is required.
+	Name string `json:"name,omitempty"`
+	// Device that VirtualDeviceContext belongs to. This field is required.
+	Device *Device `json:"device,omitempty"`
+	// Status of the VirtualDeviceContext. This field is required.
+	Status *VDCStatus `json:"status,omitempty"`
+	// Unique identifier for VirtualDeviceContext within Single Device.
+	Identifier int `json:"identifier,omitempty"`
+	// Tenant for this VirtualDeviceContext.
+	Tenant *Tenant `json:"tenant,omitempty"`
+	// Primary IPv4 for VirtualDeviceContext.
+	PrimaryIPv4 *IPAddress `json:"primary_ipv4,omitempty"`
+	// Primary IPv6 for VirtualDeviceContext.
+	PrimaryIPv6 *IPAddress `json:"primary_ipv6,omitempty"`
+}
+
+func (vdc VirtualDeviceContext) String() string {
+	return fmt.Sprintf("VirtualDeviceContext{Name: %s, Device: %s, Status: %s}", vdc.Name, vdc.Device, vdc.Status)
 }
