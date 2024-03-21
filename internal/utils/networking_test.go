@@ -261,3 +261,84 @@ func TestSubnetsContainIPAddress(t *testing.T) {
 		})
 	}
 }
+
+func TestExtractPrefixFromIPAddress(t *testing.T) {
+	type args struct {
+		ipAddress string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "Extract valid prefix",
+			args: args{
+				ipAddress: "172.16.1.2/16",
+			},
+			want:    "172.16.0.0/16",
+			wantErr: false,
+		},
+		{
+			name: "Extract valid prefix",
+			args: args{
+				ipAddress: "192.168.1.2/24",
+			},
+			want:    "192.168.1.0/24",
+			wantErr: false,
+		},
+		{
+			name: "Extract invalid prefix",
+			args: args{
+				ipAddress: "192.168.1.2",
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name: "Valid ipv6 prefix",
+			args: args{
+				ipAddress: "2001:db8::1/32",
+			},
+			want:    "2001:db8::/32",
+			wantErr: false,
+		},
+		{
+			name: "Invalid ipv6 prefix",
+			args: args{
+				ipAddress: "2001:db8::1",
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name: "Ignore 128 mask for ipv6",
+			args: args{
+				ipAddress: "2001:db8::1/128",
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name: "Ignore 32 mask for ipv4",
+			args: args{
+				ipAddress: "192:168:0:64/32",
+			},
+			want:    "",
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ExtractPrefixFromIPAddress(tt.args.ipAddress)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ExtractPrefixFromIPAddress() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("ExtractPrefixFromIPAddress() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

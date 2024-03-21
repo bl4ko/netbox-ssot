@@ -54,9 +54,7 @@ func GetIPVersion(ipAddress string) int {
 }
 
 // Function that checks if given IP address is part of the
-// given subnet.
-// e.g. ipAddress "172.31.4.129" and subnet "172.31.4.145/25"
-// Return true.
+// given subnet (e.g. ipAddress "172.31.4.129" and subnet "172.31.4.145/25").
 func SubnetContainsIPAddress(ipAddress string, subnet string) bool {
 	ip := net.ParseIP(ipAddress)
 	if ip == nil {
@@ -84,4 +82,19 @@ func SubnetsContainIPAddress(ipAddress string, subnets []string) bool {
 		}
 	}
 	return false
+}
+
+// ExtractPrefixFromIPAddress extracts network with mask
+// from the given ipAddress of format ip/mask,
+// e.g. 172.16.2.1/16 -> 172.16.0.0/16.
+func ExtractPrefixFromIPAddress(ipAddress string) (string, error) {
+	_, ipNet, err := net.ParseCIDR(ipAddress)
+	if err != nil {
+		return "", err
+	}
+	maskSize, _ := ipNet.Mask.Size()
+	if (ipNet.IP.To4() != nil && maskSize == 32) || (ipNet.IP.To4() == nil && maskSize == 128) {
+		return "", fmt.Errorf("invalid mask size for network: %v", maskSize)
+	}
+	return ipNet.String(), nil
 }

@@ -325,9 +325,25 @@ func (ds *DnacSource) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error
 				DNSName:            utils.ReverseLookup(iface.IPv4Address),
 				AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
 				AssignedObjectID:   nbIface.ID,
+				Tenant:             nbIface.Device.Tenant,
 			})
 			if err != nil {
-				return fmt.Errorf("adding ip address: %s", err)
+				ds.Logger.Errorf(ds.Ctx, "adding ip address: %s", err)
+				continue
+			}
+
+			// Also add prefix to netbox
+			prefix, err := utils.ExtractPrefixFromIPAddress(nbIPAddress.Address)
+			if err != nil {
+				ds.Logger.Warningf(ds.Ctx, "failed extracting prefix from ipAddress: %s", err)
+			} else {
+				_, err = nbi.AddPrefix(ds.Ctx, &objects.Prefix{
+					Prefix: prefix,
+					Tenant: nbIface.Device.Tenant,
+				})
+				if err != nil {
+					ds.Logger.Errorf(ds.Ctx, "adding prefix: %s", err)
+				}
 			}
 
 			// To determine if this interface, has the same IP address as the device's management IP
@@ -338,7 +354,7 @@ func (ds *DnacSource) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error
 				deviceCopy.PrimaryIPv4 = nbIPAddress
 				_, err = nbi.AddDevice(ds.Ctx, &deviceCopy)
 				if err != nil {
-					return fmt.Errorf("adding primary ipv4 address: %s", err)
+					ds.Logger.Errorf(ds.Ctx, "adding primary ipv4 address: %s", err)
 				}
 			}
 		}

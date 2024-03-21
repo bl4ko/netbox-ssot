@@ -432,12 +432,24 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 						return fmt.Errorf("adding primary ipv4 address: %s", err)
 					}
 				}
+
+				// Also create prefix if it doesn't exist yet
+				prefix, err := utils.ExtractPrefixFromIPAddress(nbIPAddress.Address)
+				if err != nil {
+					o.Logger.Warningf(o.Ctx, "error extracting prefix from IP address: %s", err)
+				}
+				_, err = nbi.AddPrefix(o.Ctx, &objects.Prefix{
+					Prefix: prefix,
+				})
+				if err != nil {
+					o.Logger.Warningf(o.Ctx, "adding prefix: %s", err)
+				}
 			}
 		}
 		for nicID, ipv6 := range nicID2IPv6 {
 			nbNic := nicID2nic[nicID]
 			address := strings.Split(ipv6, "/")[0]
-			_, err := nbi.AddIPAddress(o.Ctx, &objects.IPAddress{
+			nbIPAddress, err := nbi.AddIPAddress(o.Ctx, &objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
 					Tags: o.Config.SourceTags,
 					CustomFields: map[string]string{
@@ -452,6 +464,18 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 			})
 			if err != nil {
 				return fmt.Errorf("add ipv6 address: %s", err)
+			}
+
+			// Also create prefix if it doesn't exist yet
+			prefix, err := utils.ExtractPrefixFromIPAddress(nbIPAddress.Address)
+			if err != nil {
+				o.Logger.Warningf(o.Ctx, "error extracting prefix from IP address: %s", err)
+			}
+			_, err = nbi.AddPrefix(o.Ctx, &objects.Prefix{
+				Prefix: prefix,
+			})
+			if err != nil {
+				o.Logger.Warningf(o.Ctx, "adding prefix: %s", err)
 			}
 		}
 	}
@@ -852,9 +876,8 @@ func (o *OVirtSource) syncVMInterfaces(nbi *inventory.NetboxInventory, ovirtVM *
 										})
 
 										if err != nil {
-											// TODO: return should be here, commented just for now
-											// return fmt.Errorf("failed to sync oVirt vm's interface %s ip %s: %v", vmInterface, ip.MustAddress(), err)
-											o.Logger.Error(o.Ctx, fmt.Sprintf("failed to sync oVirt vm's interface %s ip %s: %v", vmInterface, ip.MustAddress(), err))
+											o.Logger.Errorf(o.Ctx, "add ip address: %s", err)
+											continue
 										}
 
 										// Check if ip is primary
@@ -865,9 +888,21 @@ func (o *OVirtSource) syncVMInterfaces(nbi *inventory.NetboxInventory, ovirtVM *
 												vmCopy.PrimaryIPv4 = newIPAddress
 												_, err := nbi.AddVM(o.Ctx, &vmCopy)
 												if err != nil {
-													return fmt.Errorf("adding primary ipv4 address: %s", err)
+													o.Logger.Errorf(o.Ctx, "adding vm's primary ipv4 address: %s", err)
+													continue
 												}
 											}
+										}
+										prefix, err := utils.ExtractPrefixFromIPAddress(newIPAddress.Address)
+										if err != nil {
+											o.Logger.Warningf(o.Ctx, "extract prefix: %s", err)
+											continue
+										}
+										_, err = nbi.AddPrefix(o.Ctx, &objects.Prefix{
+											Prefix: prefix,
+										})
+										if err != nil {
+											o.Logger.Errorf(o.Ctx, "add prefix: %s", err)
 										}
 									}
 								}

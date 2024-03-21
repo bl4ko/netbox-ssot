@@ -757,6 +757,10 @@ func (nbi *NetboxInventory) AddIPAddress(ctx context.Context, newIPAddress *obje
 func (nbi *NetboxInventory) AddPrefix(ctx context.Context, newPrefix *objects.Prefix) (*objects.Prefix, error) {
 	newPrefix.Tags = append(newPrefix.Tags, nbi.SsotTag)
 	nbi.PrefixesLock.Lock()
+	if newPrefix.NetboxObject.CustomFields == nil {
+		newPrefix.NetboxObject.CustomFields = make(map[string]string)
+	}
+	newPrefix.NetboxObject.CustomFields[constants.CustomFieldSourceName] = ctx.Value(constants.CtxSourceKey).(string) //nolint:forcetypeassert
 	defer nbi.PrefixesLock.Unlock()
 	if _, ok := nbi.PrefixesIndexByPrefix[newPrefix.Prefix]; ok {
 		// Delete id from orphan manager, because it still exists in the sources

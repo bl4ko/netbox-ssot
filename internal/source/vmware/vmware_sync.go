@@ -477,33 +477,54 @@ func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetboxInventory, vcHo
 				AssignedObjectID:   nbVnic.ID,
 			})
 			if err != nil {
-				return err
+				vc.Logger.Errorf(vc.Ctx, "add ipv4 address: %s", err)
+				continue
 			}
 			hostIPv4Addresses = append(hostIPv4Addresses, nbIPv4Address)
+
+			prefix, err := utils.ExtractPrefixFromIPAddress(nbIPv4Address.Address)
+			if err != nil {
+				vc.Logger.Warningf(vc.Ctx, "extract prefix from ip address: %s", err)
+				continue
+			}
+			_, err = nbi.AddPrefix(vc.Ctx, &objects.Prefix{
+				Prefix: prefix,
+			})
+			if err != nil {
+				vc.Logger.Errorf(vc.Ctx, "add prefix: %s", err)
+			}
 		}
 
 		if vnic.Spec.Ip.IpV6Config != nil {
 			for _, ipv6Entry := range vnic.Spec.Ip.IpV6Config.IpV6Address {
 				ipv6Address := ipv6Entry.IpAddress
 				ipv6Mask := ipv6Entry.PrefixLength
-				// TODO: Filter out ipv6 addresses
-				nbIPv6Address, err := nbi.AddIPAddress(vc.Ctx, &objects.IPAddress{
-					NetboxObject: objects.NetboxObject{
-						Tags: vc.Config.SourceTags,
-						CustomFields: map[string]string{
-							constants.CustomFieldSourceName: vc.SourceConfig.Name,
+				if !utils.SubnetsContainIPAddress(ipv6Address, vc.SourceConfig.IgnoredSubnets) {
+					nbIPv6Address, err := nbi.AddIPAddress(vc.Ctx, &objects.IPAddress{
+						NetboxObject: objects.NetboxObject{
+							Tags: vc.Config.SourceTags,
+							CustomFields: map[string]string{
+								constants.CustomFieldSourceName: vc.SourceConfig.Name,
+							},
 						},
-					},
-					Address:            fmt.Sprintf("%s/%d", ipv6Address, ipv6Mask),
-					Status:             &objects.IPAddressStatusActive, // TODO
-					Tenant:             nbHost.Tenant,
-					AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
-					AssignedObjectID:   nbVnic.ID,
-				})
-				if err != nil {
-					return err
+						Address:            fmt.Sprintf("%s/%d", ipv6Address, ipv6Mask),
+						Status:             &objects.IPAddressStatusActive, // TODO
+						Tenant:             nbHost.Tenant,
+						AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
+						AssignedObjectID:   nbVnic.ID,
+					})
+					if err != nil {
+						vc.Logger.Errorf(vc.Ctx, "add ipv6 address: %s", err)
+						continue
+					}
+					hostIPv6Addresses = append(hostIPv6Addresses, nbIPv6Address)
+
+					prefix, err := utils.ExtractPrefixFromIPAddress(nbIPv6Address.Address)
+					if err != nil {
+						vc.Logger.Warningf(vc.Ctx, "extract prefix %s", prefix)
+						continue
+					}
 				}
-				hostIPv6Addresses = append(hostIPv6Addresses, nbIPv6Address)
 			}
 		}
 	}
@@ -1024,8 +1045,20 @@ func (vc *VmwareSource) addVMInterfaceIPs(nbi *inventory.NetboxInventory, nbVMIn
 			})
 			if err != nil {
 				vc.Logger.Warningf(vc.Ctx, "adding ipv4 address: %s", err)
+				continue
 			}
 			vmIPv4Addresses = append(vmIPv4Addresses, nbIPv4Address)
+			prefix, err := utils.ExtractPrefixFromIPAddress(nbIPv4Address.Address)
+			if err != nil {
+				vc.Logger.Warningf(vc.Ctx, "extract prefix from ip address: %s", err)
+				continue
+			}
+			_, err = nbi.AddPrefix(vc.Ctx, &objects.Prefix{
+				Prefix: prefix,
+			})
+			if err != nil {
+				vc.Logger.Errorf(vc.Ctx, "add prefix: %s", err)
+			}
 		}
 	}
 
@@ -1045,8 +1078,20 @@ func (vc *VmwareSource) addVMInterfaceIPs(nbi *inventory.NetboxInventory, nbVMIn
 		})
 		if err != nil {
 			vc.Logger.Warningf(vc.Ctx, "adding ipv6 address: %s", err)
+			continue
 		}
 		vmIPv6Addresses = append(vmIPv6Addresses, nbIPv6Address)
+		prefix, err := utils.ExtractPrefixFromIPAddress(nbIPv6Address.Address)
+		if err != nil {
+			vc.Logger.Warningf(vc.Ctx, "extract prefix from ip address: %s", err)
+			continue
+		}
+		_, err = nbi.AddPrefix(vc.Ctx, &objects.Prefix{
+			Prefix: prefix,
+		})
+		if err != nil {
+			vc.Logger.Errorf(vc.Ctx, "add prefix: %s", err)
+		}
 	}
 	return vmIPv4Addresses, vmIPv6Addresses
 }
