@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/PaloAltoNetworks/pango v0.10.2
 	github.com/cisco-en-programmability/dnacenter-go-sdk/v5 v5.0.25
-	github.com/luthermonson/go-proxmox v0.0.0-beta5
+	github.com/luthermonson/go-proxmox v0.0.0-beta6
 	github.com/ovirt/go-ovirt v4.3.4+incompatible
 	github.com/vmware/govmomi v0.36.1
 	golang.org/x/text v0.14.0
