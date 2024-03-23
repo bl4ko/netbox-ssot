@@ -127,6 +127,9 @@ const (
 
 	DeviceRoleServer      = "Server"
 	DeviceRoleServerColor = "00add8"
+
+	DeviceRoleContainer      = "Container"
+	DeviceRoleContainerColor = "0db7ed"
 )
 
 // Constants used for variables in our contexts.

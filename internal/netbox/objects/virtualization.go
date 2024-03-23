@@ -96,6 +96,8 @@ type VM struct {
 	Memory int `json:"memory,omitempty"`
 	// Disk is the amount of disk space allocated to the virtual machine in GB.
 	Disk int `json:"disk,omitempty"`
+	// Role of the virtual machine.
+	Role *DeviceRole `json:"role,omitempty"`
 
 	// Additional Comments
 	Comments string `json:"comments,omitempty"`

@@ -26,6 +26,7 @@ func (ps *ProxmoxSource) initNodes(ctx context.Context, c *proxmox.Client) error
 	ps.Nodes = make([]*proxmox.Node, 0, len(nodes))
 	ps.NodeNetworks = make(map[string][]*proxmox.NodeNetwork, len(nodes))
 	ps.Vms = make(map[string][]*proxmox.VirtualMachine, len(nodes))
+	ps.Containers = make(map[string][]*proxmox.Container, len(nodes))
 	for _, node := range nodes {
 		node, err := c.Node(ctx, node.Node)
 		if err != nil {
@@ -41,6 +42,11 @@ func (ps *ProxmoxSource) initNodes(ctx context.Context, c *proxmox.Client) error
 		err = ps.initNodeVMs(ctx, node)
 		if err != nil {
 			return fmt.Errorf("init nodeVMs: %s", err)
+		}
+
+		err = ps.initContainers(ctx, node)
+		if err != nil {
+			return fmt.Errorf("init node containers: %s", err)
 		}
 	}
 	return nil
@@ -76,6 +82,23 @@ func (ps *ProxmoxSource) initNodeVMs(ctx context.Context, node *proxmox.Node) er
 		ifaces, _ := vm.AgentGetNetworkIFaces(ctx)
 		ps.VMNetworks[vm.Name] = make([]*proxmox.AgentNetworkIface, 0, len(ifaces))
 		ps.VMNetworks[vm.Name] = append(ps.VMNetworks[vm.Name], ifaces...)
+	}
+	return nil
+}
+
+// Helper function for initNodes. It collects all containers for given node.
+func (ps *ProxmoxSource) initContainers(ctx context.Context, node *proxmox.Node) error {
+	containers, err := node.Containers(ctx)
+	if err != nil {
+		return err
+	}
+	ps.Containers[node.Name] = make([]*proxmox.Container, 0, len(containers))
+	// ps.VMNetworks = make(map[string][]*proxmox.AgentNetworkIface, len(containers))
+	for _, container := range containers {
+		ps.Containers[node.Name] = append(ps.Containers[node.Name], container)
+		// ifaces, _ := container.AgentGetNetworkIFaces(ctx)
+		// ps.VMNetworks[container.Name] = make([]*proxmox.AgentNetworkIface, 0, len(ifaces))
+		// ps.VMNetworks[container.Name] = append(ps.VMNetworks[container.Name], ifaces...)
 	}
 	return nil
 }

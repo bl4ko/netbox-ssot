@@ -289,3 +289,62 @@ func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *ob
 	}
 	return nil
 }
+
+// Function that synces proxmox containers to the netbox inventory.
+func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
+	if len(ps.Containers) > 0 {
+		// Create container role
+		containerRole, err := nbi.AddDeviceRole(ps.Ctx, &objects.DeviceRole{
+			Name:   constants.DeviceRoleContainer,
+			Slug:   utils.Slugify(constants.DeviceRoleContainer),
+			Color:  constants.DeviceRoleContainerColor,
+			VMRole: true,
+		})
+		if err != nil {
+			return fmt.Errorf("create container role: %s", err)
+		}
+		for nodeName, containers := range ps.Containers {
+			nbHost := ps.NetboxNodes[nodeName]
+			for _, container := range containers {
+				// Determine Container status
+				containerStatus := &objects.VMStatusActive
+				if container.Status == "stopped" {
+					containerStatus = &objects.VMStatusOffline
+				}
+				// Determine Container tenant
+				vmTenant, err := common.MatchVMToTenant(ps.Ctx, nbi, container.Name, ps.VMTenantRelations)
+				if err != nil {
+					return fmt.Errorf("match vm to tenant: %s", err)
+				}
+				_, err = nbi.AddVM(ps.Ctx, &objects.VM{
+					NetboxObject: objects.NetboxObject{
+						Tags: ps.SourceTags,
+						CustomFields: map[string]string{
+							constants.CustomFieldSourceName:   ps.SourceConfig.Name,
+							constants.CustomFieldSourceIDName: fmt.Sprintf("%d", container.VMID),
+						},
+					},
+					Host:    nbHost,
+					Role:    containerRole,
+					Cluster: ps.NetboxCluster, // Default single proxmox cluster
+					Tenant:  vmTenant,
+					VCPUs:   float32(container.CPUs),
+					Memory:  int(container.MaxMem / constants.MiB),  // Memory is in MB
+					Disk:    int(container.MaxDisk / constants.GiB), // Disk is in GB
+					Site:    nbHost.Site,
+					Name:    container.Name,
+					Status:  containerStatus,
+				})
+				if err != nil {
+					return fmt.Errorf("new vm: %s", err)
+				}
+
+				// err = ps.syncContainerNetworks(nbi, nbContainer)
+				// if err != nil {
+				// 	return fmt.Errorf("sync container networks: %s", err)
+				// }
+			}
+		}
+	}
+	return nil
+}

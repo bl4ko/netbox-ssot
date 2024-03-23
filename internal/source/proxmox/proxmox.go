@@ -24,6 +24,7 @@ type ProxmoxSource struct {
 	NodeNetworks map[string][]*proxmox.NodeNetwork       // NodeName -> NodeNetworks (interfaces)
 	Vms          map[string][]*proxmox.VirtualMachine    // NodeName -> VirtualMachines
 	VMNetworks   map[string][]*proxmox.AgentNetworkIface // VMName -> NetworkDevices
+	Containers   map[string][]*proxmox.Container         // NodeName -> Contatiners
 
 	// Netbox related data for easier access. Initialized in sync functions.
 	NetboxCluster *objects.Cluster
@@ -102,6 +103,7 @@ func (ps *ProxmoxSource) Sync(nbi *inventory.NetboxInventory) error {
 		ps.syncCluster,
 		ps.syncNodes,
 		ps.syncVMs,
+		ps.syncContainers,
 	}
 	for _, syncFunc := range syncFunctions {
 		startTime := time.Now()
