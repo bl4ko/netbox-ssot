@@ -580,7 +580,15 @@ func Test_hasPriorityOver(t *testing.T) {
 		args args
 		want bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "When custom fields on object are missing return true",
+			args: args{
+				newObj:          reflect.ValueOf(objects.Tag{Name: "NewDevice"}),
+				existingObj:     reflect.ValueOf(objects.Tag{Name: "ExistingDevice"}),
+				source2priority: map[string]int{},
+			},
+			want: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -589,6 +597,30 @@ func Test_hasPriorityOver(t *testing.T) {
 			}
 		})
 	}
+}
+
+type testStruct struct {
+	Test string
+}
+
+type testStruct2 struct {
+	Test int
+}
+
+type testSliceStruct struct {
+	Test []int
+}
+
+type wrongIDField struct {
+	ID string
+}
+
+type testStructWithWrongIDField struct {
+	SubStruct wrongIDField
+}
+
+type structWithIntMapAttribute struct {
+	Map map[int]int
 }
 
 func TestJSONDiffMapExceptID(t *testing.T) {
@@ -604,7 +636,95 @@ func TestJSONDiffMapExceptID(t *testing.T) {
 		want    map[string]interface{}
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test diff map with objects of different kinds",
+			args: args{
+				newObj:          objects.Device{Name: "TestDevice"},
+				existingObj:     &objects.Interface{Name: "TestInterface"},
+				resetFields:     true,
+				source2priority: map[string]int{},
+			},
+			wantErr: true,
+		},
+		{
+			name: "New object is not a struct",
+			args: args{
+				newObj:          "TestDevice",
+				existingObj:     "Existing device",
+				resetFields:     true,
+				source2priority: map[string]int{},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Trigger error for fieldName == \"NetboxObject\"",
+			args: args{
+				newObj: &objects.Device{
+					Name: "NewDevice",
+				},
+				existingObj: &objects.Tag{
+					Name: "ExistingTag",
+				},
+				resetFields: true,
+				source2priority: map[string]int{
+					"InvalidPrioritySetting": -1,
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "New object has a field with no json",
+			args: args{
+				newObj:          testStruct{Test: "Test"},
+				existingObj:     testStruct{Test: "Test2"},
+				resetFields:     true,
+				source2priority: map[string]int{},
+			},
+			want: map[string]interface{}{
+				"Test": "Test",
+			},
+			wantErr: false,
+		},
+		{
+			name: "Fail with both fields are not of the same type",
+			args: args{
+				newObj:          testStruct{Test: "test"},
+				existingObj:     testStruct2{Test: 1},
+				resetFields:     false,
+				source2priority: map[string]int{},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Fail with case reflect.Slice",
+			args: args{
+				newObj:          testSliceStruct{Test: []int{1, 2, 3}},
+				existingObj:     testSliceStruct{Test: []int{1, 2}},
+				resetFields:     false,
+				source2priority: map[string]int{},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Fail with case reflect.Struct",
+			args: args{
+				newObj:          testStructWithWrongIDField{SubStruct: wrongIDField{ID: "wrong"}},
+				existingObj:     testStructWithWrongIDField{SubStruct: wrongIDField{ID: "should be int"}},
+				resetFields:     false,
+				source2priority: map[string]int{},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Fail with case reflect.Map",
+			args: args{
+				newObj:          structWithIntMapAttribute{Map: map[int]int{1: 1}},
+				existingObj:     structWithIntMapAttribute{Map: map[int]int{1: 1}},
+				resetFields:     false,
+				source2priority: map[string]int{},
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -633,7 +753,56 @@ func Test_addSliceDiff(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test when new slice is nil and has priority",
+			args: args{
+				newSlice:      reflect.ValueOf([]int{}),
+				existingSlice: reflect.ValueOf([]int{1, 2, 3}),
+				jsonTag:       "test",
+				hasPriority:   true,
+				diffMap:       map[string]interface{}{},
+			},
+		},
+		{
+			name: "Test string slices of different length",
+			args: args{
+				newSlice:      reflect.ValueOf([]string{"pineapple", "strawberry"}),
+				existingSlice: reflect.ValueOf([]string{"pineapple"}),
+				jsonTag:       "test",
+				hasPriority:   true,
+				diffMap:       map[string]interface{}{"test": []string{"pineapple", "strawberry"}},
+			},
+		},
+		{
+			name: "Test string slices of same length",
+			args: args{
+				newSlice:      reflect.ValueOf([]string{"pineapple", "strawberry"}),
+				existingSlice: reflect.ValueOf([]string{"pineapple", "apple"}),
+				jsonTag:       "test",
+				hasPriority:   true,
+				diffMap:       map[string]interface{}{"test": []string{"pineapple", "strawberry"}},
+			},
+		},
+		{
+			name: "Test interface slices of same length. Fails because elements are not structs",
+			args: args{
+				newSlice:      reflect.ValueOf([]interface{}{nil, "pineapple", "strawberry"}),
+				existingSlice: reflect.ValueOf([]interface{}{"pineapple", "apple"}),
+				jsonTag:       "test",
+				hasPriority:   true,
+			},
+			wantErr: true,
+		},
+		{
+			name: "Test interface slices of same length. Fails because elements don't have ID",
+			args: args{
+				newSlice:      reflect.ValueOf([]interface{}{nil, IDObject{ID: 1}, testStruct{Test: "test"}}),
+				existingSlice: reflect.ValueOf([]interface{}{IDObject{ID: 1}}),
+				jsonTag:       "test",
+				hasPriority:   true,
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -657,7 +826,59 @@ func Test_addStructDiff(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Skip if new object is invalid",
+			args: args{
+				newObj:      reflect.ValueOf(nil),
+				existingObj: reflect.ValueOf("string"),
+				jsonTag:     "Test",
+				diffMap:     map[string]interface{}{},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Existing obj is invalid",
+			args: args{
+				newObj:      reflect.ValueOf(testStruct{Test: "new"}),
+				existingObj: reflect.ValueOf(nil),
+				jsonTag:     "Test",
+				diffMap:     map[string]interface{}{},
+			},
+			wantErr: false,
+		},
+		{
+			name: "New object has priority and is different",
+			args: args{
+				newObj:      reflect.ValueOf(testStruct{Test: "new string"}),
+				existingObj: reflect.ValueOf(testStruct{Test: "old string"}),
+				jsonTag:     "Test",
+				diffMap:     map[string]interface{}{},
+				hasPriority: true,
+			},
+			wantErr: false,
+		},
+		{
+			name: "New object doesn't have priority and is different",
+			args: args{
+				newObj:      reflect.ValueOf(testStruct{Test: "new string"}),
+				existingObj: reflect.ValueOf(testStruct{Test: "old string"}),
+				jsonTag:     "Test",
+				diffMap:     map[string]interface{}{},
+				hasPriority: false,
+			},
+			wantErr: false,
+		},
+		{
+			name: "New object has priority and is different and has choice attribute",
+			args: args{
+				newObj:      reflect.ValueOf(objects.InterfaceModeAccess),
+				existingObj: reflect.ValueOf(objects.InterfaceModeTagged),
+				jsonTag:     "Test",
+				diffMap:     map[string]interface{}{},
+				hasPriority: true,
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -681,7 +902,15 @@ func Test_addMapDiff(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "skip if new map is not valid",
+			args: args{
+				newMap:      reflect.ValueOf(nil),
+				existingMap: reflect.ValueOf(map[string]string{}),
+				jsonTag:     "test",
+				hasPriority: false,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

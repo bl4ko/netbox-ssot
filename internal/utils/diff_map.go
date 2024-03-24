@@ -11,6 +11,7 @@ import (
 )
 
 // Helper function to determine if a given reflect.Value contains an embedded objects.Choice.
+// We assume that Choice attribute is always the first attribute of an object.
 func isChoiceEmbedded(v reflect.Value) bool {
 	vType := v.Type()
 	return vType.Field(0).Type == reflect.TypeOf(objects.Choice{})
@@ -27,7 +28,7 @@ func choiceValue(v reflect.Value) interface{} {
 }
 
 // Struct used for patching objects, when attributes are structs, or slices
-// we only need object with an id of original object for patching.
+// we only need object with an ID of original object for patching.
 type IDObject struct {
 	ID int `json:"id"`
 }
@@ -144,7 +145,7 @@ func JSONDiffMapExceptID(newObj, existingObj interface{}, resetFields bool, sour
 
 		switch newObjectField.Kind() {
 		// Reset the field (when it is set to nil),
-		// this only happens if flag resetFields is set to true
+		// this only happens if flag resetFields is set to true.
 		case reflect.Invalid:
 			if existingObjectField.IsValid() {
 				diff[jsonTag] = nil
@@ -197,13 +198,12 @@ func addSliceDiff(newSlice reflect.Value, existingSlice reflect.Value, jsonTag s
 	// will compare ids of the objects, else we will compare
 	// the values of the slice
 	switch newSlice.Index(0).Kind() {
+	case reflect.Int:
+		return fmt.Errorf("integer slice comparison not implemented yet")
 	case reflect.String:
 		strSet := make(map[string]bool)
 		for j := 0; j < newSlice.Len(); j++ {
-			val, ok := newSlice.Index(j).Interface().(string)
-			if !ok {
-				return fmt.Errorf("slice contains non string values")
-			}
+			val := newSlice.Index(j).Interface().(string) //nolint:forcetypeassert
 			strSet[val] = true
 		}
 		if len(strSet) != existingSlice.Len() {
@@ -213,10 +213,7 @@ func addSliceDiff(newSlice reflect.Value, existingSlice reflect.Value, jsonTag s
 		} else {
 			if hasPriority {
 				for j := 0; j < existingSlice.Len(); j++ {
-					val, ok := existingSlice.Index(j).Interface().(string)
-					if !ok {
-						return fmt.Errorf("slice contains non string values")
-					}
+					val := existingSlice.Index(j).Interface().(string) //nolint:forcetypeassert
 					if !strSet[val] {
 						diffMap[jsonTag] = newSlice.Interface()
 						return nil
@@ -234,6 +231,9 @@ func addSliceDiff(newSlice reflect.Value, existingSlice reflect.Value, jsonTag s
 			}
 			if element.Kind() == reflect.Ptr {
 				element = element.Elem()
+			}
+			if element.Kind() != reflect.Struct {
+				return fmt.Errorf("slice diff only works for structs")
 			}
 			id, ok := element.FieldByName("ID").Interface().(int)
 			if !ok {
@@ -353,8 +353,6 @@ func addMapDiff(newMap reflect.Value, existingMap reflect.Value, jsonTag string,
 				if !newMap.MapIndex(key).IsValid() {
 					mapsDiff[keyValue] = existingMap.MapIndex(key).Interface()
 				}
-			} else {
-				return fmt.Errorf("map keys have to be strings. Not implemented for anything else yet")
 			}
 		}
 		diffMap[jsonTag] = mapsDiff

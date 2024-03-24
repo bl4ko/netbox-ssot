@@ -247,6 +247,10 @@ func (nbi *NetboxInventory) AddContactAssignment(ctx context.Context, newCA *obj
 	return nbi.ContactAssignmentsIndexByContentTypeAndObjectIDAndContactIDAndRoleID[newCA.ContentType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID], nil
 }
 
+// AddCustomField adds a custom field to the Netbox inventory.
+// It takes a context and a newCf object as input and returns the created or patched custom field along with any error encountered.
+// If the custom field already exists in Netbox but is out of date, it will be patched with the new values.
+// If the custom field does not exist, it will be created.
 func (nbi *NetboxInventory) AddCustomField(ctx context.Context, newCf *objects.CustomField) (*objects.CustomField, error) {
 	nbi.CustomFieldsLock.Lock()
 	defer nbi.CustomFieldsLock.Unlock()
@@ -277,6 +281,11 @@ func (nbi *NetboxInventory) AddCustomField(ctx context.Context, newCf *objects.C
 	return nbi.CustomFieldsIndexByName[newCf.Name], nil
 }
 
+// AddClusterGroup adds a new cluster group to the Netbox inventory.
+// It takes a context and a newCg object as input and returns the newly created cluster group and an error (if any).
+// If the cluster group already exists in Netbox, it checks if it is up to date and patches it if necessary.
+// If the cluster group does not exist, it creates a new one.
+// The function also updates the cluster group index by name and removes the ID from the orphan manager.
 func (nbi *NetboxInventory) AddClusterGroup(ctx context.Context, newCg *objects.ClusterGroup) (*objects.ClusterGroup, error) {
 	nbi.ClusterGroupsLock.Lock()
 	defer nbi.ClusterGroupsLock.Unlock()
@@ -311,6 +320,10 @@ func (nbi *NetboxInventory) AddClusterGroup(ctx context.Context, newCg *objects.
 	return nbi.ClusterGroupsIndexByName[newCg.Name], nil
 }
 
+// AddClusterType adds a new cluster type to the Netbox inventory.
+// It takes a context and a newClusterType object as input and returns the created or updated cluster type object and an error, if any.
+// If the cluster type already exists in Netbox, it checks if it is up to date. If not, it patches the existing cluster type.
+// If the cluster type does not exist, it creates a new one.
 func (nbi *NetboxInventory) AddClusterType(ctx context.Context, newClusterType *objects.ClusterType) (*objects.ClusterType, error) {
 	nbi.ClusterTypesLock.Lock()
 	defer nbi.ClusterTypesLock.Unlock()
@@ -345,6 +358,12 @@ func (nbi *NetboxInventory) AddClusterType(ctx context.Context, newClusterType *
 	return newClusterType, nil
 }
 
+// AddCluster adds a new cluster to the Netbox inventory.
+// It takes a context and a pointer to a Cluster object as input.
+// It returns the newly created cluster object and an error, if any.
+// If the cluster already exists in Netbox, it checks if the existing cluster is up to date.
+// If it is not up to date, it patches the existing cluster with the changes from the new cluster.
+// If the cluster does not exist in Netbox, it creates a new cluster.
 func (nbi *NetboxInventory) AddCluster(ctx context.Context, newCluster *objects.Cluster) (*objects.Cluster, error) {
 	newCluster.Tags = append(newCluster.Tags, nbi.SsotTag)
 
@@ -379,6 +398,10 @@ func (nbi *NetboxInventory) AddCluster(ctx context.Context, newCluster *objects.
 	return nbi.ClustersIndexByName[newCluster.Name], nil
 }
 
+// AddDeviceRole adds a new device role to the Netbox inventory.
+// It takes a context and a newDeviceRole object as input and returns the created device role object and an error, if any.
+// If the device role already exists in Netbox, it checks if it is up to date and patches it if necessary.
+// If the device role does not exist, it creates a new one.
 func (nbi *NetboxInventory) AddDeviceRole(ctx context.Context, newDeviceRole *objects.DeviceRole) (*objects.DeviceRole, error) {
 	nbi.DeviceRolesLock.Lock()
 	defer nbi.DeviceRolesLock.Unlock()
@@ -412,6 +435,12 @@ func (nbi *NetboxInventory) AddDeviceRole(ctx context.Context, newDeviceRole *ob
 	return nbi.DeviceRolesIndexByName[newDeviceRole.Name], nil
 }
 
+// AddManufacturer adds a new manufacturer to the Netbox inventory.
+// It takes a context, `ctx`, and a pointer to a `newManufacturer` object as input.
+// The function returns a pointer to the newly created manufacturer and an error, if any.
+// If the manufacturer already exists in Netbox, the function checks if it is up to date.
+// If it is not up to date, the function patches the existing manufacturer with the updated information.
+// If the manufacturer does not exist in Netbox, the function creates a new one.
 func (nbi *NetboxInventory) AddManufacturer(ctx context.Context, newManufacturer *objects.Manufacturer) (*objects.Manufacturer, error) {
 	nbi.ManufacturersLock.Lock()
 	defer nbi.ManufacturersLock.Unlock()
