@@ -247,6 +247,28 @@ func TestMatchStringToValue(t *testing.T) {
 			want:    "",
 			wantErr: true,
 		},
+		{
+			name: "Match string to value valid",
+			args: args{
+				input: "can't see me",
+				patterns: map[string]string{
+					"can't": "true",
+				},
+			},
+			want:    "true",
+			wantErr: false,
+		},
+		{
+			name: "No error with no matches",
+			args: args{
+				input: "can't see me",
+				patterns: map[string]string{
+					"john cena": "true",
+				},
+			},
+			want:    "",
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

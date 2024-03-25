@@ -2,7 +2,6 @@ package utils
 
 import (
 	"encoding/json"
-	"fmt"
 	"reflect"
 	"strings"
 )
@@ -13,17 +12,15 @@ import (
 // isn't compatible with netbox API when attributes have nested
 // objects.
 func NetboxJSONMarshal(obj interface{}) ([]byte, error) {
-	objMap, err := StructToNetboxJSONMap(obj)
-	if err != nil {
-		return nil, fmt.Errorf("error converting object to json map: %s", err)
-	}
-	return json.Marshal(objMap)
+	objMap := StructToNetboxJSONMap(obj)
+	json, err := json.Marshal(objMap)
+	return json, err
 }
 
 // Function that converts an object to a map[string]interface{}
 // which can be used to create a json body for netbox API, especially
 // for POST requests.
-func StructToNetboxJSONMap(obj interface{}) (map[string]interface{}, error) {
+func StructToNetboxJSONMap(obj interface{}) map[string]interface{} {
 	v := reflect.ValueOf(obj)
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()
@@ -42,10 +39,7 @@ func StructToNetboxJSONMap(obj interface{}) (map[string]interface{}, error) {
 
 		// Special case when object inherits from NetboxObject
 		if fieldType.Name == "NetboxObject" {
-			diffMap, err := StructToNetboxJSONMap(fieldValue.Interface())
-			if err != nil {
-				return nil, fmt.Errorf("error processing ObjToJsonMap when processing NetboxObject %s", err)
-			}
+			diffMap := StructToNetboxJSONMap(fieldValue.Interface())
 			for k, v := range diffMap {
 				netboxJSONMap[k] = v
 			}
@@ -103,5 +97,5 @@ func StructToNetboxJSONMap(obj interface{}) (map[string]interface{}, error) {
 			netboxJSONMap[jsonTag] = fieldValue.Interface()
 		}
 	}
-	return netboxJSONMap, nil
+	return netboxJSONMap
 }

@@ -199,9 +199,7 @@ func TestNetboxJSONMarshal(t *testing.T) {
 		args    args
 		want    []byte
 		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
+	}{}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := NetboxJSONMarshal(tt.args.obj)
@@ -221,20 +219,32 @@ func TestStructToNetboxJSONMap(t *testing.T) {
 		obj interface{}
 	}
 	tests := []struct {
-		name    string
-		args    args
-		want    map[string]interface{}
-		wantErr bool
+		name string
+		args args
+		want map[string]interface{}
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Skip when slice has length of zero",
+			args: args{
+				obj: interface{}(objects.NetboxObject{
+					Tags: []*objects.Tag{},
+				}),
+			},
+			want: map[string]interface{}{},
+		},
+		{
+			name: "From slice attributes with ids extract only ids",
+			args: args{
+				obj: interface{}(objects.NetboxObject{
+					Tags: []*objects.Tag{{ID: 1}, {ID: 2}, {ID: 3}},
+				}),
+			},
+			want: map[string]interface{}{"tags": []interface{}{int64(1), int64(2), int64(3)}},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := StructToNetboxJSONMap(tt.args.obj)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("StructToNetboxJSONMap() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			got := StructToNetboxJSONMap(tt.args.obj)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("StructToNetboxJSONMap() = %v, want %v", got, tt.want)
 			}
