@@ -34,8 +34,9 @@ type OVirtSource struct {
 }
 
 type NetworkData struct {
-	OVirtNetworks map[string]*ovirtsdk4.Network
-	Vid2Name      map[int]string
+	OVirtNetworks       map[string]*ovirtsdk4.Network
+	VnicProfile2Network map[string]string // vnicProfileId -> networkId
+	Vid2Name            map[int]string
 }
 
 // Function that initializes state from ovirt api to local storage.

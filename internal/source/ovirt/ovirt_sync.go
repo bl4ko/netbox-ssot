@@ -642,6 +642,7 @@ func (o *OVirtSource) collectHostNicsData(nbHost *objects.Device, nbi *inventory
 	return nil
 }
 
+// syncVms synces ovirt vms into netbox inventory.
 func (o *OVirtSource) syncVms(nbi *inventory.NetboxInventory) error {
 	for vmID, ovirtVM := range o.Vms {
 		collectedVM, err := o.extractVMData(nbi, vmID, ovirtVM)
@@ -803,8 +804,12 @@ func (o *OVirtSource) extractVMData(nbi *inventory.NetboxInventory, vmID string,
 	}, nil
 }
 
-// Syncs VM's interfaces to Netbox.
+// syncVMInterfaces is a helper function for syncVMS. It syncs all interfaces from a VM to netbox.
 func (o *OVirtSource) syncVMInterfaces(nbi *inventory.NetboxInventory, ovirtVM *ovirtsdk4.Vm, netboxVM *objects.VM) error {
+	err := o.syncVMNics(nbi, ovirtVM, netboxVM)
+	if err != nil {
+		return fmt.Errorf("sync VMNics %s", err)
+	}
 	if reportedDevices, exist := ovirtVM.ReportedDevices(); exist {
 		for _, reportedDevice := range reportedDevices.Slice() {
 			if reportedDeviceType, exist := reportedDevice.Type(); exist {
@@ -915,6 +920,84 @@ func (o *OVirtSource) syncVMInterfaces(nbi *inventory.NetboxInventory, ovirtVM *
 						}
 					}
 				}
+			}
+		}
+	}
+	return nil
+}
+
+func (o *OVirtSource) syncVMNics(nbi *inventory.NetboxInventory, ovirtVM *ovirtsdk4.Vm, netboxVM *objects.VM) error {
+	if nics, ok := ovirtVM.Nics(); ok {
+		for _, nic := range nics.Slice() {
+			nicName, ok := nic.Name()
+			if !ok {
+				o.Logger.Debugf(o.Ctx, "skipping nic because it doesn't have name")
+				continue
+			}
+			if utils.FilterInterfaceName(nicName, o.SourceConfig.InterfaceFilter) {
+				o.Logger.Debugf(o.Ctx, "filtering interface %s with interface filter %s", nicName, o.SourceConfig.InterfaceFilter)
+				continue
+			}
+			var nicID string
+			if id, ok := nic.Id(); ok {
+				nicID = id
+			}
+			var nicDescription string
+			if description, ok := nic.Description(); ok {
+				nicDescription = description
+			}
+
+			if len(nicDescription) == 0 {
+				if comment, ok := nic.Comment(); ok {
+					nicDescription = comment
+				}
+			}
+
+			var nicMAC string
+			if mac, ok := nic.Mac(); ok {
+				if macAddress, ok := mac.Address(); ok {
+					nicMAC = strings.ToUpper(macAddress)
+				}
+			}
+
+			var nicMode *objects.VMInterfaceMode
+			var nicVlans []*objects.Vlan
+			if vnicProfile, ok := nic.VnicProfile(); ok {
+				if vnicProfileID, ok := vnicProfile.Id(); ok {
+					// Get network for profile
+					vnicNetwork := o.Networks.OVirtNetworks[o.Networks.VnicProfile2Network[vnicProfileID]]
+					if vnicNetworkVlan, ok := vnicNetwork.Vlan(); ok {
+						if vlanID, ok := vnicNetworkVlan.Id(); ok {
+							vlanName := o.Networks.Vid2Name[int(vlanID)]
+							vlanGroup, err := common.MatchVlanToGroup(o.Ctx, nbi, vlanName, o.VlanGroupRelations)
+							if err != nil {
+								o.Logger.Warningf(o.Ctx, "match vlan to group: %s", err)
+								continue
+							}
+							nicVlans = []*objects.Vlan{nbi.VlansIndexByVlanGroupIDAndVID[vlanGroup.ID][int(vlanID)]}
+							nicMode = &objects.VMInterfaceModeTagged
+						}
+					}
+				}
+			}
+
+			_, err := nbi.AddVMInterface(o.Ctx, &objects.VMInterface{
+				NetboxObject: objects.NetboxObject{
+					Tags:        o.SourceTags,
+					Description: nicDescription,
+					CustomFields: map[string]string{
+						constants.CustomFieldSourceIDName: nicID,
+					},
+				},
+				VM:          netboxVM,
+				Name:        nicName,
+				MACAddress:  nicMAC,
+				Mode:        nicMode,
+				Enabled:     true,
+				TaggedVlans: nicVlans,
+			})
+			if err != nil {
+				return fmt.Errorf("add vm interface: %s", err)
 			}
 		}
 	}

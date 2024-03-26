@@ -8,20 +8,30 @@ import (
 
 // Fetches networks from ovirt api and stores them to local object.
 func (o *OVirtSource) InitNetworks(conn *ovirtsdk4.Connection) error {
-	networksResponse, err := conn.SystemService().NetworksService().List().Send()
+	networksResponse, err := conn.SystemService().NetworksService().List().Follow("vnicprofiles").Send()
 	if err != nil {
 		return fmt.Errorf("init oVirt networks: %v", err)
 	}
 	o.Networks = &NetworkData{
-		OVirtNetworks: make(map[string]*ovirtsdk4.Network),
-		Vid2Name:      make(map[int]string),
+		OVirtNetworks:       make(map[string]*ovirtsdk4.Network),
+		Vid2Name:            make(map[int]string),
+		VnicProfile2Network: make(map[string]string),
 	}
 	if networks, ok := networksResponse.Networks(); ok {
 		for _, network := range networks.Slice() {
-			o.Networks.OVirtNetworks[network.MustId()] = network
-			if vlan, exists := network.Vlan(); exists {
-				if vlanID, exists := vlan.Id(); exists {
-					o.Networks.Vid2Name[int(vlanID)] = network.MustName()
+			if networkID, ok := network.Id(); ok {
+				o.Networks.OVirtNetworks[networkID] = network
+				if vlan, exists := network.Vlan(); exists {
+					if vlanID, exists := vlan.Id(); exists {
+						o.Networks.Vid2Name[int(vlanID)] = network.MustName()
+					}
+				}
+				if vnicProfiles, ok := network.VnicProfiles(); ok {
+					for _, vnicProfile := range vnicProfiles.Slice() {
+						if vnicProfileID, ok := vnicProfile.Id(); ok {
+							o.Networks.VnicProfile2Network[vnicProfileID] = networkID
+						}
+					}
 				}
 			}
 		}
