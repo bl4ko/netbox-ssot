@@ -143,15 +143,15 @@ func (pas *PaloAltoSource) SyncInterfaces(nbi *inventory.NetboxInventory) error 
 		}
 
 		if len(iface.StaticIps) > 0 {
-			pas.syncIPs(nbi, nbIface, iface.StaticIps)
+			pas.syncIPs(nbi, nbIface, iface.StaticIps, nil)
 		}
 
-		ifaceVlans := []*objects.Vlan{}
 		for _, subIface := range pas.Iface2SubIfaces[iface.Name] {
 			subIfaceName := subIface.Name
 			if subIfaceName == "" {
 				continue
 			}
+			var subIfaceVlan *objects.Vlan
 			subIfaceVlans := []*objects.Vlan{}
 			var subifaceMode *objects.InterfaceMode
 			if subIface.Tag != 0 {
@@ -160,7 +160,7 @@ func (pas *PaloAltoSource) SyncInterfaces(nbi *inventory.NetboxInventory) error 
 				if err != nil {
 					return fmt.Errorf("match vlan to group: %s", err)
 				}
-				subIfaceVlan, err := nbi.AddVlan(pas.Ctx, &objects.Vlan{
+				subIfaceVlan, err = nbi.AddVlan(pas.Ctx, &objects.Vlan{
 					NetboxObject: objects.NetboxObject{
 						Tags:        pas.SourceTags,
 						Description: subIface.Comment,
@@ -173,7 +173,6 @@ func (pas *PaloAltoSource) SyncInterfaces(nbi *inventory.NetboxInventory) error 
 				if err != nil {
 					return fmt.Errorf("add vlan: %s", err)
 				}
-				ifaceVlans = append(ifaceVlans, subIfaceVlan)
 				subIfaceVlans = append(subIfaceVlans, subIfaceVlan)
 				subifaceMode = &objects.InterfaceModeTagged
 			}
@@ -199,24 +198,16 @@ func (pas *PaloAltoSource) SyncInterfaces(nbi *inventory.NetboxInventory) error 
 				return fmt.Errorf("add subinterface: %s", err)
 			}
 			if len(subIface.StaticIps) > 0 {
-				pas.syncIPs(nbi, nbSubIface, subIface.StaticIps)
-			}
-		}
-
-		if len(ifaceVlans) > 0 {
-			nbIfaceUpdate := *nbIface
-			nbIfaceUpdate.Mode = &objects.InterfaceModeTagged
-			nbIfaceUpdate.TaggedVlans = ifaceVlans
-			_, err = nbi.AddInterface(pas.Ctx, &nbIfaceUpdate)
-			if err != nil {
-				pas.Logger.Errorf(pas.Ctx, "updating ifaceVlans: %s", err)
+				pas.syncIPs(nbi, nbSubIface, subIface.StaticIps, subIfaceVlan)
 			}
 		}
 	}
 	return nil
 }
 
-func (pas *PaloAltoSource) syncIPs(nbi *inventory.NetboxInventory, nbIface *objects.Interface, ips []string) {
+// syncIPs adds all of the given ips to the given nbIface. It also
+// Extracts prefixes from ips and connect them with prefix vlan.
+func (pas *PaloAltoSource) syncIPs(nbi *inventory.NetboxInventory, nbIface *objects.Interface, ips []string, prefixVlan *objects.Vlan) {
 	for _, ipAddress := range ips {
 		if !utils.SubnetsContainIPAddress(ipAddress, pas.SourceConfig.IgnoredSubnets) {
 			dnsName := utils.ReverseLookup(ipAddress)
@@ -239,6 +230,7 @@ func (pas *PaloAltoSource) syncIPs(nbi *inventory.NetboxInventory, nbIface *obje
 			} else {
 				_, err = nbi.AddPrefix(pas.Ctx, &objects.Prefix{
 					Prefix: prefix,
+					Vlan:   prefixVlan,
 				})
 				if err != nil {
 					pas.Logger.Errorf(pas.Ctx, "adding prefix: %s", err)
@@ -248,6 +240,8 @@ func (pas *PaloAltoSource) syncIPs(nbi *inventory.NetboxInventory, nbIface *obje
 	}
 }
 
+// SyncSecurityZones syncs all security zones from palo alto as virtual device context in netbox.
+// They are all added as part of main paloalto firewall device.
 func (pas *PaloAltoSource) SyncSecurityZones(nbi *inventory.NetboxInventory) error {
 	for _, securityZone := range pas.SecurityZones {
 		_, err := nbi.AddVirtualDeviceContext(pas.Ctx, &objects.VirtualDeviceContext{
@@ -265,6 +259,7 @@ func (pas *PaloAltoSource) SyncSecurityZones(nbi *inventory.NetboxInventory) err
 	return nil
 }
 
+// getVirtualDeviceContext retrieves the virtual device context associated with the given interface name.
 func (pas *PaloAltoSource) getVirtualDeviceContext(nbi *inventory.NetboxInventory, ifaceName string) *objects.VirtualDeviceContext {
 	var virtualDeviceContext *objects.VirtualDeviceContext
 	zoneName := pas.Iface2SecurityZone[ifaceName]
