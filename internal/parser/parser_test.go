@@ -157,6 +157,7 @@ func TestParseConfigInvalidConfigs(t *testing.T) {
 		{filename: "invalid_config27.yaml", expectedErr: "source[wrong].vlanGroupRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
 		{filename: "invalid_config28.yaml", expectedErr: "source[wrong].vlanTenantRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
 		{filename: "invalid_config29.yaml", expectedErr: "yaml: unmarshal errors:\n  line 2: cannot unmarshal !!str `2dasf` into int"},
+		{filename: "invalid_config30.yaml", expectedErr: "source[fortigate].apiToken is required for fortigate"},
 		{filename: "invalid_config1111.yaml", expectedErr: "open testdata/invalid_config1111.yaml: no such file or directory"},
 	}
 

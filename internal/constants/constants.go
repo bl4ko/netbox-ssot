@@ -3,11 +3,12 @@ package constants
 type SourceType string
 
 const (
-	Ovirt    SourceType = "ovirt"
-	Vmware   SourceType = "vmware"
-	Dnac     SourceType = "dnac"
-	Proxmox  SourceType = "proxmox"
-	PaloAlto SourceType = "paloalto"
+	Ovirt     SourceType = "ovirt"
+	Vmware    SourceType = "vmware"
+	Dnac      SourceType = "dnac"
+	Proxmox   SourceType = "proxmox"
+	PaloAlto  SourceType = "paloalto"
+	Fortigate SourceType = "fortigate"
 )
 
 const DefaultSourceName = "netbox-ssot"

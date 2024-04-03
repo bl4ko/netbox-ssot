@@ -20,7 +20,8 @@ Currently, the supported external data sources types are:
 - [`dnac`](https://www.cisco.com/site/us/en/products/networking/catalyst-center/index.html)
 - [`proxmox`](https://www.proxmox.com/en/)
 - [`paloalto`](https://www.paloaltonetworks.com/network-security/next-generation-firewall)
-  - firewall
+  - PAN-OS firewall
+- [`fortigate`](https://www.fortinet.com/products/next-generation-firewall)
 
 > [!WARNING]
 > **This project is still under heavy development, use with caution.**
@@ -61,27 +62,28 @@ Example configuration can be found [here](#example-config).
 
 ### Source
 
-| Parameter                       | Description                                                                                                        | Source Type | Type     | Possible values                          | Default    | Required |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ----------- | -------- | ---------------------------------------- | ---------- | -------- |
-| `source.name`                   | Name of the data source.                                                                                           | all         | str      | any                                      | ""         | Yes      |
-| `source.type`                   | Type of the data source.                                                                                           | all         | str      | [ovirt, vmware, dnac, proxmox, paloalto] | ""         | Yes      |
-| `source.httpScheme`             | Http scheme for the source                                                                                         | all         | str      | [ http,https]                            | https      | no       |
-| `source.hostname`               | Hostname of the data source.                                                                                       | all         | str      | any                                      | ""         | Yes      |
-| `source.port`                   | Port of the data source.                                                                                           | all         | int      | 0-65536                                  | 443        | No       |
-| `source.username`               | Username of the data source account.                                                                               | all         | str      | any                                      | ""         | Yes      |
-| `source.password`               | Password of the data source account.                                                                               | all         | str      | any                                      | ""         | Yes      |
-| `source.validateCert`           | Enforce TLS certificate validation.                                                                                | all         | bool     | [true, false]                            | false      | No       |
-| `source.tagColor`               | TagColor for the source tag.                                                                                       | all         | string   | any                                      | Predefined | No       |
-| `source.ignoredSubnets`         | List of subnets, which will be ignored (e.g. IPs won't be synced).                                                 | all         | []string | any                                      | []         | No       |
-| `source.interfaceFilter`        | Regex representation of interface names to be ignored (e.g. `(cali\|vxlan\|flannel\|[a-f0-9]{15})`)                | all         | string   | any                                      | []         | No       |
-| `source.hostSiteRelations`      | Regex relations in format `regex = siteName`, that map each host that satisfies regex to site.                     | all         | []string | any                                      | []         | No       |
-| `source.clusterSiteRelations`   | Regex relations in format `regex = siteName`, that map each cluster that satisfies regex to site.                  | all         | []string | any                                      | []         | No       |
-| `source.clusterTenantRelations` | Regex relations in format `regex = tenantName`, that map each cluster that satisfies regex to tenant.              | all         | []string | any                                      | []         | No       |
-| `source.hostTenantRelations`    | Regex relations in format `regex = tenantName`, that map each host that satisfies regex to tenant.                 | all         | []string | any                                      | []         | No       |
-| `source.vmTenantRelations`      | Regex relations in format `regex = tenantName`, that map each vm that satisfies regex to tenant.                   | all         | []string | any                                      | []         | No       |
-| `source.vlanGroupRelations`     | Regex relations in format `regex = vlanGroup`, that map each vlan that satisfies regex to vlanGroup.               | all         | []string | any                                      | []         | No       |
-| `source.vlanTenantRelations`    | Regex relations in format `regex = tenantName`, that map each vlan that satisfies regex to tenant.                 | all         | []string | any                                      | []         | No       |
-| `source.customFieldMappings`    | Mappings of format `customFieldName = option`. Currently, supported options are `contact`, `owner`, `description`. | [ vmware ]  | []string | any                                      | []         | No       |
+| Parameter                       | Description                                                                                                        | Source Type     | Type     | Possible values                          | Default    | Required |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------ | --------------- | -------- | ---------------------------------------- | ---------- | -------- |
+| `source.name`                   | Name of the data source.                                                                                           | all             | str      | any                                      | ""         | Yes      |
+| `source.type`                   | Type of the data source.                                                                                           | all             | str      | [ovirt, vmware, dnac, proxmox, paloalto] | ""         | Yes      |
+| `source.httpScheme`             | Http scheme for the source                                                                                         | all             | str      | [ http,https]                            | https      | no       |
+| `source.hostname`               | Hostname of the data source.                                                                                       | all             | str      | any                                      | ""         | Yes      |
+| `source.port`                   | Port of the data source.                                                                                           | all             | int      | 0-65536                                  | 443        | No       |
+| `source.username`               | Username of the data source account.                                                                               | all             | str      | any                                      | ""         | Yes      |
+| `source.password`               | Password of the data source account.                                                                               | all             | str      | any                                      | ""         | Yes      |
+| `source.apiToken`               | Password of the data source account.                                                                               | [**fortigate**] | str      | any                                      | ""         | Yes      |
+| `source.validateCert`           | Enforce TLS certificate validation.                                                                                | all             | bool     | [true, false]                            | false      | No       |
+| `source.tagColor`               | TagColor for the source tag.                                                                                       | all             | string   | any                                      | Predefined | No       |
+| `source.ignoredSubnets`         | List of subnets, which will be ignored (e.g. IPs won't be synced).                                                 | all             | []string | any                                      | []         | No       |
+| `source.interfaceFilter`        | Regex representation of interface names to be ignored (e.g. `(cali\|vxlan\|flannel\|[a-f0-9]{15})`)                | all             | string   | any                                      | []         | No       |
+| `source.hostSiteRelations`      | Regex relations in format `regex = siteName`, that map each host that satisfies regex to site.                     | all             | []string | any                                      | []         | No       |
+| `source.clusterSiteRelations`   | Regex relations in format `regex = siteName`, that map each cluster that satisfies regex to site.                  | all             | []string | any                                      | []         | No       |
+| `source.clusterTenantRelations` | Regex relations in format `regex = tenantName`, that map each cluster that satisfies regex to tenant.              | all             | []string | any                                      | []         | No       |
+| `source.hostTenantRelations`    | Regex relations in format `regex = tenantName`, that map each host that satisfies regex to tenant.                 | all             | []string | any                                      | []         | No       |
+| `source.vmTenantRelations`      | Regex relations in format `regex = tenantName`, that map each vm that satisfies regex to tenant.                   | all             | []string | any                                      | []         | No       |
+| `source.vlanGroupRelations`     | Regex relations in format `regex = vlanGroup`, that map each vlan that satisfies regex to vlanGroup.               | all             | []string | any                                      | []         | No       |
+| `source.vlanTenantRelations`    | Regex relations in format `regex = tenantName`, that map each vlan that satisfies regex to tenant.                 | all             | []string | any                                      | []         | No       |
+| `source.customFieldMappings`    | Mappings of format `customFieldName = option`. Currently, supported options are `contact`, `owner`, `description`. | [**vmware**]    | []string | any                                      | []         | No       |
 
 ### Example config
 
@@ -107,16 +109,6 @@ source:
     password: "topsecret"
     interfaceFilter: (cali|vxlan|flannel|docker|[a-f0-9]{15})
 
-  - name: prodprox
-    type: proxmox
-    username: svc@pve
-    password: changeme
-    hostname: 192.168.1.254
-    port: 8006
-    validateCert: false
-    clusterSiteRelations:
-     - .* = Site
-
   - name: prodvmware
     type: vmware
     hostname: vcenter.example.com
@@ -132,14 +124,33 @@ source:
       - Creator = owner
       - Description = description
 
+  - name: prodprox
+    type: proxmox
+    username: svc@pve
+    password: changeme
+    hostname: 192.168.1.254
+    port: 8006
+    validateCert: false
+    clusterSiteRelations:
+     - .* = Site
+
+  - name: forti
+    type: fortigate
+    hostname: forti.example.com
+    apiToken: "apitokenhere"
+    validateCert: False
+    hostTenantRelations:
+      - .* = MyTenant
+    hostSiteRelations:
+      - .* = MySite
+
   - name: pa-uk
     type: paloalto
     hostname: 192.168.1.52
     username: user
     password: passw0rd
     hostTenantRelations:
-      - .* = SRC
-
+      - .* = MyTenant
 
   - name: dnacenter
     type: dnac

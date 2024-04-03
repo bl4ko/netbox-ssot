@@ -1,0 +1,21 @@
+logger:
+  level: 2
+  dest: "test"
+
+netbox:
+  apiToken: "netbox-token"
+  port: 666
+  hostname: netbox.example.com
+  httpScheme: "http"
+
+source:
+  - name: paloalto
+    type: paloalto
+    hostname: paloalto.example.com
+    username: user
+    password: pass
+
+  - name: fortigate
+    type: fortigate
+    hostname: forti.example.com
+    apiToken: "" # Error apitoken must be provided

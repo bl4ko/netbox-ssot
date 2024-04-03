@@ -62,6 +62,7 @@ type SourceConfig struct {
 	Port            int                  `yaml:"port"`
 	Username        string               `yaml:"username"`
 	Password        string               `yaml:"password"`
+	APIToken        string               `yaml:"apiToken"`
 	ValidateCert    bool                 `yaml:"validateCert"`
 	Tag             string               `yaml:"tag"`
 	TagColor        string               `yaml:"tagColor"`
@@ -174,6 +175,16 @@ func validateSourceConfig(config *Config) error {
 		if externalSource.Name == "" {
 			return fmt.Errorf("%s.name: cannot be empty", externalSourceStr)
 		}
+		switch externalSource.Type {
+		case constants.Ovirt:
+		case constants.Vmware:
+		case constants.Dnac:
+		case constants.Proxmox:
+		case constants.PaloAlto:
+		case constants.Fortigate:
+		default:
+			return fmt.Errorf("%s.type is not valid", externalSourceStr)
+		}
 		if externalSource.HTTPScheme == "" {
 			externalSource.HTTPScheme = "https"
 		} else if externalSource.HTTPScheme != HTTP && externalSource.HTTPScheme != HTTPS {
@@ -187,10 +198,13 @@ func validateSourceConfig(config *Config) error {
 		} else if externalSource.Port < 0 || externalSource.Port > 65535 {
 			return fmt.Errorf("%s.port: must be between 0 and 65535. Is %d", externalSourceStr, externalSource.Port)
 		}
-		if externalSource.Username == "" {
+		if externalSource.APIToken == "" && externalSource.Type == constants.Fortigate {
+			return fmt.Errorf("%s.apiToken is required for %s", externalSourceStr, constants.Fortigate)
+		}
+		if externalSource.Username == "" && externalSource.Type != constants.Fortigate {
 			return fmt.Errorf("%s.username: cannot be empty", externalSourceStr)
 		}
-		if externalSource.Password == "" {
+		if externalSource.Password == "" && externalSource.Type != constants.Fortigate {
 			return fmt.Errorf("%s.password: cannot be empty", externalSourceStr)
 		}
 		if externalSource.Tag == "" {
@@ -198,15 +212,6 @@ func validateSourceConfig(config *Config) error {
 		}
 		if externalSource.TagColor == "" {
 			externalSource.TagColor = constants.DefaultSourceToTagColorMap[externalSource.Type]
-		}
-		switch externalSource.Type {
-		case constants.Ovirt:
-		case constants.Vmware:
-		case constants.Dnac:
-		case constants.Proxmox:
-		case constants.PaloAlto:
-		default:
-			return fmt.Errorf("%s.type is not valid", externalSourceStr)
 		}
 		err := validateSourceConfigRelations(externalSource, externalSourceStr)
 		if err != nil {
