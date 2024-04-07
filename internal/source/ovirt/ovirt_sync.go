@@ -119,31 +119,15 @@ func (o *OVirtSource) syncClusters(nbi *inventory.NetboxInventory) error {
 		if clusterGroupName != "" {
 			clusterGroup = nbi.ClusterGroupsIndexByName[clusterGroupName]
 		}
-		var clusterSite *objects.Site
-		if o.ClusterSiteRelations != nil {
-			match, err := utils.MatchStringToValue(clusterName, o.ClusterSiteRelations)
-			if err != nil {
-				return fmt.Errorf("failed to match oVirt cluster %s to a Netbox site: %v", clusterName, err)
-			}
-			if match != "" {
-				if _, ok := nbi.SitesIndexByName[match]; !ok {
-					return fmt.Errorf("failed to match oVirt cluster %s to a Netbox site: %v. Site with this name doesn't exist", clusterName, match)
-				}
-				clusterSite = nbi.SitesIndexByName[match]
-			}
+
+		clusterSite, err := common.MatchClusterToSite(o.Ctx, nbi, clusterName, o.ClusterSiteRelations)
+		if err != nil {
+			return fmt.Errorf("match cluster to site: %s", err)
 		}
-		var clusterTenant *objects.Tenant
-		if o.ClusterTenantRelations != nil {
-			match, err := utils.MatchStringToValue(clusterName, o.ClusterTenantRelations)
-			if err != nil {
-				return fmt.Errorf("error occurred when matching oVirt cluster %s to a Netbox tenant: %v", clusterName, err)
-			}
-			if match != "" {
-				if _, ok := nbi.TenantsIndexByName[match]; !ok {
-					return fmt.Errorf("failed to match oVirt cluster %s to a Netbox tenant: %v. Tenant with this name doesn't exist", clusterName, match)
-				}
-				clusterTenant = nbi.TenantsIndexByName[match]
-			}
+
+		clusterTenant, err := common.MatchClusterToTenant(o.Ctx, nbi, clusterName, o.ClusterTenantRelations)
+		if err != nil {
+			return fmt.Errorf("match cluster to tenant: %s", err)
 		}
 
 		nbCluster := &objects.Cluster{
@@ -161,7 +145,7 @@ func (o *OVirtSource) syncClusters(nbi *inventory.NetboxInventory) error {
 			Site:   clusterSite,
 			Tenant: clusterTenant,
 		}
-		_, err := nbi.AddCluster(o.Ctx, nbCluster)
+		_, err = nbi.AddCluster(o.Ctx, nbCluster)
 		if err != nil {
 			return fmt.Errorf("failed to add oVirt cluster %s as Netbox cluster: %v", clusterName, err)
 		}

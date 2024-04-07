@@ -94,32 +94,14 @@ func (vc *VmwareSource) syncClusters(nbi *inventory.NetboxInventory) error {
 		datacenterID := vc.Cluster2Datacenter[clusterID]
 		clusterGroup = nbi.ClusterGroupsIndexByName[vc.DataCenters[datacenterID].Name]
 
-		var clusterSite *objects.Site
-		if vc.ClusterSiteRelations != nil {
-			match, err := utils.MatchStringToValue(clusterName, vc.ClusterSiteRelations)
-			if err != nil {
-				return fmt.Errorf("failed to match vmware cluster %s to a Netbox site: %v", clusterName, err)
-			}
-			if match != "" {
-				if _, ok := nbi.SitesIndexByName[match]; !ok {
-					return fmt.Errorf("failed to match vmware cluster %s to a Netbox site: %v. Site with this name doesn't exist", clusterName, match)
-				}
-				clusterSite = nbi.SitesIndexByName[match]
-			}
+		clusterSite, err := common.MatchClusterToSite(vc.Ctx, nbi, clusterName, vc.ClusterSiteRelations)
+		if err != nil {
+			return fmt.Errorf("match cluster to site: %s", err)
 		}
 
-		var clusterTenant *objects.Tenant
-		if vc.ClusterTenantRelations != nil {
-			match, err := utils.MatchStringToValue(clusterName, vc.ClusterTenantRelations)
-			if err != nil {
-				return fmt.Errorf("error occurred when matching vmware cluster %s to a Netbox tenant: %v", clusterName, err)
-			}
-			if match != "" {
-				if _, ok := nbi.TenantsIndexByName[match]; !ok {
-					return fmt.Errorf("failed to match vmware cluster %s to a Netbox tenant: %v. Tenant with this name doesn't exist", clusterName, match)
-				}
-				clusterTenant = nbi.TenantsIndexByName[match]
-			}
+		clusterTenant, err := common.MatchClusterToTenant(vc.Ctx, nbi, clusterName, vc.ClusterTenantRelations)
+		if err != nil {
+			return fmt.Errorf("match cluster to tenant: %s", err)
 		}
 
 		nbCluster := &objects.Cluster{
@@ -136,7 +118,7 @@ func (vc *VmwareSource) syncClusters(nbi *inventory.NetboxInventory) error {
 			Site:   clusterSite,
 			Tenant: clusterTenant,
 		}
-		_, err := nbi.AddCluster(vc.Ctx, nbCluster)
+		_, err = nbi.AddCluster(vc.Ctx, nbCluster)
 		if err != nil {
 			return fmt.Errorf("failed to add vmware cluster %s as Netbox cluster: %v", clusterName, err)
 		}
