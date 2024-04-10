@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.22.2@sha256:6f1a37176cde35c5a64b1835c7b303635c07e3d0348abc11f744e0ef1bcd8b60 as builder
+FROM --platform=$BUILDPLATFORM golang:1.22.2@sha256:82f0d84a24c3f68a8c4494dd74ac3e2360c8464f15ebb41813636f837e12ac20 as builder
 
 WORKDIR /app
 
