@@ -202,6 +202,7 @@ func validateSourceConfig(config *Config) error {
 		case constants.PaloAlto:
 		case constants.Fortigate:
 		case constants.FMC:
+		case constants.IOSXE:
 		default:
 			return fmt.Errorf("%s.type is not valid", externalSourceStr)
 		}

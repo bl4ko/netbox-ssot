@@ -10,6 +10,7 @@ const (
 	PaloAlto  SourceType = "paloalto"
 	Fortigate SourceType = "fortigate"
 	FMC       SourceType = "fmc"
+	IOSXE     SourceType = "ios-xe"
 )
 
 const DefaultNetboxTagColor = "00add8"
@@ -71,6 +72,7 @@ var SourceTagColorMap = map[SourceType]string{
 	PaloAlto:  ColorDarkOrange,
 	Fortigate: ColorDarkGreen,
 	FMC:       ColorLightBlue,
+	IOSXE:     "0d294f",
 }
 
 // Each source Mapping for source type tag. E.g. tag "paloalto" -> color orange.
@@ -81,6 +83,7 @@ var SourceTypeTagColorMap = map[SourceType]string{
 	PaloAlto:  ColorOrange,
 	Fortigate: ColorDarkGreen,
 	FMC:       ColorBlue,
+	IOSXE:     "0d294f",
 }
 
 const (
@@ -154,6 +157,9 @@ const (
 const (
 	DeviceRoleFirewall      = "Firewall"
 	DeviceRoleFirewallColor = "f57842"
+
+	DeviceRoleSwitch      = "Switch"
+	DeviceRoleSwitchColor = "7aefea"
 
 	DeviceRoleServer      = "Server"
 	DeviceRoleServerColor = "00add8"

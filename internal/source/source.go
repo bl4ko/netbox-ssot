@@ -14,6 +14,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/source/dnac"
 	"github.com/bl4ko/netbox-ssot/internal/source/fmc"
 	"github.com/bl4ko/netbox-ssot/internal/source/fortigate"
+	iosxe "github.com/bl4ko/netbox-ssot/internal/source/ios-xe"
 	"github.com/bl4ko/netbox-ssot/internal/source/ovirt"
 	"github.com/bl4ko/netbox-ssot/internal/source/paloalto"
 	"github.com/bl4ko/netbox-ssot/internal/source/proxmox"
@@ -65,6 +66,8 @@ func NewSource(ctx context.Context, config *parser.SourceConfig, logger *logger.
 		return &fortigate.FortigateSource{Config: commonConfig}, nil
 	case constants.FMC:
 		return &fmc.FMCSource{Config: commonConfig}, nil
+	case constants.IOSXE:
+		return &iosxe.IOSXESource{Config: commonConfig}, nil
 	default:
 		return nil, fmt.Errorf("unsupported source type: %s", config.Type)
 	}
