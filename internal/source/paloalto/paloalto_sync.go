@@ -156,9 +156,14 @@ func (pas *PaloAltoSource) SyncInterfaces(nbi *inventory.NetboxInventory) error 
 			var subifaceMode *objects.InterfaceMode
 			if subIface.Tag != 0 {
 				// Extract Vlan
-				vlanGroup, err := common.MatchVlanToGroup(pas.Ctx, nbi, fmt.Sprintf("Vlan%d", subIface.Tag), pas.VlanGroupRelations)
+				vlanName := fmt.Sprintf("Vlan%d", subIface.Tag)
+				vlanGroup, err := common.MatchVlanToGroup(pas.Ctx, nbi, vlanName, pas.VlanGroupRelations)
 				if err != nil {
 					return fmt.Errorf("match vlan to group: %s", err)
+				}
+				vlanTenant, err := common.MatchVlanToTenant(pas.Ctx, nbi, vlanName, pas.VlanTenantRelations)
+				if err != nil {
+					return fmt.Errorf("match vlan to tenant: %s", err)
 				}
 				subIfaceVlan, err = nbi.AddVlan(pas.Ctx, &objects.Vlan{
 					NetboxObject: objects.NetboxObject{
@@ -168,6 +173,7 @@ func (pas *PaloAltoSource) SyncInterfaces(nbi *inventory.NetboxInventory) error 
 					Status: &objects.VlanStatusActive,
 					Name:   fmt.Sprintf("Vlan%d", subIface.Tag),
 					Vid:    subIface.Tag,
+					Tenant: vlanTenant,
 					Group:  vlanGroup,
 				})
 				if err != nil {
@@ -228,8 +234,13 @@ func (pas *PaloAltoSource) syncIPs(nbi *inventory.NetboxInventory, nbIface *obje
 			if err != nil {
 				pas.Logger.Warningf(pas.Ctx, "extract prefix from address: %s", err)
 			} else {
+				var prefixTenant *objects.Tenant
+				if prefixVlan != nil {
+					prefixTenant = prefixVlan.Tenant
+				}
 				_, err = nbi.AddPrefix(pas.Ctx, &objects.Prefix{
 					Prefix: prefix,
+					Tenant: prefixTenant,
 					Vlan:   prefixVlan,
 				})
 				if err != nil {

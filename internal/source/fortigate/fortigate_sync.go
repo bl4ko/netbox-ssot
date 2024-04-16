@@ -174,6 +174,10 @@ func (fs *FortigateSource) SyncInterfaces(nbi *inventory.NetboxInventory) error 
 			if err != nil {
 				return fmt.Errorf("match vlan to group: %s", err)
 			}
+			vlanTenant, err := common.MatchVlanToTenant(fs.Ctx, nbi, vlanName, fs.VlanTenantRelations)
+			if err != nil {
+				return fmt.Errorf("match vlan to tenant: %s", err)
+			}
 			NBVlan, err := nbi.AddVlan(fs.Ctx, &objects.Vlan{
 				NetboxObject: objects.NetboxObject{
 					Tags: fs.SourceTags,
@@ -181,6 +185,7 @@ func (fs *FortigateSource) SyncInterfaces(nbi *inventory.NetboxInventory) error 
 				Status: &objects.VlanStatusActive,
 				Name:   vlanName,
 				Vid:    vlanID,
+				Tenant: vlanTenant,
 				Group:  vlanGroup,
 			})
 			if err != nil {
@@ -196,6 +201,7 @@ func (fs *FortigateSource) SyncInterfaces(nbi *inventory.NetboxInventory) error 
 				}
 				_, err = nbi.AddPrefix(fs.Ctx, &objects.Prefix{
 					Prefix: prefix,
+					Tenant: NBVlan.Tenant,
 					Vlan:   NBVlan,
 				})
 				if err != nil {

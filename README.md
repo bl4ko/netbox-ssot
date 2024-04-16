@@ -142,7 +142,9 @@ source:
     hostTenantRelations:
       - .* = MyTenant
     hostSiteRelations:
-      - .* = MySite
+      - .* = MyTenant
+    hostTenantRelations:
+      - .* = MyTenant
 
   - name: pa-uk
     type: paloalto
@@ -150,6 +152,10 @@ source:
     username: user
     password: passw0rd
     hostTenantRelations:
+      - .* = MyTenant
+    hostSiteRelations:
+      - .* = MySite
+    vlanTenantRelations:
       - .* = MyTenant
 
   - name: dnacenter
