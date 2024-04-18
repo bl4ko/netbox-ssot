@@ -11,7 +11,14 @@ const (
 	Fortigate SourceType = "fortigate"
 )
 
+const DefaultNetboxTagColor = "00add8"
 const DefaultSourceName = "netbox-ssot"
+
+const DefaultArpTagName = "arp-entry"
+const DefaultArpTagColor = ColorRed
+const ArpLastSeenFormat = "2006-01-02 15:04:05"
+
+const DefaultArpDataLifeSpan = 60 * 60 * 24 * 2 // 2 days in seconds
 
 const (
 	DefaultOSName       string = "Generic OS"
@@ -53,20 +60,24 @@ const (
 	ColorWhite      = "ffffff"
 )
 
-// Default mappings of sources to colors (for tags).
-var DefaultSourceToTagColorMap = map[SourceType]string{
-	Ovirt:    ColorDarkRed,
-	Vmware:   ColorLightGreen,
-	Dnac:     ColorLightBlue,
-	PaloAlto: ColorDarkOrange,
+// Default mappings of sources to colors (for tags), fallback mechanism.
+// E.g. we name a source "prodvmware", tag "Source: prodvmware" is created
+// with our color.
+var SourceTagColorMap = map[SourceType]string{
+	Ovirt:     ColorDarkRed,
+	Vmware:    ColorLightGreen,
+	Dnac:      ColorLightBlue,
+	PaloAlto:  ColorDarkOrange,
+	Fortigate: ColorDarkGreen,
 }
 
-// Object for mapping source type to tag color.
-var SourceTypeToTagColorMap = map[SourceType]string{
-	Ovirt:    ColorRed,
-	Vmware:   ColorGreen,
-	Dnac:     ColorBlue,
-	PaloAlto: ColorOrange,
+// Each source Mapping for source type tag. E.g. tag "paloalto" -> color orange.
+var SourceTypeTagColorMap = map[SourceType]string{
+	Ovirt:     ColorRed,
+	Vmware:    ColorGreen,
+	Dnac:      ColorBlue,
+	PaloAlto:  ColorOrange,
+	Fortigate: ColorDarkGreen,
 }
 
 const (
@@ -119,6 +130,16 @@ const (
 	CustomFieldHostMemoryName        = "host_memory"
 	CustomFieldHostMemoryLabel       = "Host memory"
 	CustomFieldHostMemoryDescription = "Amount of memory on the host"
+
+	// Custom field for ContentTypeIPAddress, so we can determine if an ip is part of an arp table or not.
+	CustomFieldArpEntryName        = "arp_entry"
+	CustomFieldArpEntryLabel       = "Arp Entry"
+	CustomFieldArpEntryDescription = "Was this IP collected from ARP table"
+
+	// Custom field for ipam.ipaddress, so we can track when was arp entry last found.
+	CustomFieldArpIPLastSeenName        = "last_seen"
+	CustomFieldArpIPLastSeenLabel       = "Last seen"
+	CustomFieldArpIPLastSeenDescription = "Last time the IP was found in the arp table"
 )
 
 // Device Role constants.
@@ -145,6 +166,35 @@ const (
 	DefaultVID  = 1
 	MaxVID      = 4094
 	TaggedVID   = 4095
+)
+
+// All content types from netbox.
+const (
+	ContentTypeDcimDevice                   = "dcim.device"
+	ContentTypeDcimDeviceRole               = "dcim.devicerole"
+	ContentTypeDcimDeviceType               = "dcim.devicetype"
+	ContentTypeDcimInterface                = "dcim.interface"
+	ContentTypeDcimLocation                 = "dcim.location"
+	ContentTypeDcimManufacturer             = "dcim.manufacturer"
+	ContentTypeDcimPlatform                 = "dcim.platform"
+	ContentTypeDcimRegion                   = "dcim.region"
+	ContentTypeDcimSite                     = "dcim.site"
+	ContentTypeVirtualDeviceContext         = "dcim.virtualdevicecontext"
+	ContentTypeIpamIPAddress                = "ipam.ipaddress"
+	ContentTypeIpamVlanGroup                = "ipam.vlangroup"
+	ContentTypeIpamVlan                     = "ipam.vlan"
+	ContentTypeIpamPrefix                   = "ipam.prefix"
+	ContentTypeTenancyTenantGroup           = "tenancy.tenantgroup"
+	ContentTypeTenancyTenant                = "tenancy.tenant"
+	ContentTypeTenancyContact               = "tenancy.contact"
+	ContentTypeTenancyContactAssignment     = "tenancy.contactassignment"
+	ContentTypeTenancyContactGroup          = "tenancy.contactgroup"
+	ContentTypeTenancyContactRole           = "tenancy.contactrole"
+	ContentTypeVirtualizationCluster        = "virtualization.cluster"
+	ContentTypeVirtualizationClusterGroup   = "virtualization.clustergroup"
+	ContentTypeVirtualizationClusterType    = "virtualization.clustertype"
+	ContentTypeVirtualizationVirtualMachine = "virtualization.virtualmachine"
+	ContentTypeVirtualizationVMInterface    = "virtualization.vminterface"
 )
 
 // Here all mappings are defined so we don't hardcode api paths of objects

@@ -156,6 +156,9 @@ func (fs *FortigateSource) SyncInterfaces(nbi *inventory.NetboxInventory) error 
 			NBIPAddress, err = nbi.AddIPAddress(fs.Ctx, &objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
 					Tags: fs.SourceTags,
+					CustomFields: map[string]interface{}{
+						constants.CustomFieldArpEntryName: false,
+					},
 				},
 				Address:            fmt.Sprintf("%s/%d", ipAndMask[0], maskBits),
 				AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,

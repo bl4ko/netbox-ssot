@@ -17,15 +17,16 @@ func TestValidonfig(t *testing.T) {
 			Dest:  "test",
 		},
 		Netbox: &NetboxConfig{
-			APIToken:      "netbox-token",
-			Hostname:      "netbox.example.com",
-			HTTPScheme:    "https",
-			Port:          666,
-			ValidateCert:  false, // Default
-			Timeout:       constants.DefaultAPITimeout,
-			Tag:           constants.DefaultSourceName, // Default
-			TagColor:      "00add8",                    // Default
-			RemoveOrphans: true,                        // Default
+			APIToken:        "netbox-token",
+			Hostname:        "netbox.example.com",
+			HTTPScheme:      "https",
+			Port:            666,
+			ValidateCert:    false, // Default
+			Timeout:         constants.DefaultAPITimeout,
+			Tag:             constants.DefaultSourceName,      // Default
+			TagColor:        constants.DefaultNetboxTagColor,  // Default
+			RemoveOrphans:   true,                             // Default
+			ArpDataLifeSpan: constants.DefaultArpDataLifeSpan, // Default
 		},
 		Sources: []SourceConfig{
 			{
@@ -44,6 +45,22 @@ func TestValidonfig(t *testing.T) {
 				ValidateCert: true,
 				Tag:          "testing",
 				TagColor:     "ff0000",
+			}, {
+				Name:       "paloalto",
+				Type:       "paloalto",
+				HTTPScheme: "http",
+				Port:       443,
+				Hostname:   "palo.example.com",
+				Username:   "svcuser",
+				Password:   "svcpassword",
+				IgnoredSubnets: []string{
+					"172.16.0.0/12",
+					"192.168.0.0/16",
+					"fd00::/8",
+				},
+				CollectArpData: true,
+				TagColor:       constants.SourceTagColorMap[constants.PaloAlto], // Default
+				Tag:            "Source: paloalto",                              // Default
 			},
 			{
 				Name:       "prodolvm",
@@ -158,6 +175,7 @@ func TestParseConfigInvalidConfigs(t *testing.T) {
 		{filename: "invalid_config28.yaml", expectedErr: "source[wrong].vlanTenantRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
 		{filename: "invalid_config29.yaml", expectedErr: "yaml: unmarshal errors:\n  line 2: cannot unmarshal !!str `2dasf` into int"},
 		{filename: "invalid_config30.yaml", expectedErr: "source[fortigate].apiToken is required for fortigate"},
+		{filename: "invalid_config31.yaml", expectedErr: "netbox.arpDataLifeSpan: cannot be negative"},
 		{filename: "invalid_config1111.yaml", expectedErr: "open testdata/invalid_config1111.yaml: no such file or directory"},
 	}
 

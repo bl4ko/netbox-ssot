@@ -32,7 +32,7 @@ func (vc *VmwareSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 			_, err := nbi.AddVlan(vc.Ctx, &objects.Vlan{
 				NetboxObject: objects.NetboxObject{
 					Tags: vc.Config.SourceTags,
-					CustomFields: map[string]string{
+					CustomFields: map[string]interface{}{
 						constants.CustomFieldSourceName: vc.SourceConfig.Name,
 					},
 				},
@@ -56,7 +56,7 @@ func (vc *VmwareSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
 			NetboxObject: objects.NetboxObject{
 				Description: fmt.Sprintf("Datacenter from source %s", vc.SourceConfig.Hostname),
 				Tags:        vc.Config.SourceTags,
-				CustomFields: map[string]string{
+				CustomFields: map[string]interface{}{
 					constants.CustomFieldSourceName: vc.SourceConfig.Name,
 				},
 			},
@@ -75,7 +75,7 @@ func (vc *VmwareSource) syncClusters(nbi *inventory.NetboxInventory) error {
 	clusterType := &objects.ClusterType{
 		NetboxObject: objects.NetboxObject{
 			Tags: vc.Config.SourceTags,
-			CustomFields: map[string]string{
+			CustomFields: map[string]interface{}{
 				constants.CustomFieldSourceName: vc.SourceConfig.Name,
 			},
 		},
@@ -107,7 +107,7 @@ func (vc *VmwareSource) syncClusters(nbi *inventory.NetboxInventory) error {
 		nbCluster := &objects.Cluster{
 			NetboxObject: objects.NetboxObject{
 				Tags: vc.Config.SourceTags,
-				CustomFields: map[string]string{
+				CustomFields: map[string]interface{}{
 					constants.CustomFieldSourceName: vc.SourceConfig.Name,
 				},
 			},
@@ -214,7 +214,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		}
 
 		nbHost := &objects.Device{
-			NetboxObject: objects.NetboxObject{Tags: vc.Config.SourceTags, CustomFields: map[string]string{
+			NetboxObject: objects.NetboxObject{Tags: vc.Config.SourceTags, CustomFields: map[string]interface{}{
 				constants.CustomFieldSourceName:       vc.SourceConfig.Name,
 				constants.CustomFieldHostCPUCoresName: fmt.Sprintf("%d", hostCPUCores),
 				constants.CustomFieldHostMemoryName:   fmt.Sprintf("%d GB", hostMemGB),
@@ -359,7 +359,7 @@ func (vc *VmwareSource) collectHostPhysicalNicData(nbi *inventory.NetboxInventor
 					newVlan, err = nbi.AddVlan(vc.Ctx, &objects.Vlan{
 						NetboxObject: objects.NetboxObject{
 							Tags: vc.Config.SourceTags,
-							CustomFields: map[string]string{
+							CustomFields: map[string]interface{}{
 								constants.CustomFieldSourceName: vc.SourceConfig.Name,
 							},
 						},
@@ -407,7 +407,7 @@ func (vc *VmwareSource) collectHostPhysicalNicData(nbi *inventory.NetboxInventor
 		NetboxObject: objects.NetboxObject{
 			Tags:        vc.Config.SourceTags,
 			Description: pnicDescription,
-			CustomFields: map[string]string{
+			CustomFields: map[string]interface{}{
 				constants.CustomFieldSourceName: vc.SourceConfig.Name,
 			},
 		},
@@ -452,8 +452,9 @@ func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetboxInventory, vcHo
 			nbIPv4Address, err := nbi.AddIPAddress(vc.Ctx, &objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
 					Tags: vc.Config.SourceTags,
-					CustomFields: map[string]string{
-						constants.CustomFieldSourceName: vc.SourceConfig.Name,
+					CustomFields: map[string]interface{}{
+						constants.CustomFieldSourceName:   vc.SourceConfig.Name,
+						constants.CustomFieldArpEntryName: false,
 					},
 				},
 				Address:            fmt.Sprintf("%s/%d", ipv4Address, ipv4MaskBits),
@@ -490,8 +491,9 @@ func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetboxInventory, vcHo
 					nbIPv6Address, err := nbi.AddIPAddress(vc.Ctx, &objects.IPAddress{
 						NetboxObject: objects.NetboxObject{
 							Tags: vc.Config.SourceTags,
-							CustomFields: map[string]string{
-								constants.CustomFieldSourceName: vc.SourceConfig.Name,
+							CustomFields: map[string]interface{}{
+								constants.CustomFieldSourceName:   vc.SourceConfig.Name,
+								constants.CustomFieldArpEntryName: false,
 							},
 						},
 						Address:            fmt.Sprintf("%s/%d", ipv6Address, ipv6Mask),
@@ -625,7 +627,7 @@ func (vc *VmwareSource) collectHostVirtualNicData(nbi *inventory.NetboxInventory
 		NetboxObject: objects.NetboxObject{
 			Tags:        vc.Config.SourceTags,
 			Description: vnicDescription,
-			CustomFields: map[string]string{
+			CustomFields: map[string]interface{}{
 				constants.CustomFieldSourceName: vc.SourceConfig.Name,
 			},
 		},
@@ -709,7 +711,7 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
 		var vmOwners []string
 		var vmOwnerEmails []string
 		var vmDescription string
-		vmCustomFields := map[string]string{}
+		vmCustomFields := map[string]interface{}{}
 		if len(vm.Summary.CustomValue) > 0 {
 			for _, field := range vm.Summary.CustomValue {
 				if field, ok := field.(*types.CustomFieldStringValue); ok {
@@ -732,7 +734,7 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
 								Type:                  objects.CustomFieldTypeText,
 								CustomFieldUIVisible:  &objects.CustomFieldUIVisibleIfSet,
 								CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
-								ContentTypes:          []string{"virtualization.virtualmachine"},
+								ContentTypes:          []string{constants.ContentTypeVirtualizationVirtualMachine},
 							})
 							if err != nil {
 								return fmt.Errorf("vm's custom field %s: %s", fieldName, err)
@@ -744,7 +746,6 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
 			}
 		}
 		vmCustomFields[constants.CustomFieldSourceName] = vc.SourceConfig.Name
-		vmCustomFields[constants.CustomFieldSourceIDName] = vm.Self.Value
 
 		// netbox description has constraint <= len(200 characters)
 		// In this case we make a comment
@@ -998,7 +999,7 @@ func (vc *VmwareSource) collectVMInterfaceData(nbi *inventory.NetboxInventory, n
 		NetboxObject: objects.NetboxObject{
 			Tags:        vc.Config.SourceTags,
 			Description: intDescription,
-			CustomFields: map[string]string{
+			CustomFields: map[string]interface{}{
 				constants.CustomFieldSourceName: vc.SourceConfig.Name,
 			},
 		},
@@ -1021,8 +1022,9 @@ func (vc *VmwareSource) addVMInterfaceIPs(nbi *inventory.NetboxInventory, nbVMIn
 			nbIPv4Address, err := nbi.AddIPAddress(vc.Ctx, &objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
 					Tags: vc.Config.SourceTags,
-					CustomFields: map[string]string{
-						constants.CustomFieldSourceName: vc.SourceConfig.Name,
+					CustomFields: map[string]interface{}{
+						constants.CustomFieldSourceName:   vc.SourceConfig.Name,
+						constants.CustomFieldArpEntryName: false,
 					},
 				},
 				Address:            ipv4Address,
@@ -1054,8 +1056,9 @@ func (vc *VmwareSource) addVMInterfaceIPs(nbi *inventory.NetboxInventory, nbVMIn
 		nbIPv6Address, err := nbi.AddIPAddress(vc.Ctx, &objects.IPAddress{
 			NetboxObject: objects.NetboxObject{
 				Tags: vc.Config.SourceTags,
-				CustomFields: map[string]string{
-					constants.CustomFieldSourceName: vc.SourceConfig.Name,
+				CustomFields: map[string]interface{}{
+					constants.CustomFieldSourceName:   vc.SourceConfig.Name,
+					constants.CustomFieldArpEntryName: false,
 				},
 			},
 			Address:            ipv6Address,

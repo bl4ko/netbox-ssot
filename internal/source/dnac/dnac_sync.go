@@ -18,7 +18,7 @@ func (ds *DnacSource) SyncSites(nbi *inventory.NetboxInventory) error {
 		dnacSite := &objects.Site{
 			NetboxObject: objects.NetboxObject{
 				Tags: ds.Config.SourceTags,
-				CustomFields: map[string]string{
+				CustomFields: map[string]interface{}{
 					constants.CustomFieldSourceName: ds.SourceConfig.Name,
 				},
 			},
@@ -61,7 +61,7 @@ func (ds *DnacSource) SyncVlans(nbi *inventory.NetboxInventory) error {
 			NetboxObject: objects.NetboxObject{
 				Tags:        ds.Config.SourceTags,
 				Description: vlan.VLANType,
-				CustomFields: map[string]string{
+				CustomFields: map[string]interface{}{
 					constants.CustomFieldSourceName: ds.SourceConfig.Name,
 				},
 			},
@@ -80,7 +80,7 @@ func (ds *DnacSource) SyncVlans(nbi *inventory.NetboxInventory) error {
 			_, err = nbi.AddPrefix(ds.Ctx, &objects.Prefix{
 				NetboxObject: objects.NetboxObject{
 					Tags: ds.Config.SourceTags,
-					CustomFields: map[string]string{
+					CustomFields: map[string]interface{}{
 						constants.CustomFieldSourceName: ds.SourceConfig.Name,
 					},
 				},
@@ -175,7 +175,7 @@ func (ds *DnacSource) SyncDevices(nbi *inventory.NetboxInventory) error {
 			NetboxObject: objects.NetboxObject{
 				Tags:        ds.Config.SourceTags,
 				Description: description,
-				CustomFields: map[string]string{
+				CustomFields: map[string]interface{}{
 					constants.CustomFieldSourceName: ds.SourceConfig.Name,
 				},
 			},
@@ -284,7 +284,7 @@ func (ds *DnacSource) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error
 			NetboxObject: objects.NetboxObject{
 				Description: ifaceDescription,
 				Tags:        ds.Config.SourceTags,
-				CustomFields: map[string]string{
+				CustomFields: map[string]interface{}{
 					constants.CustomFieldSourceName: ds.SourceConfig.Name,
 				},
 			},
@@ -316,8 +316,9 @@ func (ds *DnacSource) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error
 			nbIPAddress, err := nbi.AddIPAddress(ds.Ctx, &objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
 					Tags: ds.Config.SourceTags,
-					CustomFields: map[string]string{
-						constants.CustomFieldSourceName: ds.SourceConfig.Name,
+					CustomFields: map[string]interface{}{
+						constants.CustomFieldSourceName:   ds.SourceConfig.Name,
+						constants.CustomFieldArpEntryName: false,
 					},
 				},
 				Address:            fmt.Sprintf("%s/%d", iface.IPv4Address, defaultMask),

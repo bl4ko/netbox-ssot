@@ -29,6 +29,7 @@ type PaloAltoSource struct {
 	Ifaces              map[string]eth.Entry      // Iface name -> Iface
 	Iface2SubIfaces     map[string][]layer3.Entry // Iface name -> SubIfaces
 	VirtualRouters      map[string]router.Entry   // VirtualRouter name -> VirutalRouter
+	ArpData             []ArpEntry                // Array of arp entreies
 
 	// NBFirewall representing paloalto firewall created in syncDevice func.
 	NBFirewall *objects.Device
@@ -68,10 +69,11 @@ func (pas *PaloAltoSource) Init() error {
 	pas.Logger.Debugf(pas.Ctx, "HostSiteRelations: %s", pas.HostSiteRelations)
 
 	initFunctions := []func(*pango.Firewall) error{
-		pas.InitSystemInfo,
-		pas.InitVirtualSystems,
-		pas.InitInterfaces,
-		pas.InitVirtualRouters,
+		pas.initArpData,
+		pas.initSystemInfo,
+		pas.initVirtualSystems,
+		pas.initInterfaces,
+		pas.initVirtualRouters,
 	}
 	for _, initFunc := range initFunctions {
 		startTime := time.Now()
@@ -86,9 +88,10 @@ func (pas *PaloAltoSource) Init() error {
 
 func (pas *PaloAltoSource) Sync(nbi *inventory.NetboxInventory) error {
 	syncFunctions := []func(*inventory.NetboxInventory) error{
-		pas.SyncDevice,
-		pas.SyncSecurityZones,
-		pas.SyncInterfaces,
+		pas.syncDevice,
+		pas.syncSecurityZones,
+		pas.syncInterfaces,
+		pas.syncArpTable,
 	}
 
 	for _, syncFunc := range syncFunctions {

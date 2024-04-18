@@ -817,9 +817,9 @@ func (nbi *NetboxInventory) AddIPAddress(ctx context.Context, newIPAddress *obje
 				return nil, err
 			}
 			nbi.IPAdressesIndexByAddress[newIPAddress.Address] = patchedIPAddress
-		} else {
-			nbi.Logger.Debug(ctx, "IP address ", newIPAddress.Address, " already exists in Netbox and is up to date...")
+			return patchedIPAddress, nil
 		}
+		nbi.Logger.Debug(ctx, "IP address ", newIPAddress.Address, " already exists in Netbox and is up to date...")
 	} else {
 		nbi.Logger.Debug(ctx, "IP address ", newIPAddress.Address, " does not exist in Netbox. Creating it...")
 		newIPAddress, err := service.Create[objects.IPAddress](ctx, nbi.NetboxAPI, newIPAddress)
@@ -836,7 +836,7 @@ func (nbi *NetboxInventory) AddPrefix(ctx context.Context, newPrefix *objects.Pr
 	newPrefix.Tags = append(newPrefix.Tags, nbi.SsotTag)
 	nbi.PrefixesLock.Lock()
 	if newPrefix.NetboxObject.CustomFields == nil {
-		newPrefix.NetboxObject.CustomFields = make(map[string]string)
+		newPrefix.NetboxObject.CustomFields = make(map[string]interface{})
 	}
 	newPrefix.NetboxObject.CustomFields[constants.CustomFieldSourceName] = ctx.Value(constants.CtxSourceKey).(string) //nolint:forcetypeassert
 	defer nbi.PrefixesLock.Unlock()
@@ -873,7 +873,7 @@ func (nbi *NetboxInventory) AddPrefix(ctx context.Context, newPrefix *objects.Pr
 // Helper function that adds source name to custom field of the netbox object.
 func addSourceNameCustomField(ctx context.Context, netboxObject *objects.NetboxObject) {
 	if netboxObject.CustomFields == nil {
-		netboxObject.CustomFields = make(map[string]string)
+		netboxObject.CustomFields = make(map[string]interface{})
 	}
 	netboxObject.CustomFields[constants.CustomFieldSourceName] = ctx.Value(constants.CtxSourceKey).(string) //nolint
 }

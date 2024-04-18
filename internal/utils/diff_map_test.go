@@ -332,16 +332,15 @@ func TestMapAttributeDiff(t *testing.T) {
 			resetFields: true,
 			newStruct: &objects.Device{
 				NetboxObject: objects.NetboxObject{
-					CustomFields: map[string]string{
+					CustomFields: map[string]interface{}{
 						constants.CustomFieldHostCPUCoresName: "10 cpu cores",
 						constants.CustomFieldHostMemoryName:   "10 GB",
-						constants.CustomFieldSourceIDName:     "123456789",
 					},
 				},
 			},
 			existingStruct: &objects.Device{
 				NetboxObject: objects.NetboxObject{
-					CustomFields: map[string]string{
+					CustomFields: map[string]interface{}{
 						constants.CustomFieldHostCPUCoresName: "5 cpu cores",
 						"existing_tag1":                       "existing_tag1",
 						"existing_tag2":                       "existing_tag2",
@@ -352,7 +351,6 @@ func TestMapAttributeDiff(t *testing.T) {
 				"custom_fields": map[string]interface{}{
 					constants.CustomFieldHostCPUCoresName: "10 cpu cores",
 					constants.CustomFieldHostMemoryName:   "10 GB",
-					constants.CustomFieldSourceIDName:     "123456789",
 					"existing_tag1":                       "existing_tag1",
 					"existing_tag2":                       "existing_tag2",
 				},
@@ -363,7 +361,7 @@ func TestMapAttributeDiff(t *testing.T) {
 			resetFields: true,
 			newStruct: &objects.Device{
 				NetboxObject: objects.NetboxObject{
-					CustomFields: map[string]string{
+					CustomFields: map[string]interface{}{
 						constants.CustomFieldHostCPUCoresName: "10 cpu cores",
 						constants.CustomFieldHostMemoryName:   "10 GB",
 					},
@@ -372,7 +370,7 @@ func TestMapAttributeDiff(t *testing.T) {
 
 			existingStruct: &objects.Device{
 				NetboxObject: objects.NetboxObject{
-					CustomFields: map[string]string{
+					CustomFields: map[string]interface{}{
 						constants.CustomFieldHostCPUCoresName: "10 cpu cores",
 						constants.CustomFieldHostMemoryName:   "10 GB",
 						"existing_tag1":                       "existing_tag1",
@@ -387,7 +385,7 @@ func TestMapAttributeDiff(t *testing.T) {
 			resetFields: true,
 			newStruct: &objects.Device{
 				NetboxObject: objects.NetboxObject{
-					CustomFields: map[string]string{
+					CustomFields: map[string]interface{}{
 						constants.CustomFieldHostCPUCoresName: "5 cpu cores",
 						constants.CustomFieldHostMemoryName:   "10 GB",
 					},
@@ -395,7 +393,7 @@ func TestMapAttributeDiff(t *testing.T) {
 			},
 			existingStruct: &objects.Device{
 				NetboxObject: objects.NetboxObject{
-					CustomFields: map[string]string{
+					CustomFields: map[string]interface{}{
 						constants.CustomFieldHostCPUCoresName: "10 cpu cores",
 						constants.CustomFieldHostMemoryName:   "10 GB",
 						"existing_tag1":                       "existing_tag1",
@@ -442,7 +440,7 @@ func TestPriorityMergeDiff(t *testing.T) {
 				Name: "Vlan1000",
 				Vid:  1000,
 				NetboxObject: objects.NetboxObject{
-					CustomFields: map[string]string{
+					CustomFields: map[string]interface{}{
 						constants.CustomFieldSourceName: "test1",
 					},
 					Tags: []*objects.Tag{
@@ -455,7 +453,7 @@ func TestPriorityMergeDiff(t *testing.T) {
 				Name: "1000Vlan",
 				Vid:  1000,
 				NetboxObject: objects.NetboxObject{
-					CustomFields: map[string]string{
+					CustomFields: map[string]interface{}{
 						constants.CustomFieldSourceName: "test2",
 					},
 					Tags: []*objects.Tag{
@@ -484,7 +482,7 @@ func TestPriorityMergeDiff(t *testing.T) {
 				Vid:      1000,
 				Comments: "Added comment",
 				NetboxObject: objects.NetboxObject{
-					CustomFields: map[string]string{
+					CustomFields: map[string]interface{}{
 						constants.CustomFieldSourceName: "test1",
 					},
 					Tags: []*objects.Tag{
@@ -497,7 +495,7 @@ func TestPriorityMergeDiff(t *testing.T) {
 				Name: "1000Vlan",
 				Vid:  1000,
 				NetboxObject: objects.NetboxObject{
-					CustomFields: map[string]string{
+					CustomFields: map[string]interface{}{
 						constants.CustomFieldSourceName: "test2",
 					},
 					Tags: []*objects.Tag{
@@ -582,6 +580,78 @@ func Test_hasPriorityOver(t *testing.T) {
 	}{
 		{
 			name: "When custom fields on object are missing return true",
+			args: args{
+				newObj:          reflect.ValueOf(objects.Tag{Name: "NewDevice"}),
+				existingObj:     reflect.ValueOf(objects.Tag{Name: "ExistingDevice"}),
+				source2priority: map[string]int{},
+			},
+			want: true,
+		},
+		{
+			name: "IP address representing arp entry has always lower priority than standard IP address",
+			args: args{
+				newObj: reflect.ValueOf(objects.IPAddress{NetboxObject: objects.NetboxObject{
+					CustomFields: map[string]interface{}{
+						constants.CustomFieldArpEntryName: false,
+						constants.CustomFieldSourceName:   "source1",
+					},
+				}}),
+				existingObj: reflect.ValueOf(objects.IPAddress{NetboxObject: objects.NetboxObject{
+					CustomFields: map[string]interface{}{
+						constants.CustomFieldArpEntryName: true,
+						constants.CustomFieldSourceName:   "source2",
+					},
+				}}),
+				source2priority: map[string]int{
+					"source1": 1, "source2": 2,
+				},
+			},
+			want: true,
+		},
+		{
+			name: "IP address representing arp entry has always lower priority than standard IP address",
+			args: args{
+				newObj: reflect.ValueOf(objects.IPAddress{NetboxObject: objects.NetboxObject{
+					CustomFields: map[string]interface{}{
+						constants.CustomFieldArpEntryName: true,
+						constants.CustomFieldSourceName:   "source1",
+					},
+				}}),
+				existingObj: reflect.ValueOf(objects.IPAddress{NetboxObject: objects.NetboxObject{
+					CustomFields: map[string]interface{}{
+						constants.CustomFieldArpEntryName: true,
+						constants.CustomFieldSourceName:   "source2",
+					},
+				}}),
+				source2priority: map[string]int{
+					"source1": 1, "source2": 2,
+				},
+			},
+			want: true,
+		},
+		{
+			name: "IP address representing arp entry has always lower priority than standard IP address",
+			args: args{
+				newObj: reflect.ValueOf(objects.IPAddress{NetboxObject: objects.NetboxObject{
+					CustomFields: map[string]interface{}{
+						constants.CustomFieldArpEntryName: true,
+						constants.CustomFieldSourceName:   "source2",
+					},
+				}}),
+				existingObj: reflect.ValueOf(objects.IPAddress{NetboxObject: objects.NetboxObject{
+					CustomFields: map[string]interface{}{
+						constants.CustomFieldArpEntryName: true,
+						constants.CustomFieldSourceName:   "source1",
+					},
+				}}),
+				source2priority: map[string]int{
+					"source1": 1, "source2": 2,
+				},
+			},
+			want: false,
+		},
+		{
+			name: "IP address representing arp entry has always lower priority than standard IP address",
 			args: args{
 				newObj:          reflect.ValueOf(objects.Tag{Name: "NewDevice"}),
 				existingObj:     reflect.ValueOf(objects.Tag{Name: "ExistingDevice"}),
@@ -898,9 +968,10 @@ func Test_addMapDiff(t *testing.T) {
 		diffMap     map[string]interface{}
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
+		name        string
+		args        args
+		wantErr     bool
+		wantDiffMap map[string]interface{}
 	}{
 		{
 			name: "skip if new map is not valid",
@@ -909,13 +980,57 @@ func Test_addMapDiff(t *testing.T) {
 				existingMap: reflect.ValueOf(map[string]string{}),
 				jsonTag:     "test",
 				hasPriority: false,
+				diffMap:     map[string]interface{}{},
+			},
+			wantDiffMap: map[string]interface{}{},
+		},
+		{
+			name: "map diff test",
+			args: args{
+				newMap: reflect.ValueOf(map[string]interface{}{
+					constants.CustomFieldArpIPLastSeenName: "2024-04-18 10:59:17",
+					constants.CustomFieldSourceIDName:      nil,
+				}),
+				existingMap: reflect.ValueOf(map[string]interface{}{
+					constants.CustomFieldArpIPLastSeenName: "2024-04-18 10:29:30",
+					constants.CustomFieldSourceIDName:      nil,
+				}),
+				hasPriority: true,
+				jsonTag:     "CustomFields",
+				diffMap:     map[string]interface{}{},
+			},
+			wantDiffMap: map[string]interface{}{
+				"CustomFields": map[string]interface{}{constants.CustomFieldArpIPLastSeenName: "2024-04-18 10:59:17"},
+			},
+		},
+		{
+			name: "map diff test",
+			args: args{
+				newMap: reflect.ValueOf(map[string]interface{}{
+					constants.CustomFieldArpIPLastSeenName: "2024-04-18 10:59:17",
+				}),
+				existingMap: reflect.ValueOf(map[string]interface{}{
+					constants.CustomFieldArpIPLastSeenName: "2024-04-18 10:29:30",
+					constants.CustomFieldSourceIDName:      nil,
+				}),
+				hasPriority: true,
+				jsonTag:     "CustomFields",
+				diffMap:     map[string]interface{}{},
+			},
+			wantDiffMap: map[string]interface{}{
+				"CustomFields": map[string]interface{}{constants.CustomFieldArpIPLastSeenName: "2024-04-18 10:59:17"},
 			},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := addMapDiff(tt.args.newMap, tt.args.existingMap, tt.args.jsonTag, tt.args.hasPriority, tt.args.diffMap); (err != nil) != tt.wantErr {
 				t.Errorf("addMapDiff() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if !reflect.DeepEqual(tt.args.diffMap, tt.wantDiffMap) {
+				t.Errorf("diffMap: %s, wantDiffMap: %s", tt.args.diffMap, tt.wantDiffMap)
 			}
 		})
 	}

@@ -34,9 +34,10 @@ type IDObject struct {
 }
 
 // hasPriorityOver returns true if newObj has priority over existingObj, false otherwise.
-// newObject will alwaays have priority over exisitngObject, unless
-// sourcePriority[newObj.CustomFields[constants.CustomFieldSourceName]] >
-// sourcePriority[existingObj.CustomFields[constants.CustomFieldSourceName]].
+// newObject will always have priority over exisitngObject, unless following cases:
+//  1. When sourcePriority[newObj] > sourcePriority[existingObj]
+//  2. When the new IP address is an arp entry (custom field ArpEntry),
+//     and the exisiting is not. If both we follow case 1. .
 func hasPriorityOver(newObj, existingObj reflect.Value, source2priority map[string]int) bool {
 	// Retrieve the SourceName field from CustomFields for both objects
 	newObjCustomFields := newObj.FieldByName("CustomFields")
@@ -44,20 +45,32 @@ func hasPriorityOver(newObj, existingObj reflect.Value, source2priority map[stri
 
 	// Check if fields are valid and present in the sourcePriority map
 	if newObjCustomFields.IsValid() && existingObjCustomFields.IsValid() {
-		if newCustomFields, ok := newObjCustomFields.Interface().(map[string]string); ok {
-			if existingCustomFields, ok := existingObjCustomFields.Interface().(map[string]string); ok {
-				newPriority := int(^uint(0) >> 1) // max int
-				if priority, newOk := source2priority[newCustomFields[constants.CustomFieldSourceName]]; newOk {
-					newPriority = priority
-				}
-				existingPriority := int(^uint(0) >> 1)
-				if priority, existingOk := source2priority[existingCustomFields[constants.CustomFieldSourceName]]; existingOk {
-					existingPriority = priority
+		if newCustomFields, ok := newObjCustomFields.Interface().(map[string]interface{}); ok {
+			if existingCustomFields, ok := existingObjCustomFields.Interface().(map[string]interface{}); ok {
+				// 2. case
+				if newCustomFields[constants.CustomFieldArpEntryName] != existingCustomFields[constants.CustomFieldArpEntryName] {
+					if existingCustomFields[constants.CustomFieldArpEntryName] == false {
+						return true
+					}
+					if newCustomFields[constants.CustomFieldArpEntryName] != nil {
+						return !newCustomFields[constants.CustomFieldArpEntryName].(bool) //nolint:forcetypeassert
+					}
 				}
 
-				// In case newPriority is lower or equal than existingPriority
-				// newObj has precedence over exsitingObj
-				return newPriority <= existingPriority
+				// 1. case
+				if newCustomFields[constants.CustomFieldSourceName] != nil && existingCustomFields[constants.CustomFieldSourceName] != nil {
+					newPriority := int(^uint(0) >> 1) // max int
+					if priority, newOk := source2priority[newCustomFields[constants.CustomFieldSourceName].(string)]; newOk {
+						newPriority = priority
+					}
+					existingPriority := int(^uint(0) >> 1)
+					if priority, existingOk := source2priority[existingCustomFields[constants.CustomFieldSourceName].(string)]; existingOk {
+						existingPriority = priority
+					}
+					// In case newPriority is lower or equal than existingPriority
+					// newObj has precedence over exsitingObj
+					return newPriority <= existingPriority
+				}
 			}
 		}
 	}
@@ -351,7 +364,9 @@ func addMapDiff(newMap reflect.Value, existingMap reflect.Value, jsonTag string,
 		for _, key := range existingMap.MapKeys() {
 			if keyValue, ok := key.Interface().(string); ok {
 				if !newMap.MapIndex(key).IsValid() {
-					mapsDiff[keyValue] = existingMap.MapIndex(key).Interface()
+					if !existingMap.MapIndex(key).IsNil() {
+						mapsDiff[keyValue] = existingMap.MapIndex(key).Interface()
+					}
 				}
 			}
 		}

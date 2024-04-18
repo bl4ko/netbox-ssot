@@ -3,6 +3,7 @@ package paloalto
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
@@ -12,7 +13,7 @@ import (
 )
 
 // Sync device creates default device in netbox representing Paloalto firewall.
-func (pas *PaloAltoSource) SyncDevice(nbi *inventory.NetboxInventory) error {
+func (pas *PaloAltoSource) syncDevice(nbi *inventory.NetboxInventory) error {
 	deviceName := pas.SystemInfo["devicename"]
 	if deviceName == "" {
 		return fmt.Errorf("can't extract device name from system info")
@@ -87,7 +88,7 @@ func (pas *PaloAltoSource) SyncDevice(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
-func (pas *PaloAltoSource) SyncInterfaces(nbi *inventory.NetboxInventory) error {
+func (pas *PaloAltoSource) syncInterfaces(nbi *inventory.NetboxInventory) error {
 	for _, iface := range pas.Ifaces {
 		if iface.Name == "" {
 			pas.Logger.Debugf(pas.Ctx, "empty interface name. Skipping...")
@@ -220,6 +221,9 @@ func (pas *PaloAltoSource) syncIPs(nbi *inventory.NetboxInventory, nbIface *obje
 			_, err := nbi.AddIPAddress(pas.Ctx, &objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
 					Tags: pas.SourceTags,
+					CustomFields: map[string]interface{}{
+						constants.CustomFieldArpEntryName: false,
+					},
 				},
 				Address:            ipAddress,
 				AssignedObjectID:   nbIface.ID,
@@ -251,9 +255,9 @@ func (pas *PaloAltoSource) syncIPs(nbi *inventory.NetboxInventory, nbIface *obje
 	}
 }
 
-// SyncSecurityZones syncs all security zones from palo alto as virtual device context in netbox.
+// syncSecurityZones syncs all security zones from palo alto as virtual device context in netbox.
 // They are all added as part of main paloalto firewall device.
-func (pas *PaloAltoSource) SyncSecurityZones(nbi *inventory.NetboxInventory) error {
+func (pas *PaloAltoSource) syncSecurityZones(nbi *inventory.NetboxInventory) error {
 	for _, securityZone := range pas.SecurityZones {
 		_, err := nbi.AddVirtualDeviceContext(pas.Ctx, &objects.VirtualDeviceContext{
 			NetboxObject: objects.NetboxObject{
@@ -278,4 +282,65 @@ func (pas *PaloAltoSource) getVirtualDeviceContext(nbi *inventory.NetboxInventor
 		virtualDeviceContext = vdc
 	}
 	return virtualDeviceContext
+}
+
+func (pas *PaloAltoSource) syncArpTable(nbi *inventory.NetboxInventory) error {
+	if !pas.SourceConfig.CollectArpData {
+		pas.Logger.Info(pas.Ctx, "skipping collecting of arp data")
+		return nil
+	}
+
+	// We tag it with special tag for arp data.
+	arpTag, err := nbi.AddTag(pas.Ctx, &objects.Tag{
+		Name:        constants.DefaultArpTagName,
+		Slug:        utils.Slugify(constants.DefaultArpTagName),
+		Color:       constants.DefaultArpTagColor,
+		Description: "tag created for ip's collected from arp table",
+	})
+	if err != nil {
+		return fmt.Errorf("add tag: %s", err)
+	}
+	// We create custom field for tracking when was arp entry last seen
+	_, err = nbi.AddCustomField(pas.Ctx, &objects.CustomField{
+		Name:                  constants.CustomFieldArpIPLastSeenName,
+		Label:                 constants.CustomFieldArpIPLastSeenLabel,
+		Type:                  objects.CustomFieldTypeText,
+		FilterLogic:           objects.FilterLogicLoose,
+		CustomFieldUIVisible:  &objects.CustomFieldUIVisibleAlways,
+		CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
+		DisplayWeight:         objects.DisplayWeightDefault,
+		Description:           constants.CustomFieldArpIPLastSeenDescription,
+		SearchWeight:          objects.SearchWeightDefault,
+		ContentTypes:          []string{constants.ContentTypeIpamIPAddress},
+	})
+	if err != nil {
+		return fmt.Errorf("add custom field: %s", err)
+	}
+	for _, entry := range pas.ArpData {
+		if entry.MAC != "(incomplete)" {
+			newTags := pas.SourceTags
+			newTags = append(newTags, arpTag)
+			currentTime := time.Now()
+			dnsName := utils.ReverseLookup(entry.IP)
+			defaultMask := 32
+			addressWithMask := fmt.Sprintf("%s/%d", entry.IP, defaultMask)
+			_, err = nbi.AddIPAddress(pas.Ctx, &objects.IPAddress{
+				NetboxObject: objects.NetboxObject{
+					Tags:        newTags,
+					Description: fmt.Sprintf("IP collected from %s arp table", pas.SourceConfig.Name),
+					CustomFields: map[string]interface{}{
+						constants.CustomFieldArpIPLastSeenName: currentTime.Format(constants.ArpLastSeenFormat),
+						constants.CustomFieldArpEntryName:      true,
+					},
+				},
+				Address: addressWithMask,
+				DNSName: dnsName,
+				Status:  &objects.IPAddressStatusActive,
+			})
+			if err != nil {
+				return fmt.Errorf("add arp ip address: %s", err)
+			}
+		}
+	}
+	return nil
 }

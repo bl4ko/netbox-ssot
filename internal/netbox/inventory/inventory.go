@@ -124,6 +124,8 @@ type NetboxInventory struct {
 	// }
 	OrphanObjectPriority map[int]string
 
+	// ArpDataLifeSpan determines the lifespan of arp entries in seconds.
+	ArpDataLifeSpan int
 	// Tag used by netbox-ssot to mark devices that are managed by it.
 	SsotTag *objects.Tag
 	// Default context for the inventory, we use it to pass sourcename to functions for logging.

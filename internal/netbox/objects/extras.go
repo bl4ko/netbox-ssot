@@ -87,9 +87,12 @@ type CustomField struct {
 	CustomFieldUIVisible *CustomFieldUIVisible `json:"ui_visible,omitempty"`
 	// UI editable. This field is required. (Default read-write).
 	CustomFieldUIEditable *CustomFieldUIEditable `json:"ui_editable,omitempty"`
-	// Display Weight. Fields with higher weights appear lower in a form.
-	// default 100
+	// Display Weight. Fields with higher weights appear lower in a form (default is 100).
 	DisplayWeight int `json:"weight,omitempty"`
+	// Default value for the field (must be a JSON value). Encapsulate strings with double quotes (e.g. "Foo").
+	Default interface{} `json:"default"`
+	// If this field is required or not.
+	Required bool `json:"required"`
 }
 
 func (cf CustomField) String() string {

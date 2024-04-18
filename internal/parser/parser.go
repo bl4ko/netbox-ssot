@@ -41,13 +41,14 @@ type NetboxConfig struct {
 	Hostname string `yaml:"hostname"`
 	Port     int    `yaml:"port"`
 	// Can be http or https (default)
-	HTTPScheme     HTTPScheme `yaml:"httpScheme"`
-	ValidateCert   bool       `yaml:"validateCert"`
-	Timeout        int        `yaml:"timeout"`
-	Tag            string     `yaml:"tag"`
-	TagColor       string     `yaml:"tagColor"`
-	RemoveOrphans  bool       `yaml:"removeOrphans"`
-	SourcePriority []string   `yaml:"sourcePriority"`
+	HTTPScheme      HTTPScheme `yaml:"httpScheme"`
+	ValidateCert    bool       `yaml:"validateCert"`
+	Timeout         int        `yaml:"timeout"`
+	Tag             string     `yaml:"tag"`
+	TagColor        string     `yaml:"tagColor"`
+	RemoveOrphans   bool       `yaml:"removeOrphans"`
+	SourcePriority  []string   `yaml:"sourcePriority"`
+	ArpDataLifeSpan int        `yaml:"arpDataLifeSpan"`
 }
 
 func (n NetboxConfig) String() string {
@@ -68,6 +69,8 @@ type SourceConfig struct {
 	TagColor        string               `yaml:"tagColor"`
 	IgnoredSubnets  []string             `yaml:"ignoredSubnets"`
 	InterfaceFilter string               `yaml:"interfaceFilter"`
+	CollectArpData  bool                 `yaml:"collectArpData"`
+	ArpDataLifeSpan int                  `yaml:"arpDataLifeSpan"`
 
 	// Relations
 	HostSiteRelations      []string `yaml:"hostSiteRelations"`
@@ -135,7 +138,7 @@ func validateNetboxConfig(config *Config) error {
 		config.Netbox.Tag = constants.DefaultSourceName
 	}
 	if config.Netbox.TagColor == "" {
-		config.Netbox.TagColor = "00add8"
+		config.Netbox.TagColor = constants.DefaultNetboxTagColor
 	} else {
 		// Ensure that TagColor is a string of 6 hexadecimal characters
 		if len(config.Netbox.TagColor) != len("ffffff") {
@@ -163,6 +166,12 @@ func validateNetboxConfig(config *Config) error {
 				return fmt.Errorf("netbox.sourcePriority: source[%s] doesn't exist in the sources array", sourceName)
 			}
 		}
+	}
+	if config.Netbox.ArpDataLifeSpan < 0 {
+		return fmt.Errorf("netbox.arpDataLifeSpan: cannot be negative")
+	}
+	if config.Netbox.ArpDataLifeSpan == 0 {
+		config.Netbox.ArpDataLifeSpan = constants.DefaultArpDataLifeSpan
 	}
 	return nil
 }
@@ -211,7 +220,7 @@ func validateSourceConfig(config *Config) error {
 			externalSource.Tag = fmt.Sprintf("Source: %s", externalSource.Name)
 		}
 		if externalSource.TagColor == "" {
-			externalSource.TagColor = constants.DefaultSourceToTagColorMap[externalSource.Type]
+			externalSource.TagColor = constants.SourceTagColorMap[externalSource.Type]
 		}
 		err := validateSourceConfigRelations(externalSource, externalSourceStr)
 		if err != nil {

@@ -35,7 +35,7 @@ func NewSource(ctx context.Context, config *parser.SourceConfig, logger *logger.
 	sourceTypeTag, err := netboxInventory.AddTag(ctx, &objects.Tag{
 		Name:        string(config.Type),
 		Slug:        utils.Slugify("type-" + string(config.Type)),
-		Color:       constants.Color(constants.SourceTypeToTagColorMap[config.Type]),
+		Color:       constants.Color(constants.SourceTypeTagColorMap[config.Type]),
 		Description: fmt.Sprintf("Automatically created tag by netbox-ssot for source type %s", config.Type),
 	})
 	if err != nil {

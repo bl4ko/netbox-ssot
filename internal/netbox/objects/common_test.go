@@ -46,7 +46,7 @@ func TestNetboxObject_String(t *testing.T) {
 					{Name: "Test tag1"}, {Name: "Test tag2"},
 				},
 				Description: "Test description",
-				CustomFields: map[string]string{
+				CustomFields: map[string]interface{}{
 					constants.CustomFieldSourceName: "test",
 				},
 			},
