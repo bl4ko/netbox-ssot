@@ -49,11 +49,10 @@ func hasPriorityOver(newObj, existingObj reflect.Value, source2priority map[stri
 			if existingCustomFields, ok := existingObjCustomFields.Interface().(map[string]interface{}); ok {
 				// 2. case
 				if newCustomFields[constants.CustomFieldArpEntryName] != existingCustomFields[constants.CustomFieldArpEntryName] {
-					if existingCustomFields[constants.CustomFieldArpEntryName] == false {
-						return true
-					}
 					if newCustomFields[constants.CustomFieldArpEntryName] != nil {
 						return !newCustomFields[constants.CustomFieldArpEntryName].(bool) //nolint:forcetypeassert
+					} else if existingCustomFields[constants.CustomFieldArpEntryName] == true {
+						return true
 					}
 				}
 
@@ -239,7 +238,7 @@ func addSliceDiff(newSlice reflect.Value, existingSlice reflect.Value, jsonTag s
 		newIDSet := make(map[int]bool, newSlice.Len())
 		for j := 0; j < newSlice.Len(); j++ {
 			element := newSlice.Index(j)
-			if newSlice.Index(j).IsNil() {
+			if newSlice.Index(j).Kind() == reflect.Pointer && newSlice.Index(j).IsNil() {
 				continue
 			}
 			if element.Kind() == reflect.Ptr {
@@ -248,10 +247,14 @@ func addSliceDiff(newSlice reflect.Value, existingSlice reflect.Value, jsonTag s
 			if element.Kind() != reflect.Struct {
 				return fmt.Errorf("slice diff only works for structs")
 			}
-			id, ok := element.FieldByName("ID").Interface().(int)
-			if !ok {
-				return fmt.Errorf("slice contains non id values")
+			idField := element.FieldByName("ID")
+			if !idField.IsValid() {
+				return fmt.Errorf("slice contains elements that have no ID attribute")
 			}
+			if idField.Kind() != reflect.Int {
+				return fmt.Errorf("slice contains elements that have an ID attribute which is not of int kind")
+			}
+			id := idField.Interface().(int) //nolint:forcetypeassert
 			newIDSet[id] = true
 		}
 
@@ -310,11 +313,7 @@ func addStructDiff(newObj reflect.Value, existingObj reflect.Value, jsonTag stri
 			diffMap[jsonTag] = newObj.Interface()
 		} else if newObj.Interface() != existingObj.Interface() {
 			if hasPriority {
-				if isChoiceEmbedded(newObj) {
-					diffMap[jsonTag] = choiceValue(newObj)
-				} else {
-					diffMap[jsonTag] = newObj.Interface()
-				}
+				diffMap[jsonTag] = newObj.Interface()
 			}
 		}
 	} else {

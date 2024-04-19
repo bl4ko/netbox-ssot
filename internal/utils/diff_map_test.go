@@ -651,6 +651,27 @@ func Test_hasPriorityOver(t *testing.T) {
 			want: false,
 		},
 		{
+			name: "IP address that has set arpentryname to nil and existing is arp data has priority over",
+			args: args{
+				newObj: reflect.ValueOf(objects.IPAddress{NetboxObject: objects.NetboxObject{
+					CustomFields: map[string]interface{}{
+						constants.CustomFieldArpEntryName: nil,
+						constants.CustomFieldSourceName:   "source2",
+					},
+				}}),
+				existingObj: reflect.ValueOf(objects.IPAddress{NetboxObject: objects.NetboxObject{
+					CustomFields: map[string]interface{}{
+						constants.CustomFieldArpEntryName: true,
+						constants.CustomFieldSourceName:   "source1",
+					},
+				}}),
+				source2priority: map[string]int{
+					"source1": 1, "source2": 2,
+				},
+			},
+			want: true,
+		},
+		{
 			name: "IP address representing arp entry has always lower priority than standard IP address",
 			args: args{
 				newObj:          reflect.ValueOf(objects.Tag{Name: "NewDevice"}),
@@ -669,8 +690,16 @@ func Test_hasPriorityOver(t *testing.T) {
 	}
 }
 
-type testStruct struct {
+type testStructWithTestAttribute struct {
 	Test string
+}
+
+type testStructWithStringIDAttribute struct {
+	ID string
+}
+
+type testStructWithIntIDAttribute struct {
+	ID int
 }
 
 type testStruct2 struct {
@@ -745,8 +774,8 @@ func TestJSONDiffMapExceptID(t *testing.T) {
 		{
 			name: "New object has a field with no json",
 			args: args{
-				newObj:          testStruct{Test: "Test"},
-				existingObj:     testStruct{Test: "Test2"},
+				newObj:          testStructWithTestAttribute{Test: "Test"},
+				existingObj:     testStructWithTestAttribute{Test: "Test2"},
 				resetFields:     true,
 				source2priority: map[string]int{},
 			},
@@ -758,7 +787,7 @@ func TestJSONDiffMapExceptID(t *testing.T) {
 		{
 			name: "Fail with both fields are not of the same type",
 			args: args{
-				newObj:          testStruct{Test: "test"},
+				newObj:          testStructWithTestAttribute{Test: "test"},
 				existingObj:     testStruct2{Test: 1},
 				resetFields:     false,
 				source2priority: map[string]int{},
@@ -819,9 +848,10 @@ func Test_addSliceDiff(t *testing.T) {
 		diffMap       map[string]interface{}
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
+		name        string
+		args        args
+		wantErr     bool
+		wantDiffMap map[string]interface{}
 	}{
 		{
 			name: "Test when new slice is nil and has priority",
@@ -832,6 +862,7 @@ func Test_addSliceDiff(t *testing.T) {
 				hasPriority:   true,
 				diffMap:       map[string]interface{}{},
 			},
+			wantDiffMap: map[string]interface{}{"test": []interface{}{}},
 		},
 		{
 			name: "Test string slices of different length",
@@ -840,8 +871,9 @@ func Test_addSliceDiff(t *testing.T) {
 				existingSlice: reflect.ValueOf([]string{"pineapple"}),
 				jsonTag:       "test",
 				hasPriority:   true,
-				diffMap:       map[string]interface{}{"test": []string{"pineapple", "strawberry"}},
+				diffMap:       map[string]interface{}{},
 			},
+			wantDiffMap: map[string]interface{}{"test": []string{"pineapple", "strawberry"}},
 		},
 		{
 			name: "Test string slices of same length",
@@ -850,8 +882,9 @@ func Test_addSliceDiff(t *testing.T) {
 				existingSlice: reflect.ValueOf([]string{"pineapple", "apple"}),
 				jsonTag:       "test",
 				hasPriority:   true,
-				diffMap:       map[string]interface{}{"test": []string{"pineapple", "strawberry"}},
+				diffMap:       map[string]interface{}{},
 			},
+			wantDiffMap: map[string]interface{}{"test": []string{"pineapple", "strawberry"}},
 		},
 		{
 			name: "Test interface slices of same length. Fails because elements are not structs",
@@ -863,21 +896,63 @@ func Test_addSliceDiff(t *testing.T) {
 			},
 			wantErr: true,
 		},
-		// {
-		// 	name: "Test interface slices of same length. Fails because elements don't have ID",
-		// 	args: args{
-		// 		newSlice:      reflect.ValueOf([]testStruct{{Test: "1"}, {Test: "test"}}),
-		// 		existingSlice: reflect.ValueOf([]testStruct{{Test: "1"}}),
-		// 		jsonTag:       "test",
-		// 		hasPriority:   true,
-		// 	},
-		// 	wantErr: true,
-		// },
+		{
+			name: "Test interface slices of same length. Fails because elements don't have an ID attribute",
+			args: args{
+				newSlice:      reflect.ValueOf([]testStructWithTestAttribute{{Test: "1"}, {Test: "test"}}),
+				existingSlice: reflect.ValueOf([]testStructWithTestAttribute{{Test: "1"}}),
+				jsonTag:       "test",
+				hasPriority:   true,
+				diffMap:       map[string]interface{}{},
+			},
+			wantErr:     true,
+			wantDiffMap: map[string]interface{}{},
+		},
+		{
+			name: "Elements have an ID attribute but fails because it is not int",
+			args: args{
+				newSlice:      reflect.ValueOf([]testStructWithStringIDAttribute{{ID: "1"}, {ID: "2"}}),
+				existingSlice: reflect.ValueOf([]testStructWithStringIDAttribute{{ID: "1"}}),
+				jsonTag:       "test",
+				hasPriority:   true,
+				diffMap:       map[string]interface{}{},
+			},
+			wantErr: true,
+		},
+		{
+			name: "nil pointers should be skipped",
+			args: args{
+				newSlice:      reflect.ValueOf([]*testStructWithIntIDAttribute{{ID: 1}, nil, {ID: 2}}),
+				existingSlice: reflect.ValueOf([]*testStructWithIntIDAttribute{{ID: 1}}),
+				jsonTag:       "test",
+				hasPriority:   true,
+				diffMap:       map[string]interface{}{},
+			},
+			wantErr:     false,
+			wantDiffMap: map[string]interface{}{"test": []int{1, 2}},
+		},
+		{
+			name: "Existing slice contains ID attributes which are not int",
+			args: args{
+				newSlice:      reflect.ValueOf([]testStructWithIntIDAttribute{{ID: 1}, {ID: 2}}),
+				existingSlice: reflect.ValueOf([]testStructWithStringIDAttribute{{ID: "1"}, {ID: "2"}}),
+				jsonTag:       "test",
+				hasPriority:   true,
+				diffMap:       map[string]interface{}{},
+			},
+			wantErr:     true,
+			wantDiffMap: map[string]interface{}{},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := addSliceDiff(tt.args.newSlice, tt.args.existingSlice, tt.args.jsonTag, tt.args.hasPriority, tt.args.diffMap); (err != nil) != tt.wantErr {
 				t.Errorf("addSliceDiff() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if tt.wantErr == false {
+				if !reflect.DeepEqual(tt.wantDiffMap, tt.args.diffMap) {
+					t.Errorf("got diffmap: %s, want diffmap: %s", tt.args.diffMap, tt.wantDiffMap)
+				}
 			}
 		})
 	}
@@ -909,7 +984,7 @@ func Test_addStructDiff(t *testing.T) {
 		{
 			name: "Existing obj is invalid",
 			args: args{
-				newObj:      reflect.ValueOf(testStruct{Test: "new"}),
+				newObj:      reflect.ValueOf(testStructWithTestAttribute{Test: "new"}),
 				existingObj: reflect.ValueOf(nil),
 				jsonTag:     "Test",
 				diffMap:     map[string]interface{}{},
@@ -919,8 +994,8 @@ func Test_addStructDiff(t *testing.T) {
 		{
 			name: "New object has priority and is different",
 			args: args{
-				newObj:      reflect.ValueOf(testStruct{Test: "new string"}),
-				existingObj: reflect.ValueOf(testStruct{Test: "old string"}),
+				newObj:      reflect.ValueOf(testStructWithTestAttribute{Test: "new string"}),
+				existingObj: reflect.ValueOf(testStructWithTestAttribute{Test: "old string"}),
 				jsonTag:     "Test",
 				diffMap:     map[string]interface{}{},
 				hasPriority: true,
@@ -930,8 +1005,8 @@ func Test_addStructDiff(t *testing.T) {
 		{
 			name: "New object doesn't have priority and is different",
 			args: args{
-				newObj:      reflect.ValueOf(testStruct{Test: "new string"}),
-				existingObj: reflect.ValueOf(testStruct{Test: "old string"}),
+				newObj:      reflect.ValueOf(testStructWithTestAttribute{Test: "new string"}),
+				existingObj: reflect.ValueOf(testStructWithTestAttribute{Test: "old string"}),
 				jsonTag:     "Test",
 				diffMap:     map[string]interface{}{},
 				hasPriority: false,
@@ -943,6 +1018,28 @@ func Test_addStructDiff(t *testing.T) {
 			args: args{
 				newObj:      reflect.ValueOf(objects.InterfaceModeAccess),
 				existingObj: reflect.ValueOf(objects.InterfaceModeTagged),
+				jsonTag:     "Test",
+				diffMap:     map[string]interface{}{},
+				hasPriority: true,
+			},
+			wantErr: false,
+		},
+		{
+			name: "ID field is of type string",
+			args: args{
+				newObj:      reflect.ValueOf(testStructWithStringIDAttribute{ID: "1"}),
+				existingObj: reflect.Value{},
+				jsonTag:     "Test",
+				diffMap:     map[string]interface{}{},
+				hasPriority: true,
+			},
+			wantErr: true,
+		},
+		{
+			name: "Existing object is not valid",
+			args: args{
+				newObj:      reflect.ValueOf(testStructWithIntIDAttribute{ID: 1}),
+				existingObj: reflect.Value{},
 				jsonTag:     "Test",
 				diffMap:     map[string]interface{}{},
 				hasPriority: true,

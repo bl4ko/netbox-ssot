@@ -190,6 +190,22 @@ func TestNetboxJsonMarshalWithChoiceAttr(t *testing.T) {
 // 	}
 // }
 
+type testStruct struct {
+	Test string `json:"test"`
+}
+
+type testStructWithStructAttribute struct {
+	Test testStruct `json:"test"`
+}
+
+type structWithSliceAttribute struct {
+	Test []string `json:"test"`
+}
+
+type structWithSliceAttributeOfStructs struct {
+	Test []testStruct `json:"test"`
+}
+
 func TestNetboxJSONMarshal(t *testing.T) {
 	type args struct {
 		obj interface{}
@@ -199,7 +215,29 @@ func TestNetboxJSONMarshal(t *testing.T) {
 		args    args
 		want    []byte
 		wantErr bool
-	}{}
+	}{
+		{
+			name: "Test when slices attribute doesn't have ids",
+			args: args{
+				obj: structWithSliceAttribute{Test: []string{"one", "two", "three"}},
+			},
+			want: []byte("{\"test\":[\"one\",\"two\",\"three\"]}"),
+		},
+		{
+			name: "Struct with slice attribute of structs with no ids",
+			args: args{
+				obj: structWithSliceAttributeOfStructs{Test: []testStruct{{Test: "one"}, {Test: "two"}}},
+			},
+			want: []byte("{\"test\":[{\"test\":\"one\"},{\"test\":\"two\"}]}"),
+		},
+		{
+			name: "Struct that has no ID attribute marshal",
+			args: args{
+				obj: testStructWithStructAttribute{Test: testStruct{Test: "test"}},
+			},
+			want: []byte("{\"test\":{\"test\":\"test\"}}"),
+		},
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := NetboxJSONMarshal(tt.args.obj)
