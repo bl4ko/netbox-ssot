@@ -12,6 +12,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/parser"
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
 	"github.com/bl4ko/netbox-ssot/internal/source/dnac"
+	"github.com/bl4ko/netbox-ssot/internal/source/fmc"
 	"github.com/bl4ko/netbox-ssot/internal/source/fortigate"
 	"github.com/bl4ko/netbox-ssot/internal/source/ovirt"
 	"github.com/bl4ko/netbox-ssot/internal/source/paloalto"
@@ -61,6 +62,8 @@ func NewSource(ctx context.Context, config *parser.SourceConfig, logger *logger.
 		return &paloalto.PaloAltoSource{Config: commonConfig}, nil
 	case constants.Fortigate:
 		return &fortigate.FortigateSource{Config: commonConfig}, nil
+	case constants.FMC:
+		return &fmc.FMCSource{Config: commonConfig}, nil
 	default:
 		return nil, fmt.Errorf("unsupported source type: %s", config.Type)
 	}

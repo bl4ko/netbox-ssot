@@ -9,6 +9,7 @@ const (
 	Proxmox   SourceType = "proxmox"
 	PaloAlto  SourceType = "paloalto"
 	Fortigate SourceType = "fortigate"
+	FMC       SourceType = "fmc"
 )
 
 const DefaultNetboxTagColor = "00add8"
@@ -69,6 +70,7 @@ var SourceTagColorMap = map[SourceType]string{
 	Dnac:      ColorLightBlue,
 	PaloAlto:  ColorDarkOrange,
 	Fortigate: ColorDarkGreen,
+	FMC:       ColorLightBlue,
 }
 
 // Each source Mapping for source type tag. E.g. tag "paloalto" -> color orange.
@@ -78,6 +80,7 @@ var SourceTypeTagColorMap = map[SourceType]string{
 	Dnac:      ColorBlue,
 	PaloAlto:  ColorOrange,
 	Fortigate: ColorDarkGreen,
+	FMC:       ColorBlue,
 }
 
 const (

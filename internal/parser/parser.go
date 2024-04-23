@@ -191,6 +191,7 @@ func validateSourceConfig(config *Config) error {
 		case constants.Proxmox:
 		case constants.PaloAlto:
 		case constants.Fortigate:
+		case constants.FMC:
 		default:
 			return fmt.Errorf("%s.type is not valid", externalSourceStr)
 		}

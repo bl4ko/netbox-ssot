@@ -22,6 +22,7 @@ Currently, the supported external data sources types are:
 - [`paloalto`](https://www.paloaltonetworks.com/network-security/next-generation-firewall)
   - PAN-OS firewall
 - [`fortigate`](https://www.fortinet.com/products/next-generation-firewall)
+- [`fmc`](https://www.cisco.com/site/us/en/products/security/firewalls/firewall-management-center/index.html)
 
 > [!WARNING]
 > **This project is still under heavy development, use with caution.**
@@ -100,7 +101,7 @@ netbox:
   httpScheme: http
   port: 443
   timeout: 30
-  sourcePriority: ["olvm", "prodvmware", "prodprox", "dnacenter", "testvmware"] # Not required, but recommended
+  sourcePriority: ["olvm", "prodvmware", "prodprox", "dnacenter", "testvmware", "pa-uk", "fmc-lab"] # Not required, but recommended
 
 source:
   - name: olvm
@@ -166,6 +167,19 @@ source:
     hostname: dnac.example.com
     username: user
     password: "pa$$w0rd"
+    vlanTenantRelations:
+      - .* = MyTenant
+
+  - name: fmc-lab
+    type: fmc
+    hostname: 172.16.1.30
+    username: user
+    password: password
+    validateCert: False
+    hostTenantRelations:
+      - .* = MyTenant
+    hostSiteRelations:
+      - .* = MySite
     vlanTenantRelations:
       - .* = MyTenant
 ```
