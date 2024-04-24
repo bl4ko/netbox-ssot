@@ -158,7 +158,7 @@ func TestParseConfigInvalidConfigs(t *testing.T) {
 		{filename: "invalid_config11.yaml", expectedErr: "netbox.apiToken: cannot be empty"},
 		{filename: "invalid_config12.yaml", expectedErr: "netbox.tagColor: must be a string of 6 hexadecimal characters"},
 		{filename: "invalid_config13.yaml", expectedErr: "netbox.tagColor: must be a string of 6 lowercase hexadecimal characters"},
-		{filename: "invalid_config14.yaml", expectedErr: "netbox.sourcePriority: len(config.Netbox.SourcePriority != len(config.Sources)"},
+		{filename: "invalid_config14.yaml", expectedErr: "netbox.sourcePriority: len(config.Netbox.SourcePriority) != len(config.Sources)"},
 		{filename: "invalid_config15.yaml", expectedErr: "netbox.sourcePriority: source[wrongone] doesn't exist in the sources array"},
 		{filename: "invalid_config16.yaml", expectedErr: "source[].name: cannot be empty"},
 		{filename: "invalid_config17.yaml", expectedErr: "source[wrong].hostname: cannot be empty"},

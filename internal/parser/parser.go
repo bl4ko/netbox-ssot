@@ -152,7 +152,7 @@ func validateNetboxConfig(config *Config) error {
 	}
 	if len(config.Netbox.SourcePriority) > 0 {
 		if len(config.Netbox.SourcePriority) != len(config.Sources) {
-			return fmt.Errorf("netbox.sourcePriority: len(config.Netbox.SourcePriority != len(config.Sources)")
+			return fmt.Errorf("netbox.sourcePriority: len(config.Netbox.SourcePriority) != len(config.Sources)")
 		}
 		for _, sourceName := range config.Netbox.SourcePriority {
 			contains := false
