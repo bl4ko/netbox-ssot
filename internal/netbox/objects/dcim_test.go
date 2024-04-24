@@ -155,7 +155,7 @@ func TestDevice_String(t *testing.T) {
 					Name: "Test site",
 				},
 			},
-			want: fmt.Sprintf("Device{Name: %s, %s, %s, %s}", "Test device", "DeviceType{Manufacturer: Test manufacturer, Model: test model}", "DeviceRole{Name: Test device-role}", "Site{Name: Test site}"),
+			want: fmt.Sprintf("Device{Name: %s, Type: %s, Role: %s, Site: %s}", "Test device", "DeviceType{Manufacturer: Test manufacturer, Model: test model}", "DeviceRole{Name: Test device-role}", "Site{Name: Test site}"),
 		},
 	}
 	for _, tt := range tests {

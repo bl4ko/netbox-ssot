@@ -241,7 +241,7 @@ type Device struct {
 }
 
 func (d Device) String() string {
-	return fmt.Sprintf("Device{Name: %s, %s, %s, %s}", d.Name, d.DeviceType, d.DeviceRole, d.Site)
+	return fmt.Sprintf("Device{Name: %s, Type: %s, Role: %s, Site: %s}", d.Name, d.DeviceType, d.DeviceRole, d.Site)
 }
 
 type InterfaceType struct {
