@@ -15,9 +15,11 @@ func (nbi *NetboxInventory) DeleteOrphans(ctx context.Context) error {
 		if len(ids) != 0 {
 			nbi.Logger.Infof(ctx, "Deleting orphaned objects of type %s", objectAPIPath)
 			nbi.Logger.Debugf(ctx, "Ids of objects to be deleted: %v", ids)
-			err := nbi.NetboxAPI.BulkDeleteObjects(ctx, objectAPIPath, ids)
-			if err != nil {
-				return err
+			for id := range ids {
+				err := nbi.NetboxAPI.DeleteObject(ctx, objectAPIPath, id)
+				if err != nil {
+					nbi.Logger.Errorf(nbi.Ctx, "delete objects: %s", err)
+				}
 			}
 		}
 	}

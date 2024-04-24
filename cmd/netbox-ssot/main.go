@@ -107,7 +107,7 @@ func main() {
 	}
 	wg.Wait()
 
-	// Orphan manager cleanup
+	// Orphan manager cleanup on successful run and if enabled
 	if config.Netbox.RemoveOrphans && successfullRun {
 		ssotLogger.Info(mainCtx, "Cleaning up orphaned objects...")
 		err = netboxInventory.DeleteOrphans(mainCtx)

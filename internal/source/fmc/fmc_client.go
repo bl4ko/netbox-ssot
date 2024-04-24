@@ -7,24 +7,29 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
+
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 )
 
 type fmcClient struct {
-	HTTPClient   *http.Client
-	BaseURL      string
-	Username     string
-	Password     string
-	AccessToken  string
-	RefreshToken string
+	HTTPClient     *http.Client
+	BaseURL        string
+	Username       string
+	Password       string
+	AccessToken    string
+	RefreshToken   string
+	DefaultTimeout time.Duration
 }
 
 func newFMCClient(username string, password string, httpScheme string, hostname string, port int, httpClient *http.Client) (*fmcClient, error) {
 	// First we obtain access and refresh token
 	c := &fmcClient{
-		HTTPClient: httpClient,
-		BaseURL:    fmt.Sprintf("%s://%s:%d/api", httpScheme, hostname, port),
-		Username:   username,
-		Password:   password,
+		HTTPClient:     httpClient,
+		BaseURL:        fmt.Sprintf("%s://%s:%d/api", httpScheme, hostname, port),
+		Username:       username,
+		Password:       password,
+		DefaultTimeout: time.Second * constants.DefaultAPITimeout,
 	}
 
 	aToken, rToken, err := c.Authenticate()
@@ -40,8 +45,8 @@ func newFMCClient(username string, password string, httpScheme string, hostname 
 
 // Authenticate performs authentication on FMC API. If successful it returns access and refresh tokens.
 func (fmcc fmcClient) Authenticate() (string, string, error) {
-	ctx := context.Background()
-	defer ctx.Done()
+	ctx, cancel := context.WithTimeout(context.Background(), fmcc.DefaultTimeout)
+	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s/fmc_platform/v1/auth/generatetoken", fmcc.BaseURL), nil)
 	if err != nil {
 		return "", "", fmt.Errorf("new request with context: %w", err)
@@ -97,6 +102,8 @@ type Device struct {
 }
 
 func (fmcc *fmcClient) MakeRequest(ctx context.Context, method, path string, body io.Reader) (*http.Response, error) {
+	ctx, cancel := context.WithTimeout(ctx, fmcc.DefaultTimeout)
+	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, method, fmt.Sprintf("%s/%s", fmcc.BaseURL, path), body)
 	if err != nil {
 		return nil, err
@@ -112,7 +119,7 @@ func (fmcc *fmcClient) GetDomains() ([]Domain, error) {
 	domains := []Domain{}
 	ctx := context.Background()
 	for {
-		apiResponse, err := fmcc.MakeRequest(ctx, http.MethodGet, "fmc_platform/v1/info/domain", nil)
+		apiResponse, err := fmcc.MakeRequest(ctx, http.MethodGet, fmt.Sprintf("fmc_platform/v1/info/domain?offset=%d&limit=%d", offset, limit), nil)
 		if err != nil {
 			return nil, fmt.Errorf("make request for domains: %w", err)
 		}
@@ -134,7 +141,7 @@ func (fmcc *fmcClient) GetDomains() ([]Domain, error) {
 			domains = append(domains, marshaledResponse.Items...)
 		}
 
-		if marshaledResponse.Paging.Count < marshaledResponse.Paging.Limit {
+		if len(marshaledResponse.Items) < limit {
 			break
 		}
 		offset += limit
@@ -147,7 +154,7 @@ func (fmcc *fmcClient) GetDevices(domainUUID string) ([]Device, error) {
 	limit := 25
 	devices := []Device{}
 	ctx := context.Background()
-	devicesURL := fmt.Sprintf("fmc_config/v1/domain/%s/devices/devicerecords", domainUUID)
+	devicesURL := fmt.Sprintf("fmc_config/v1/domain/%s/devices/devicerecords?offset=%d&limit=%d", domainUUID, offset, limit)
 	for {
 		apiResponse, err := fmcc.MakeRequest(ctx, http.MethodGet, devicesURL, nil)
 		if err != nil {
@@ -171,7 +178,7 @@ func (fmcc *fmcClient) GetDevices(domainUUID string) ([]Device, error) {
 			devices = append(devices, marshaledResponse.Items...)
 		}
 
-		if marshaledResponse.Paging.Count < marshaledResponse.Paging.Limit {
+		if len(marshaledResponse.Items) < limit {
 			break
 		}
 		offset += limit
@@ -190,7 +197,7 @@ func (fmcc *fmcClient) GetDevicePhysicalInterfaces(domainUUID string, deviceID s
 	limit := 25
 	pIfaces := []PhysicalInterface{}
 	ctx := context.Background()
-	pInterfacesURL := fmt.Sprintf("fmc_config/v1/domain/%s/devices/devicerecords/%s/physicalinterfaces", domainUUID, deviceID)
+	pInterfacesURL := fmt.Sprintf("fmc_config/v1/domain/%s/devices/devicerecords/%s/physicalinterfaces?offset=%d&limit=%d", domainUUID, deviceID, offset, limit)
 	for {
 		apiResponse, err := fmcc.MakeRequest(ctx, http.MethodGet, pInterfacesURL, nil)
 		if err != nil {
@@ -214,7 +221,7 @@ func (fmcc *fmcClient) GetDevicePhysicalInterfaces(domainUUID string, deviceID s
 			pIfaces = append(pIfaces, marshaledResponse.Items...)
 		}
 
-		if marshaledResponse.Paging.Count < marshaledResponse.Paging.Limit {
+		if len(marshaledResponse.Items) < limit {
 			break
 		}
 		offset += limit
@@ -233,7 +240,7 @@ func (fmcc *fmcClient) GetDeviceVLANInterfaces(domainUUID string, deviceID strin
 	limit := 25
 	vlanIfaces := []VlanInterface{}
 	ctx := context.Background()
-	pInterfacesURL := fmt.Sprintf("fmc_config/v1/domain/%s/devices/devicerecords/%s/vlaninterfaces", domainUUID, deviceID)
+	pInterfacesURL := fmt.Sprintf("fmc_config/v1/domain/%s/devices/devicerecords/%s/vlaninterfaces?offset=%d&limit=%d", domainUUID, deviceID, offset, limit)
 	for {
 		apiResponse, err := fmcc.MakeRequest(ctx, http.MethodGet, pInterfacesURL, nil)
 		if err != nil {
@@ -257,7 +264,7 @@ func (fmcc *fmcClient) GetDeviceVLANInterfaces(domainUUID string, deviceID strin
 			vlanIfaces = append(vlanIfaces, marshaledResponse.Items...)
 		}
 
-		if marshaledResponse.Paging.Count < marshaledResponse.Paging.Limit {
+		if len(marshaledResponse.Items) < limit {
 			break
 		}
 		offset += limit

@@ -201,3 +201,20 @@ func (api *NetboxClient) BulkDeleteObjects(ctx context.Context, objectPath strin
 
 	return nil
 }
+
+// Function that deletes objectas on path objectPath.
+// It deletes a single object at a time. It is alternative to bulk delete
+// because if one delete fails other still go.
+func (api *NetboxClient) DeleteObject(ctx context.Context, objectPath string, id int) error {
+	api.Logger.Debugf(ctx, "Deleting object with id %d on route %s", id, objectPath)
+
+	response, err := api.doRequest(MethodDelete, fmt.Sprintf("%s%d/", objectPath, id), nil)
+	if err != nil {
+		return err
+	}
+
+	if response.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
+	}
+	return nil
+}
