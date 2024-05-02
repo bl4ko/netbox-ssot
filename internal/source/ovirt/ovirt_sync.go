@@ -637,12 +637,12 @@ func (o *OVirtSource) syncVms(nbi *inventory.NetboxInventory) error {
 
 		nbVM, err := nbi.AddVM(o.Ctx, collectedVM)
 		if err != nil {
-			return fmt.Errorf("failed to sync oVirt vm: %v", err)
+			return fmt.Errorf("failed to sync oVirt vm %s: %v", collectedVM.Name, err)
 		}
 
 		err = o.syncVMInterfaces(nbi, ovirtVM, nbVM)
 		if err != nil {
-			return fmt.Errorf("failed to sync oVirt vm's interfaces: %v", err)
+			return fmt.Errorf("failed to sync oVirt vm %s's interfaces: %v", collectedVM.Name, err)
 		}
 	}
 	return nil
@@ -827,7 +827,7 @@ func (o *OVirtSource) syncVMInterfaces(nbi *inventory.NetboxInventory, ovirtVM *
 							Enabled:    true, // TODO
 						})
 						if err != nil {
-							return fmt.Errorf("failed to sync oVirt vm's interface %s: %v", reportedDeviceName, err)
+							return fmt.Errorf("failed to sync oVirt vm %s's interface %s: %v", netboxVM.Name, reportedDeviceName, err)
 						}
 					} else {
 						o.Logger.Warning(o.Ctx, "name for oVirt vm's reported device is empty. Skipping...")
