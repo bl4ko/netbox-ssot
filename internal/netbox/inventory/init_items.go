@@ -616,20 +616,27 @@ func (nbi *NetboxInventory) InitVMs(ctx context.Context) error {
 		return err
 	}
 
-	// Initialize internal index of VMs by name
-	nbi.VMsIndexByName = make(map[string]*objects.VM)
+	// Initialize internal index of VMs by name and cluster id
+	nbi.VMsIndexByNameAndClusterID = make(map[string]map[int]*objects.VM)
 	// Add VMs to orphan manager
 	nbi.OrphanManager[constants.VirtualMachinesAPIPath] = make(map[int]bool, 0)
 
 	for i := range nbVMs {
 		vm := &nbVMs[i]
-		nbi.VMsIndexByName[vm.Name] = vm
+		if nbi.VMsIndexByNameAndClusterID[vm.Name] == nil {
+			nbi.VMsIndexByNameAndClusterID[vm.Name] = make(map[int]*objects.VM)
+		}
+		if vm.Cluster == nil {
+			nbi.VMsIndexByNameAndClusterID[vm.Name][-1] = vm
+		} else {
+			nbi.VMsIndexByNameAndClusterID[vm.Name][vm.Cluster.ID] = vm
+		}
 		if slices.IndexFunc(vm.Tags, func(t *objects.Tag) bool { return t.Slug == nbi.SsotTag.Slug }) >= 0 {
 			nbi.OrphanManager[constants.VirtualMachinesAPIPath][vm.ID] = true
 		}
 	}
 
-	nbi.Logger.Debug(ctx, "Successfully collected VMs from Netbox: ", nbi.VMsIndexByName)
+	nbi.Logger.Debug(ctx, "Successfully collected VMs from Netbox: ", nbi.VMsIndexByNameAndClusterID)
 	return nil
 }
 

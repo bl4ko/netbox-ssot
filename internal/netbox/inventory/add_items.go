@@ -731,34 +731,37 @@ func (nbi *NetboxInventory) AddVM(ctx context.Context, newVM *objects.VM) (*obje
 	defer nbi.VMsLock.Unlock()
 	newVM.Tags = append(newVM.Tags, nbi.SsotTag)
 	addSourceNameCustomField(ctx, &newVM.NetboxObject)
-	if _, ok := nbi.VMsIndexByName[newVM.Name]; ok {
+	newVMClusterID := -1
+	if newVM.Cluster != nil {
+		newVMClusterID = newVM.Cluster.ID
+	}
+	if oldVM, ok := nbi.VMsIndexByNameAndClusterID[newVM.Name][newVMClusterID]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
-		delete(nbi.OrphanManager[constants.VirtualMachinesAPIPath], nbi.VMsIndexByName[newVM.Name].ID)
-		diffMap, err := utils.JSONDiffMapExceptID(newVM, nbi.VMsIndexByName[newVM.Name], false, nbi.SourcePriority)
-		oldVM := nbi.VMsIndexByName[newVM.Name]
+		delete(nbi.OrphanManager[constants.VirtualMachinesAPIPath], oldVM.ID)
+		diffMap, err := utils.JSONDiffMapExceptID(newVM, oldVM, false, nbi.SourcePriority)
 		if err != nil {
 			return nil, err
 		}
 		if len(diffMap) > 0 {
-			nbi.Logger.Debug(ctx, "VM ", newVM.Name, " already exists in Netbox but is out of date. Patching it...")
+			nbi.Logger.Debugf(ctx, "%s already exists in Netbox but is out of date. Patching it...", newVM)
 			patchedVM, err := service.Patch[objects.VM](ctx, nbi.NetboxAPI, oldVM.ID, diffMap)
 			if err != nil {
 				return nil, err
 			}
-			nbi.VMsIndexByName[newVM.Name] = patchedVM
+			nbi.VMsIndexByNameAndClusterID[newVM.Name][newVMClusterID] = patchedVM
 		} else {
-			nbi.Logger.Debug(ctx, "VM ", newVM.Name, " already exists in Netbox and is up to date...")
+			nbi.Logger.Debugf(ctx, "%s already exists in Netbox and is up to date...", newVM)
 		}
 	} else {
-		nbi.Logger.Debug(ctx, "VM ", newVM.Name, " does not exist in Netbox. Creating it...")
+		nbi.Logger.Debugf(ctx, "%s does not exist in Netbox. Creating it...", newVM)
 		newVM, err := service.Create[objects.VM](ctx, nbi.NetboxAPI, newVM)
 		if err != nil {
 			return nil, err
 		}
-		nbi.VMsIndexByName[newVM.Name] = newVM
+		nbi.VMsIndexByNameAndClusterID[newVM.Name][newVMClusterID] = newVM
 		return newVM, nil
 	}
-	return nbi.VMsIndexByName[newVM.Name], nil
+	return nbi.VMsIndexByNameAndClusterID[newVM.Name][newVMClusterID], nil
 }
 
 func (nbi *NetboxInventory) AddVMInterface(ctx context.Context, newVMInterface *objects.VMInterface) (*objects.VMInterface, error) {

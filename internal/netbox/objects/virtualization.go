@@ -52,7 +52,7 @@ type Cluster struct {
 }
 
 func (c Cluster) String() string {
-	return fmt.Sprintf("Cluster{Name: %s, Type: %s}", c.Name, c.Type.Name)
+	return fmt.Sprintf("Cluster{Name: %s, Type: %s}", c.Name, c.Type)
 }
 
 type VMStatus struct {
@@ -104,7 +104,7 @@ type VM struct {
 }
 
 func (vm VM) String() string {
-	return fmt.Sprintf("VM{ID: %d, Name: %s}", vm.ID, vm.Name)
+	return fmt.Sprintf("VM{Name: %s, Cluster: %s}", vm.Name, vm.Cluster)
 }
 
 // 802.1Q VLAN Tagging Mode (Access, Tagged, Tagged All).

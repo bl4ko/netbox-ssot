@@ -68,8 +68,8 @@ type NetboxInventory struct {
 	// InterfacesIndexByDeviceAnName is a map of all interfaces in the inventory, indexed by their's
 	// device id and their name.
 	InterfacesIndexByDeviceIDAndName map[int]map[string]*objects.Interface
-	// VirtualMachinedIndexByName is a map of all virtual machines in the inventory, indexed by their name
-	VMsIndexByName map[string]*objects.VM
+	// VMsIndexByNameAndClusterID is a map of all virtual machines in the inventory, indexed by their name and their cluster id
+	VMsIndexByNameAndClusterID map[string]map[int]*objects.VM
 	// VirtualMachineInterfacesIndexByVMAndName is a map of all virtual machine interfaces in the inventory, indexed by their's virtual machine id and their name
 	VMInterfacesIndexByVMIdAndName map[int]map[string]*objects.VMInterface
 	// IPAdressesIndexByAddress is a map of all IP addresses in the inventory, indexed by their address

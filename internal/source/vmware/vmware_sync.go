@@ -775,18 +775,18 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
 		})
 
 		if err != nil {
-			return fmt.Errorf("failed to sync vmware vm: %v", err)
+			return fmt.Errorf("failed to sync vmware VM %s: %v", vmName, err)
 		}
 
 		err = vc.addVMContact(nbi, newVM, vmOwners, vmOwnerEmails)
 		if err != nil {
-			return fmt.Errorf("adding vm's contact: %s", err)
+			return fmt.Errorf("adding %s's contact: %s", newVM, err)
 		}
 
 		// Sync vm interfaces
 		err = vc.syncVMInterfaces(nbi, vm, newVM)
 		if err != nil {
-			return fmt.Errorf("failed to sync vmware vm's interfaces: %v", err)
+			return fmt.Errorf("failed to sync vmware %s's interfaces: %v", newVM, err)
 		}
 	}
 	return nil

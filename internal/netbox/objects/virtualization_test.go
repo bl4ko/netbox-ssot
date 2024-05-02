@@ -1,6 +1,9 @@
 package objects
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestClusterType_String(t *testing.T) {
 	tests := []struct {
@@ -37,7 +40,7 @@ func TestCluster_String(t *testing.T) {
 				Name: "Test cluster",
 				Type: &ClusterType{Name: "ovirt"},
 			},
-			want: "Cluster{Name: Test cluster, Type: ovirt}",
+			want: fmt.Sprintf("Cluster{Name: Test cluster, Type: %s}", &ClusterType{Name: "ovirt"}),
 		},
 	}
 	for _, tt := range tests {
@@ -63,7 +66,7 @@ func TestVM_String(t *testing.T) {
 				},
 				Name: "Test vm",
 			},
-			want: "VM{ID: 1, Name: Test vm}",
+			want: "VM{Name: Test vm, Cluster: <nil>}",
 		},
 	}
 	for _, tt := range tests {
