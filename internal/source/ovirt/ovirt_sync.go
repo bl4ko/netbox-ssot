@@ -703,6 +703,9 @@ func (o *OVirtSource) extractVMData(nbi *inventory.NetboxInventory, vmID string,
 			if cores, exists := cpuTopology.Cores(); exists {
 				vmVCPUs = float32(cores)
 			}
+			if sockets, exists := cpuTopology.Sockets(); exists {
+				vmVCPUs *= float32(sockets)
+			}
 		}
 	}
 
