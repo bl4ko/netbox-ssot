@@ -134,45 +134,54 @@ func (vc *VmwareSource) InitHosts(ctx context.Context, containerView *view.Conta
 			vc.VM2Host[vm.Value] = host.Self.Value
 		}
 
-		// Add network data which is received from hosts
-		// Iterate over hosts virtual switches, needed to enrich data on physical interfaces
-		vc.Networks.HostVirtualSwitches[host.Name] = make(map[string]*HostVirtualSwitchData)
-		for _, vswitch := range host.Config.Network.Vswitch {
-			if vswitch.Name != "" {
-				vc.Networks.HostVirtualSwitches[host.Name][vswitch.Name] = &HostVirtualSwitchData{
-					mtu:   int(vswitch.Mtu),
-					pnics: vswitch.Pnic,
-				}
-			}
-		}
-		// Iterate over hosts proxy switches, needed to enrich data on physical interfaces
-		// Also stores mtu data which is used for VM interfaces
-		vc.Networks.HostProxySwitches[host.Name] = make(map[string]*HostProxySwitchData)
-		for _, pswitch := range host.Config.Network.ProxySwitch {
-			if pswitch.DvsUuid != "" {
-				vc.Networks.HostProxySwitches[host.Name][pswitch.DvsUuid] = &HostProxySwitchData{
-					mtu:   int(pswitch.Mtu),
-					pnics: pswitch.Pnic,
-					name:  pswitch.DvsName,
-				}
-			}
-		}
-		// Iterate over hosts port groups, needed to enrich data on physical interfaces
 		vc.Networks.HostPortgroups[host.Name] = make(map[string]*HostPortgroupData)
-		for _, pgroup := range host.Config.Network.Portgroup {
-			if pgroup.Spec.Name != "" {
-				nicOrder := pgroup.ComputedPolicy.NicTeaming.NicOrder
-				pgroupNics := []string{}
-				if len(nicOrder.ActiveNic) > 0 {
-					pgroupNics = append(pgroupNics, nicOrder.ActiveNic...)
+		vc.Networks.HostVirtualSwitches[host.Name] = make(map[string]*HostVirtualSwitchData)
+		vc.Networks.HostProxySwitches[host.Name] = make(map[string]*HostProxySwitchData)
+
+		if host.Config != nil && host.Config.Network != nil {
+			// Add network data which is received from hosts
+			// Iterate over hosts virtual switches, needed to enrich data on physical interfaces
+			if host.Config.Network.Vswitch != nil {
+				for _, vswitch := range host.Config.Network.Vswitch {
+					if vswitch.Name != "" {
+						vc.Networks.HostVirtualSwitches[host.Name][vswitch.Name] = &HostVirtualSwitchData{
+							mtu:   int(vswitch.Mtu),
+							pnics: vswitch.Pnic,
+						}
+					}
 				}
-				if len(nicOrder.StandbyNic) > 0 {
-					pgroupNics = append(pgroupNics, nicOrder.StandbyNic...)
+			}
+			// Iterate over hosts proxy switches, needed to enrich data on physical interfaces
+			// Also stores mtu data which is used for VM interfaces
+			if host.Config.Network.ProxySwitch != nil {
+				for _, pswitch := range host.Config.Network.ProxySwitch {
+					if pswitch.DvsUuid != "" {
+						vc.Networks.HostProxySwitches[host.Name][pswitch.DvsUuid] = &HostProxySwitchData{
+							mtu:   int(pswitch.Mtu),
+							pnics: pswitch.Pnic,
+							name:  pswitch.DvsName,
+						}
+					}
 				}
-				vc.Networks.HostPortgroups[host.Name][pgroup.Spec.Name] = &HostPortgroupData{
-					vlanID:  int(pgroup.Spec.VlanId),
-					vswitch: pgroup.Spec.VswitchName,
-					nics:    pgroupNics,
+			}
+			// Iterate over hosts port groups, needed to enrich data on physical interfaces
+			if host.Config.Network.Portgroup != nil {
+				for _, pgroup := range host.Config.Network.Portgroup {
+					if pgroup.Spec.Name != "" {
+						nicOrder := pgroup.ComputedPolicy.NicTeaming.NicOrder
+						pgroupNics := []string{}
+						if len(nicOrder.ActiveNic) > 0 {
+							pgroupNics = append(pgroupNics, nicOrder.ActiveNic...)
+						}
+						if len(nicOrder.StandbyNic) > 0 {
+							pgroupNics = append(pgroupNics, nicOrder.StandbyNic...)
+						}
+						vc.Networks.HostPortgroups[host.Name][pgroup.Spec.Name] = &HostPortgroupData{
+							vlanID:  int(pgroup.Spec.VlanId),
+							vswitch: pgroup.Spec.VswitchName,
+							nics:    pgroupNics,
+						}
+					}
 				}
 			}
 		}
