@@ -272,19 +272,21 @@ func (vc *VmwareSource) syncHostNics(nbi *inventory.NetboxInventory, vcHost mo.H
 }
 
 func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetboxInventory, vcHost mo.HostSystem, nbHost *objects.Device) error {
-	for _, pnic := range vcHost.Config.Network.Pnic {
-		hostPnic, err := vc.collectHostPhysicalNicData(nbi, nbHost, pnic)
-		if err != nil {
-			return err
-		}
-		if utils.FilterInterfaceName(hostPnic.Name, vc.SourceConfig.InterfaceFilter) {
-			vc.Logger.Debugf(vc.Ctx, "interface %s is filtered out with interfaceFilter %s", hostPnic.Name, vc.SourceConfig.InterfaceFilter)
-			continue
-		}
-		// After collecting all of the data add interface to nbi
-		_, err = nbi.AddInterface(vc.Ctx, hostPnic)
-		if err != nil {
-			return fmt.Errorf("failed adding physical interface: %s", err)
+	if vcHost.Config.Network.Pnic != nil {
+		for _, pnic := range vcHost.Config.Network.Pnic {
+			hostPnic, err := vc.collectHostPhysicalNicData(nbi, nbHost, pnic)
+			if err != nil {
+				return err
+			}
+			if utils.FilterInterfaceName(hostPnic.Name, vc.SourceConfig.InterfaceFilter) {
+				vc.Logger.Debugf(vc.Ctx, "interface %s is filtered out with interfaceFilter %s", hostPnic.Name, vc.SourceConfig.InterfaceFilter)
+				continue
+			}
+			// After collecting all of the data add interface to nbi
+			_, err = nbi.AddInterface(vc.Ctx, hostPnic)
+			if err != nil {
+				return fmt.Errorf("failed adding physical interface: %s", err)
+			}
 		}
 	}
 	return nil
@@ -425,93 +427,95 @@ func (vc *VmwareSource) collectHostPhysicalNicData(nbi *inventory.NetboxInventor
 
 func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetboxInventory, vcHost mo.HostSystem, nbHost *objects.Device, hostIPv4Addresses []*objects.IPAddress, hostIPv6Addresses []*objects.IPAddress) error {
 	// Collect data over all virtual interfaces
-	for _, vnic := range vcHost.Config.Network.Vnic {
-		hostVnic, err := vc.collectHostVirtualNicData(nbi, nbHost, vcHost, vnic)
-		if err != nil {
-			return err
-		}
-
-		if utils.FilterInterfaceName(hostVnic.Name, vc.SourceConfig.InterfaceFilter) {
-			vc.Logger.Debugf(vc.Ctx, "interface %s is filtered out with interfaceFilter %s", hostVnic.Name, vc.SourceConfig.InterfaceFilter)
-			continue
-		}
-
-		nbVnic, err := nbi.AddInterface(vc.Ctx, hostVnic)
-		if err != nil {
-			return err
-		}
-
-		// Get IPv4 address for this vnic
-		ipv4Address := vnic.Spec.Ip.IpAddress
-		if !utils.SubnetsContainIPAddress(ipv4Address, vc.SourceConfig.IgnoredSubnets) { // Filter out ignored
-			ipv4MaskBits, err := utils.MaskToBits(vnic.Spec.Ip.SubnetMask)
+	if vcHost.Config.Network.Vnic != nil {
+		for _, vnic := range vcHost.Config.Network.Vnic {
+			hostVnic, err := vc.collectHostVirtualNicData(nbi, nbHost, vcHost, vnic)
 			if err != nil {
-				return fmt.Errorf("mask to bits: %s", err)
+				return err
 			}
-			ipv4DNS := utils.ReverseLookup(ipv4Address)
-			nbIPv4Address, err := nbi.AddIPAddress(vc.Ctx, &objects.IPAddress{
-				NetboxObject: objects.NetboxObject{
-					Tags: vc.Config.SourceTags,
-					CustomFields: map[string]interface{}{
-						constants.CustomFieldSourceName:   vc.SourceConfig.Name,
-						constants.CustomFieldArpEntryName: false,
-					},
-				},
-				Address:            fmt.Sprintf("%s/%d", ipv4Address, ipv4MaskBits),
-				Status:             &objects.IPAddressStatusActive, // TODO
-				DNSName:            ipv4DNS,
-				Tenant:             nbHost.Tenant,
-				AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
-				AssignedObjectID:   nbVnic.ID,
-			})
-			if err != nil {
-				vc.Logger.Errorf(vc.Ctx, "add ipv4 address: %s", err)
+
+			if utils.FilterInterfaceName(hostVnic.Name, vc.SourceConfig.InterfaceFilter) {
+				vc.Logger.Debugf(vc.Ctx, "interface %s is filtered out with interfaceFilter %s", hostVnic.Name, vc.SourceConfig.InterfaceFilter)
 				continue
 			}
-			hostIPv4Addresses = append(hostIPv4Addresses, nbIPv4Address)
 
-			prefix, err := utils.ExtractPrefixFromIPAddress(nbIPv4Address.Address)
+			nbVnic, err := nbi.AddInterface(vc.Ctx, hostVnic)
 			if err != nil {
-				vc.Logger.Warningf(vc.Ctx, "extract prefix from ip address: %s", err)
-				continue
+				return err
 			}
-			_, err = nbi.AddPrefix(vc.Ctx, &objects.Prefix{
-				Prefix: prefix,
-			})
-			if err != nil {
-				vc.Logger.Errorf(vc.Ctx, "add prefix: %s", err)
-			}
-		}
 
-		if vnic.Spec.Ip.IpV6Config != nil {
-			for _, ipv6Entry := range vnic.Spec.Ip.IpV6Config.IpV6Address {
-				ipv6Address := ipv6Entry.IpAddress
-				ipv6Mask := ipv6Entry.PrefixLength
-				if !utils.SubnetsContainIPAddress(ipv6Address, vc.SourceConfig.IgnoredSubnets) {
-					nbIPv6Address, err := nbi.AddIPAddress(vc.Ctx, &objects.IPAddress{
-						NetboxObject: objects.NetboxObject{
-							Tags: vc.Config.SourceTags,
-							CustomFields: map[string]interface{}{
-								constants.CustomFieldSourceName:   vc.SourceConfig.Name,
-								constants.CustomFieldArpEntryName: false,
-							},
+			// Get IPv4 address for this vnic
+			ipv4Address := vnic.Spec.Ip.IpAddress
+			if !utils.SubnetsContainIPAddress(ipv4Address, vc.SourceConfig.IgnoredSubnets) { // Filter out ignored
+				ipv4MaskBits, err := utils.MaskToBits(vnic.Spec.Ip.SubnetMask)
+				if err != nil {
+					return fmt.Errorf("mask to bits: %s", err)
+				}
+				ipv4DNS := utils.ReverseLookup(ipv4Address)
+				nbIPv4Address, err := nbi.AddIPAddress(vc.Ctx, &objects.IPAddress{
+					NetboxObject: objects.NetboxObject{
+						Tags: vc.Config.SourceTags,
+						CustomFields: map[string]interface{}{
+							constants.CustomFieldSourceName:   vc.SourceConfig.Name,
+							constants.CustomFieldArpEntryName: false,
 						},
-						Address:            fmt.Sprintf("%s/%d", ipv6Address, ipv6Mask),
-						Status:             &objects.IPAddressStatusActive, // TODO
-						Tenant:             nbHost.Tenant,
-						AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
-						AssignedObjectID:   nbVnic.ID,
-					})
-					if err != nil {
-						vc.Logger.Errorf(vc.Ctx, "add ipv6 address: %s", err)
-						continue
-					}
-					hostIPv6Addresses = append(hostIPv6Addresses, nbIPv6Address)
+					},
+					Address:            fmt.Sprintf("%s/%d", ipv4Address, ipv4MaskBits),
+					Status:             &objects.IPAddressStatusActive, // TODO
+					DNSName:            ipv4DNS,
+					Tenant:             nbHost.Tenant,
+					AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
+					AssignedObjectID:   nbVnic.ID,
+				})
+				if err != nil {
+					vc.Logger.Errorf(vc.Ctx, "add ipv4 address: %s", err)
+					continue
+				}
+				hostIPv4Addresses = append(hostIPv4Addresses, nbIPv4Address)
 
-					prefix, err := utils.ExtractPrefixFromIPAddress(nbIPv6Address.Address)
-					if err != nil {
-						vc.Logger.Warningf(vc.Ctx, "extract prefix %s", prefix)
-						continue
+				prefix, err := utils.ExtractPrefixFromIPAddress(nbIPv4Address.Address)
+				if err != nil {
+					vc.Logger.Warningf(vc.Ctx, "extract prefix from ip address: %s", err)
+					continue
+				}
+				_, err = nbi.AddPrefix(vc.Ctx, &objects.Prefix{
+					Prefix: prefix,
+				})
+				if err != nil {
+					vc.Logger.Errorf(vc.Ctx, "add prefix: %s", err)
+				}
+			}
+
+			if vnic.Spec.Ip.IpV6Config != nil {
+				for _, ipv6Entry := range vnic.Spec.Ip.IpV6Config.IpV6Address {
+					ipv6Address := ipv6Entry.IpAddress
+					ipv6Mask := ipv6Entry.PrefixLength
+					if !utils.SubnetsContainIPAddress(ipv6Address, vc.SourceConfig.IgnoredSubnets) {
+						nbIPv6Address, err := nbi.AddIPAddress(vc.Ctx, &objects.IPAddress{
+							NetboxObject: objects.NetboxObject{
+								Tags: vc.Config.SourceTags,
+								CustomFields: map[string]interface{}{
+									constants.CustomFieldSourceName:   vc.SourceConfig.Name,
+									constants.CustomFieldArpEntryName: false,
+								},
+							},
+							Address:            fmt.Sprintf("%s/%d", ipv6Address, ipv6Mask),
+							Status:             &objects.IPAddressStatusActive, // TODO
+							Tenant:             nbHost.Tenant,
+							AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
+							AssignedObjectID:   nbVnic.ID,
+						})
+						if err != nil {
+							vc.Logger.Errorf(vc.Ctx, "add ipv6 address: %s", err)
+							continue
+						}
+						hostIPv6Addresses = append(hostIPv6Addresses, nbIPv6Address)
+
+						prefix, err := utils.ExtractPrefixFromIPAddress(nbIPv6Address.Address)
+						if err != nil {
+							vc.Logger.Warningf(vc.Ctx, "extract prefix %s", prefix)
+							continue
+						}
 					}
 				}
 			}
