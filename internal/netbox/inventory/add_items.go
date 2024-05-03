@@ -758,6 +758,9 @@ func (nbi *NetboxInventory) AddVM(ctx context.Context, newVM *objects.VM) (*obje
 		if err != nil {
 			return nil, err
 		}
+		if nbi.VMsIndexByNameAndClusterID[newVM.Name] == nil {
+			nbi.VMsIndexByNameAndClusterID[newVM.Name] = make(map[int]*objects.VM)
+		}
 		nbi.VMsIndexByNameAndClusterID[newVM.Name][newVMClusterID] = newVM
 		return newVM, nil
 	}
