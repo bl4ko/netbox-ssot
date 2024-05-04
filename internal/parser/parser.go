@@ -73,20 +73,21 @@ type SourceConfig struct {
 	ArpDataLifeSpan int                  `yaml:"arpDataLifeSpan"`
 
 	// Relations
-	HostSiteRelations      []string `yaml:"hostSiteRelations"`
-	ClusterSiteRelations   []string `yaml:"clusterSiteRelations"`
-	ClusterTenantRelations []string `yaml:"clusterTenantRelations"`
-	HostTenantRelations    []string `yaml:"hostTenantRelations"`
-	VMTenantRelations      []string `yaml:"vmTenantRelations"`
-	VlanGroupRelations     []string `yaml:"vlanGroupRelations"`
-	VlanTenantRelations    []string `yaml:"vlanTenantRelations"`
+	DatacenterClusterGroupRelations []string `yaml:"datacenterClusterGroupRelations"`
+	HostSiteRelations               []string `yaml:"hostSiteRelations"`
+	ClusterSiteRelations            []string `yaml:"clusterSiteRelations"`
+	ClusterTenantRelations          []string `yaml:"clusterTenantRelations"`
+	HostTenantRelations             []string `yaml:"hostTenantRelations"`
+	VMTenantRelations               []string `yaml:"vmTenantRelations"`
+	VlanGroupRelations              []string `yaml:"vlanGroupRelations"`
+	VlanTenantRelations             []string `yaml:"vlanTenantRelations"`
 
 	// Vmware specific relations
 	CustomFieldMappings []string `yaml:"customFieldMappings"`
 }
 
 func (s SourceConfig) String() string {
-	return fmt.Sprintf("SourceConfig{Name: %s, Type: %s, HTTPScheme: %s, Hostname: %s, Port: %d, Username: %s, Password: %s, PermittedSubnets: %v, ValidateCert: %t, Tag: %s, TagColor: %s, HostSiteRelations: %v, ClusterSiteRelations: %v, clusterTenantRelations: %v, HostTenantRelations: %v, VmTenantRelations %v, VlanGroupRelations: %v, VlanTenantRelations: %v}", s.Name, s.Type, s.HTTPScheme, s.Hostname, s.Port, s.Username, s.Password, s.IgnoredSubnets, s.ValidateCert, s.Tag, s.TagColor, s.HostSiteRelations, s.ClusterSiteRelations, s.ClusterTenantRelations, s.HostTenantRelations, s.VMTenantRelations, s.VlanGroupRelations, s.VlanTenantRelations)
+	return fmt.Sprintf("SourceConfig{Name: %s, Type: %s, HTTPScheme: %s, Hostname: %s, Port: %d, Username: %s, Password: %s, PermittedSubnets: %v, ValidateCert: %t, Tag: %s, TagColor: %s, DatacenterClusterGroupRelations: %s, HostSiteRelations: %v, ClusterSiteRelations: %v, clusterTenantRelations: %v, HostTenantRelations: %v, VmTenantRelations %v, VlanGroupRelations: %v, VlanTenantRelations: %v}", s.Name, s.Type, s.HTTPScheme, s.Hostname, s.Port, s.Username, s.Password, s.IgnoredSubnets, s.ValidateCert, s.Tag, s.TagColor, s.DatacenterClusterGroupRelations, s.HostSiteRelations, s.ClusterSiteRelations, s.ClusterTenantRelations, s.HostTenantRelations, s.VMTenantRelations, s.VlanGroupRelations, s.VlanTenantRelations)
 }
 
 // Validates the user's config for limits and required fields.
@@ -244,6 +245,12 @@ func validateSourceConfig(config *Config) error {
 }
 
 func validateSourceConfigRelations(externalSource *SourceConfig, externalSourceStr string) error {
+	if len(externalSource.DatacenterClusterGroupRelations) > 0 {
+		err := utils.ValidateRegexRelations(externalSource.DatacenterClusterGroupRelations)
+		if err != nil {
+			return fmt.Errorf("%s.datacenterClusterGroupRelations: %s", externalSourceStr, err)
+		}
+	}
 	if len(externalSource.HostSiteRelations) > 0 {
 		err := utils.ValidateRegexRelations(externalSource.HostSiteRelations)
 		if err != nil {

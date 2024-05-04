@@ -24,13 +24,14 @@ type OVirtSource struct {
 	Vms         map[string]*ovirtsdk4.Vm
 	Networks    *NetworkData
 
-	HostSiteRelations      map[string]string
-	ClusterSiteRelations   map[string]string
-	ClusterTenantRelations map[string]string
-	HostTenantRelations    map[string]string
-	VMTenantRelations      map[string]string
-	VlanGroupRelations     map[string]string
-	VlanTenantRelations    map[string]string
+	DatacenterClusterGroupRelations map[string]string
+	HostSiteRelations               map[string]string
+	ClusterSiteRelations            map[string]string
+	ClusterTenantRelations          map[string]string
+	HostTenantRelations             map[string]string
+	VMTenantRelations               map[string]string
+	VlanGroupRelations              map[string]string
+	VlanTenantRelations             map[string]string
 }
 
 type NetworkData struct {
@@ -43,6 +44,8 @@ type NetworkData struct {
 func (o *OVirtSource) Init() error {
 	// Initialize regex relations
 	o.Logger.Debug(o.Ctx, o.Ctx, "Initializing regex relations for oVirt source ", o.SourceConfig.Name)
+	o.DatacenterClusterGroupRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.DatacenterClusterGroupRelations)
+	o.Logger.Debug(o.Ctx, "DatacenterClusterGroupRelations: ", o.DatacenterClusterGroupRelations)
 	o.HostSiteRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.HostSiteRelations)
 	o.Logger.Debug(o.Ctx, o.Ctx, "HostSiteRelations: ", o.HostSiteRelations)
 	o.ClusterSiteRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.ClusterSiteRelations)
@@ -57,6 +60,7 @@ func (o *OVirtSource) Init() error {
 	o.Logger.Debug(o.Ctx, "VlanGroupRelations: ", o.VlanGroupRelations)
 	o.VlanTenantRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.VlanTenantRelations)
 	o.Logger.Debug(o.Ctx, "VlanTenantRelations: ", o.VlanTenantRelations)
+
 	// Initialize the connection
 	o.Logger.Debug(o.Ctx, "Initializing oVirt source ", o.SourceConfig.Name)
 	conn, err := ovirtsdk4.NewConnectionBuilder().

@@ -40,13 +40,14 @@ type VmwareSource struct {
 	CustomFieldID2Name map[int32]string
 
 	// Netbox relations
-	ClusterSiteRelations   map[string]string
-	ClusterTenantRelations map[string]string
-	HostTenantRelations    map[string]string
-	HostSiteRelations      map[string]string
-	VMTenantRelations      map[string]string
-	VlanGroupRelations     map[string]string
-	VlanTenantRelations    map[string]string
+	DatacenterClusterGroupRelations map[string]string
+	ClusterSiteRelations            map[string]string
+	ClusterTenantRelations          map[string]string
+	HostTenantRelations             map[string]string
+	HostSiteRelations               map[string]string
+	VMTenantRelations               map[string]string
+	VlanGroupRelations              map[string]string
+	VlanTenantRelations             map[string]string
 
 	// Mappings of custom fields to contacts
 	CustomFieldMappings map[string]string
@@ -87,7 +88,9 @@ type HostPortgroupData struct {
 
 func (vc *VmwareSource) Init() error {
 	// Initialize regex relations
-	vc.Logger.Debug(vc.Ctx, "Initializing regex relations for oVirt source ", vc.SourceConfig.Name)
+	vc.Logger.Debug(vc.Ctx, "Initializing regex relations for vmware source ", vc.SourceConfig.Name)
+	vc.DatacenterClusterGroupRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.DatacenterClusterGroupRelations)
+	vc.Logger.Debug(vc.Ctx, "DatacenterClusterGroupRelations: ", vc.DatacenterClusterGroupRelations)
 	vc.HostSiteRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.HostSiteRelations)
 	vc.Logger.Debug(vc.Ctx, "HostSiteRelations: ", vc.HostSiteRelations)
 	vc.ClusterSiteRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.ClusterSiteRelations)

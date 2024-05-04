@@ -52,6 +52,11 @@ func (vc *VmwareSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 
 func (vc *VmwareSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
 	for _, dc := range vc.DataCenters {
+		netboxClusterGroupName := dc.Name
+		if mappedClusterGroupName, ok := vc.DatacenterClusterGroupRelations[netboxClusterGroupName]; ok {
+			netboxClusterGroupName = mappedClusterGroupName
+			vc.Logger.Debugf(vc.Ctx, "mapping datacenter name %s to cluster group name %s", dc.Name, mappedClusterGroupName)
+		}
 		nbClusterGroup := &objects.ClusterGroup{
 			NetboxObject: objects.NetboxObject{
 				Description: fmt.Sprintf("Datacenter from source %s", vc.SourceConfig.Hostname),
@@ -60,8 +65,8 @@ func (vc *VmwareSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
 					constants.CustomFieldSourceName: vc.SourceConfig.Name,
 				},
 			},
-			Name: dc.Name,
-			Slug: utils.Slugify(dc.Name),
+			Name: netboxClusterGroupName,
+			Slug: utils.Slugify(netboxClusterGroupName),
 		}
 		_, err := nbi.AddClusterGroup(vc.Ctx, nbClusterGroup)
 		if err != nil {
@@ -92,7 +97,11 @@ func (vc *VmwareSource) syncClusters(nbi *inventory.NetboxInventory) error {
 
 		var clusterGroup *objects.ClusterGroup
 		datacenterID := vc.Cluster2Datacenter[clusterID]
-		clusterGroup = nbi.ClusterGroupsIndexByName[vc.DataCenters[datacenterID].Name]
+		clusterGroupName := vc.DataCenters[datacenterID].Name
+		if mappedName, ok := vc.DatacenterClusterGroupRelations[clusterGroupName]; ok {
+			clusterGroupName = mappedName
+		}
+		clusterGroup = nbi.ClusterGroupsIndexByName[clusterGroupName]
 
 		clusterSite, err := common.MatchClusterToSite(vc.Ctx, nbi, clusterName, vc.ClusterSiteRelations)
 		if err != nil {

@@ -59,12 +59,16 @@ func (o *OVirtSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 
 func (o *OVirtSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
 	for _, datacenter := range o.DataCenters {
-		name, exists := datacenter.Name()
+		dcName, exists := datacenter.Name()
 		if !exists {
-			return fmt.Errorf("failed to get name for oVirt datacenter %s", name)
+			return fmt.Errorf("failed to get name for oVirt datacenter %s", dcName)
 		}
 		description, _ := datacenter.Description()
-
+		nbClusterGroupName := dcName
+		if mappedClusterGroupName, ok := o.DatacenterClusterGroupRelations[dcName]; ok {
+			nbClusterGroupName = mappedClusterGroupName
+			o.Logger.Debugf(o.Ctx, "mapping datacenter name %s to cluster group name %s", dcName, mappedClusterGroupName)
+		}
 		nbClusterGroup := &objects.ClusterGroup{
 			NetboxObject: objects.NetboxObject{
 				Description: description,
@@ -73,12 +77,12 @@ func (o *OVirtSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
 					constants.CustomFieldSourceName: o.SourceConfig.Name,
 				},
 			},
-			Name: name,
-			Slug: utils.Slugify(name),
+			Name: nbClusterGroupName,
+			Slug: utils.Slugify(nbClusterGroupName),
 		}
 		_, err := nbi.AddClusterGroup(o.Ctx, nbClusterGroup)
 		if err != nil {
-			return fmt.Errorf("failed to add oVirt data center %s as Netbox cluster group: %v", name, err)
+			return fmt.Errorf("failed to add oVirt data center %s as Netbox cluster group: %v", dcName, err)
 		}
 	}
 	return nil
@@ -117,6 +121,9 @@ func (o *OVirtSource) syncClusters(nbi *inventory.NetboxInventory) error {
 			o.Logger.Warning(o.Ctx, "failed to get datacenter for oVirt cluster ", clusterName)
 		}
 		if clusterGroupName != "" {
+			if mappedName, ok := o.DatacenterClusterGroupRelations[clusterGroupName]; ok {
+				clusterGroupName = mappedName
+			}
 			clusterGroup = nbi.ClusterGroupsIndexByName[clusterGroupName]
 		}
 

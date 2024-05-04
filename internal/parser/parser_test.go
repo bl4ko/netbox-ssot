@@ -177,6 +177,7 @@ func TestParseConfigInvalidConfigs(t *testing.T) {
 		{filename: "invalid_config30.yaml", expectedErr: "source[fortigate].apiToken is required for fortigate"},
 		{filename: "invalid_config31.yaml", expectedErr: "netbox.arpDataLifeSpan: cannot be negative"},
 		{filename: "invalid_config1111.yaml", expectedErr: "open testdata/invalid_config1111.yaml: no such file or directory"},
+		{filename: "invalid_config32.yaml", expectedErr: "source[wrong].datacenterClusterGroupRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
 	}
 
 	for _, tc := range testCases {
