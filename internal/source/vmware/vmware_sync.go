@@ -28,7 +28,7 @@ func (vc *VmwareSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 		if err != nil {
 			return fmt.Errorf("vlanTenant: %s", err)
 		}
-		if len(dvpg.VlanIDs) == 1 && len(dvpg.VlanIDRanges) == 0 {
+		if len(dvpg.VlanIDs) == 1 && len(dvpg.VlanIDRanges) == 0 && dvpg.VlanIDs[0] != 0 {
 			_, err := nbi.AddVlan(vc.Ctx, &objects.Vlan{
 				NetboxObject: objects.NetboxObject{
 					Tags: vc.Config.SourceTags,
