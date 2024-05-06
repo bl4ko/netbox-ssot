@@ -77,17 +77,7 @@ func (vc *VmwareSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
 }
 
 func (vc *VmwareSource) syncClusters(nbi *inventory.NetboxInventory) error {
-	clusterType := &objects.ClusterType{
-		NetboxObject: objects.NetboxObject{
-			Tags: vc.Config.SourceTags,
-			CustomFields: map[string]interface{}{
-				constants.CustomFieldSourceName: vc.SourceConfig.Name,
-			},
-		},
-		Name: "Vmware ESXi",
-		Slug: utils.Slugify("Vmware ESXi"),
-	}
-	clusterType, err := nbi.AddClusterType(vc.Ctx, clusterType)
+	clusterType, err := vc.createVmwareClusterType(nbi)
 	if err != nil {
 		return fmt.Errorf("failed to add vmware ClusterType: %v", err)
 	}
@@ -683,6 +673,15 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
 		// Cluster of the vm is same as the host
 		vmCluster := vmHost.Cluster
 
+		// In the case vmCluster is nil, we have to create hypothetical cluster, so
+		// we can add vm to netbox https://github.com/bl4ko/netbox-ssot/issues/141
+		if vmCluster == nil {
+			vmCluster, err = vc.createHypotheticalCluster(nbi, vmHost)
+			if err != nil {
+				return fmt.Errorf("add hypothetical cluster: %s", err)
+			}
+		}
+
 		// VM status
 		vmStatus := &objects.VMStatusOffline
 		vmPowerState := vm.Runtime.PowerState
@@ -1169,4 +1168,58 @@ func (vc *VmwareSource) addVMContact(nbi *inventory.NetboxInventory, nbVM *objec
 		}
 	}
 	return nil
+}
+
+// createVmwareClusterType creates a new VMware cluster type in Netbox.
+// It takes a NetboxInventory object as input and returns the created
+// ClusterType object and an error, if any.
+func (vc *VmwareSource) createVmwareClusterType(nbi *inventory.NetboxInventory) (*objects.ClusterType, error) {
+	clusterType := &objects.ClusterType{
+		NetboxObject: objects.NetboxObject{
+			Tags: vc.Config.SourceTags,
+			CustomFields: map[string]interface{}{
+				constants.CustomFieldSourceName: vc.SourceConfig.Name,
+			},
+		},
+		Name: "Vmware ESXi",
+		Slug: utils.Slugify("Vmware ESXi"),
+	}
+	clusterType, err := nbi.AddClusterType(vc.Ctx, clusterType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add vmware ClusterType: %v", err)
+	}
+	return clusterType, nil
+}
+
+// createHypotheticalCluster creates a cluster with name clusterName. This function is needed
+// for all hosts that are not assigned to cluster so we can assign them to hypotheticalCluster.
+// for more see: https://github.com/bl4ko/netbox-ssot/issues/141
+func (vc *VmwareSource) createHypotheticalCluster(nbi *inventory.NetboxInventory, vmHost *objects.Device) (*objects.Cluster, error) {
+	clusterType, err := vc.createVmwareClusterType(nbi)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add vmware ClusterType: %v", err)
+	}
+	nbCluster, err := nbi.AddCluster(vc.Ctx, &objects.Cluster{
+		NetboxObject: objects.NetboxObject{
+			Tags: vc.Config.SourceTags,
+			CustomFields: map[string]interface{}{
+				constants.CustomFieldSourceName: vc.SourceConfig.Name,
+			},
+		},
+		Name:   vmHost.Name,
+		Type:   clusterType,
+		Status: objects.ClusterStatusActive,
+		Site:   vmHost.Site,
+		Tenant: vmHost.Tenant,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to add vmware cluster %s as Netbox cluster: %v", vmHost.Name, err)
+	}
+	vmHostCopy := *vmHost
+	vmHostCopy.Cluster = nbCluster
+	_, err = nbi.AddDevice(vc.Ctx, &vmHostCopy)
+	if err != nil {
+		return nil, fmt.Errorf("failed updating existing host with hypothetical cluster: %s", err)
+	}
+	return nbCluster, nil
 }
