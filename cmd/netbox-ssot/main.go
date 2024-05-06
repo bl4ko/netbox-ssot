@@ -57,7 +57,7 @@ func main() {
 
 	// Variable to store if the run was successful. If it wasn't we don't remove orphans.
 	successfullRun := true
-	// Variable to store failed sources
+	// Variable to store failed sourcesFalse
 	encounteredErrors := map[string]bool{}
 
 	// Go through all sources and sync data

@@ -1,9 +1,7 @@
 package fmc
 
 import (
-	"crypto/tls"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
@@ -35,15 +33,12 @@ type FMCSource struct {
 }
 
 func (fmcs *FMCSource) Init() error {
-	HTTPClient := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: !fmcs.SourceConfig.ValidateCert,
-			},
-		},
+	httpClient, err := utils.NewHTTPClient(fmcs.SourceConfig.ValidateCert, fmcs.CAFile)
+	if err != nil {
+		return fmt.Errorf("create new http client: %s", err)
 	}
 
-	c, err := newFMCClient(fmcs.SourceConfig.Username, fmcs.SourceConfig.Password, string(fmcs.SourceConfig.HTTPScheme), fmcs.SourceConfig.Hostname, fmcs.SourceConfig.Port, HTTPClient)
+	c, err := newFMCClient(fmcs.SourceConfig.Username, fmcs.SourceConfig.Password, string(fmcs.SourceConfig.HTTPScheme), fmcs.SourceConfig.Hostname, fmcs.SourceConfig.Port, httpClient)
 	if err != nil {
 		return fmt.Errorf("create FMC client: %s", err)
 	}

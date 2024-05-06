@@ -61,16 +61,23 @@ func (o *OVirtSource) Init() error {
 	o.VlanTenantRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.VlanTenantRelations)
 	o.Logger.Debug(o.Ctx, "VlanTenantRelations: ", o.VlanTenantRelations)
 
-	// Initialize the connection
+	// Build the connection
 	o.Logger.Debug(o.Ctx, "Initializing oVirt source ", o.SourceConfig.Name)
-	conn, err := ovirtsdk4.NewConnectionBuilder().
+	connBuilder := ovirtsdk4.NewConnectionBuilder().
 		URL(fmt.Sprintf("%s://%s:%d/ovirt-engine/api", o.SourceConfig.HTTPScheme, o.SourceConfig.Hostname, o.SourceConfig.Port)).
 		Username(o.SourceConfig.Username).
 		Password(o.SourceConfig.Password).
 		Insecure(!o.SourceConfig.ValidateCert).
 		Compress(true).
 		Timeout(time.Second * constants.DefaultAPITimeout).
-		Build()
+		CAFile(o.Config.CAFile)
+
+	if o.Config.CAFile != "" {
+		connBuilder.CAFile(o.Config.CAFile)
+	}
+
+	// Initialize the connection
+	conn, err := connBuilder.Build()
 	if err != nil {
 		return fmt.Errorf("failed to create oVirt connection: %v", err)
 	}

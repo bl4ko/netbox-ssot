@@ -2,7 +2,6 @@ package fortigate
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"io"
 	"net/http"
@@ -62,14 +61,11 @@ func (c FortiClient) MakeRequest(ctx context.Context, method, path string, body 
 }
 
 func (fs *FortigateSource) Init() error {
-	HTTPClient := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: !fs.SourceConfig.ValidateCert,
-			},
-		},
+	httpClient, err := utils.NewHTTPClient(fs.SourceConfig.ValidateCert, fs.CAFile)
+	if err != nil {
+		return fmt.Errorf("create new http client: %s", err)
 	}
-	c := NewAPIClient(fs.SourceConfig.APIToken, fmt.Sprintf("%s://%s:%d/api/v2", fs.SourceConfig.HTTPScheme, fs.SourceConfig.Hostname, fs.SourceConfig.Port), HTTPClient)
+	c := NewAPIClient(fs.SourceConfig.APIToken, fmt.Sprintf("%s://%s:%d/api/v2", fs.SourceConfig.HTTPScheme, fs.SourceConfig.Hostname, fs.SourceConfig.Port), httpClient)
 	ctx := context.Background()
 	defer ctx.Done()
 

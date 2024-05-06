@@ -175,7 +175,11 @@ func (nbi *NetboxInventory) Init() error {
 	baseURL := fmt.Sprintf("%s://%s:%d", nbi.NetboxConfig.HTTPScheme, nbi.NetboxConfig.Hostname, nbi.NetboxConfig.Port)
 
 	nbi.Logger.Debug(nbi.Ctx, "Initializing Netbox API with baseURL: ", baseURL)
-	nbi.NetboxAPI = service.NewNetboxClient(nbi.Ctx, nbi.Logger, baseURL, nbi.NetboxConfig.APIToken, nbi.NetboxConfig.ValidateCert, nbi.NetboxConfig.Timeout)
+	var err error
+	nbi.NetboxAPI, err = service.NewNetboxClient(nbi.Logger, baseURL, nbi.NetboxConfig.APIToken, nbi.NetboxConfig.ValidateCert, nbi.NetboxConfig.Timeout, nbi.NetboxConfig.CAFile)
+	if err != nil {
+		return fmt.Errorf("create new netbox client: %s", err)
+	}
 
 	// Order matters. TODO: use parallelization in the future, on the init functions that can be parallelized
 	initFunctions := []func(context.Context) error{

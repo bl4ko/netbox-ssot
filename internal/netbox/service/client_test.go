@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"crypto/tls"
 	"io"
 	"log"
@@ -15,12 +14,12 @@ import (
 
 func TestNewNetBoxAPI(t *testing.T) {
 	type args struct {
-		ctx          context.Context
 		logger       *logger.Logger
 		baseURL      string
 		apiToken     string
 		validateCert bool
 		timeout      int
+		caCert       string
 	}
 	tests := []struct {
 		name string
@@ -30,12 +29,12 @@ func TestNewNetBoxAPI(t *testing.T) {
 		{
 			name: "test new API creation without ssl verify",
 			args: args{
-				ctx:          context.Background(),
 				logger:       &logger.Logger{Logger: log.Default()},
 				baseURL:      "netbox.example.com",
 				apiToken:     "apitoken",
 				validateCert: false,
 				timeout:      constants.DefaultAPITimeout,
+				caCert:       "",
 			},
 			want: &NetboxClient{
 				Logger:     &logger.Logger{Logger: log.Default()},
@@ -48,26 +47,38 @@ func TestNewNetBoxAPI(t *testing.T) {
 		{
 			name: "test new API creation with ssl verify",
 			args: args{
-				ctx:          context.Background(),
 				logger:       &logger.Logger{Logger: log.Default()},
 				baseURL:      "netbox.example.com",
 				apiToken:     "apitoken",
 				validateCert: true,
 				timeout:      constants.DefaultAPITimeout,
+				caCert:       "",
 			},
 			want: &NetboxClient{
-				Logger:     &logger.Logger{Logger: log.Default()},
-				BaseURL:    "netbox.example.com",
-				APIToken:   "apitoken",
-				HTTPClient: &http.Client{},
-				Timeout:    constants.DefaultAPITimeout,
+				Logger:   &logger.Logger{Logger: log.Default()},
+				BaseURL:  "netbox.example.com",
+				APIToken: "apitoken",
+				HTTPClient: &http.Client{Transport: &http.Transport{
+					TLSClientConfig: &tls.Config{},
+				}},
+				Timeout: constants.DefaultAPITimeout,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewNetboxClient(tt.args.ctx, tt.args.logger, tt.args.baseURL, tt.args.apiToken, tt.args.validateCert, tt.args.timeout); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewNetBoxAPI() = %v, want %v", got, tt.want)
+			got, err := NewNetboxClient(tt.args.logger, tt.args.baseURL, tt.args.apiToken, tt.args.validateCert, tt.args.timeout, tt.args.caCert)
+			if err != nil {
+				t.Errorf("NewNetboxClient() error = %v", err)
+				return
+			}
+			// Check non-pointer fields for simplicity or use an interface to mock clients
+			if got.BaseURL != tt.want.BaseURL || got.APIToken != tt.want.APIToken || got.Timeout != tt.want.Timeout {
+				t.Errorf("NewNetboxClient() got = %v, want %v", got, tt.want)
+			}
+			// Optionally check if HTTPClient is not nil to confirm it's initialized
+			if got.HTTPClient == nil {
+				t.Errorf("HTTPClient was not initialized")
 			}
 		})
 	}

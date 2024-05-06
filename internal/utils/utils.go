@@ -2,7 +2,11 @@ package utils
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"net/http"
+	"os"
 	"reflect"
 	"regexp"
 	"runtime"
@@ -178,4 +182,39 @@ func MatchNamesWithEmails(ctx context.Context, names []string, emails []string, 
 		}
 	}
 	return matches
+}
+
+// Function that loads additional certs from the given certDirPath.
+// In case empty certPath is provided, deefault cert pool is returned.
+func LoadExtraCert(certPath string) (*x509.CertPool, error) {
+	rootCAs, err := x509.SystemCertPool()
+	if err != nil {
+		return nil, fmt.Errorf("system cert pool: %s", err)
+	}
+	if certPath != "" {
+		// Read in the cert file
+		certFile, err := os.ReadFile(certPath)
+		if err != nil {
+			return nil, fmt.Errorf("read cert file: %s", err)
+		}
+		ok := rootCAs.AppendCertsFromPEM((certFile))
+		if !ok {
+			return nil, fmt.Errorf("failed to append cert from PEM file: %s", certFile)
+		}
+	}
+	return rootCAs, nil
+}
+
+// Function that returns Transport config with extra cert from
+// cert path loaded.
+func LoadExtraCertInTransportConfig(certPath string) (*http.Transport, error) {
+	rootCAs, err := LoadExtraCert(certPath)
+	if err != nil {
+		return nil, fmt.Errorf("load extra cert: %s", err)
+	}
+	return &http.Transport{
+		TLSClientConfig: &tls.Config{
+			RootCAs: rootCAs,
+		},
+	}, nil
 }
