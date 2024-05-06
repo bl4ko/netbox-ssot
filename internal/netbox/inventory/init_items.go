@@ -355,6 +355,22 @@ func (nbi *NetboxInventory) InitSsotCustomFields(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("add custom field %s", err)
 	}
+	// Custom field for storing object's source id.
+	_, err = nbi.AddCustomField(ctx, &objects.CustomField{
+		Name:                  constants.CustomFieldSourceIDName,
+		Label:                 constants.CustomFieldSourceIDLabel,
+		Type:                  objects.CustomFieldTypeText,
+		FilterLogic:           objects.FilterLogicLoose,
+		CustomFieldUIVisible:  &objects.CustomFieldUIVisibleAlways,
+		CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
+		DisplayWeight:         objects.DisplayWeightDefault,
+		Description:           constants.CustomFieldSourceIDDescription,
+		SearchWeight:          objects.SearchWeightDefault,
+		ContentTypes:          []string{constants.ContentTypeDcimDevice, constants.ContentTypeDcimDeviceRole, constants.ContentTypeDcimDeviceType, constants.ContentTypeDcimInterface, constants.ContentTypeDcimLocation, constants.ContentTypeDcimManufacturer, constants.ContentTypeDcimPlatform, constants.ContentTypeDcimRegion, constants.ContentTypeDcimSite, constants.ContentTypeVirtualDeviceContext, constants.ContentTypeIpamIPAddress, constants.ContentTypeIpamVlanGroup, constants.ContentTypeIpamVlan, constants.ContentTypeIpamPrefix, constants.ContentTypeTenancyTenantGroup, constants.ContentTypeTenancyTenant, constants.ContentTypeTenancyContact, constants.ContentTypeTenancyContactAssignment, constants.ContentTypeTenancyContactGroup, constants.ContentTypeTenancyContactRole, constants.ContentTypeVirtualizationCluster, constants.ContentTypeVirtualizationClusterGroup, constants.ContentTypeVirtualizationClusterType, constants.ContentTypeVirtualizationVirtualMachine, constants.ContentTypeVirtualizationVMInterface},
+	})
+	if err != nil {
+		return fmt.Errorf("add custom field %s", err)
+	}
 	// Custom field for storing number of CPU cores for device (server).
 	_, err = nbi.AddCustomField(ctx, &objects.CustomField{
 		Name:                  constants.CustomFieldHostCPUCoresName,
