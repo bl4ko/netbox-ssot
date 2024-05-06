@@ -2,6 +2,7 @@ package paloalto
 
 import (
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/PaloAltoNetworks/pango"
@@ -42,6 +43,14 @@ type PaloAltoSource struct {
 }
 
 func (pas *PaloAltoSource) Init() error {
+	var transport *http.Transport
+	var err error
+	if pas.Config.CAFile != "" {
+		transport, err = utils.LoadExtraCertInTransportConfig(pas.Config.CAFile)
+		if err != nil {
+			return fmt.Errorf("load extra cert in transport config: %s", err)
+		}
+	}
 	c := &pango.Firewall{Client: pango.Client{
 		Hostname:          pas.SourceConfig.Hostname,
 		Username:          pas.SourceConfig.Username,
@@ -51,6 +60,7 @@ func (pas *PaloAltoSource) Init() error {
 		Port:              uint(pas.SourceConfig.Port),
 		Timeout:           constants.DefaultAPITimeout,
 		Protocol:          string(pas.SourceConfig.HTTPScheme),
+		Transport:         transport,
 	}}
 
 	if err := c.Initialize(); err != nil {

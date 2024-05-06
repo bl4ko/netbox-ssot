@@ -47,6 +47,7 @@ func NewSource(ctx context.Context, config *parser.SourceConfig, logger *logger.
 		SourceConfig: config,
 		SourceTags:   []*objects.Tag{sourceTag, sourceTypeTag},
 		Ctx:          ctx,
+		CAFile:       config.CAFile,
 	}
 
 	switch config.Type {

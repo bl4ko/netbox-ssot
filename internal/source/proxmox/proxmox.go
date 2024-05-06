@@ -2,9 +2,7 @@ package proxmox
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
@@ -59,22 +57,23 @@ func (ps *ProxmoxSource) Init() error {
 	ps.VlanTenantRelations = utils.ConvertStringsToRegexPairs(ps.SourceConfig.VlanTenantRelations)
 	ps.Logger.Debug(ps.Ctx, "VlanTenantRelations: ", ps.VlanTenantRelations)
 
-	// Initialize the connection
+	// Setup credentials for proxmox
 	credentials := proxmox.Credentials{
 		Username: ps.SourceConfig.Username,
 		Password: ps.SourceConfig.Password,
 	}
-	HTTPClient := http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: !ps.SourceConfig.ValidateCert,
-			},
-		},
+
+	// Create http client depending on ssl configuration
+	HTTPClient, err := utils.NewHTTPClient(ps.SourceConfig.ValidateCert, ps.SourceConfig.CAFile)
+	if err != nil {
+		return fmt.Errorf("error creating new HTTP client: %s", err)
 	}
+
+	// Initialize proxmox client
 	client := proxmox.NewClient(fmt.Sprintf("%s://%s:%d/api2/json",
 		ps.SourceConfig.HTTPScheme, ps.SourceConfig.Hostname, ps.SourceConfig.Port),
 		proxmox.WithCredentials(&credentials),
-		proxmox.WithHTTPClient(&HTTPClient),
+		proxmox.WithHTTPClient(HTTPClient),
 	)
 
 	ctx, cancel := context.WithCancel(context.Background())

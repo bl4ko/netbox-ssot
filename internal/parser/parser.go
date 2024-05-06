@@ -49,6 +49,7 @@ type NetboxConfig struct {
 	RemoveOrphans   bool       `yaml:"removeOrphans"`
 	SourcePriority  []string   `yaml:"sourcePriority"`
 	ArpDataLifeSpan int        `yaml:"arpDataLifeSpan"`
+	CAFile          string     `yaml:"caFile"`
 }
 
 func (n NetboxConfig) String() string {
@@ -71,6 +72,7 @@ type SourceConfig struct {
 	InterfaceFilter string               `yaml:"interfaceFilter"`
 	CollectArpData  bool                 `yaml:"collectArpData"`
 	ArpDataLifeSpan int                  `yaml:"arpDataLifeSpan"`
+	CAFile          string               `yaml:"caFile"`
 
 	// Relations
 	DatacenterClusterGroupRelations []string `yaml:"datacenterClusterGroupRelations"`
@@ -174,9 +176,16 @@ func validateNetboxConfig(config *Config) error {
 	if config.Netbox.ArpDataLifeSpan == 0 {
 		config.Netbox.ArpDataLifeSpan = constants.DefaultArpDataLifeSpan
 	}
+	if config.Netbox.CAFile != "" {
+		_, err := os.ReadFile(config.Netbox.CAFile)
+		if err != nil {
+			return fmt.Errorf("netbox.caFile: %s", err)
+		}
+	}
 	return nil
 }
 
+//nolint:gocyclo
 func validateSourceConfig(config *Config) error {
 	// Validate Sources
 	for i := range config.Sources {
@@ -223,6 +232,11 @@ func validateSourceConfig(config *Config) error {
 		}
 		if externalSource.TagColor == "" {
 			externalSource.TagColor = constants.SourceTagColorMap[externalSource.Type]
+		}
+		if externalSource.CAFile != "" {
+			if _, err := os.ReadFile(externalSource.CAFile); err != nil {
+				return fmt.Errorf("%s.caFile: %s", externalSourceStr, err)
+			}
 		}
 		err := validateSourceConfigRelations(externalSource, externalSourceStr)
 		if err != nil {

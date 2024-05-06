@@ -2,12 +2,13 @@ package service
 
 import (
 	"context"
-	"crypto/tls"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
 
 	"github.com/bl4ko/netbox-ssot/internal/logger"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
 // NetboxClient is a service used for communicating with the Netbox API.
@@ -36,25 +37,18 @@ type APIResponse struct {
 }
 
 // Constructor function for creating a new netBoxAPI instance.
-func NewNetboxClient(ctx context.Context, logger *logger.Logger, baseURL string, apiToken string, validateCert bool, timeout int) *NetboxClient {
-	var client *http.Client
-	if validateCert {
-		client = &http.Client{}
-	} else {
-		logger.Warning(ctx, "TLS certificate validation is disabled")
-		client = &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-			},
-		}
+func NewNetboxClient(logger *logger.Logger, baseURL string, apiToken string, validateCert bool, timeout int, caCert string) (*NetboxClient, error) {
+	httpClient, err := utils.NewHTTPClient(validateCert, caCert)
+	if err != nil {
+		return nil, fmt.Errorf("create new HTTP client: %s", err)
 	}
 	return &NetboxClient{
-		HTTPClient: client,
+		HTTPClient: httpClient,
 		Logger:     logger,
 		BaseURL:    baseURL,
 		APIToken:   apiToken,
 		Timeout:    timeout,
-	}
+	}, nil
 }
 
 func (api *NetboxClient) doRequest(method string, path string, body io.Reader) (*APIResponse, error) {

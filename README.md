@@ -61,6 +61,7 @@ Example configuration can be found [here](#example-config).
 | `netbox.tagColor`        | TagColor for the netbox-ssot tag.                                                                                                             | string   | any             | "07426b"      | No       |
 | `netbox.sourcePriority`  | Array of source names in order of priority. If an object (e.g. Vlan) is found in multiple sources, the first source in the list will be used. | []string | any             | []            | No       |
 | `netbox.arpDataLifeSpan` | Lifespan of each arp data entry in **seconds** (if entry is not found in the following interations).                                          | int      | >0              | 172800        | No       |
+| `netbox.caFile`          | Path to a self signed certificate for netbox.                                                                                                 | string   | Valid path      | ""            | No       |
 
 ### Source
 
@@ -88,6 +89,7 @@ Example configuration can be found [here](#example-config).
 | `source.vlanGroupRelations`              | Regex relations in format `regex = vlanGroup`, that map each vlan that satisfies regex to vlanGroup.                                                                                   | all                     | []string | any                                      | []         | No       |
 | `source.vlanTenantRelations`             | Regex relations in format `regex = tenantName`, that map each vlan that satisfies regex to tenant.                                                                                     | all                     | []string | any                                      | []         | No       |
 | `source.customFieldMappings`             | Mappings of format `customFieldName = option`. Currently, supported options are `contact`, `owner`, `description`.                                                                     | [**vmware**]            | []string | any                                      | []         | No       |
+| `source.caFile`                          | Path to a self signed certificate for the source.                                                                                                                                      | any                     | string   | Valid path                               | ""         | No       |
 
 ### Example config
 

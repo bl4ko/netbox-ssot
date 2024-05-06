@@ -10,12 +10,13 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
-	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/object"
+	"github.com/vmware/govmomi/session"
 	"github.com/vmware/govmomi/view"
 	"github.com/vmware/govmomi/vim25"
 	"github.com/vmware/govmomi/vim25/mo"
+	"github.com/vmware/govmomi/vim25/soap"
 )
 
 // VmwareSource represents an vsphere source.
@@ -124,14 +125,30 @@ func (vc *VmwareSource) Init() error {
 		return fmt.Errorf("failed parsing url for %s with error %s", vc.SourceConfig.Hostname, err)
 	}
 
-	conn, err := govmomi.NewClient(ctx, url, !vc.SourceConfig.ValidateCert)
+	// How to set custom ca certificates for govmomi: https://github.com/vmware/govmomi/issues/1200#issuecomment-412950179
+	soapClient := soap.NewClient(url, !vc.SourceConfig.ValidateCert)
+	if vc.Config.CAFile != "" {
+		err = soapClient.SetRootCAs(vc.Config.CAFile)
+		if err != nil {
+			return fmt.Errorf("set root CAs: %s", err)
+		}
+	}
+	vim25Client, err := vim25.NewClient(ctx, soapClient)
 	if err != nil {
 		return fmt.Errorf("failed creating a govmomi client with an error: %s", err)
 	}
 
+	// Create a SessionManager and login to authenticate the session
+	sessionManager := session.NewManager(vim25Client)
+
+	// Perform login
+	if err = sessionManager.Login(ctx, url.User); err != nil {
+		return fmt.Errorf("login failed: %s", err)
+	}
+
 	// View manager is used to create and manage views. Views are a mechanism in vSphere
 	// to group and manage objects in the inventory.
-	viewManager := view.NewManager(conn.Client)
+	viewManager := view.NewManager(vim25Client)
 
 	// viewType specifies the types of objects to be included in our container view.
 	// Each string in this slice represents a different vSphere Managed Object type.
@@ -141,7 +158,7 @@ func (vc *VmwareSource) Init() error {
 
 	// A container view is a subset of the vSphere inventory, focusing on the specified
 	// object types, making it easier to manage and retrieve data for these objects.
-	containerView, err := viewManager.CreateContainerView(ctx, conn.Client.ServiceContent.RootFolder, viewType, true)
+	containerView, err := viewManager.CreateContainerView(ctx, vim25Client.ServiceContent.RootFolder, viewType, true)
 	if err != nil {
 		return fmt.Errorf("failed creating containerView: %s", err)
 	}
@@ -151,14 +168,14 @@ func (vc *VmwareSource) Init() error {
 	// Create CustomFieldManager to map custom field ids to their names
 	// This is required to determine which custom field key is used for
 	// which custom field name (e.g.g 202 -> vm owner, 203 -> vm description...)
-	err = vc.CreateCustomFieldRelation(ctx, conn.Client)
+	err = vc.CreateCustomFieldRelation(ctx, vim25Client)
 	if err != nil {
 		return fmt.Errorf("create custom field relation failed: %s", err)
 	}
 
 	// Find relation between data centers and clusters. Currently we have to manually traverse
 	// the tree to get this relation.
-	err = vc.CreateClusterDataCenterRelation(ctx, conn.Client)
+	err = vc.CreateClusterDataCenterRelation(ctx, vim25Client)
 	if err != nil {
 		return fmt.Errorf("create cluster datacenter relation failed: %s", err)
 	}
@@ -188,7 +205,7 @@ func (vc *VmwareSource) Init() error {
 		vc.Logger.Errorf(vc.Ctx, "failed destroying containerView: %s", err)
 	}
 
-	err = conn.Logout(ctx)
+	err = sessionManager.Logout(ctx)
 	if err != nil {
 		return fmt.Errorf("error occurred when ending vmware connection to host %s: %s", vc.SourceConfig.Hostname, err)
 	}
