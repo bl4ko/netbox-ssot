@@ -403,6 +403,22 @@ func (nbi *NetboxInventory) InitSsotCustomFields(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("add custom field: %s", err)
 	}
+	// custom field for storing uuid of the device.
+	_, err = nbi.AddCustomField(ctx, &objects.CustomField{
+		Name:                  constants.CustomFieldDeviceUUIDName,
+		Label:                 constants.CustomFieldDeviceUUIDLabel,
+		Type:                  objects.CustomFieldTypeText,
+		FilterLogic:           objects.FilterLogicLoose,
+		CustomFieldUIVisible:  &objects.CustomFieldUIVisibleAlways,
+		CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
+		DisplayWeight:         objects.DisplayWeightDefault,
+		Description:           constants.CustomFieldDeviceUUIDDescription,
+		SearchWeight:          objects.SearchWeightDefault,
+		ContentTypes:          []string{constants.ContentTypeDcimDevice},
+	})
+	if err != nil {
+		return fmt.Errorf("add custom field: %s", err)
+	}
 	// Custom field for determining if an IP address was obtained from the arp table.
 	_, err = nbi.AddCustomField(ctx, &objects.CustomField{
 		Name:                  constants.CustomFieldArpEntryName,

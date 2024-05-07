@@ -70,6 +70,7 @@ func (fmcs *FMCSource) syncDevices(nbi *inventory.NetboxInventory) error {
 				Tags:        fmcs.SourceTags,
 				CustomFields: map[string]interface{}{
 					constants.CustomFieldSourceIDName:     deviceUUID,
+					constants.CustomFieldDeviceUUIDName:   deviceUUID,
 					constants.CustomFieldHostCPUCoresName: device.Metadata.InventoryData.CPUCores,
 					constants.CustomFieldHostMemoryName:   fmt.Sprintf("%sMB", device.Metadata.InventoryData.MemoryInMB),
 				},

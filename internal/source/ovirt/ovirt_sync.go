@@ -179,10 +179,10 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 			return fmt.Errorf("hostTenant: %s", err)
 		}
 
-		var hostSerialNumber, manufacturerName, hostAssetTag, hostModel string
+		var hostSerialNumber, manufacturerName, hostUUID, hostModel string
 		hwInfo, exists := host.HardwareInformation()
 		if exists {
-			hostAssetTag, exists = hwInfo.Uuid()
+			hostUUID, exists = hwInfo.Uuid()
 			if !exists {
 				o.Logger.Warning(o.Ctx, "Uuid (asset tag) for oVirt host ", hostName, " is empty. Can't identify it, so it will be skipped...")
 				continue
@@ -292,8 +292,10 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 				Tags:        o.Config.SourceTags,
 				CustomFields: map[string]interface{}{
 					constants.CustomFieldSourceName:       o.SourceConfig.Name,
+					constants.CustomFieldSourceIDName:     hostID,
 					constants.CustomFieldHostCPUCoresName: hostCPUCores,
 					constants.CustomFieldHostMemoryName:   fmt.Sprintf("%d GB", mem),
+					constants.CustomFieldDeviceUUIDName:   hostUUID,
 				},
 			},
 			Name:         hostName,
@@ -305,7 +307,6 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 			Cluster:      hostCluster,
 			Comments:     hostComment,
 			SerialNumber: hostSerialNumber,
-			AssetTag:     hostAssetTag,
 			DeviceType:   hostDeviceType,
 		}
 		nbHost, err = nbi.AddDevice(o.Ctx, nbHost)
