@@ -99,7 +99,7 @@ func (ds *DnacSource) SyncVlans(nbi *inventory.NetboxInventory) error {
 }
 
 func (ds *DnacSource) SyncDevices(nbi *inventory.NetboxInventory) error {
-	for _, device := range ds.Devices {
+	for deviceID, device := range ds.Devices {
 		var description, comments string
 		if device.Description != "" {
 			description = device.Description
@@ -176,7 +176,9 @@ func (ds *DnacSource) SyncDevices(nbi *inventory.NetboxInventory) error {
 				Tags:        ds.Config.SourceTags,
 				Description: description,
 				CustomFields: map[string]interface{}{
-					constants.CustomFieldSourceName: ds.SourceConfig.Name,
+					constants.CustomFieldSourceName:     ds.SourceConfig.Name,
+					constants.CustomFieldSourceIDName:   deviceID,
+					constants.CustomFieldDeviceUUIDName: device.InstanceUUID,
 				},
 			},
 			Name:         device.Hostname,

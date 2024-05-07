@@ -16,7 +16,7 @@ import (
 )
 
 func (vc *VmwareSource) syncNetworks(nbi *inventory.NetboxInventory) error {
-	for _, dvpg := range vc.Networks.DistributedVirtualPortgroups {
+	for dvpgID, dvpg := range vc.Networks.DistributedVirtualPortgroups {
 		// TODO: currently we are syncing only vlans
 		// Get vlanGroup from relations
 		vlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, dvpg.Name, vc.VlanGroupRelations)
@@ -33,7 +33,8 @@ func (vc *VmwareSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 				NetboxObject: objects.NetboxObject{
 					Tags: vc.Config.SourceTags,
 					CustomFields: map[string]interface{}{
-						constants.CustomFieldSourceName: vc.SourceConfig.Name,
+						constants.CustomFieldSourceName:   vc.SourceConfig.Name,
+						constants.CustomFieldSourceIDName: dvpgID,
 					},
 				},
 				Name:   dvpg.Name,
@@ -51,7 +52,7 @@ func (vc *VmwareSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 }
 
 func (vc *VmwareSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
-	for _, dc := range vc.DataCenters {
+	for dcID, dc := range vc.DataCenters {
 		netboxClusterGroupName := dc.Name
 		if mappedClusterGroupName, ok := vc.DatacenterClusterGroupRelations[netboxClusterGroupName]; ok {
 			netboxClusterGroupName = mappedClusterGroupName
@@ -62,7 +63,8 @@ func (vc *VmwareSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
 				Description: fmt.Sprintf("Datacenter from source %s", vc.SourceConfig.Hostname),
 				Tags:        vc.Config.SourceTags,
 				CustomFields: map[string]interface{}{
-					constants.CustomFieldSourceName: vc.SourceConfig.Name,
+					constants.CustomFieldSourceName:   vc.SourceConfig.Name,
+					constants.CustomFieldSourceIDName: dcID,
 				},
 			},
 			Name: netboxClusterGroupName,
@@ -107,7 +109,8 @@ func (vc *VmwareSource) syncClusters(nbi *inventory.NetboxInventory) error {
 			NetboxObject: objects.NetboxObject{
 				Tags: vc.Config.SourceTags,
 				CustomFields: map[string]interface{}{
-					constants.CustomFieldSourceName: vc.SourceConfig.Name,
+					constants.CustomFieldSourceName:   vc.SourceConfig.Name,
+					constants.CustomFieldSourceIDName: clusterID,
 				},
 			},
 			Name:   clusterName,
@@ -141,7 +144,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		if err != nil {
 			return fmt.Errorf("hostTenant: %s", err)
 		}
-		hostAssetTag := host.Summary.Hardware.Uuid
+		hostUUID := host.Summary.Hardware.Uuid
 		hostModel := host.Summary.Hardware.Model
 
 		var hostSerialNumber string
@@ -151,11 +154,15 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 			"ServiceTag":               true,
 			"SerialNumberTag":          true,
 		}
+		var assetTag string
 		for _, info := range host.Summary.Hardware.OtherIdentifyingInfo {
 			infoType := info.IdentifierType.GetElementDescription().Key
-			if serialInfoTypes[infoType] {
+			infoValue := strings.Trim(info.IdentifierValue, " ") // remove blank spaces from value
+			if infoType == "AssetTag" {
+				assetTag = infoValue
+			} else if serialInfoTypes[infoType] {
 				if info.IdentifierValue != "" {
-					hostSerialNumber = info.IdentifierValue
+					hostSerialNumber = infoValue
 					break
 				}
 			}
@@ -215,6 +222,8 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		nbHost := &objects.Device{
 			NetboxObject: objects.NetboxObject{Tags: vc.Config.SourceTags, CustomFields: map[string]interface{}{
 				constants.CustomFieldSourceName:       vc.SourceConfig.Name,
+				constants.CustomFieldSourceIDName:     hostID,
+				constants.CustomFieldDeviceUUIDName:   hostUUID,
 				constants.CustomFieldHostCPUCoresName: fmt.Sprintf("%d", hostCPUCores),
 				constants.CustomFieldHostMemoryName:   fmt.Sprintf("%d GB", hostMemGB),
 			}},
@@ -226,7 +235,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 			Tenant:       hostTenant,
 			Cluster:      hostCluster,
 			SerialNumber: hostSerialNumber,
-			AssetTag:     hostAssetTag,
+			AssetTag:     assetTag,
 			DeviceType:   hostDeviceType,
 		}
 		nbHost, err = nbi.AddDevice(vc.Ctx, nbHost)

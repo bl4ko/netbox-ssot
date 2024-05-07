@@ -134,6 +134,11 @@ const (
 	CustomFieldHostMemoryLabel       = "Host memory"
 	CustomFieldHostMemoryDescription = "Amount of memory on the host"
 
+	// Custom field for dcim.device, so we can store uuid for it.
+	CustomFieldDeviceUUIDName        = "uuid"
+	CustomFieldDeviceUUIDLabel       = "uuid"
+	CustomFieldDeviceUUIDDescription = "Universally Unique Identifier for a device"
+
 	// Custom field for ContentTypeIPAddress, so we can determine if an ip is part of an arp table or not.
 	CustomFieldArpEntryName        = "arp_entry"
 	CustomFieldArpEntryLabel       = "Arp Entry"
