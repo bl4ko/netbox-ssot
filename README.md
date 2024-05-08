@@ -26,7 +26,10 @@ Currently, the supported external data sources types are:
 
 > [!WARNING]
 > **This project is still under heavy development, use with caution.**
-> Works with `netbox>=3.7.x`.
+>
+> - <u>v1.x.x</u> works with `netbox>=4.0.0`
+>
+> - <u>v0.x.x</u> works with `netbox>=3.7.0`
 
 ## Configuration
 
