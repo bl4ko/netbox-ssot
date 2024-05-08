@@ -311,7 +311,7 @@ func (pas *PaloAltoSource) syncArpTable(nbi *inventory.NetboxInventory) error {
 		DisplayWeight:         objects.DisplayWeightDefault,
 		Description:           constants.CustomFieldArpIPLastSeenDescription,
 		SearchWeight:          objects.SearchWeightDefault,
-		ContentTypes:          []string{constants.ContentTypeIpamIPAddress},
+		ObjectTypes:           []objects.ObjectType{objects.ObjectTypeIpamIPAddress},
 	})
 	if err != nil {
 		return fmt.Errorf("add custom field: %s", err)

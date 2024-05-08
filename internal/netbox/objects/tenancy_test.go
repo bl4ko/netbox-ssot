@@ -80,7 +80,7 @@ func TestContactAssignment_String(t *testing.T) {
 				NetboxObject: NetboxObject{
 					ID: 1,
 				},
-				ContentType: "virtualization.virtual_machine",
+				ObjectType: ObjectTypeVirtualizationVirtualMachine,
 				Contact: &Contact{
 					Name: "Test contact",
 				},
@@ -89,7 +89,7 @@ func TestContactAssignment_String(t *testing.T) {
 				},
 				ObjectID: 5,
 			},
-			want: fmt.Sprintf("ContactAssignment{ContentType: %s, ObjectID: %d, %v, %v}", "virtualization.virtual_machine", 5, Contact{Name: "Test contact"}, ContactRole{Name: "Test contact role"}),
+			want: fmt.Sprintf("ContactAssignment{ObjectType: %s, ObjectID: %d, %v, %v}", ObjectTypeVirtualizationVirtualMachine, 5, Contact{Name: "Test contact"}, ContactRole{Name: "Test contact role"}),
 		},
 	}
 	for _, tt := range tests {

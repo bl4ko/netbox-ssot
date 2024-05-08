@@ -209,18 +209,18 @@ func (nbi *NetboxInventory) AddContact(ctx context.Context, newContact *objects.
 func (nbi *NetboxInventory) AddContactAssignment(ctx context.Context, newCA *objects.ContactAssignment) (*objects.ContactAssignment, error) {
 	nbi.ContactAssignmentsLock.Lock()
 	defer nbi.ContactAssignmentsLock.Unlock()
-	if nbi.ContactAssignmentsIndexByContentTypeAndObjectIDAndContactIDAndRoleID[newCA.ContentType] == nil {
-		nbi.ContactAssignmentsIndexByContentTypeAndObjectIDAndContactIDAndRoleID[newCA.ContentType] = make(map[int]map[int]map[int]*objects.ContactAssignment)
+	if nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ObjectType] == nil {
+		nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ObjectType] = make(map[int]map[int]map[int]*objects.ContactAssignment)
 	}
-	if nbi.ContactAssignmentsIndexByContentTypeAndObjectIDAndContactIDAndRoleID[newCA.ContentType][newCA.ObjectID] == nil {
-		nbi.ContactAssignmentsIndexByContentTypeAndObjectIDAndContactIDAndRoleID[newCA.ContentType][newCA.ObjectID] = make(map[int]map[int]*objects.ContactAssignment)
+	if nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ObjectType][newCA.ObjectID] == nil {
+		nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ObjectType][newCA.ObjectID] = make(map[int]map[int]*objects.ContactAssignment)
 	}
-	if nbi.ContactAssignmentsIndexByContentTypeAndObjectIDAndContactIDAndRoleID[newCA.ContentType][newCA.ObjectID][newCA.Contact.ID] == nil {
-		nbi.ContactAssignmentsIndexByContentTypeAndObjectIDAndContactIDAndRoleID[newCA.ContentType][newCA.ObjectID][newCA.Contact.ID] = make(map[int]*objects.ContactAssignment)
+	if nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ObjectType][newCA.ObjectID][newCA.Contact.ID] == nil {
+		nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ObjectType][newCA.ObjectID][newCA.Contact.ID] = make(map[int]*objects.ContactAssignment)
 	}
 	newCA.Tags = append(newCA.Tags, nbi.SsotTag)
-	if _, ok := nbi.ContactAssignmentsIndexByContentTypeAndObjectIDAndContactIDAndRoleID[newCA.ContentType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID]; ok {
-		oldCA := nbi.ContactAssignmentsIndexByContentTypeAndObjectIDAndContactIDAndRoleID[newCA.ContentType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID]
+	if _, ok := nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ObjectType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID]; ok {
+		oldCA := nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ObjectType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID]
 		delete(nbi.OrphanManager[constants.ContactAssignmentsAPIPath], oldCA.ID)
 		diffMap, err := utils.JSONDiffMapExceptID(newCA, oldCA, false, nbi.SourcePriority)
 		if err != nil {
@@ -232,7 +232,7 @@ func (nbi *NetboxInventory) AddContactAssignment(ctx context.Context, newCA *obj
 			if err != nil {
 				return nil, err
 			}
-			nbi.ContactAssignmentsIndexByContentTypeAndObjectIDAndContactIDAndRoleID[newCA.ContentType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID] = patchedCA
+			nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ObjectType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID] = patchedCA
 		} else {
 			nbi.Logger.Debug(ctx, "ContactAssignment ", newCA.ID, " already exists in Netbox and is up to date...")
 		}
@@ -242,9 +242,9 @@ func (nbi *NetboxInventory) AddContactAssignment(ctx context.Context, newCA *obj
 		if err != nil {
 			return nil, err
 		}
-		nbi.ContactAssignmentsIndexByContentTypeAndObjectIDAndContactIDAndRoleID[newCA.ContentType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID] = newCA
+		nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ObjectType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID] = newCA
 	}
-	return nbi.ContactAssignmentsIndexByContentTypeAndObjectIDAndContactIDAndRoleID[newCA.ContentType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID], nil
+	return nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ObjectType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID], nil
 }
 
 // AddCustomField adds a custom field to the Netbox inventory.

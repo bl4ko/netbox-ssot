@@ -139,7 +139,7 @@ const (
 	CustomFieldDeviceUUIDLabel       = "uuid"
 	CustomFieldDeviceUUIDDescription = "Universally Unique Identifier for a device"
 
-	// Custom field for ContentTypeIPAddress, so we can determine if an ip is part of an arp table or not.
+	// Custom field for ObjectTypeIPAddress, so we can determine if an ip is part of an arp table or not.
 	CustomFieldArpEntryName        = "arp_entry"
 	CustomFieldArpEntryLabel       = "Arp Entry"
 	CustomFieldArpEntryDescription = "Was this IP collected from ARP table"
@@ -174,35 +174,6 @@ const (
 	DefaultVID  = 1
 	MaxVID      = 4094
 	TaggedVID   = 4095
-)
-
-// All content types from netbox.
-const (
-	ContentTypeDcimDevice                   = "dcim.device"
-	ContentTypeDcimDeviceRole               = "dcim.devicerole"
-	ContentTypeDcimDeviceType               = "dcim.devicetype"
-	ContentTypeDcimInterface                = "dcim.interface"
-	ContentTypeDcimLocation                 = "dcim.location"
-	ContentTypeDcimManufacturer             = "dcim.manufacturer"
-	ContentTypeDcimPlatform                 = "dcim.platform"
-	ContentTypeDcimRegion                   = "dcim.region"
-	ContentTypeDcimSite                     = "dcim.site"
-	ContentTypeVirtualDeviceContext         = "dcim.virtualdevicecontext"
-	ContentTypeIpamIPAddress                = "ipam.ipaddress"
-	ContentTypeIpamVlanGroup                = "ipam.vlangroup"
-	ContentTypeIpamVlan                     = "ipam.vlan"
-	ContentTypeIpamPrefix                   = "ipam.prefix"
-	ContentTypeTenancyTenantGroup           = "tenancy.tenantgroup"
-	ContentTypeTenancyTenant                = "tenancy.tenant"
-	ContentTypeTenancyContact               = "tenancy.contact"
-	ContentTypeTenancyContactAssignment     = "tenancy.contactassignment"
-	ContentTypeTenancyContactGroup          = "tenancy.contactgroup"
-	ContentTypeTenancyContactRole           = "tenancy.contactrole"
-	ContentTypeVirtualizationCluster        = "virtualization.cluster"
-	ContentTypeVirtualizationClusterGroup   = "virtualization.clustergroup"
-	ContentTypeVirtualizationClusterType    = "virtualization.clustertype"
-	ContentTypeVirtualizationVirtualMachine = "virtualization.virtualmachine"
-	ContentTypeVirtualizationVMInterface    = "virtualization.vminterface"
 )
 
 // Here all mappings are defined so we don't hardcode api paths of objects

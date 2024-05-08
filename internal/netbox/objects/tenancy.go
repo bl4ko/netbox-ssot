@@ -90,8 +90,8 @@ var (
 
 type ContactAssignment struct {
 	NetboxObject
-	// Content type (e.g. virtualization.virtual_machine). This field is necessary
-	ContentType string `json:"content_type,omitempty"`
+	// Content type (e.g. virtualization.virtualmachine). This field is necessary
+	ObjectType ObjectType `json:"object_type,omitempty"`
 	// ID of the dependent object. This field is necessary
 	ObjectID int `json:"object_id,omitempty"`
 	// Contact for this assignment. This field is necessary
@@ -103,5 +103,5 @@ type ContactAssignment struct {
 }
 
 func (ca ContactAssignment) String() string {
-	return fmt.Sprintf("ContactAssignment{ContentType: %s, ObjectID: %d, %v, %v}", ca.ContentType, ca.ObjectID, ca.Contact, ca.Role)
+	return fmt.Sprintf("ContactAssignment{ObjectType: %s, ObjectID: %d, %v, %v}", ca.ObjectType, ca.ObjectID, ca.Contact, ca.Role)
 }

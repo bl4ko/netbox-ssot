@@ -707,7 +707,7 @@ type testStruct2 struct {
 }
 
 type testSliceStruct struct {
-	Test []int
+	Test []testStructWithTestAttribute
 }
 
 type wrongIDField struct {
@@ -797,8 +797,8 @@ func TestJSONDiffMapExceptID(t *testing.T) {
 		{
 			name: "Fail with case reflect.Slice",
 			args: args{
-				newObj:          testSliceStruct{Test: []int{1, 2, 3}},
-				existingObj:     testSliceStruct{Test: []int{1, 2}},
+				newObj:          testSliceStruct{Test: []testStructWithTestAttribute{{Test: "test1"}, {Test: "test2"}}},
+				existingObj:     testSliceStruct{Test: []testStructWithTestAttribute{}},
 				resetFields:     false,
 				source2priority: map[string]int{},
 			},
@@ -854,7 +854,7 @@ func Test_addSliceDiff(t *testing.T) {
 		wantDiffMap map[string]interface{}
 	}{
 		{
-			name: "Test when new slice is nil and has priority",
+			name: "new slice has priority, but is empty or nil",
 			args: args{
 				newSlice:      reflect.ValueOf([]int{}),
 				existingSlice: reflect.ValueOf([]int{1, 2, 3}),
@@ -865,7 +865,7 @@ func Test_addSliceDiff(t *testing.T) {
 			wantDiffMap: map[string]interface{}{"test": []interface{}{}},
 		},
 		{
-			name: "Test string slices of different length",
+			name: "Has priority newSlice different length",
 			args: args{
 				newSlice:      reflect.ValueOf([]string{"pineapple", "strawberry"}),
 				existingSlice: reflect.ValueOf([]string{"pineapple"}),
@@ -876,10 +876,10 @@ func Test_addSliceDiff(t *testing.T) {
 			wantDiffMap: map[string]interface{}{"test": []string{"pineapple", "strawberry"}},
 		},
 		{
-			name: "Test string slices of same length",
+			name: "Has priority same lengths",
 			args: args{
 				newSlice:      reflect.ValueOf([]string{"pineapple", "strawberry"}),
-				existingSlice: reflect.ValueOf([]string{"pineapple", "apple"}),
+				existingSlice: reflect.ValueOf([]string{"pineapple", "pie"}),
 				jsonTag:       "test",
 				hasPriority:   true,
 				diffMap:       map[string]interface{}{},
@@ -887,43 +887,21 @@ func Test_addSliceDiff(t *testing.T) {
 			wantDiffMap: map[string]interface{}{"test": []string{"pineapple", "strawberry"}},
 		},
 		{
-			name: "Test interface slices of same length. Fails because elements are not structs",
+			name: "No priority newSlice different length",
 			args: args{
-				newSlice:      reflect.ValueOf([]interface{}{nil, "pineapple", "strawberry"}),
-				existingSlice: reflect.ValueOf([]interface{}{"pineapple", "apple"}),
+				newSlice:      reflect.ValueOf([]string{"pineapple", "strawberry"}),
+				existingSlice: reflect.ValueOf([]string{"pineapple"}),
 				jsonTag:       "test",
-				hasPriority:   true,
-			},
-			wantErr: true,
-		},
-		{
-			name: "Test interface slices of same length. Fails because elements don't have an ID attribute",
-			args: args{
-				newSlice:      reflect.ValueOf([]testStructWithTestAttribute{{Test: "1"}, {Test: "test"}}),
-				existingSlice: reflect.ValueOf([]testStructWithTestAttribute{{Test: "1"}}),
-				jsonTag:       "test",
-				hasPriority:   true,
+				hasPriority:   false,
 				diffMap:       map[string]interface{}{},
 			},
-			wantErr:     true,
 			wantDiffMap: map[string]interface{}{},
 		},
 		{
-			name: "Elements have an ID attribute but fails because it is not int",
+			name: "Has priority. Different length. Slice with structs with ID attributes.",
 			args: args{
-				newSlice:      reflect.ValueOf([]testStructWithStringIDAttribute{{ID: "1"}, {ID: "2"}}),
-				existingSlice: reflect.ValueOf([]testStructWithStringIDAttribute{{ID: "1"}}),
-				jsonTag:       "test",
-				hasPriority:   true,
-				diffMap:       map[string]interface{}{},
-			},
-			wantErr: true,
-		},
-		{
-			name: "nil pointers should be skipped",
-			args: args{
-				newSlice:      reflect.ValueOf([]*testStructWithIntIDAttribute{{ID: 1}, nil, {ID: 2}}),
-				existingSlice: reflect.ValueOf([]*testStructWithIntIDAttribute{{ID: 1}}),
+				newSlice:      reflect.ValueOf([]testStructWithIntIDAttribute{{ID: 1}, {ID: 2}}),
+				existingSlice: reflect.ValueOf([]testStructWithIntIDAttribute{{ID: 1}}),
 				jsonTag:       "test",
 				hasPriority:   true,
 				diffMap:       map[string]interface{}{},
@@ -932,10 +910,34 @@ func Test_addSliceDiff(t *testing.T) {
 			wantDiffMap: map[string]interface{}{"test": []int{1, 2}},
 		},
 		{
-			name: "Existing slice contains ID attributes which are not int",
+			name: "Has priority. Same length but different. Slice with structs with ID attributes.",
 			args: args{
 				newSlice:      reflect.ValueOf([]testStructWithIntIDAttribute{{ID: 1}, {ID: 2}}),
-				existingSlice: reflect.ValueOf([]testStructWithStringIDAttribute{{ID: "1"}, {ID: "2"}}),
+				existingSlice: reflect.ValueOf([]testStructWithIntIDAttribute{{ID: 1}, {ID: 3}}),
+				jsonTag:       "test",
+				hasPriority:   true,
+				diffMap:       map[string]interface{}{},
+			},
+			wantErr:     false,
+			wantDiffMap: map[string]interface{}{"test": []int{1, 2}},
+		},
+		{
+			name: "Has priority. Same length and the same. Slice with structs with ID attributes.",
+			args: args{
+				newSlice:      reflect.ValueOf([]testStructWithIntIDAttribute{{ID: 1}, {ID: 2}}),
+				existingSlice: reflect.ValueOf([]testStructWithIntIDAttribute{{ID: 1}, {ID: 2}}),
+				jsonTag:       "test",
+				hasPriority:   false,
+				diffMap:       map[string]interface{}{},
+			},
+			wantErr:     false,
+			wantDiffMap: map[string]interface{}{},
+		},
+		{
+			name: "Test interface slices of same length. Fails because struct elements don't have an ID attribute",
+			args: args{
+				newSlice:      reflect.ValueOf([]testStructWithTestAttribute{{Test: "1"}, {Test: "test"}}),
+				existingSlice: reflect.ValueOf([]testStructWithTestAttribute{{Test: "1"}}),
 				jsonTag:       "test",
 				hasPriority:   true,
 				diffMap:       map[string]interface{}{},

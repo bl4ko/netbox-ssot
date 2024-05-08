@@ -3,7 +3,6 @@ package utils
 import (
 	"fmt"
 	"reflect"
-	"slices"
 	"strings"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
@@ -194,98 +193,98 @@ func JSONDiffMapExceptID(newObj, existingObj interface{}, resetFields bool, sour
 // To achieve this the map is of the following format:
 // map[jsonTag] = [id1, id2, id3] // If the slice contains objects with ID field
 // map[jsonTag] = [value1, value2, value3] // If the slice contains strings.
+//
+// This function only works for slices with comparable elements (e.g. ints, strings) and
+// slices that contain objects that are structs but have ID attribute.
 func addSliceDiff(newSlice reflect.Value, existingSlice reflect.Value, jsonTag string, hasPriority bool, diffMap map[string]interface{}) error {
-	// If first slice is nil, that means that we reset the value
+	// If new slice doesn't have priority don't do anything
+	if !hasPriority {
+		return nil
+	}
+
+	// If first slice is nil but second is not that means that we reset the value.
 	if !newSlice.IsValid() || newSlice.Len() == 0 {
 		if existingSlice.IsValid() && existingSlice.Len() > 0 {
-			if hasPriority {
-				diffMap[jsonTag] = []interface{}{}
-			}
+			diffMap[jsonTag] = []interface{}{}
 		}
 		return nil
 	}
 
-	// There are going to be 2 kinds of comparison.
-	// One where slice will contain objects, in that case we
-	// will compare ids of the objects, else we will compare
-	// the values of the slice
-	switch newSlice.Index(0).Kind() {
-	case reflect.Int:
-		return fmt.Errorf("integer slice comparison not implemented yet")
-	case reflect.String:
-		strSet := make(map[string]bool)
-		for j := 0; j < newSlice.Len(); j++ {
-			val := newSlice.Index(j).Interface().(string) //nolint:forcetypeassert
-			strSet[val] = true
-		}
-		if len(strSet) != existingSlice.Len() {
-			if hasPriority {
-				diffMap[jsonTag] = newSlice.Interface()
-			}
-		} else {
-			if hasPriority {
-				for j := 0; j < existingSlice.Len(); j++ {
-					val := existingSlice.Index(j).Interface().(string) //nolint:forcetypeassert
-					if !strSet[val] {
-						diffMap[jsonTag] = newSlice.Interface()
-						return nil
-					}
-				}
-			}
-		}
+	// Convert slices to comparable slices (e.g. slices containging structs with ids, to only slices
+	// of ids.)
+	newSlice, err := convertSliceToComparableSlice(newSlice)
+	if err != nil {
+		return fmt.Errorf("error converting slice to comparable slice: %s", err)
+	}
+	existingSlice, err = convertSliceToComparableSlice(existingSlice)
+	if err != nil {
+		return fmt.Errorf("error converting slice to comparable slice: %s", err)
+	}
 
-	default:
-		newIDSet := make(map[int]bool, newSlice.Len())
-		for j := 0; j < newSlice.Len(); j++ {
-			element := newSlice.Index(j)
-			if newSlice.Index(j).Kind() == reflect.Pointer && newSlice.Index(j).IsNil() {
-				continue
-			}
+	// Compare if slices are the same
+	if newSlice.Len() != existingSlice.Len() {
+		diffMap[jsonTag] = newSlice.Interface()
+		return nil
+	}
+	newSet := sliceToSet(newSlice)
+	existingSet := sliceToSet(existingSlice)
+	for key := range newSet {
+		fmt.Printf("Key: %v, Type: %T\n", key, key)
+	}
+	for key := range existingSet {
+		fmt.Printf("Key: %v, Type: %T\n", key, key)
+	}
+	if !reflect.DeepEqual(newSet, existingSet) {
+		diffMap[jsonTag] = newSlice.Interface()
+		return nil
+	}
+
+	return nil
+}
+
+// Converts slice of structs with IDs to slice containing only ids. If slice
+// contains comparable elements don't do anything.
+func convertSliceToComparableSlice(slice reflect.Value) (reflect.Value, error) {
+	// We determine the types of elements of the slice by checking the first element.
+	firstElement := slice.Index(0)
+	if firstElement.Kind() == reflect.Pointer {
+		firstElement = firstElement.Elem()
+	}
+	if firstElement.Kind() == reflect.Struct {
+		if !firstElement.FieldByName("ID").IsValid() {
+			return reflect.ValueOf(nil), fmt.Errorf("slice contains struct that don't contain id field")
+		}
+		idSlice := make([]int, 0)
+		for i := 0; i < slice.Len(); i++ {
+			element := slice.Index(i)
 			if element.Kind() == reflect.Ptr {
 				element = element.Elem()
 			}
-			if element.Kind() != reflect.Struct {
-				return fmt.Errorf("slice diff only works for structs")
-			}
-			idField := element.FieldByName("ID")
-			if !idField.IsValid() {
-				return fmt.Errorf("slice contains elements that have no ID attribute")
-			}
-			if idField.Kind() != reflect.Int {
-				return fmt.Errorf("slice contains elements that have an ID attribute which is not of int kind")
-			}
-			id := idField.Interface().(int) //nolint:forcetypeassert
-			newIDSet[id] = true
-		}
-
-		if hasPriority {
-			newIDSlice := make([]int, 0, len(newIDSet))
-			for id := range newIDSet {
-				newIDSlice = append(newIDSlice, id)
-			}
-			slices.Sort(newIDSlice)
-
-			if len(newIDSet) != existingSlice.Len() && hasPriority {
-				diffMap[jsonTag] = newIDSlice
-			} else {
-				for j := 0; j < existingSlice.Len(); j++ {
-					existingSliceEl := existingSlice.Index(j)
-					if existingSlice.Index(j).Kind() == reflect.Ptr {
-						existingSliceEl = existingSliceEl.Elem()
-					}
-					id, ok := existingSliceEl.FieldByName("ID").Interface().(int)
-					if !ok {
-						return fmt.Errorf("slice contains non id values")
-					}
-					if _, ok := newIDSet[id]; !ok {
-						diffMap[jsonTag] = newIDSlice
-						return nil
-					}
-				}
+			idField := element.FieldByName("ID").Interface()
+			switch value := idField.(type) {
+			case int:
+				idSlice = append(idSlice, value)
+			default:
+				return reflect.ValueOf(nil), fmt.Errorf("id is not int")
 			}
 		}
+		return reflect.ValueOf(idSlice), nil
 	}
-	return nil
+
+	return slice, nil
+}
+
+// Converts slice to a set.
+func sliceToSet(slice reflect.Value) map[interface{}]bool {
+	set := make(map[interface{}]bool)
+	for i := 0; i < slice.Len(); i++ {
+		element := slice.Index(i)
+		if element.Kind() == reflect.Ptr {
+			element = element.Elem()
+		}
+		set[element.Interface()] = true
+	}
+	return set
 }
 
 // Returns json form for patching the difference e.g. { "ID": 1 }.

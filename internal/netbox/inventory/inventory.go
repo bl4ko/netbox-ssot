@@ -32,8 +32,8 @@ type NetboxInventory struct {
 	ContactRolesIndexByName map[string]*objects.ContactRole
 	// ContactsIndexByName is a map of all contacts in the Netbox's inventory, indexed by their names
 	ContactsIndexByName map[string]*objects.Contact
-	// ContactAssignmentsIndexByContentTypeAndObjectIDAndContactIDAndRoleID is a map of all contact assignments indexed by their content type, object id, contact id and role id.
-	ContactAssignmentsIndexByContentTypeAndObjectIDAndContactIDAndRoleID map[string]map[int]map[int]map[int]*objects.ContactAssignment
+	// ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID is a map of all contact assignments indexed by their content type, object id, contact id and role id.
+	ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID map[objects.ObjectType]map[int]map[int]map[int]*objects.ContactAssignment
 	// SitesIndexByName is a map of all sites in the Netbox's inventory, indexed by their name
 	SitesIndexByName map[string]*objects.Site
 	// ManufacturersIndexByName is a map of all manufacturers in the Netbox's inventory, indexed by their name
