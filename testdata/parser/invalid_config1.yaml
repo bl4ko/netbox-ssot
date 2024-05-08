@@ -1,20 +1,19 @@
 logger:
   level: 2
-  dest: "test" 
+  dest: "test"
 
 netbox:
   apiToken: "netbox-token"
-  hostname: netbox.example.com
-  port: 3333
+  port: 666
 
 source:
   - name: testolvm
-    type: unknown
+    type: ovirt
     hostname: testolvm.example.com
     username: admin@internal
     password: adminpass
-    permittedSubnets: 
+    permittedSubnets:
       - 172.16.0.0/12
       - 192.168.0.0/16
       - fd00::/8
-    
+    validateCert: true

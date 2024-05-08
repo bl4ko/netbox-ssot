@@ -1,6 +1,6 @@
 logger:
   level: 2
-  dest: "test" 
+  dest: "test"
 
 netbox:
   apiToken: "netbox-token"
@@ -14,18 +14,18 @@ source:
     hostname: testolvm.example.com
     username: admin@internal
     password: adminpass
-    permittedSubnets: 
+    permittedSubnets:
       - 172.16.0.0/12
       - 192.168.0.0/16
       - fd00::/8
     validateCert: true
-    
+
   - name: testvcenter
     type: vmware
     hostname: testvcenter.example.com
     username: admin
     password: adminpass
-    permittedSubnets: 
+    permittedSubnets:
       - 172.16.0.0/12
 
   - name: prodvcenter
@@ -33,5 +33,5 @@ source:
     hostname: prodvcenter.example.com
     username: test
     password: test
-    permittedSubnets: 
+    permittedSubnets:
     - 10.0.0.0/8

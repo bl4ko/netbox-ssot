@@ -1,6 +1,6 @@
 logger:
   level: 2
-  dest: "test" 
+  dest: "test"
 
 netbox:
   apiToken: "netbox-token"
@@ -13,18 +13,18 @@ source:
     hostname: testolvm.example.com
     username: admin@internal
     password: adminpass
-    permittedSubnets: 
+    permittedSubnets:
       - 172.16.0.0/12
       - 192.168.0.0/16
       - fd00::/8
     validateCert: true
-    
+
   - name: testolvm
     type: ovirt
     hostname: ovirt.example.com
     username: admin
     password: adminpass
-    permittedSubnets: 
+    permittedSubnets:
       - 172.16.0.0/12
 
   - name: prodovirt
@@ -33,5 +33,5 @@ source:
     hostname: ovirt.example.com
     username: test
     password: test
-    permittedSubnets: 
+    permittedSubnets:
     - 10.0.0.0/8

@@ -1,6 +1,6 @@
 logger:
   level: 2
-  dest: "test" 
+  dest: "test"
 
 netbox:
   apiToken: "netbox-token"
@@ -13,9 +13,8 @@ source:
     hostname: testolvm.example.com
     username: admin@internal
     password: adminpass
-    permittedSubnets: 
+    permittedSubnets:
       - 172.16.0.0/12
       - 192.168.0.0/16
       - fd00::/8
     validateCert: true
-    

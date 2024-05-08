@@ -536,3 +536,55 @@ func TestFilterInterfaceName(t *testing.T) {
 		})
 	}
 }
+
+func TestLoadExtraCert(t *testing.T) {
+	tests := []struct {
+		name     string
+		certPath string
+		wantErr  bool
+	}{
+		{
+			name:     "No cert load (empty string)",
+			certPath: "",
+			wantErr:  false,
+		},
+		{
+			name:     "Load valid cert",
+			certPath: "../../testdata/certificate/cert.pem",
+			wantErr:  false,
+		},
+		{
+			name:     "Throw error on non-existent path",
+			certPath: "non existent path",
+			wantErr:  true,
+		},
+		{
+			name:     "Throw error on invalid cert data",
+			certPath: "invalid cert path",
+			wantErr:  true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := LoadExtraCert(tt.certPath)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("LoadExtraCert(%q) error = %v, wantErr %v", tt.certPath, err, tt.wantErr)
+			}
+			if err == nil && got == nil {
+				t.Errorf("LoadExtraCert(%q) = nil, expected non-nil CertPool", tt.certPath)
+			}
+		})
+	}
+}
+
+func TestLoadExtraCertInTransportConfig(t *testing.T) {
+	_, err := LoadExtraCertInTransportConfig("wrong path")
+	if err == nil {
+		t.Errorf("should throw error on wrong path")
+	}
+
+	_, err = LoadExtraCertInTransportConfig("../../testdata/certificate/cert.pem")
+	if err != nil {
+		t.Errorf("error loading extra cert: %s", err)
+	}
+}

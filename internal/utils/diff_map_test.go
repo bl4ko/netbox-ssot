@@ -1155,3 +1155,49 @@ func Test_addPrimaryDiff(t *testing.T) {
 		})
 	}
 }
+
+func Test_convertSliceToComparableSlice(t *testing.T) {
+	type args struct {
+		slice reflect.Value
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    reflect.Value
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := convertSliceToComparableSlice(tt.args.slice)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("convertSliceToComparableSlice() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("convertSliceToComparableSlice() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_sliceToSet(t *testing.T) {
+	type args struct {
+		slice reflect.Value
+	}
+	tests := []struct {
+		name string
+		args args
+		want map[interface{}]bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := sliceToSet(tt.args.slice); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("sliceToSet() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

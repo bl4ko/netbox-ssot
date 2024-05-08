@@ -10,7 +10,7 @@ import (
 )
 
 func TestValidonfig(t *testing.T) {
-	filename := filepath.Join("testdata", "valid_config1.yaml")
+	filename := filepath.Join("../../testdata/parser", "valid_config1.yaml")
 	want := &Config{
 		Logger: &LoggerConfig{
 			Level: 2,
@@ -125,7 +125,7 @@ func TestParseValidConfigs(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.filename, func(t *testing.T) {
-			filename := filepath.Join("testdata", tc.filename)
+			filename := filepath.Join("../../testdata/parser", tc.filename)
 			config, err := ParseConfig(filename)
 			if err != nil {
 				t.Errorf("error parsing config: %s", err)
@@ -176,13 +176,15 @@ func TestParseConfigInvalidConfigs(t *testing.T) {
 		{filename: "invalid_config29.yaml", expectedErr: "yaml: unmarshal errors:\n  line 2: cannot unmarshal !!str `2dasf` into int"},
 		{filename: "invalid_config30.yaml", expectedErr: "source[fortigate].apiToken is required for fortigate"},
 		{filename: "invalid_config31.yaml", expectedErr: "netbox.arpDataLifeSpan: cannot be negative"},
-		{filename: "invalid_config1111.yaml", expectedErr: "open testdata/invalid_config1111.yaml: no such file or directory"},
+		{filename: "invalid_config1111.yaml", expectedErr: "open ../../testdata/parser/invalid_config1111.yaml: no such file or directory"},
 		{filename: "invalid_config32.yaml", expectedErr: "source[wrong].datacenterClusterGroupRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
+		{filename: "invalid_config33.yaml", expectedErr: "source[wrong].caFile: open \\//: no such file or directory"},
+		{filename: "invalid_config34.yaml", expectedErr: "netbox.caFile: open wrong path: no such file or directory"},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.filename, func(t *testing.T) {
-			filename := filepath.Join("testdata", tc.filename)
+			filename := filepath.Join("../../testdata/parser", tc.filename)
 			_, err := ParseConfig(filename)
 			if err == nil {
 				t.Errorf("Expected error for %v, got nil", tc.filename)

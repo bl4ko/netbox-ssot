@@ -228,12 +228,6 @@ func addSliceDiff(newSlice reflect.Value, existingSlice reflect.Value, jsonTag s
 	}
 	newSet := sliceToSet(newSlice)
 	existingSet := sliceToSet(existingSlice)
-	for key := range newSet {
-		fmt.Printf("Key: %v, Type: %T\n", key, key)
-	}
-	for key := range existingSet {
-		fmt.Printf("Key: %v, Type: %T\n", key, key)
-	}
 	if !reflect.DeepEqual(newSet, existingSet) {
 		diffMap[jsonTag] = newSlice.Interface()
 		return nil
