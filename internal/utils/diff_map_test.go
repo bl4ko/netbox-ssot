@@ -936,8 +936,20 @@ func Test_addSliceDiff(t *testing.T) {
 		{
 			name: "Test interface slices of same length. Fails because struct elements don't have an ID attribute",
 			args: args{
-				newSlice:      reflect.ValueOf([]testStructWithTestAttribute{{Test: "1"}, {Test: "test"}}),
+				newSlice:      reflect.ValueOf([]testStructWithIntIDAttribute{{ID: 1}}),
 				existingSlice: reflect.ValueOf([]testStructWithTestAttribute{{Test: "1"}}),
+				jsonTag:       "test",
+				hasPriority:   true,
+				diffMap:       map[string]interface{}{},
+			},
+			wantErr:     true,
+			wantDiffMap: map[string]interface{}{},
+		},
+		{
+			name: "Test interface slices of same length. Fails because struct elements don't have an ID attribute",
+			args: args{
+				existingSlice: reflect.ValueOf([]testStructWithTestAttribute{{Test: "1"}, {Test: "test"}}),
+				newSlice:      reflect.ValueOf([]testStructWithTestAttribute{{Test: "1"}}),
 				jsonTag:       "test",
 				hasPriority:   true,
 				diffMap:       map[string]interface{}{},

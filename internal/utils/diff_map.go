@@ -221,18 +221,15 @@ func addSliceDiff(newSlice reflect.Value, existingSlice reflect.Value, jsonTag s
 		return fmt.Errorf("error converting slice to comparable slice: %s", err)
 	}
 
-	// Compare if slices are the same
-	if newSlice.Len() != existingSlice.Len() {
-		diffMap[jsonTag] = newSlice.Interface()
-		return nil
-	}
+	// Convert slices to sets for comparison
 	newSet := sliceToSet(newSlice)
 	existingSet := sliceToSet(existingSlice)
+
+	// Compare if slices are the same
 	if !reflect.DeepEqual(newSet, existingSet) {
 		diffMap[jsonTag] = newSlice.Interface()
 		return nil
 	}
-
 	return nil
 }
 
