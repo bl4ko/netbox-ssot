@@ -7,7 +7,7 @@ require (
 	github.com/cisco-en-programmability/dnacenter-go-sdk/v5 v5.0.27
 	github.com/luthermonson/go-proxmox v0.0.0-beta6
 	github.com/ovirt/go-ovirt v4.3.4+incompatible
-	github.com/vmware/govmomi v0.37.1
+	github.com/vmware/govmomi v0.37.2
 	golang.org/x/text v0.15.0
 	gopkg.in/yaml.v3 v3.0.1
 )
