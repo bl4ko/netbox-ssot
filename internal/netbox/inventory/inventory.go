@@ -3,6 +3,8 @@ package inventory
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -181,6 +183,11 @@ func (nbi *NetboxInventory) Init() error {
 		return fmt.Errorf("create new netbox client: %s", err)
 	}
 
+	err = nbi.checkVersion()
+	if err != nil {
+		return err
+	}
+
 	// Order matters. TODO: use parallelization in the future, on the init functions that can be parallelized
 	initFunctions := []func(context.Context) error{
 		nbi.InitCustomFields,
@@ -221,5 +228,22 @@ func (nbi *NetboxInventory) Init() error {
 		nbi.Logger.Infof(nbi.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionName(initFunc), duration.Seconds())
 	}
 
+	return nil
+}
+
+func (nbi *NetboxInventory) checkVersion() error {
+	version, err := service.GetVersion(nbi.Ctx, nbi.NetboxAPI)
+	if err != nil {
+		return fmt.Errorf("get version: %s", err)
+	}
+	supportedVersion := 4
+	versionComponents := strings.Split(version, ".")
+	majorVersion, err := strconv.Atoi(versionComponents[0])
+	if err != nil {
+		return fmt.Errorf("parse major version: %s", err)
+	}
+	if majorVersion < supportedVersion {
+		return fmt.Errorf("this version of netbox-ssot works only with netbox version > 4.x.x, but received version: %s", version)
+	}
 	return nil
 }

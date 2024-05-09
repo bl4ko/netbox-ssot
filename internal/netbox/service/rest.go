@@ -13,6 +13,10 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
+type VersionResponse struct {
+	NetboxVersion string `json:"netbox-version"`
+}
+
 // Standard response format from Netbox's API.
 type Response[T any] struct {
 	Count    int     `json:"count"`
@@ -46,6 +50,25 @@ var type2path = map[reflect.Type]string{
 	reflect.TypeOf((*objects.Tag)(nil)).Elem():                  constants.TagsAPIPath,
 	reflect.TypeOf((*objects.ContactAssignment)(nil)).Elem():    constants.ContactAssignmentsAPIPath,
 	reflect.TypeOf((*objects.Prefix)(nil)).Elem():               constants.PrefixesAPIPath,
+}
+
+// Function that queries and returns netbox version on success.
+func GetVersion(ctx context.Context, netboxClient *NetboxClient) (string, error) {
+	var versionResponse VersionResponse
+	netboxClient.Logger.Debugf(ctx, "Getting netbox's version")
+	response, err := netboxClient.doRequest(MethodGet, "/api/status", nil)
+	if err != nil {
+		return "", err
+	}
+	if response.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("unexpected status code %d: %s", response.StatusCode, response.Body)
+	}
+
+	err = json.Unmarshal(response.Body, &versionResponse)
+	if err != nil {
+		return "", fmt.Errorf("error unmarshalling body: %s", err)
+	}
+	return versionResponse.NetboxVersion, nil
 }
 
 // GetAll queries all objects of type T from Netbox's API.
