@@ -13,23 +13,23 @@ import (
 )
 
 type fmcClient struct {
-	HTTPClient     *http.Client
-	BaseURL        string
-	Username       string
-	Password       string
-	AccessToken    string
-	RefreshToken   string
-	DefaultTimeout time.Duration
+	HTTPClient   *http.Client
+	BaseURL      string
+	Username     string
+	Password     string
+	AccessToken  string
+	RefreshToken string
+	Timeout      time.Duration
 }
 
 func newFMCClient(username string, password string, httpScheme string, hostname string, port int, httpClient *http.Client) (*fmcClient, error) {
 	// First we obtain access and refresh token
 	c := &fmcClient{
-		HTTPClient:     httpClient,
-		BaseURL:        fmt.Sprintf("%s://%s:%d/api", httpScheme, hostname, port),
-		Username:       username,
-		Password:       password,
-		DefaultTimeout: time.Second * constants.DefaultAPITimeout,
+		HTTPClient: httpClient,
+		BaseURL:    fmt.Sprintf("%s://%s:%d/api", httpScheme, hostname, port),
+		Username:   username,
+		Password:   password,
+		Timeout:    time.Second * constants.DefaultAPITimeout,
 	}
 
 	aToken, rToken, err := c.Authenticate()
@@ -45,7 +45,7 @@ func newFMCClient(username string, password string, httpScheme string, hostname 
 
 // Authenticate performs authentication on FMC API. If successful it returns access and refresh tokens.
 func (fmcc fmcClient) Authenticate() (string, string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), fmcc.DefaultTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), fmcc.Timeout)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s/fmc_platform/v1/auth/generatetoken", fmcc.BaseURL), nil)
 	if err != nil {
@@ -102,7 +102,7 @@ type Device struct {
 }
 
 func (fmcc *fmcClient) MakeRequest(ctx context.Context, method, path string, body io.Reader) (*http.Response, error) {
-	ctx, cancel := context.WithTimeout(ctx, fmcc.DefaultTimeout)
+	ctx, cancel := context.WithTimeout(ctx, fmcc.Timeout)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, method, fmt.Sprintf("%s/%s", fmcc.BaseURL, path), body)
 	if err != nil {

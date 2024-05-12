@@ -182,7 +182,7 @@ func Create[T any](ctx context.Context, netboxClient *NetboxClient, object *T) (
 // Function that deletes object on path objectPath.
 // It deletes objects in pages of 50 so we don't stress
 // the API too much.
-func (api *NetboxClient) BulkDeleteObjects(ctx context.Context, objectPath string, idSet map[int]bool) error {
+func (nbClient *NetboxClient) BulkDeleteObjects(ctx context.Context, objectPath string, idSet map[int]bool) error {
 	const pageSize = 50
 
 	// Convert the map to a slice for easier slicing.
@@ -192,7 +192,7 @@ func (api *NetboxClient) BulkDeleteObjects(ctx context.Context, objectPath strin
 	}
 
 	for i := 0; i < len(ids); i += pageSize {
-		api.Logger.Debugf(ctx, "Deleting %s with pagesize=%d and offset=%d", objectPath, pageSize, i)
+		nbClient.Logger.Debugf(ctx, "Deleting %s with pagesize=%d and offset=%d", objectPath, pageSize, i)
 		end := i + pageSize
 		if end > len(ids) {
 			end = len(ids)
@@ -211,7 +211,7 @@ func (api *NetboxClient) BulkDeleteObjects(ctx context.Context, objectPath strin
 		}
 
 		requestBodyBuffer := bytes.NewBuffer(requestBody)
-		response, err := api.doRequest(MethodDelete, objectPath, requestBodyBuffer)
+		response, err := nbClient.doRequest(MethodDelete, objectPath, requestBodyBuffer)
 		if err != nil {
 			return err
 		}
@@ -220,7 +220,7 @@ func (api *NetboxClient) BulkDeleteObjects(ctx context.Context, objectPath strin
 			return fmt.Errorf("unexpected status code: %d: %s", response.StatusCode, response.Body)
 		}
 	}
-	api.Logger.Debugf(ctx, "Successfully deleted all objects of path %s", objectPath)
+	nbClient.Logger.Debugf(ctx, "Successfully deleted all objects of path %s", objectPath)
 
 	return nil
 }
@@ -228,10 +228,10 @@ func (api *NetboxClient) BulkDeleteObjects(ctx context.Context, objectPath strin
 // Function that deletes objectas on path objectPath.
 // It deletes a single object at a time. It is alternative to bulk delete
 // because if one delete fails other still go.
-func (api *NetboxClient) DeleteObject(ctx context.Context, objectPath string, id int) error {
-	api.Logger.Debugf(ctx, "Deleting object with id %d on route %s", id, objectPath)
+func (nbClient *NetboxClient) DeleteObject(ctx context.Context, objectPath string, id int) error {
+	nbClient.Logger.Debugf(ctx, "Deleting object with id %d on route %s", id, objectPath)
 
-	response, err := api.doRequest(MethodDelete, fmt.Sprintf("%s%d/", objectPath, id), nil)
+	response, err := nbClient.doRequest(MethodDelete, fmt.Sprintf("%s%d/", objectPath, id), nil)
 	if err != nil {
 		return err
 	}
