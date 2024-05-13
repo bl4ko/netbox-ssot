@@ -503,13 +503,13 @@ func (o *OVirtSource) collectHostNicsData(nbHost *objects.Device, nbi *inventory
 		// var nicType *objects.InterfaceType
 		nicSpeedBips, exists := nic.Speed()
 		if !exists {
-			o.Logger.Warning(o.Ctx, "speed for oVirt nic with id ", nicID, " is empty.")
+			o.Logger.Debugf(o.Ctx, "speed for oVirt nic with id %s is empty", nicID)
 		}
 		nicSpeedKbps := nicSpeedBips / constants.KB
 
 		nicMtu, exists := nic.Mtu()
 		if !exists {
-			o.Logger.Warning(o.Ctx, "mtu for oVirt nic with id ", nicID, " is empty.")
+			o.Logger.Debugf(o.Ctx, "mtu for oVirt nic with id %s is empty", nicID)
 		}
 
 		nicComment, _ := nic.Comment()

@@ -890,10 +890,7 @@ func (vc *VmwareSource) syncVMInterfaces(nbi *inventory.NetboxInventory, vmwareV
 			vmIPv4Addresses, vmIPv6Addresses = vc.addVMInterfaceIPs(nbi, nbVMInterface, nicIPv4Addresses, nicIPv6Addresses, vmIPv4Addresses, vmIPv6Addresses)
 		}
 	}
-	err := vc.setVMPrimaryIPAddress(nbi, netboxVM, vmDefaultGatewayIpv4, vmDefaultGatewayIpv6, vmIPv4Addresses, vmIPv6Addresses)
-	if err != nil {
-		return fmt.Errorf("setting vm primary ip address: %s", err)
-	}
+	vc.setVMPrimaryIPAddress(nbi, netboxVM, vmDefaultGatewayIpv4, vmDefaultGatewayIpv6, vmIPv4Addresses, vmIPv6Addresses)
 	return nil
 }
 
@@ -1111,7 +1108,7 @@ func (vc *VmwareSource) addVMInterfaceIPs(nbi *inventory.NetboxInventory, nbVMIn
 // we loop through all of the collected IPv4 and IPv6 addresses for the vm.
 // If any of the ips is in the same subnet as the default gateway, we choose it.
 // If there is no ip in the subnet of the default gateway, we choose the first one.
-func (vc *VmwareSource) setVMPrimaryIPAddress(nbi *inventory.NetboxInventory, netboxVM *objects.VM, vmDefaultGatewayIpv4 string, vmDefaultGatewayIpv6 string, vmIPv4Addresses []*objects.IPAddress, vmIPv6Addresses []*objects.IPAddress) error {
+func (vc *VmwareSource) setVMPrimaryIPAddress(nbi *inventory.NetboxInventory, netboxVM *objects.VM, vmDefaultGatewayIpv4 string, vmDefaultGatewayIpv6 string, vmIPv4Addresses []*objects.IPAddress, vmIPv6Addresses []*objects.IPAddress) {
 	if len(vmIPv4Addresses) > 0 || len(vmIPv6Addresses) > 0 {
 		var vmIPv4PrimaryAddress *objects.IPAddress
 		for _, addr := range vmIPv4Addresses {
@@ -1130,10 +1127,9 @@ func (vc *VmwareSource) setVMPrimaryIPAddress(nbi *inventory.NetboxInventory, ne
 		newNetboxVM.PrimaryIPv6 = vmIPv6PrimaryAddress
 		_, err := nbi.AddVM(vc.Ctx, &newNetboxVM)
 		if err != nil {
-			return fmt.Errorf("updating vm's primary ip: %s", err)
+			vc.Logger.Warningf(vc.Ctx, "updating vm's primary ip: %s", err)
 		}
 	}
-	return nil
 }
 
 func (vc *VmwareSource) addVMContact(nbi *inventory.NetboxInventory, nbVM *objects.VM, vmOwners []string, vmOwnerEmails []string) error {
