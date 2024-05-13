@@ -234,10 +234,10 @@ func (pas *PaloAltoSource) syncIPs(nbi *inventory.NetboxInventory, nbIface *obje
 				pas.Logger.Errorf(pas.Ctx, "adding ip address %s failed with error: %s", ipAddress, err)
 				continue
 			}
-			prefix, err := utils.ExtractPrefixFromIPAddress(ipAddress)
+			prefix, mask, err := utils.GetPrefixAndMaskFromIPAddress(ipAddress)
 			if err != nil {
 				pas.Logger.Warningf(pas.Ctx, "extract prefix from address: %s", err)
-			} else {
+			} else if mask != constants.MaxIPv4MaskBits {
 				var prefixTenant *objects.Tenant
 				if prefixVlan != nil {
 					prefixTenant = prefixVlan.Tenant

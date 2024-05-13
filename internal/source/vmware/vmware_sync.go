@@ -481,16 +481,16 @@ func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetboxInventory, vcHo
 				}
 				hostIPv4Addresses = append(hostIPv4Addresses, nbIPv4Address)
 
-				prefix, err := utils.ExtractPrefixFromIPAddress(nbIPv4Address.Address)
+				prefix, mask, err := utils.GetPrefixAndMaskFromIPAddress(nbIPv4Address.Address)
 				if err != nil {
 					vc.Logger.Warningf(vc.Ctx, "extract prefix from ip address: %s", err)
-					continue
-				}
-				_, err = nbi.AddPrefix(vc.Ctx, &objects.Prefix{
-					Prefix: prefix,
-				})
-				if err != nil {
-					vc.Logger.Errorf(vc.Ctx, "add prefix: %s", err)
+				} else if mask != constants.MaxIPv4MaskBits {
+					_, err = nbi.AddPrefix(vc.Ctx, &objects.Prefix{
+						Prefix: prefix,
+					})
+					if err != nil {
+						vc.Logger.Errorf(vc.Ctx, "add prefix: %s", err)
+					}
 				}
 			}
 
@@ -518,12 +518,6 @@ func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetboxInventory, vcHo
 							continue
 						}
 						hostIPv6Addresses = append(hostIPv6Addresses, nbIPv6Address)
-
-						prefix, err := utils.ExtractPrefixFromIPAddress(nbIPv6Address.Address)
-						if err != nil {
-							vc.Logger.Warningf(vc.Ctx, "extract prefix %s", prefix)
-							continue
-						}
 					}
 				}
 			}
@@ -1055,16 +1049,16 @@ func (vc *VmwareSource) addVMInterfaceIPs(nbi *inventory.NetboxInventory, nbVMIn
 				continue
 			}
 			vmIPv4Addresses = append(vmIPv4Addresses, nbIPv4Address)
-			prefix, err := utils.ExtractPrefixFromIPAddress(nbIPv4Address.Address)
+			prefix, mask, err := utils.GetPrefixAndMaskFromIPAddress(nbIPv4Address.Address)
 			if err != nil {
 				vc.Logger.Warningf(vc.Ctx, "extract prefix from ip address: %s", err)
-				continue
-			}
-			_, err = nbi.AddPrefix(vc.Ctx, &objects.Prefix{
-				Prefix: prefix,
-			})
-			if err != nil {
-				vc.Logger.Errorf(vc.Ctx, "add prefix: %s", err)
+			} else if mask != constants.MaxIPv4MaskBits {
+				_, err = nbi.AddPrefix(vc.Ctx, &objects.Prefix{
+					Prefix: prefix,
+				})
+				if err != nil {
+					vc.Logger.Errorf(vc.Ctx, "add prefix: %s", err)
+				}
 			}
 		}
 	}
@@ -1089,16 +1083,16 @@ func (vc *VmwareSource) addVMInterfaceIPs(nbi *inventory.NetboxInventory, nbVMIn
 			continue
 		}
 		vmIPv6Addresses = append(vmIPv6Addresses, nbIPv6Address)
-		prefix, err := utils.ExtractPrefixFromIPAddress(nbIPv6Address.Address)
+		prefix, mask, err := utils.GetPrefixAndMaskFromIPAddress(nbIPv6Address.Address)
 		if err != nil {
 			vc.Logger.Warningf(vc.Ctx, "extract prefix from ip address: %s", err)
-			continue
-		}
-		_, err = nbi.AddPrefix(vc.Ctx, &objects.Prefix{
-			Prefix: prefix,
-		})
-		if err != nil {
-			vc.Logger.Errorf(vc.Ctx, "add prefix: %s", err)
+		} else if mask != constants.MaxIPv6MaskBits {
+			_, err = nbi.AddPrefix(vc.Ctx, &objects.Prefix{
+				Prefix: prefix,
+			})
+			if err != nil {
+				vc.Logger.Errorf(vc.Ctx, "add prefix: %s", err)
+			}
 		}
 	}
 	return vmIPv4Addresses, vmIPv6Addresses
@@ -1136,7 +1130,7 @@ func (vc *VmwareSource) addVMContact(nbi *inventory.NetboxInventory, nbVM *objec
 	// If vm owner name was found we also add contact assignment to the vm
 	var vmMailMapFallback bool
 	if len(vmOwners) > 0 && len(vmOwnerEmails) > 0 && len(vmOwners) != len(vmOwnerEmails) {
-		vc.Logger.Warningf(vc.Ctx, "vm owner names and emails mismatch (len(vmOwnerEmails) != len(vmOwners), using fallback mechanism")
+		vc.Logger.Debugf(vc.Ctx, "vm owner names and emails mismatch len(vmOwnerEmails) != len(vmOwners), using fallback mechanism")
 		vmMailMapFallback = true
 	}
 	vmOwner2Email := utils.MatchNamesWithEmails(vc.Ctx, vmOwners, vmOwnerEmails, vc.Logger)

@@ -336,10 +336,10 @@ func (ds *DnacSource) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error
 			}
 
 			// Also add prefix to netbox
-			prefix, err := utils.ExtractPrefixFromIPAddress(nbIPAddress.Address)
+			prefix, mask, err := utils.GetPrefixAndMaskFromIPAddress(nbIPAddress.Address)
 			if err != nil {
 				ds.Logger.Warningf(ds.Ctx, "failed extracting prefix from ipAddress: %s", err)
-			} else {
+			} else if mask != constants.MaxIPv4MaskBits {
 				_, err = nbi.AddPrefix(ds.Ctx, &objects.Prefix{
 					Prefix: prefix,
 					Tenant: nbIface.Device.Tenant,

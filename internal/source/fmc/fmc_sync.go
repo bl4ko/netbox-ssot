@@ -169,10 +169,10 @@ func (fmcs *FMCSource) syncVlanInterfaces(nbi *inventory.NetboxInventory, nbDevi
 						return fmt.Errorf("add ip address")
 					}
 					// Also add prefix
-					prefix, err := utils.ExtractPrefixFromIPAddress(address)
+					prefix, mask, err := utils.GetPrefixAndMaskFromIPAddress(address)
 					if err != nil {
-						fmcs.Logger.Warningf(fmcs.Ctx, "extract prefix from address: %s", err)
-					} else {
+						fmcs.Logger.Debugf(fmcs.Ctx, "extract prefix from address: %s", err)
+					} else if mask != constants.MaxIPv4MaskBits {
 						var prefixTenant *objects.Tenant
 						var prefixVlan *objects.Vlan
 						if len(ifaceTaggedVlans) > 0 {

@@ -257,16 +257,16 @@ func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *ob
 				default:
 					ps.Logger.Warningf(ps.Ctx, "wrong IP type: %s", ipAddress.IPAddressType)
 				}
-				prefix, err := utils.ExtractPrefixFromIPAddress(nbIPAddress.Address)
+				prefix, mask, err := utils.GetPrefixAndMaskFromIPAddress(nbIPAddress.Address)
 				if err != nil {
 					ps.Logger.Warningf(ps.Ctx, "extract prefix from ip address: %s", err)
-					continue
-				}
-				_, err = nbi.AddPrefix(ps.Ctx, &objects.Prefix{
-					Prefix: prefix,
-				})
-				if err != nil {
-					ps.Logger.Errorf(ps.Ctx, "adding prefix: %s", err)
+				} else if (ipAddress.IPAddressType == "ipv4" && mask != constants.MaxIPv4MaskBits) || (ipAddress.IPAddressType == "ipv6" && mask != constants.MaxIPv6MaskBits) {
+					_, err = nbi.AddPrefix(ps.Ctx, &objects.Prefix{
+						Prefix: prefix,
+					})
+					if err != nil {
+						ps.Logger.Errorf(ps.Ctx, "adding prefix: %s", err)
+					}
 				}
 			}
 		}

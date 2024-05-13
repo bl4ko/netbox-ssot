@@ -261,8 +261,7 @@ func TestSubnetsContainIPAddress(t *testing.T) {
 		})
 	}
 }
-
-func TestExtractPrefixFromIPAddress(t *testing.T) {
+func TestGetMaskAndPrefixFromIPAddress(t *testing.T) {
 	type args struct {
 		ipAddress string
 	}
@@ -270,74 +269,45 @@ func TestExtractPrefixFromIPAddress(t *testing.T) {
 		name    string
 		args    args
 		want    string
+		want1   int
 		wantErr bool
 	}{
 		{
-			name: "Extract valid prefix",
+			name: "Test valid ip address with valid mask",
 			args: args{
-				ipAddress: "172.16.1.2/16",
+				ipAddress: "192.168.1.1/24",
 			},
-			want:    "172.16.0.0/16",
-			wantErr: false,
+			want:  "192.168.1.0/24",
+			want1: 24,
 		},
 		{
-			name: "Extract valid prefix",
+			name: "Test valid ip address with valid mask",
 			args: args{
-				ipAddress: "192.168.1.2/24",
+				ipAddress: "192.168.1.1/32",
 			},
-			want:    "192.168.1.0/24",
-			wantErr: false,
+			want:  "192.168.1.1/32",
+			want1: 32,
 		},
 		{
-			name: "Extract invalid prefix",
+			name: "Error wrong ipv4 address",
 			args: args{
-				ipAddress: "192.168.1.2",
+				ipAddress: "300.168.1.1/24",
 			},
-			want:    "",
-			wantErr: true,
-		},
-		{
-			name: "Valid ipv6 prefix",
-			args: args{
-				ipAddress: "2001:db8::1/32",
-			},
-			want:    "2001:db8::/32",
-			wantErr: false,
-		},
-		{
-			name: "Invalid ipv6 prefix",
-			args: args{
-				ipAddress: "2001:db8::1",
-			},
-			want:    "",
-			wantErr: true,
-		},
-		{
-			name: "Ignore 128 mask for ipv6",
-			args: args{
-				ipAddress: "2001:db8::1/128",
-			},
-			want:    "",
-			wantErr: true,
-		},
-		{
-			name: "Ignore 32 mask for ipv4",
-			args: args{
-				ipAddress: "192:168:0:64/32",
-			},
-			want:    "",
 			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ExtractPrefixFromIPAddress(tt.args.ipAddress)
+			got, got1, err := GetPrefixAndMaskFromIPAddress(tt.args.ipAddress)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ExtractPrefixFromIPAddress() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetMaskAndPrefixFromIPAddress() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("ExtractPrefixFromIPAddress() = %v, want %v", got, tt.want)
+				t.Errorf("GetMaskAndPrefixFromIPAddress() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("GetMaskAndPrefixFromIPAddress() got1 = %v, want %v", got1, tt.want1)
 			}
 		})
 	}

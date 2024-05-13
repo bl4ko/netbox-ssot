@@ -432,15 +432,16 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 				}
 
 				// Also create prefix if it doesn't exist yet
-				prefix, err := utils.ExtractPrefixFromIPAddress(nbIPAddress.Address)
+				prefix, mask, err := utils.GetPrefixAndMaskFromIPAddress(nbIPAddress.Address)
 				if err != nil {
 					o.Logger.Warningf(o.Ctx, "error extracting prefix from IP address: %s", err)
-				}
-				_, err = nbi.AddPrefix(o.Ctx, &objects.Prefix{
-					Prefix: prefix,
-				})
-				if err != nil {
-					o.Logger.Warningf(o.Ctx, "adding prefix: %s", err)
+				} else if mask != constants.MaxIPv4MaskBits {
+					_, err = nbi.AddPrefix(o.Ctx, &objects.Prefix{
+						Prefix: prefix,
+					})
+					if err != nil {
+						o.Logger.Warningf(o.Ctx, "adding prefix: %s", err)
+					}
 				}
 			}
 		}
@@ -466,15 +467,16 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 			}
 
 			// Also create prefix if it doesn't exist yet
-			prefix, err := utils.ExtractPrefixFromIPAddress(nbIPAddress.Address)
+			prefix, mask, err := utils.GetPrefixAndMaskFromIPAddress(nbIPAddress.Address)
 			if err != nil {
 				o.Logger.Warningf(o.Ctx, "error extracting prefix from IP address: %s", err)
-			}
-			_, err = nbi.AddPrefix(o.Ctx, &objects.Prefix{
-				Prefix: prefix,
-			})
-			if err != nil {
-				o.Logger.Warningf(o.Ctx, "adding prefix: %s", err)
+			} else if mask != constants.MaxIPv4MaskBits {
+				_, err = nbi.AddPrefix(o.Ctx, &objects.Prefix{
+					Prefix: prefix,
+				})
+				if err != nil {
+					o.Logger.Warningf(o.Ctx, "adding prefix: %s", err)
+				}
 			}
 		}
 	}
@@ -900,16 +902,16 @@ func (o *OVirtSource) syncVMInterfaces(nbi *inventory.NetboxInventory, ovirtVM *
 												}
 											}
 										}
-										prefix, err := utils.ExtractPrefixFromIPAddress(newIPAddress.Address)
+										prefix, mask, err := utils.GetPrefixAndMaskFromIPAddress(newIPAddress.Address)
 										if err != nil {
-											o.Logger.Warningf(o.Ctx, "extract prefix: %s", err)
-											continue
-										}
-										_, err = nbi.AddPrefix(o.Ctx, &objects.Prefix{
-											Prefix: prefix,
-										})
-										if err != nil {
-											o.Logger.Errorf(o.Ctx, "add prefix: %s", err)
+											o.Logger.Debugf(o.Ctx, "extract prefix: %s", err)
+										} else if mask != constants.MaxIPv4MaskBits {
+											_, err = nbi.AddPrefix(o.Ctx, &objects.Prefix{
+												Prefix: prefix,
+											})
+											if err != nil {
+												o.Logger.Errorf(o.Ctx, "add prefix: %s", err)
+											}
 										}
 									}
 								}

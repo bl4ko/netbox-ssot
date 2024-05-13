@@ -197,18 +197,18 @@ func (fs *FortigateSource) SyncInterfaces(nbi *inventory.NetboxInventory) error 
 
 			// Connect prefix with vlan
 			if NBIPAddress != nil {
-				prefix, err := utils.ExtractPrefixFromIPAddress(NBIPAddress.Address)
+				prefix, mask, err := utils.GetPrefixAndMaskFromIPAddress(NBIPAddress.Address)
 				if err != nil {
 					fs.Logger.Warningf(fs.Ctx, "extract prefix from ip address: %s", err)
-					continue
-				}
-				_, err = nbi.AddPrefix(fs.Ctx, &objects.Prefix{
-					Prefix: prefix,
-					Tenant: NBVlan.Tenant,
-					Vlan:   NBVlan,
-				})
-				if err != nil {
-					return fmt.Errorf("add prefix: %s", err)
+				} else if mask != constants.MaxIPv4MaskBits {
+					_, err = nbi.AddPrefix(fs.Ctx, &objects.Prefix{
+						Prefix: prefix,
+						Tenant: NBVlan.Tenant,
+						Vlan:   NBVlan,
+					})
+					if err != nil {
+						return fmt.Errorf("add prefix: %s", err)
+					}
 				}
 			}
 		}

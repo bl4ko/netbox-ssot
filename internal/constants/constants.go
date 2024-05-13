@@ -106,8 +106,10 @@ const (
 
 // Magic numbers for dealing with IP addresses.
 const (
-	IPv4 = 4
-	IPv6 = 6
+	IPv4            = 4
+	IPv6            = 6
+	MaxIPv4MaskBits = 32
+	MaxIPv6MaskBits = 128
 )
 
 const (

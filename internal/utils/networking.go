@@ -84,17 +84,14 @@ func SubnetsContainIPAddress(ipAddress string, subnets []string) bool {
 	return false
 }
 
-// ExtractPrefixFromIPAddress extracts network with mask
-// from the given ipAddress of format ip/mask,
-// e.g. 172.16.2.1/16 -> 172.16.0.0/16.
-func ExtractPrefixFromIPAddress(ipAddress string) (string, error) {
+// GetmaskAndPrefixFromIPAddress extracts mask and prefix
+// from a given ipAddress of format ip/mask.
+// 192.168.1.1/24 --> (192.168.1.0/24, 24).
+func GetPrefixAndMaskFromIPAddress(ipAddress string) (string, int, error) {
 	_, ipNet, err := net.ParseCIDR(ipAddress)
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
-	maskSize, _ := ipNet.Mask.Size()
-	if (ipNet.IP.To4() != nil && maskSize == 32) || (ipNet.IP.To4() == nil && maskSize == 128) {
-		return "", fmt.Errorf("invalid mask size for network: %v", maskSize)
-	}
-	return ipNet.String(), nil
+	maskBits, _ := ipNet.Mask.Size()
+	return ipNet.String(), maskBits, err
 }
