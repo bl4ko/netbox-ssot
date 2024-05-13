@@ -922,6 +922,30 @@ func Test_addSliceDiff(t *testing.T) {
 			wantDiffMap: map[string]interface{}{"test": []int{1, 2}},
 		},
 		{
+			name: "Has priority. Existing slice is nil",
+			args: args{
+				newSlice:      reflect.ValueOf([]testStructWithIntIDAttribute{{ID: 1}, {ID: 2}}),
+				existingSlice: reflect.ValueOf(nil),
+				jsonTag:       "test",
+				hasPriority:   true,
+				diffMap:       map[string]interface{}{},
+			},
+			wantErr:     false,
+			wantDiffMap: map[string]interface{}{"test": []int{1, 2}},
+		},
+		{
+			name: "Has priority. Same Existing slice is empty",
+			args: args{
+				newSlice:      reflect.ValueOf([]testStructWithIntIDAttribute{{ID: 1}, {ID: 2}}),
+				existingSlice: reflect.ValueOf([]testStructWithIntIDAttribute{}),
+				jsonTag:       "test",
+				hasPriority:   true,
+				diffMap:       map[string]interface{}{},
+			},
+			wantErr:     false,
+			wantDiffMap: map[string]interface{}{"test": []int{1, 2}},
+		},
+		{
 			name: "Has priority. Same length and the same. Slice with structs with ID attributes.",
 			args: args{
 				newSlice:      reflect.ValueOf([]testStructWithIntIDAttribute{{ID: 1}, {ID: 2}}),

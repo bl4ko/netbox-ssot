@@ -216,6 +216,13 @@ func addSliceDiff(newSlice reflect.Value, existingSlice reflect.Value, jsonTag s
 	if err != nil {
 		return fmt.Errorf("error converting slice to comparable slice: %s", err)
 	}
+
+	// If second slice is empty or not valid set new
+	if !existingSlice.IsValid() || existingSlice.Len() == 0 {
+		diffMap[jsonTag] = newSlice.Interface()
+		return nil
+	}
+
 	existingSlice, err = convertSliceToComparableSlice(existingSlice)
 	if err != nil {
 		return fmt.Errorf("error converting slice to comparable slice: %s", err)
