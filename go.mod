@@ -7,7 +7,7 @@ require (
 	github.com/cisco-en-programmability/dnacenter-go-sdk/v5 v5.0.27
 	github.com/luthermonson/go-proxmox v0.0.0-beta6
 	github.com/ovirt/go-ovirt v4.3.4+incompatible
-	github.com/scrapli/scrapligo v1.2.0
+	github.com/scrapli/scrapligo v1.3.1
 	github.com/vmware/govmomi v0.37.2
 	golang.org/x/text v0.15.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -15,7 +15,7 @@ require (
 
 require (
 	github.com/buger/goterm v1.0.4 // indirect
-	github.com/creack/pty v1.1.18 // indirect
+	github.com/creack/pty v1.1.21 // indirect
 	github.com/diskfs/go-diskfs v1.4.0 // indirect
 	github.com/go-resty/resty/v2 v2.12.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
