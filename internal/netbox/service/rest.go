@@ -56,7 +56,7 @@ var type2path = map[reflect.Type]string{
 func GetVersion(ctx context.Context, netboxClient *NetboxClient) (string, error) {
 	var versionResponse VersionResponse
 	netboxClient.Logger.Debugf(ctx, "Getting netbox's version")
-	response, err := netboxClient.doRequest(MethodGet, "/api/status", nil)
+	response, err := netboxClient.doRequest(http.MethodGet, "/api/status", nil)
 	if err != nil {
 		return "", err
 	}
@@ -87,7 +87,7 @@ func GetAll[T any](ctx context.Context, netboxClient *NetboxClient, extraParams 
 	for {
 		netboxClient.Logger.Debugf(ctx, "Getting %T with limit=%d and offset=%d", dummy, limit, offset)
 		queryPath := fmt.Sprintf("%s?limit=%d&offset=%d%s", path, limit, offset, extraParams)
-		response, err := netboxClient.doRequest(MethodGet, queryPath, nil)
+		response, err := netboxClient.doRequest(http.MethodGet, queryPath, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -129,7 +129,7 @@ func Patch[T any](ctx context.Context, netboxClient *NetboxClient, objectID int,
 	}
 
 	requestBodyBuffer := bytes.NewBuffer(requestBody)
-	response, err := netboxClient.doRequest(MethodPatch, path, requestBodyBuffer)
+	response, err := netboxClient.doRequest(http.MethodPatch, path, requestBodyBuffer)
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +160,7 @@ func Create[T any](ctx context.Context, netboxClient *NetboxClient, object *T) (
 	}
 
 	requestBodyBuffer := bytes.NewBuffer(requestBody)
-	response, err := netboxClient.doRequest(MethodPost, path, requestBodyBuffer)
+	response, err := netboxClient.doRequest(http.MethodPost, path, requestBodyBuffer)
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +211,7 @@ func (api *NetboxClient) BulkDeleteObjects(ctx context.Context, objectPath strin
 		}
 
 		requestBodyBuffer := bytes.NewBuffer(requestBody)
-		response, err := api.doRequest(MethodDelete, objectPath, requestBodyBuffer)
+		response, err := api.doRequest(http.MethodDelete, objectPath, requestBodyBuffer)
 		if err != nil {
 			return err
 		}
@@ -231,7 +231,7 @@ func (api *NetboxClient) BulkDeleteObjects(ctx context.Context, objectPath strin
 func (api *NetboxClient) DeleteObject(ctx context.Context, objectPath string, id int) error {
 	api.Logger.Debugf(ctx, "Deleting object with id %d on route %s", id, objectPath)
 
-	response, err := api.doRequest(MethodDelete, fmt.Sprintf("%s%d/", objectPath, id), nil)
+	response, err := api.doRequest(http.MethodDelete, fmt.Sprintf("%s%d/", objectPath, id), nil)
 	if err != nil {
 		return err
 	}
