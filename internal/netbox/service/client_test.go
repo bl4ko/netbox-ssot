@@ -101,7 +101,7 @@ func TestNetboxAPI_doRequest(t *testing.T) {
 			name:         "Test GET /api/status/",
 			netboxClient: MockNetboxClient,
 			args: args{
-				method: MethodGet,
+				method: http.MethodGet,
 				path:   "/api/status/",
 				body:   nil,
 			},

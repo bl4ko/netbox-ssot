@@ -22,14 +22,6 @@ type NetboxClient struct {
 	MaxRetires int
 }
 
-const (
-	MethodGet    = "GET"
-	MethodPost   = "POST"
-	MethodPut    = "PUT"
-	MethodDelete = "DELETE"
-	MethodPatch  = "PATCH"
-)
-
 // APIResponse is a struct that represents a response from the Netbox API.
 type APIResponse struct {
 	StatusCode int
