@@ -24,8 +24,8 @@ func (fs *FortigateSource) syncDevice(nbi *inventory.NetboxInventory) error {
 		deviceModel = constants.DefaultModel
 	}
 	deviceManufacturer, err := nbi.AddManufacturer(fs.Ctx, &objects.Manufacturer{
-		Name: "Fortinet, Inc.",
-		Slug: utils.Slugify("Fortinet, Inc."),
+		Name: "Fortinet",
+		Slug: utils.Slugify("Fortinet"),
 	})
 	if err != nil {
 		return fmt.Errorf("failed adding manufacturer: %s", err)

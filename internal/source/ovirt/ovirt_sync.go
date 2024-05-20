@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
+	"github.com/bl4ko/netbox-ssot/internal/devices"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
@@ -160,8 +161,8 @@ func (o *OVirtSource) syncClusters(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
-// Host in oVirt is a represented as device in netbox with a
-// custom role Server.
+// syncHosts synces collected hosts from ovirt api to netbox inventory
+// as devices.
 func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 	for hostID, host := range o.Hosts {
 		hostName, exists := host.Name()
@@ -179,40 +180,33 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 			return fmt.Errorf("hostTenant: %s", err)
 		}
 
-		var hostSerialNumber, manufacturerName, hostUUID, hostModel string
-		hwInfo, exists := host.HardwareInformation()
-		if exists {
-			hostUUID, exists = hwInfo.Uuid()
-			if !exists {
-				o.Logger.Warning(o.Ctx, "Uuid (asset tag) for oVirt host ", hostName, " is empty. Can't identify it, so it will be skipped...")
-				continue
+		// Extract host hardware information if possible, if not use generic values
+		var hostSerialNumber, hostUUID string
+		hostManufacturerName := constants.DefaultManufacturer
+		hostModel := constants.DefaultModel
+		if hwInfo, exists := host.HardwareInformation(); exists {
+			hostUUID, _ = hwInfo.Uuid()
+			hostSerialNumber, _ = hwInfo.SerialNumber()
+			if manufacturerName, exists := hwInfo.Manufacturer(); exists {
+				hostManufacturerName = manufacturerName
+				hostManufacturerName = utils.SerializeManufacturerName(hostManufacturerName)
 			}
-			hostSerialNumber, exists = hwInfo.SerialNumber()
-			if !exists {
-				o.Logger.Warning(o.Ctx, "Serial number for oVirt host ", hostName, " is empty.")
+			if modelName, exists := hwInfo.ProductName(); exists {
+				hostModel = modelName
 			}
-			manufacturerName, _ = hwInfo.Manufacturer()
-			manufacturerName, err = utils.MatchStringToValue(manufacturerName, objects.ManufacturerMap)
-			if err != nil {
-				return fmt.Errorf("error occurred when matching oVirt host %s to a Netbox manufacturer: %v", hostName, err)
-			}
+		}
 
-			hostModel, exists = hwInfo.ProductName()
-			if !exists {
-				hostModel = constants.DefaultModel // Model is also required for adding device type into netbox
-			}
+		var deviceSlug string
+		deviceData, hasDeviceData := devices.DeviceTypesMap[hostManufacturerName][hostModel]
+		if hasDeviceData {
+			deviceSlug = deviceData.Slug
 		} else {
-			o.Logger.Warning(o.Ctx, "Hardware information for oVirt host ", hostName, " is empty, it can't be identified so it will be skipped.")
-			continue
+			deviceSlug = utils.GenerateDeviceTypeSlug(hostManufacturerName, hostModel)
 		}
 
-		var hostManufacturer *objects.Manufacturer
-		if manufacturerName == "" {
-			manufacturerName = constants.DefaultManufacturer
-		}
-		hostManufacturer, err = nbi.AddManufacturer(o.Ctx, &objects.Manufacturer{
-			Name: manufacturerName,
-			Slug: utils.Slugify(manufacturerName),
+		hostManufacturer, err := nbi.AddManufacturer(o.Ctx, &objects.Manufacturer{
+			Name: hostManufacturerName,
+			Slug: utils.Slugify(hostManufacturerName),
 		})
 		if err != nil {
 			return fmt.Errorf("failed adding oVirt Manufacturer %v with error: %s", hostManufacturer, err)
@@ -222,7 +216,7 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		hostDeviceType, err = nbi.AddDeviceType(o.Ctx, &objects.DeviceType{
 			Manufacturer: hostManufacturer,
 			Model:        hostModel,
-			Slug:         utils.Slugify(hostModel),
+			Slug:         deviceSlug,
 		})
 		if err != nil {
 			return fmt.Errorf("failed adding oVirt DeviceType %v with error: %s", hostDeviceType, err)
@@ -311,13 +305,13 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		}
 		nbHost, err = nbi.AddDevice(o.Ctx, nbHost)
 		if err != nil {
-			return fmt.Errorf("failed to add oVirt host %s with error: %v", host.MustName(), err)
+			return fmt.Errorf("failed to add oVirt host %s with error: %v", hostName, err)
 		}
 
 		// We also need to sync nics separately, because nic is a separate object in netbox
 		err = o.syncHostNics(nbi, host, nbHost)
 		if err != nil {
-			return fmt.Errorf("failed to sync oVirt host %s nics with error: %v", host.MustName(), err)
+			return fmt.Errorf("failed to sync oVirt host %s nics with error: %v", hostName, err)
 		}
 	}
 	return nil

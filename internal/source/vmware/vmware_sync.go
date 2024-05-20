@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
+	"github.com/bl4ko/netbox-ssot/internal/devices"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
@@ -144,11 +145,55 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		if err != nil {
 			return fmt.Errorf("hostTenant: %s", err)
 		}
-		hostUUID := host.Summary.Hardware.Uuid
-		hostModel := host.Summary.Hardware.Model
 
+		// Extract host hardware info
+		var hostUUID, hostModel, hostManufacturerName string
+		if host.Summary.Hardware != nil {
+			hostUUID = host.Summary.Hardware.Uuid
+			hostModel = host.Summary.Hardware.Model
+			hostManufacturerName = host.Summary.Hardware.Vendor
+			// Serialize manufacturer names so they match device type library
+			if hostManufacturerName != "" {
+				hostManufacturerName = utils.SerializeManufacturerName(hostManufacturerName)
+			}
+		}
+
+		if hostModel == "" {
+			hostModel = constants.DefaultModel
+		}
+		if hostManufacturerName == "" {
+			hostManufacturerName = constants.DefaultManufacturer
+		}
+
+		// Enrich data from device type library if possible
+		var deviceSlug string
+		deviceData, hasDeviceData := devices.DeviceTypesMap[hostManufacturerName][hostModel]
+		if hasDeviceData {
+			deviceSlug = deviceData.Slug
+		} else {
+			deviceSlug = utils.GenerateDeviceTypeSlug(hostManufacturerName, hostModel)
+		}
+
+		hostManufacturer, err := nbi.AddManufacturer(vc.Ctx, &objects.Manufacturer{
+			Name: hostManufacturerName,
+			Slug: utils.Slugify(hostManufacturerName),
+		})
+		if err != nil {
+			return fmt.Errorf("failed adding vmware Manufacturer %v with error: %s", hostManufacturerName, err)
+		}
+
+		// Create device type
+		hostDeviceType, err := nbi.AddDeviceType(vc.Ctx, &objects.DeviceType{
+			Manufacturer: hostManufacturer,
+			Model:        hostModel,
+			Slug:         deviceSlug,
+		})
+		if err != nil {
+			return fmt.Errorf("failed adding vmware DeviceType %v with error: %s", hostDeviceType, err)
+		}
+
+		// Find serial number from host summary.hardware.OtherIdentifyingInfo (vmware specific logic)
 		var hostSerialNumber string
-		// find serial number from  host summary.hardware.OtherIdentifyingInfo (vmware specific logic)
 		serialInfoTypes := map[string]bool{
 			"EnclosureSerialNumberTag": true,
 			"ServiceTag":               true,
@@ -166,29 +211,6 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 					break
 				}
 			}
-		}
-
-		manufacturerName := host.Summary.Hardware.Vendor
-		var hostManufacturer *objects.Manufacturer
-		if manufacturerName == "" {
-			manufacturerName = constants.DefaultManufacturer
-		}
-		hostManufacturer, err = nbi.AddManufacturer(vc.Ctx, &objects.Manufacturer{
-			Name: manufacturerName,
-			Slug: utils.Slugify(manufacturerName),
-		})
-		if err != nil {
-			return fmt.Errorf("failed adding vmware Manufacturer %v with error: %s", hostManufacturer, err)
-		}
-
-		var hostDeviceType *objects.DeviceType
-		hostDeviceType, err = nbi.AddDeviceType(vc.Ctx, &objects.DeviceType{
-			Manufacturer: hostManufacturer,
-			Model:        hostModel,
-			Slug:         utils.Slugify(hostModel),
-		})
-		if err != nil {
-			return fmt.Errorf("failed adding vmware DeviceType %v with error: %s", hostDeviceType, err)
 		}
 
 		var hostStatus *objects.DeviceStatus
@@ -244,7 +266,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		}
 
 		// We also need to sync nics separately, because nic is a separate object in netbox
-		err = vc.syncHostNics(nbi, host, nbHost)
+		err = vc.syncHostNics(nbi, host, nbHost, deviceData)
 		if err != nil {
 			return fmt.Errorf("failed to sync vmware host %s nics with error: %v", host.Name, err)
 		}
@@ -252,14 +274,14 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
-func (vc *VmwareSource) syncHostNics(nbi *inventory.NetboxInventory, vcHost mo.HostSystem, nbHost *objects.Device) error {
+func (vc *VmwareSource) syncHostNics(nbi *inventory.NetboxInventory, vcHost mo.HostSystem, nbHost *objects.Device, deviceData *devices.DeviceData) error {
 	// Variable for storeing all ipAddresses from all host interfaces,
 	// we use them to determine the primary ip of the host.
 	hostIPv4Addresses := []*objects.IPAddress{}
 	hostIPv6Addresses := []*objects.IPAddress{}
 
 	// Sync host's physical interfaces
-	err := vc.syncHostPhysicalNics(nbi, vcHost, nbHost)
+	err := vc.syncHostPhysicalNics(nbi, vcHost, nbHost, deviceData)
 	if err != nil {
 		return fmt.Errorf("physical interfaces sync: %s", err)
 	}
@@ -279,10 +301,10 @@ func (vc *VmwareSource) syncHostNics(nbi *inventory.NetboxInventory, vcHost mo.H
 	return nil
 }
 
-func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetboxInventory, vcHost mo.HostSystem, nbHost *objects.Device) error {
+func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetboxInventory, vcHost mo.HostSystem, nbHost *objects.Device, deviceData *devices.DeviceData) error {
 	if vcHost.Config.Network.Pnic != nil {
 		for _, pnic := range vcHost.Config.Network.Pnic {
-			hostPnic, err := vc.collectHostPhysicalNicData(nbi, nbHost, pnic)
+			hostPnic, err := vc.collectHostPhysicalNicData(nbi, nbHost, pnic, deviceData)
 			if err != nil {
 				return err
 			}
@@ -300,7 +322,7 @@ func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetboxInventory, vcH
 	return nil
 }
 
-func (vc *VmwareSource) collectHostPhysicalNicData(nbi *inventory.NetboxInventory, nbHost *objects.Device, pnic types.PhysicalNic) (*objects.Interface, error) {
+func (vc *VmwareSource) collectHostPhysicalNicData(nbi *inventory.NetboxInventory, nbHost *objects.Device, pnic types.PhysicalNic, _ *devices.DeviceData) (*objects.Interface, error) {
 	pnicName := pnic.Device
 	var pnicLinkSpeedMb int32
 	if pnic.LinkSpeed != nil {

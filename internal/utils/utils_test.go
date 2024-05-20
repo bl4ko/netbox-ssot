@@ -25,12 +25,12 @@ func TestSlugify(t *testing.T) {
 		{
 			name:     "String with spaces",
 			input:    "Test String",
-			expected: "test_string",
+			expected: "test-string",
 		},
 		{
 			name:     "String with trailing spaces",
 			input:    "    Te st    ",
-			expected: "te_st",
+			expected: "te-st",
 		},
 		{
 			name:     "String with special characters",
@@ -40,12 +40,12 @@ func TestSlugify(t *testing.T) {
 		{
 			name:     "String with mixed case letters",
 			input:    "TeSt StRiNg",
-			expected: "test_string",
+			expected: "test-string",
 		},
 		{
 			name:     "String with numbers",
 			input:    "Test123 String456",
-			expected: "test123_string456",
+			expected: "test123-string456",
 		},
 		{
 			name:     "String with underscores",
@@ -586,5 +586,66 @@ func TestLoadExtraCertInTransportConfig(t *testing.T) {
 	_, err = LoadExtraCertInTransportConfig("../../testdata/certificate/cert.pem")
 	if err != nil {
 		t.Errorf("error loading extra cert: %s", err)
+	}
+}
+
+func TestGetManufacturerFromString(t *testing.T) {
+	type args struct {
+		manufacturer string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "Cisco System Inc. should be mapped to Cisco",
+			args: args{
+				manufacturer: "Cisco Systems Inc.",
+			},
+			want: "Cisco",
+		},
+		{
+			name: "Test GetManufacturerFromString with HP string",
+			args: args{
+				manufacturer: "HP",
+			},
+			want: "HPE",
+		},
+		{
+			name: "Test HP Enterprise should be mapped to HPE",
+			args: args{
+				manufacturer: "HP Enterprise",
+			},
+			want: "HPE",
+		},
+		{
+			name: "Test HP Inc. should be mapped to HPE",
+			args: args{
+				manufacturer: "HP Inc.",
+			},
+			want: "HPE",
+		},
+		{
+			name: "Test Fortinet Inc. should be mapped to Fortinet",
+			args: args{
+				manufacturer: "Fortinet Inc.",
+			},
+			want: "Fortinet",
+		},
+		{
+			name: "Test GetManufacturer which is not in map",
+			args: args{
+				manufacturer: "amd",
+			},
+			want: "amd",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := SerializeManufacturerName(tt.args.manufacturer); got != tt.want {
+				t.Errorf("GetManufacturerFromString() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
