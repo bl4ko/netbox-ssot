@@ -95,31 +95,6 @@ func (m Manufacturer) String() string {
 	return fmt.Sprintf("Manufacturer{Name: %s}", m.Name)
 }
 
-var ManufacturerMap = map[string]string{
-	"^AMD$":               "AMD",
-	".*Broadcom.*":        "Broadcom",
-	".*Cisco.*":           "Cisco",
-	".*Dell.*":            "Dell",
-	"FTS Corp":            "Fujitsu",
-	".*Fujitsu.*":         "Fujitsu",
-	".*HiSilicon.*":       "HiSilicon",
-	"^HP$":                "HPE",
-	"^HPE$":               "HPE",
-	".*Huawei.*":          "Huawei",
-	".*Hynix.*":           "Hynix",
-	".*Inspur.*":          "Inspur",
-	".*Intel.*":           "Intel",
-	"LEN":                 "Lenovo",
-	".*Lenovo.*":          "Lenovo",
-	".*Micron.*":          "Micron",
-	".*Nvidea.*":          "Nvidia",
-	".*Samsung.*":         "Samsung",
-	".*Supermicro.*":      "Supermicro",
-	".*Toshiba.*":         "Toshiba",
-	"^WD$":                "Western Digital",
-	".*Western Digital.*": "Western Digital",
-}
-
 // DeviceType represents the physical and operational characteristics of a device.
 // For example, a device type may represent a Cisco C2960 switch running IOS 15.2.
 type DeviceType struct {

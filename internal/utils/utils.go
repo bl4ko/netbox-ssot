@@ -71,7 +71,7 @@ func MatchStringToValue(input string, patterns map[string]string) (string, error
 func Slugify(name string) string {
 	name = strings.TrimSpace(name)
 	name = strings.ToLower(name)
-	name = strings.ReplaceAll(name, " ", "_")
+	name = strings.ReplaceAll(name, " ", "-")
 
 	// Remove characters except lowercase letters, numbers, underscores, hyphens
 	reg := regexp.MustCompile("[^a-z0-9_-]+")
@@ -103,6 +103,13 @@ func GeneratePlatformName(osType string, osVersion string) string {
 		osVersion = constants.DefaultOSVersion
 	}
 	return fmt.Sprintf("%s %s", osType, osVersion)
+}
+
+// GenerateDeviceTypeSlug generates a device type slug from the given manufacturer and model.
+func GenerateDeviceTypeSlug(manufacturerName string, modelName string) string {
+	manufacturerSlug := Slugify(manufacturerName)
+	modelSlug := Slugify(modelName)
+	return fmt.Sprintf("%s-%s", manufacturerSlug, modelSlug)
 }
 
 // Function that returns true if the given interface name should be
@@ -217,4 +224,34 @@ func LoadExtraCertInTransportConfig(certPath string) (*http.Transport, error) {
 			RootCAs: rootCAs,
 		},
 	}, nil
+}
+
+// ManufacturerMap maps regex of manufacturer names to manufacturer name.
+// Manufacturer names are compatible with device type library. See
+// internal/devices/combined_data.go for more info.
+var ManufacturerMap = map[string]string{
+	".*Cisco.*":    "Cisco",
+	".*Fortinet.*": "Fortinet",
+	".*Dell.*":     "Dell",
+	"FTS Corp":     "Fujitsu",
+	".*Fujitsu.*":  "Fujitsu",
+	"^HP$":         "HPE",
+	"^HP .*":       "HPE",
+	".*Huawei.*":   "Huawei",
+	".*Inspur.*":   "Inspur",
+	".*Intel.*":    "Intel",
+	"LEN":          "Lenovo",
+	".*Nvidea.*":   "Nvidia",
+	".*Samsung.*":  "Samsung",
+}
+
+// GetManufactuerFromString returns manufacturer name from the given string.
+func SerializeManufacturerName(manufacturer string) string {
+	for regex, name := range ManufacturerMap {
+		matched, _ := regexp.MatchString(regex, manufacturer)
+		if matched {
+			return name
+		}
+	}
+	return manufacturer
 }

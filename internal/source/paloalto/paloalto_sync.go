@@ -25,8 +25,8 @@ func (pas *PaloAltoSource) syncDevice(nbi *inventory.NetboxInventory) error {
 		deviceModel = constants.DefaultModel
 	}
 	deviceManufacturer, err := nbi.AddManufacturer(pas.Ctx, &objects.Manufacturer{
-		Name: "Palo Alto Networks, Inc.",
-		Slug: utils.Slugify("Palo Alto Networks, Inc."),
+		Name: "Palo Alto",
+		Slug: utils.Slugify("Palo Alto"),
 	})
 	if err != nil {
 		return fmt.Errorf("failed adding manufacturer: %s", err)
