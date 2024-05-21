@@ -229,3 +229,17 @@ Apply [cronjob](./k8s/cronjob.yaml) with custom settings:
 ```yaml
 kubectl apply -f cronjob.yaml
 ```
+
+#### Using self signed certificate
+
+Create self signed certificate e.g.:
+
+```yaml
+kubectl create secret generic netbox-ssot-cert --from-file=sub.pem=./sub.pem
+```
+
+Use [cronjob with cert mounted](./k8s/cronjob_with_cert.yaml):
+
+```yaml
+kubectl apply -f cronjob_with_cert.yaml
+```
