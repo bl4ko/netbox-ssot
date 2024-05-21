@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: netbox-ssot
+spec:
+  schedule: "*/20 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: netbox-ssot
+              image: ghcr.io/bl4ko/netbox-ssot:latest
+              imagePullPolicy: Always
+              resources:
+                limits:
+                  cpu: 200m
+                  memory: 256Mi
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+              volumeMounts:
+                - name: netbox-ssot-secret
+                  mountPath: /app/config.yaml
+                  subPath: config.yaml
+                - name: netbox-ssot-cert
+                  mountPath: /app/sub.pem
+                  subPath: sub.pem
+          volumes:
+            - name: netbox-ssot-secret
+              secret:
+                secretName: netbox-ssot-secret
+            - name: netbox-ssot-cert
+              secret:
+                secretName: netbox-ssot-cert
+          restartPolicy: OnFailure
