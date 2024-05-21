@@ -123,6 +123,7 @@ func (is *IOSXESource) Init() error {
 		options.WithAuthUsername(is.SourceConfig.Username),
 		options.WithAuthPassword(is.SourceConfig.Password),
 		options.WithPort(is.SourceConfig.Port),
+		options.WithAuthNoStrictKey(), // inside container we can't confirm ssh key
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create driver: %s", err)
