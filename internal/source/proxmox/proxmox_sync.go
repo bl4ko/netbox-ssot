@@ -247,7 +247,8 @@ func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *ob
 					Status:             &objects.IPAddressStatusActive, //TODO: this is hardcoded
 				})
 				if err != nil {
-					return fmt.Errorf("add ip address: %s", err)
+					ps.Logger.Warningf(ps.Ctx, "add ip address: %s", err)
+					continue
 				}
 				switch ipAddress.IPAddressType {
 				case "ipv4":
