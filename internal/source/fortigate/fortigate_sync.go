@@ -92,7 +92,6 @@ func (fs *FortigateSource) SyncInterfaces(nbi *inventory.NetboxInventory) error 
 	for _, iface := range fs.Ifaces {
 		switch iface.Type {
 		case "loopback":
-			fmt.Printf("loopback iface: %T", iface)
 		case "tunnel":
 		case "vlan":
 		case "aggregate":
