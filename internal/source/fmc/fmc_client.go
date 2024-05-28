@@ -102,9 +102,9 @@ type Device struct {
 }
 
 func (fmcc *fmcClient) MakeRequest(ctx context.Context, method, path string, body io.Reader) (*http.Response, error) {
-	ctx, cancel := context.WithTimeout(ctx, fmcc.DefaultTimeout)
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, fmcc.DefaultTimeout)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, method, fmt.Sprintf("%s/%s", fmcc.BaseURL, path), body)
+	req, err := http.NewRequestWithContext(ctxWithTimeout, method, fmt.Sprintf("%s/%s", fmcc.BaseURL, path), body)
 	if err != nil {
 		return nil, err
 	}

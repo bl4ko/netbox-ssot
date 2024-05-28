@@ -17,7 +17,7 @@ type FMCSource struct {
 	common.Config
 
 	// FMC data. Initialized in init functions.
-	Domains              map[string]*Domain
+	Domains              map[string]Domain
 	Devices              map[string]*DeviceInfo
 	DevicePhysicalIfaces map[string][]*PhysicalInterfaceInfo
 	DeviceVlanIfaces     map[string][]*VLANInterfaceInfo
@@ -54,7 +54,7 @@ func (fmcs *FMCSource) Init() error {
 	fmcs.Logger.Debugf(fmcs.Ctx, "HostSiteRelations: %s", fmcs.HostSiteRelations)
 
 	initFunctions := []func(*fmcClient) error{
-		fmcs.initDevices,
+		fmcs.init,
 	}
 	for _, initFunc := range initFunctions {
 		startTime := time.Now()
