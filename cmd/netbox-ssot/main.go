@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"sync"
 	"time"
@@ -14,12 +15,15 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
 )
 
+var filename = flag.String("config", "config.yaml", "Path to the configuration file")
+
 func main() {
 	startTime := time.Now()
 
 	// Parse configuration
 	fmt.Printf("Netbox-SSOT has started at %s\n", startTime.Format(time.RFC3339))
-	config, err := parser.ParseConfig("config.yaml")
+	flag.Parse()
+	config, err := parser.ParseConfig(*filename)
 	if err != nil {
 		fmt.Println("Parser:", err)
 		return
