@@ -9,7 +9,7 @@ require (
 	github.com/ovirt/go-ovirt v4.3.4+incompatible
 	github.com/scrapli/scrapligo v1.3.1
 	github.com/vmware/govmomi v0.37.2
-	golang.org/x/text v0.15.0
+	golang.org/x/text v0.16.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
