@@ -6,6 +6,8 @@ github.com/cisco-en-programmability/dnacenter-go-sdk/v5 v5.0.27 h1:DxSEe5YY296zQ
 github.com/cisco-en-programmability/dnacenter-go-sdk/v5 v5.0.27/go.mod h1:4Km+JuiyL/LsNRvO4dMWUSUVbnNBRmbwzJMU1oUbn0E=
 github.com/cisco-en-programmability/dnacenter-go-sdk/v5 v5.0.28 h1:S8rvIU+QiW0A7bFuJlXmZTdLKBpGXM+gtB8eoviJP4c=
 github.com/cisco-en-programmability/dnacenter-go-sdk/v5 v5.0.28/go.mod h1:4Km+JuiyL/LsNRvO4dMWUSUVbnNBRmbwzJMU1oUbn0E=
+github.com/cisco-en-programmability/dnacenter-go-sdk/v5 v5.0.29 h1:RjvcvQRj5FEHYrQyIX/amfanPlXwsb4qsIvqp7M5xwc=
+github.com/cisco-en-programmability/dnacenter-go-sdk/v5 v5.0.29/go.mod h1:4Km+JuiyL/LsNRvO4dMWUSUVbnNBRmbwzJMU1oUbn0E=
 github.com/creack/pty v1.1.21 h1:1/QdRyBaHHJP61QkWMXlOIBfsgdDeeKfK8SYVUWJKf0=
 github.com/creack/pty v1.1.21/go.mod h1:MOBLtS5ELjhRRrroQr9kyvTxUAFNvYEK993ew/Vr4O4=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
