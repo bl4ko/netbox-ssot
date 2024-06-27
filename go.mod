@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/PaloAltoNetworks/pango v0.10.2
-	github.com/cisco-en-programmability/dnacenter-go-sdk/v5 v5.0.29
+	github.com/cisco-en-programmability/dnacenter-go-sdk/v5 v5.0.30
 	github.com/luthermonson/go-proxmox v0.1.0
 	github.com/ovirt/go-ovirt v4.3.4+incompatible
 	github.com/scrapli/scrapligo v1.3.1
@@ -24,8 +24,8 @@ require (
 	github.com/magefile/mage v1.15.0 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/sirikothe/gotextfsm v1.0.1-0.20200816110946-6aa2cfd355e4 // indirect
-	golang.org/x/crypto v0.22.0 // indirect
-	golang.org/x/net v0.24.0 // indirect
-	golang.org/x/sys v0.19.0 // indirect
+	golang.org/x/crypto v0.24.0 // indirect
+	golang.org/x/net v0.26.0 // indirect
+	golang.org/x/sys v0.21.0 // indirect
 	gopkg.in/djherbis/times.v1 v1.3.0 // indirect
 )
