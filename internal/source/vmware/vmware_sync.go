@@ -728,13 +728,17 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
 			}
 		}
 
-		// vmPlatform
-		vmPlatformName := vm.Config.GuestFullName
-		if vmPlatformName == "" {
+		// Initialize vmPlatformName with the default value
+		vmPlatformName := utils.GeneratePlatformName(constants.DefaultOSName, constants.DefaultOSVersion)
+
+		// Determine guest OS using fallbacks
+		switch {
+		case vm.Summary.Guest != nil && vm.Summary.Guest.GuestFullName != "":
+			vmPlatformName = vm.Summary.Guest.GuestFullName
+		case vm.Config.GuestFullName != "":
+			vmPlatformName = vm.Config.GuestFullName
+		case vm.Guest.GuestFullName != "":
 			vmPlatformName = vm.Guest.GuestFullName
-		}
-		if vmPlatformName == "" {
-			vmPlatformName = utils.GeneratePlatformName(constants.DefaultOSName, constants.DefaultOSVersion)
 		}
 		vmPlatform, err := nbi.AddPlatform(vc.Ctx, &objects.Platform{
 			Name: vmPlatformName,
