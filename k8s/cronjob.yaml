@@ -27,4 +27,4 @@ spec:
             - name: netbox-ssot-secret
               secret:
                 secretName: netbox-ssot-secret
-          restartPolicy: OnFailure
+          restartPolicy: Never

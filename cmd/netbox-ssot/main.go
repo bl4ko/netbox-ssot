@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -26,7 +27,7 @@ func main() {
 	config, err := parser.ParseConfig(*filename)
 	if err != nil {
 		fmt.Println("Parser:", err)
-		return
+		os.Exit(1)
 	}
 
 	// Create our main context
@@ -37,7 +38,7 @@ func main() {
 	ssotLogger, err := logger.New(config.Logger.Dest, config.Logger.Level)
 	if err != nil {
 		fmt.Println("Logger:", err)
-		return
+		os.Exit(1)
 	}
 	ssotLogger.Debug(mainCtx, "Parsed Logger config: ", config.Logger)
 	ssotLogger.Debug(mainCtx, "Parsed Netbox config: ", config.Netbox)
@@ -46,6 +47,7 @@ func main() {
 	inventoryLogger, err := logger.New(config.Logger.Dest, config.Logger.Level)
 	if err != nil {
 		ssotLogger.Errorf(mainCtx, "inventoryLogger: %s", err)
+		os.Exit(1)
 	}
 	inventoryCtx := context.WithValue(context.Background(), constants.CtxSourceKey, "inventory")
 	netboxInventory := inventory.NewNetboxInventory(inventoryCtx, inventoryLogger, config.Netbox)
@@ -55,7 +57,7 @@ func main() {
 	err = netboxInventory.Init()
 	if err != nil {
 		ssotLogger.Error(mainCtx, err)
-		return
+		os.Exit(1)
 	}
 	ssotLogger.Debug(mainCtx, "Netbox inventory initialized: ", netboxInventory)
 
@@ -73,7 +75,7 @@ func main() {
 		source, err := source.NewSource(sourceCtx, sourceConfig, ssotLogger, netboxInventory)
 		if err != nil {
 			ssotLogger.Error(sourceCtx, err)
-			return
+			os.Exit(1)
 		}
 		ssotLogger.Infof(sourceCtx, "Successfully created source %s", constants.CheckMark)
 		ssotLogger.Debugf(sourceCtx, "Source content: %s", source)
@@ -117,7 +119,7 @@ func main() {
 		err = netboxInventory.DeleteOrphans(mainCtx)
 		if err != nil {
 			ssotLogger.Error(mainCtx, err)
-			return
+			os.Exit(1)
 		}
 		ssotLogger.Infof(mainCtx, "%s Successfully removed orphans", constants.CheckMark)
 	} else {
@@ -133,5 +135,6 @@ func main() {
 		for source := range encounteredErrors {
 			ssotLogger.Infof(mainCtx, "%s syncing of source %s failed", constants.WarningSign, source)
 		}
+		os.Exit(1)
 	}
 }
