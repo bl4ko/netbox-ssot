@@ -13,7 +13,6 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/logger"
 	"golang.org/x/text/runes"
 	"golang.org/x/text/transform"
@@ -90,26 +89,6 @@ func Alphanumeric(name string) string {
 	reg := regexp.MustCompile("[^a-z0-9_]+")
 	name = reg.ReplaceAllString(name, "")
 	return name
-}
-
-// Function that takes osType and osVersion and returns a
-// an universal platform name that then can be shared between
-// multiple objects.
-func GeneratePlatformName(osType string, osVersion string) string {
-	if osType == "" {
-		osType = constants.DefaultOSName
-	}
-	if osVersion == "" {
-		osVersion = constants.DefaultOSVersion
-	}
-	return fmt.Sprintf("%s %s", osType, osVersion)
-}
-
-// GenerateDeviceTypeSlug generates a device type slug from the given manufacturer and model.
-func GenerateDeviceTypeSlug(manufacturerName string, modelName string) string {
-	manufacturerSlug := Slugify(manufacturerName)
-	modelSlug := Slugify(modelName)
-	return fmt.Sprintf("%s-%s", manufacturerSlug, modelSlug)
 }
 
 // Function that returns true if the given interface name should be
@@ -224,34 +203,4 @@ func LoadExtraCertInTransportConfig(certPath string) (*http.Transport, error) {
 			RootCAs: rootCAs,
 		},
 	}, nil
-}
-
-// ManufacturerMap maps regex of manufacturer names to manufacturer name.
-// Manufacturer names are compatible with device type library. See
-// internal/devices/combined_data.go for more info.
-var ManufacturerMap = map[string]string{
-	".*Cisco.*":    "Cisco",
-	".*Fortinet.*": "Fortinet",
-	".*Dell.*":     "Dell",
-	"FTS Corp":     "Fujitsu",
-	".*Fujitsu.*":  "Fujitsu",
-	"^HP$":         "HPE",
-	"^HP .*":       "HPE",
-	".*Huawei.*":   "Huawei",
-	".*Inspur.*":   "Inspur",
-	".*Intel.*":    "Intel",
-	"LEN":          "Lenovo",
-	".*Nvidea.*":   "Nvidia",
-	".*Samsung.*":  "Samsung",
-}
-
-// GetManufactuerFromString returns manufacturer name from the given string.
-func SerializeManufacturerName(manufacturer string) string {
-	for regex, name := range ManufacturerMap {
-		matched, _ := regexp.MatchString(regex, manufacturer)
-		if matched {
-			return name
-		}
-	}
-	return manufacturer
 }

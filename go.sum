@@ -2,8 +2,6 @@ github.com/PaloAltoNetworks/pango v0.10.2 h1:Tjn6vIzzAq6Dd7N0mDuiP8w8pz8k5W9zz/T
 github.com/PaloAltoNetworks/pango v0.10.2/go.mod h1:GztcRnVLur7G+VFG7Z5ZKNFgScLtsycwPMp1qVebE5g=
 github.com/buger/goterm v1.0.4 h1:Z9YvGmOih81P0FbVtEYTFF6YsSgxSUKEhf/f9bTMXbY=
 github.com/buger/goterm v1.0.4/go.mod h1:HiFWV3xnkolgrBV3mY8m0X0Pumt4zg4QhbdOzQtB8tE=
-github.com/cisco-en-programmability/dnacenter-go-sdk/v5 v5.0.30 h1:IeWwohFwt/SM1gdlwP82N5c0SeAtC/nqefwUBwuZAt0=
-github.com/cisco-en-programmability/dnacenter-go-sdk/v5 v5.0.30/go.mod h1:TGFSsDT4AmPzAAHC8f9UAw+gtRgu4klUIUelAzcLfDM=
 github.com/cisco-en-programmability/dnacenter-go-sdk/v5 v5.0.31 h1:fzqnvApvk7LJlFufkb+W+SyEBunYi+HIKhiX7nWbo5g=
 github.com/cisco-en-programmability/dnacenter-go-sdk/v5 v5.0.31/go.mod h1:TGFSsDT4AmPzAAHC8f9UAw+gtRgu4klUIUelAzcLfDM=
 github.com/creack/pty v1.1.21 h1:1/QdRyBaHHJP61QkWMXlOIBfsgdDeeKfK8SYVUWJKf0=
@@ -51,8 +49,6 @@ github.com/sirikothe/gotextfsm v1.0.1-0.20200816110946-6aa2cfd355e4 h1:FHUL2HofY
 github.com/sirikothe/gotextfsm v1.0.1-0.20200816110946-6aa2cfd355e4/go.mod h1:CJYqpTg9u5VPCoD0VEl9E68prCIiWQD8m457k098DdQ=
 github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsTg=
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
-github.com/vmware/govmomi v0.38.0 h1:UvQpLAOjDpO0JUxoPCXnEzOlEa/9kejO6K58qOFr6cM=
-github.com/vmware/govmomi v0.38.0/go.mod h1:mtGWtM+YhTADHlCgJBiskSRPOZRsN9MSjPzaZLte/oQ=
 github.com/vmware/govmomi v0.39.0 h1:soLZ08Q2zvjRSinNup8xVlw0KDDCJPPA1rIDmBhi7As=
 github.com/vmware/govmomi v0.39.0/go.mod h1:oHzAQ1r6152zYDGcUqeK+EO8LhKo5wjtvWZBGHws2Hc=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=

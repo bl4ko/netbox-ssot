@@ -130,6 +130,8 @@ func (ds *DnacSource) SyncDevices(nbi *inventory.NetboxInventory) error {
 		platformName := device.SoftwareType
 		if platformName == "" {
 			platformName = device.PlatformID // Fallback name
+		} else {
+			platformName = strings.Trim(fmt.Sprintf("%s %s", device.SoftwareType, device.SoftwareVersion), " ")
 		}
 
 		platform, err := nbi.AddPlatform(ds.Ctx, &objects.Platform{

@@ -23,8 +23,9 @@ const ArpLastSeenFormat = "2006-01-02 15:04:05"
 const DefaultArpDataLifeSpan = 60 * 60 * 24 * 2 // 2 days in seconds
 
 const (
-	DefaultOSName       string = "Generic OS"
-	DefaultOSVersion    string = "Generic Version"
+	DefaultOSName       string = "Unknown"
+	DefaultOSVersion    string = "X"
+	DefaultCPUArch      string = "unknown"
 	DefaultManufacturer string = "Generic Manufacturer"
 	DefaultModel        string = "Generic Model"
 	DefaultSite         string = "DefaultSite"
@@ -221,3 +222,20 @@ const (
 	CustomFieldsAPIPath = "/api/extras/custom-fields/"
 	TagsAPIPath         = "/api/extras/tags/"
 )
+
+var Arch2Bit = map[string]string{
+	"x86_64":  "64-bit",
+	"i386":    "32-bit",
+	"i486":    "32-bit",
+	"i586":    "32-bit",
+	"i686":    "32-bit",
+	"aarch64": "64-bit",
+	"arm64":   "64-bit",
+	"arm":     "32-bit",
+	"arm32":   "32-bit",
+	"ppc64le": "64-bit",
+	"s390x":   "64-bit",
+	"mips64":  "64-bit",
+	"riscv64": "64-bit",
+	"unknown": "unknown",
+}

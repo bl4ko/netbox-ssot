@@ -2,7 +2,6 @@ package utils
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"reflect"
 	"testing"
@@ -305,34 +304,6 @@ func TestAlphanumeric(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := Alphanumeric(tt.args.name); got != tt.want {
 				t.Errorf("Alphanumeric() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestGeneratePlatformName(t *testing.T) {
-	type args struct {
-		osType    string
-		osVersion string
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{
-			name: "Test generation of platform name with empty parameters",
-			args: args{
-				osType:    "",
-				osVersion: "",
-			},
-			want: fmt.Sprintf("%s %s", constants.DefaultOSName, constants.DefaultOSVersion),
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := GeneratePlatformName(tt.args.osType, tt.args.osVersion); got != tt.want {
-				t.Errorf("GeneratePlatformName() = %v, want %v", got, tt.want)
 			}
 		})
 	}

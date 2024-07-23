@@ -234,18 +234,25 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		}
 
 		var hostPlatform *objects.Platform
-		var osType, osVersion string
+		var osDistribution, osVersion, osArch string
 		if os, exists := host.Os(); exists {
 			if ovirtOsType, exists := os.Type(); exists {
-				osType = ovirtOsType
+				osDistribution = ovirtOsType
 			}
 			if ovirtOsVersion, exists := os.Version(); exists {
-				if osFullVersion, exists := ovirtOsVersion.FullVersion(); exists {
-					osVersion = osFullVersion
+				if osMajorVersion, exists := ovirtOsVersion.Major(); exists {
+					osVersion = fmt.Sprintf("%d", osMajorVersion)
+				}
+			}
+			// We extract architecture from reported_kernel_cmdline
+			if reportedKernelCmdline, exists := os.ReportedKernelCmdline(); exists {
+				osArch = utils.ExtractCPUArch(reportedKernelCmdline)
+				if bitArch, ok := constants.Arch2Bit[osArch]; ok {
+					osArch = bitArch
 				}
 			}
 		}
-		platformName := utils.GeneratePlatformName(osType, osVersion)
+		platformName := utils.GeneratePlatformName(osDistribution, osVersion, osArch)
 		hostPlatform, err = nbi.AddPlatform(o.Ctx, &objects.Platform{
 			Name: platformName,
 			Slug: utils.Slugify(platformName),
@@ -652,6 +659,7 @@ func (o *OVirtSource) syncVms(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
+//nolint:gocyclo
 func (o *OVirtSource) extractVMData(nbi *inventory.NetboxInventory, vmID string, vm *ovirtsdk4.Vm) (*objects.VM, error) {
 	// VM name, which is used as unique identifier for VMs in Netbox
 	vmName, exists := vm.Name()
@@ -740,17 +748,20 @@ func (o *OVirtSource) extractVMData(nbi *inventory.NetboxInventory, vmID string,
 
 	// VM's Platform
 	var vmPlatform *objects.Platform
-	vmOsType := constants.DefaultOSName
-	vmOsVersion := constants.DefaultOSVersion
+	var vmOsType, vmOsVersion, vmCPUArch string
 	if guestOs, exists := vm.GuestOperatingSystem(); exists {
 		if guestOsType, exists := guestOs.Distribution(); exists {
 			vmOsType = guestOsType
 		}
-		if guestOsKernel, exists := guestOs.Kernel(); exists {
-			if guestOsVersion, exists := guestOsKernel.Version(); exists {
-				if osFullVersion, exists := guestOsVersion.FullVersion(); exists {
-					vmOsVersion = osFullVersion
-				}
+		if guestOsVersion, exists := guestOs.Version(); exists {
+			if osMajorVersion, exists := guestOsVersion.Major(); exists {
+				vmOsVersion = fmt.Sprintf("%d", osMajorVersion)
+			}
+		}
+		if guestArchitecture, exists := guestOs.Architecture(); exists {
+			vmCPUArch = guestArchitecture
+			if guestArchBits, ok := constants.Arch2Bit[guestArchitecture]; ok {
+				vmCPUArch = guestArchBits
 			}
 		}
 	} else {
@@ -763,9 +774,14 @@ func (o *OVirtSource) extractVMData(nbi *inventory.NetboxInventory, vmID string,
 					vmOsVersion = osFullVersion
 				}
 			}
+			if cpuData, exists := vm.Cpu(); exists {
+				if cpuArch, exists := cpuData.Architecture(); exists {
+					vmCPUArch = fmt.Sprintf("%s", cpuArch) //nolint:gosimple
+				}
+			}
 		}
 	}
-	platformName := utils.GeneratePlatformName(vmOsType, vmOsVersion)
+	platformName := utils.GeneratePlatformName(vmOsType, vmOsVersion, vmCPUArch)
 	vmPlatform, err := nbi.AddPlatform(o.Ctx, &objects.Platform{
 		Name: platformName,
 		Slug: utils.Slugify(platformName),

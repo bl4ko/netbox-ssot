@@ -224,7 +224,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		var hostPlatform *objects.Platform
 		osType := host.Summary.Config.Product.Name
 		osVersion := host.Summary.Config.Product.Version
-		platformName := utils.GeneratePlatformName(osType, osVersion)
+		platformName := utils.GeneratePlatformName(osType, osVersion, "")
 		hostPlatform, err = nbi.AddPlatform(vc.Ctx, &objects.Platform{
 			Name: platformName,
 			Slug: utils.Slugify(platformName),
@@ -728,21 +728,20 @@ func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
 			}
 		}
 
-		// Initialize vmPlatformName with the default value
-		vmPlatformName := utils.GeneratePlatformName(constants.DefaultOSName, constants.DefaultOSVersion)
-
-		// Determine guest OS using fallbacks
+		// Determine guest OS using fallback mechanisms
+		var platformName string
 		switch {
 		case vm.Summary.Guest != nil && vm.Summary.Guest.GuestFullName != "":
-			vmPlatformName = vm.Summary.Guest.GuestFullName
+			platformName = vm.Summary.Guest.GuestFullName
 		case vm.Config.GuestFullName != "":
-			vmPlatformName = vm.Config.GuestFullName
+			platformName = vm.Config.GuestFullName
 		case vm.Guest.GuestFullName != "":
-			vmPlatformName = vm.Guest.GuestFullName
+			platformName = vm.Guest.GuestFullName
 		}
+
 		vmPlatform, err := nbi.AddPlatform(vc.Ctx, &objects.Platform{
-			Name: vmPlatformName,
-			Slug: utils.Slugify(vmPlatformName),
+			Name: platformName,
+			Slug: utils.Slugify(platformName),
 		})
 		if err != nil {
 			return fmt.Errorf("failed adding vmware vm's Platform %v with error: %s", vmPlatform, err)
