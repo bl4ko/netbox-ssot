@@ -11,7 +11,17 @@ import (
 // Function that receives ipAddress and performs a reverse lookup
 // to get the hostname. If the reverse lookup fails, it returns an empty string.
 func ReverseLookup(ipAddress string) string {
-	names, err := net.LookupAddr(ipAddress)
+	// Parse the IP address to handle cases where a subnet mask is provided
+	ip, _, err := net.ParseCIDR(ipAddress)
+	if err != nil {
+		// If parsing as CIDR fails, try to parse it as a plain IP address
+		ip = net.ParseIP(ipAddress)
+		if ip == nil {
+			return ""
+		}
+	}
+
+	names, err := net.LookupAddr(ip.String())
 	if err != nil || len(names) == 0 {
 		return ""
 	}

@@ -22,11 +22,32 @@ func TestReverseLookup(t *testing.T) {
 			want: "",
 		},
 		{
+			name: "Valid rerse lookup",
+			args: args{
+				ipAddress: "1.1.1.1",
+			},
+			want: "one.one.one.one",
+		},
+		{
 			name: "Valid reverse lookup",
 			args: args{
 				ipAddress: "8.8.8.8",
 			},
 			want: "dns.google",
+		},
+		{
+			name: "Lookup IP with mask",
+			args: args{
+				ipAddress: "8.8.8.8/24",
+			},
+			want: "dns.google",
+		},
+		{
+			name: "Lookup IP with wrong mask should fail",
+			args: args{
+				ipAddress: "8.8.8.8/36",
+			},
+			want: "",
 		},
 	}
 	for _, tt := range tests {
