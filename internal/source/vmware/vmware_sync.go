@@ -906,7 +906,7 @@ func (vc *VmwareSource) syncVMInterfaces(nbi *inventory.NetboxInventory, vmwareV
 				return fmt.Errorf("adding VmInterface: %s", err)
 			}
 
-			vmIPv4Addresses, vmIPv6Addresses = vc.addVMInterfaceIPs(nbi, nbVMInterface, nicIPv4Addresses, nicIPv6Addresses, vmIPv4Addresses, vmIPv6Addresses)
+			vmIPv4Addresses, vmIPv6Addresses = vc.addVMInterfaceIPs(nbi, netboxVM, nbVMInterface, nicIPv4Addresses, nicIPv6Addresses, vmIPv4Addresses, vmIPv6Addresses)
 		}
 	}
 	vc.setVMPrimaryIPAddress(nbi, netboxVM, vmDefaultGatewayIpv4, vmDefaultGatewayIpv6, vmIPv4Addresses, vmIPv6Addresses)
@@ -1052,7 +1052,7 @@ func (vc *VmwareSource) collectVMInterfaceData(nbi *inventory.NetboxInventory, n
 }
 
 // Function that adds all collected IPs for the vm's interface to netbox.
-func (vc *VmwareSource) addVMInterfaceIPs(nbi *inventory.NetboxInventory, nbVMInterface *objects.VMInterface, nicIPv4Addresses []string, nicIPv6Addresses []string, vmIPv4Addresses []*objects.IPAddress, vmIPv6Addresses []*objects.IPAddress) ([]*objects.IPAddress, []*objects.IPAddress) {
+func (vc *VmwareSource) addVMInterfaceIPs(nbi *inventory.NetboxInventory, netboxVM *objects.VM, nbVMInterface *objects.VMInterface, nicIPv4Addresses []string, nicIPv6Addresses []string, vmIPv4Addresses []*objects.IPAddress, vmIPv6Addresses []*objects.IPAddress) ([]*objects.IPAddress, []*objects.IPAddress) {
 	// Add all collected ipv4 addresses for the interface to netbox
 	for _, ipv4Address := range nicIPv4Addresses {
 		if !utils.SubnetsContainIPAddress(ipv4Address, vc.SourceConfig.IgnoredSubnets) {
@@ -1068,6 +1068,7 @@ func (vc *VmwareSource) addVMInterfaceIPs(nbi *inventory.NetboxInventory, nbVMIn
 				DNSName:            utils.ReverseLookup(ipv4Address),
 				AssignedObjectType: objects.AssignedObjectTypeVMInterface,
 				AssignedObjectID:   nbVMInterface.ID,
+				Tenant:             netboxVM.Tenant,
 			})
 			if err != nil {
 				vc.Logger.Warningf(vc.Ctx, "adding ipv4 address: %s", err)
