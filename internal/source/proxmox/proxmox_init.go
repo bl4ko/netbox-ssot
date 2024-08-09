@@ -27,6 +27,8 @@ func (ps *ProxmoxSource) initNodes(ctx context.Context, c *proxmox.Client) error
 	ps.NodeNetworks = make(map[string][]*proxmox.NodeNetwork, len(nodes))
 	ps.Vms = make(map[string][]*proxmox.VirtualMachine, len(nodes))
 	ps.Containers = make(map[string][]*proxmox.Container, len(nodes))
+	ps.VMNetworks = make(map[string][]*proxmox.AgentNetworkIface, 0)
+
 	for _, node := range nodes {
 		node, err := c.Node(ctx, node.Node)
 		if err != nil {
@@ -76,7 +78,6 @@ func (ps *ProxmoxSource) initNodeVMs(ctx context.Context, node *proxmox.Node) er
 		return err
 	}
 	ps.Vms[node.Name] = make([]*proxmox.VirtualMachine, 0, len(vms))
-	ps.VMNetworks = make(map[string][]*proxmox.AgentNetworkIface, len(vms))
 	for _, vm := range vms {
 		ps.Vms[node.Name] = append(ps.Vms[node.Name], vm)
 		ifaces, _ := vm.AgentGetNetworkIFaces(ctx)
