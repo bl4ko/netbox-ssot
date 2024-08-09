@@ -520,6 +520,54 @@ var DeviceTypesMapEaton = map[string]*DeviceData{
             { Name: "Network", Label: "", Type: "1000base-t", MgmtOnly: true },
         },
     },
+    "EMAT08-10": {
+        Manufacturer: "Eaton",
+        Model: "EMAT08-10",
+        Slug: "eaton-emat08-10",
+        UHeight: 1,
+        PartNumber: "743172082657",
+        IsFullDepth: false,
+        Airflow: "passive",
+        FrontImage: true,
+        RearImage: false,
+        SubdeviceRole: "",
+        Weight: 6.9,
+        WeightUnit: "",
+        IsPowered: false,
+        ConsolePorts: []ConsolePort{
+            { Name: "Serial", Type: "rj-45", Label: "", Poe: false },
+            { Name: "Daisy Chain", Type: "rj-45", Label: "", Poe: false },
+            { Name: "USB management", Type: "usb-a", Label: "", Poe: false },
+        },
+        ConsoleServerPorts: []ConsoleServerPort{
+        },
+        PowerPorts: []PowerPort{
+            { Name: "Power Port 1", Label: "", Type: "nema-5-15p", MaximumDraw: 0, AllocatedDraw: 0 },
+        },
+        PowerOutlets: []PowerOutlet{
+            { Name: "A1", Type: "nema-5-15r", Label: "", PowerPort: "Power Port 1", FeedLeg: "", MaximumDraw: 0, AllocatedDraw: 0 },
+            { Name: "A2", Type: "nema-5-15r", Label: "", PowerPort: "Power Port 1", FeedLeg: "", MaximumDraw: 0, AllocatedDraw: 0 },
+            { Name: "A3", Type: "nema-5-15r", Label: "", PowerPort: "Power Port 1", FeedLeg: "", MaximumDraw: 0, AllocatedDraw: 0 },
+            { Name: "A4", Type: "nema-5-15r", Label: "", PowerPort: "Power Port 1", FeedLeg: "", MaximumDraw: 0, AllocatedDraw: 0 },
+            { Name: "A5", Type: "nema-5-15r", Label: "", PowerPort: "Power Port 1", FeedLeg: "", MaximumDraw: 0, AllocatedDraw: 0 },
+            { Name: "A6", Type: "nema-5-15r", Label: "", PowerPort: "Power Port 1", FeedLeg: "", MaximumDraw: 0, AllocatedDraw: 0 },
+            { Name: "A7", Type: "nema-5-15r", Label: "", PowerPort: "Power Port 1", FeedLeg: "", MaximumDraw: 0, AllocatedDraw: 0 },
+            { Name: "A8", Type: "nema-5-15r", Label: "", PowerPort: "Power Port 1", FeedLeg: "", MaximumDraw: 0, AllocatedDraw: 0 },
+        },
+        FrontPorts: []FrontPort{
+        },
+        RearPorts: []RearPort{
+        },
+        ModuleBays: []ModuleBay{
+        },
+			  DeviceBays: []DeviceBay{
+        },
+        InventoryItems: []InventoryItem{
+        },
+        Interfaces: []Interface{
+            { Name: "Network", Label: "", Type: "1000base-t", MgmtOnly: true },
+        },
+    },
     "EMAT09-10": {
         Manufacturer: "Eaton",
         Model: "EMAT09-10",

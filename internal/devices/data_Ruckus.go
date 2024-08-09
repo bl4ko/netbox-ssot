@@ -447,4 +447,84 @@ var DeviceTypesMapRuckus = map[string]*DeviceData{
             { Name: "WiFi", Label: "", Type: "ieee802.11ax", MgmtOnly: false },
         },
     },
+    "R650": {
+        Manufacturer: "Ruckus",
+        Model: "R650",
+        Slug: "ruckus-r650",
+        UHeight: 0,
+        PartNumber: "901-R650-XX00",
+        IsFullDepth: false,
+        Airflow: "passive",
+        FrontImage: false,
+        RearImage: false,
+        SubdeviceRole: "",
+        Weight: 854,
+        WeightUnit: "",
+        IsPowered: false,
+        ConsolePorts: []ConsolePort{
+            { Name: "USB", Type: "usb-a", Label: "", Poe: false },
+        },
+        ConsoleServerPorts: []ConsoleServerPort{
+        },
+        PowerPorts: []PowerPort{
+            { Name: "DC", Label: "", Type: "dc-terminal", MaximumDraw: 23, AllocatedDraw: 0 },
+        },
+        PowerOutlets: []PowerOutlet{
+        },
+        FrontPorts: []FrontPort{
+        },
+        RearPorts: []RearPort{
+        },
+        ModuleBays: []ModuleBay{
+        },
+			  DeviceBays: []DeviceBay{
+        },
+        InventoryItems: []InventoryItem{
+        },
+        Interfaces: []Interface{
+            { Name: "Port 1", Label: "1G Eth", Type: "1000base-t", MgmtOnly: false },
+            { Name: "Port 2", Label: "2.5G Eth PoE", Type: "2.5gbase-t", MgmtOnly: false },
+            { Name: "WiFi", Label: "", Type: "ieee802.11ax", MgmtOnly: false },
+        },
+    },
+    "R750": {
+        Manufacturer: "Ruckus",
+        Model: "R750",
+        Slug: "ruckus-r750",
+        UHeight: 0,
+        PartNumber: "901-R750-XX00",
+        IsFullDepth: false,
+        Airflow: "passive",
+        FrontImage: false,
+        RearImage: false,
+        SubdeviceRole: "",
+        Weight: 1.01,
+        WeightUnit: "",
+        IsPowered: false,
+        ConsolePorts: []ConsolePort{
+            { Name: "USB", Type: "usb-a", Label: "", Poe: false },
+        },
+        ConsoleServerPorts: []ConsoleServerPort{
+        },
+        PowerPorts: []PowerPort{
+            { Name: "DC", Label: "", Type: "dc-terminal", MaximumDraw: 23, AllocatedDraw: 0 },
+        },
+        PowerOutlets: []PowerOutlet{
+        },
+        FrontPorts: []FrontPort{
+        },
+        RearPorts: []RearPort{
+        },
+        ModuleBays: []ModuleBay{
+        },
+			  DeviceBays: []DeviceBay{
+        },
+        InventoryItems: []InventoryItem{
+        },
+        Interfaces: []Interface{
+            { Name: "Port 1", Label: "1G Eth", Type: "1000base-t", MgmtOnly: false },
+            { Name: "Port 2", Label: "2.5G Eth PoE", Type: "2.5gbase-t", MgmtOnly: false },
+            { Name: "WiFi", Label: "", Type: "ieee802.11ax", MgmtOnly: false },
+        },
+    },
 }

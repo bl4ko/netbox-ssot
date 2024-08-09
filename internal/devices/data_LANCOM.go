@@ -1961,6 +1961,85 @@ var DeviceTypesMapLANCOM = map[string]*DeviceData{
             { Name: "WLAN-2", Label: "", Type: "ieee802.11ac", MgmtOnly: false },
         },
     },
+    "LW-600": {
+        Manufacturer: "LANCOM",
+        Model: "LW-600",
+        Slug: "lancom-lw-600",
+        UHeight: 0,
+        PartNumber: "61829",
+        IsFullDepth: false,
+        Airflow: "passive",
+        FrontImage: false,
+        RearImage: false,
+        SubdeviceRole: "",
+        Weight: 0,
+        WeightUnit: "",
+        IsPowered: false,
+        ConsolePorts: []ConsolePort{
+        },
+        ConsoleServerPorts: []ConsoleServerPort{
+        },
+        PowerPorts: []PowerPort{
+            { Name: "PS1", Label: "DC 12 V", Type: "dc-terminal", MaximumDraw: 11, AllocatedDraw: 0 },
+        },
+        PowerOutlets: []PowerOutlet{
+        },
+        FrontPorts: []FrontPort{
+        },
+        RearPorts: []RearPort{
+        },
+        ModuleBays: []ModuleBay{
+        },
+			  DeviceBays: []DeviceBay{
+        },
+        InventoryItems: []InventoryItem{
+        },
+        Interfaces: []Interface{
+            { Name: "eth1", Label: "", Type: "1000base-t", MgmtOnly: false },
+            { Name: "wlan0", Label: "", Type: "ieee802.11ax", MgmtOnly: false },
+            { Name: "wlan1", Label: "", Type: "ieee802.11ax", MgmtOnly: false },
+        },
+    },
+    "LX-6402": {
+        Manufacturer: "LANCOM",
+        Model: "LX-6402",
+        Slug: "lancom-lx-6402",
+        UHeight: 0,
+        PartNumber: "61825",
+        IsFullDepth: false,
+        Airflow: "passive",
+        FrontImage: false,
+        RearImage: false,
+        SubdeviceRole: "",
+        Weight: 0,
+        WeightUnit: "",
+        IsPowered: false,
+        ConsolePorts: []ConsolePort{
+        },
+        ConsoleServerPorts: []ConsoleServerPort{
+        },
+        PowerPorts: []PowerPort{
+            { Name: "PS1", Label: "DC 12 V", Type: "dc-terminal", MaximumDraw: 22, AllocatedDraw: 0 },
+        },
+        PowerOutlets: []PowerOutlet{
+        },
+        FrontPorts: []FrontPort{
+        },
+        RearPorts: []RearPort{
+        },
+        ModuleBays: []ModuleBay{
+        },
+			  DeviceBays: []DeviceBay{
+        },
+        InventoryItems: []InventoryItem{
+        },
+        Interfaces: []Interface{
+            { Name: "eth1", Label: "ETH1 (PoE)", Type: "2.5gbase-t", MgmtOnly: false },
+            { Name: "eth2", Label: "ETH2", Type: "1000base-t", MgmtOnly: false },
+            { Name: "wlan0", Label: "", Type: "ieee802.11ax", MgmtOnly: false },
+            { Name: "wlan1", Label: "", Type: "ieee802.11ax", MgmtOnly: false },
+        },
+    },
     "WLC-1000": {
         Manufacturer: "LANCOM",
         Model: "WLC-1000",

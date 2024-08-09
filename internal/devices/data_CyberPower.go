@@ -98,6 +98,52 @@ var DeviceTypesMapCyberPower = map[string]*DeviceData{
         Interfaces: []Interface{
         },
     },
+    "CPS1215RM": {
+        Manufacturer: "CyberPower",
+        Model: "CPS1215RM",
+        Slug: "cyberpower-cps1215rm",
+        UHeight: 1,
+        PartNumber: "cps1215rm",
+        IsFullDepth: false,
+        Airflow: "passive",
+        FrontImage: false,
+        RearImage: false,
+        SubdeviceRole: "",
+        Weight: 5,
+        WeightUnit: "",
+        IsPowered: false,
+        ConsolePorts: []ConsolePort{
+        },
+        ConsoleServerPorts: []ConsoleServerPort{
+        },
+        PowerPorts: []PowerPort{
+            { Name: "Power Port 1", Label: "", Type: "nema-5-15p", MaximumDraw: 1800, AllocatedDraw: 0 },
+        },
+        PowerOutlets: []PowerOutlet{
+            { Name: "Rear Outlet 1", Type: "nema-5-15r", Label: "", PowerPort: "Power Port 1", FeedLeg: "", MaximumDraw: 0, AllocatedDraw: 0 },
+            { Name: "Rear Outlet 2", Type: "nema-5-15r", Label: "", PowerPort: "Power Port 1", FeedLeg: "", MaximumDraw: 0, AllocatedDraw: 0 },
+            { Name: "Rear Outlet 3", Type: "nema-5-15r", Label: "", PowerPort: "Power Port 1", FeedLeg: "", MaximumDraw: 0, AllocatedDraw: 0 },
+            { Name: "Rear Outlet 4", Type: "nema-5-15r", Label: "", PowerPort: "Power Port 1", FeedLeg: "", MaximumDraw: 0, AllocatedDraw: 0 },
+            { Name: "Rear Outlet 5", Type: "nema-5-15r", Label: "", PowerPort: "Power Port 1", FeedLeg: "", MaximumDraw: 0, AllocatedDraw: 0 },
+            { Name: "Rear Outlet 6", Type: "nema-5-15r", Label: "", PowerPort: "Power Port 1", FeedLeg: "", MaximumDraw: 0, AllocatedDraw: 0 },
+            { Name: "Rear Outlet 7", Type: "nema-5-15r", Label: "", PowerPort: "Power Port 1", FeedLeg: "", MaximumDraw: 0, AllocatedDraw: 0 },
+            { Name: "Rear Outlet 8", Type: "nema-5-15r", Label: "", PowerPort: "Power Port 1", FeedLeg: "", MaximumDraw: 0, AllocatedDraw: 0 },
+            { Name: "Rear Outlet 9", Type: "nema-5-15r", Label: "", PowerPort: "Power Port 1", FeedLeg: "", MaximumDraw: 0, AllocatedDraw: 0 },
+            { Name: "Rear Outlet 10", Type: "nema-5-15r", Label: "", PowerPort: "Power Port 1", FeedLeg: "", MaximumDraw: 0, AllocatedDraw: 0 },
+        },
+        FrontPorts: []FrontPort{
+        },
+        RearPorts: []RearPort{
+        },
+        ModuleBays: []ModuleBay{
+        },
+			  DeviceBays: []DeviceBay{
+        },
+        InventoryItems: []InventoryItem{
+        },
+        Interfaces: []Interface{
+        },
+    },
     "CPS1215RMS": {
         Manufacturer: "CyberPower",
         Model: "CPS1215RMS",

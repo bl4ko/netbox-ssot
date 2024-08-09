@@ -389,6 +389,44 @@ var DeviceTypesMapSynology = map[string]*DeviceData{
             { Name: "LAN 2", Label: "", Type: "1000base-t", MgmtOnly: false },
         },
     },
+    "DS420&#43;": {
+        Manufacturer: "Synology",
+        Model: "DS420&#43;",
+        Slug: "synology-ds420-plus",
+        UHeight: 4,
+        PartNumber: "DS420&#43;",
+        IsFullDepth: false,
+        Airflow: "",
+        FrontImage: false,
+        RearImage: false,
+        SubdeviceRole: "",
+        Weight: 0,
+        WeightUnit: "",
+        IsPowered: false,
+        ConsolePorts: []ConsolePort{
+        },
+        ConsoleServerPorts: []ConsoleServerPort{
+        },
+        PowerPorts: []PowerPort{
+            { Name: "PSU", Label: "", Type: "dc-terminal", MaximumDraw: 0, AllocatedDraw: 0 },
+        },
+        PowerOutlets: []PowerOutlet{
+        },
+        FrontPorts: []FrontPort{
+        },
+        RearPorts: []RearPort{
+        },
+        ModuleBays: []ModuleBay{
+        },
+			  DeviceBays: []DeviceBay{
+        },
+        InventoryItems: []InventoryItem{
+        },
+        Interfaces: []Interface{
+            { Name: "LAN 1", Label: "", Type: "1000base-t", MgmtOnly: false },
+            { Name: "LAN 2", Label: "", Type: "1000base-t", MgmtOnly: false },
+        },
+    },
     "DS920&#43;": {
         Manufacturer: "Synology",
         Model: "DS920&#43;",
@@ -479,7 +517,7 @@ var DeviceTypesMapSynology = map[string]*DeviceData{
         FrontImage: false,
         RearImage: false,
         SubdeviceRole: "",
-        Weight: 0,
+        Weight: 6.9,
         WeightUnit: "",
         IsPowered: false,
         ConsolePorts: []ConsolePort{
@@ -497,6 +535,50 @@ var DeviceTypesMapSynology = map[string]*DeviceData{
         RearPorts: []RearPort{
         },
         ModuleBays: []ModuleBay{
+            { Name: "PCIe expansion slot", Label: "PCIe", Position: "PCIe-1" },
+        },
+			  DeviceBays: []DeviceBay{
+        },
+        InventoryItems: []InventoryItem{
+        },
+        Interfaces: []Interface{
+            { Name: "LAN 1", Label: "", Type: "1000base-t", MgmtOnly: false },
+            { Name: "LAN 2", Label: "", Type: "1000base-t", MgmtOnly: false },
+            { Name: "LAN 3", Label: "", Type: "1000base-t", MgmtOnly: false },
+            { Name: "LAN 4", Label: "", Type: "1000base-t", MgmtOnly: false },
+        },
+    },
+    "RS1221RP&#43;": {
+        Manufacturer: "Synology",
+        Model: "RS1221RP&#43;",
+        Slug: "synology-rs1221rp-plus",
+        UHeight: 2,
+        PartNumber: "RS1221RP&#43;",
+        IsFullDepth: true,
+        Airflow: "",
+        FrontImage: false,
+        RearImage: false,
+        SubdeviceRole: "",
+        Weight: 8.4,
+        WeightUnit: "",
+        IsPowered: false,
+        ConsolePorts: []ConsolePort{
+            { Name: "Serial", Type: "de-9", Label: "", Poe: false },
+        },
+        ConsoleServerPorts: []ConsoleServerPort{
+        },
+        PowerPorts: []PowerPort{
+        },
+        PowerOutlets: []PowerOutlet{
+        },
+        FrontPorts: []FrontPort{
+        },
+        RearPorts: []RearPort{
+        },
+        ModuleBays: []ModuleBay{
+            { Name: "PCIe expansion slot", Label: "", Position: "PCIe-1" },
+            { Name: "PSU 1", Label: "PWR1", Position: "PSU-1" },
+            { Name: "PSU 2", Label: "PWR2", Position: "PSU-2" },
         },
 			  DeviceBays: []DeviceBay{
         },
@@ -783,6 +865,47 @@ var DeviceTypesMapSynology = map[string]*DeviceData{
         PowerPorts: []PowerPort{
             { Name: "PSU 1", Label: "", Type: "iec-60320-c14", MaximumDraw: 0, AllocatedDraw: 0 },
             { Name: "PSU 2", Label: "", Type: "iec-60320-c14", MaximumDraw: 0, AllocatedDraw: 0 },
+        },
+        PowerOutlets: []PowerOutlet{
+        },
+        FrontPorts: []FrontPort{
+        },
+        RearPorts: []RearPort{
+        },
+        ModuleBays: []ModuleBay{
+        },
+			  DeviceBays: []DeviceBay{
+        },
+        InventoryItems: []InventoryItem{
+        },
+        Interfaces: []Interface{
+            { Name: "Ethernet 1", Label: "", Type: "1000base-t", MgmtOnly: false },
+            { Name: "Ethernet 2", Label: "", Type: "1000base-t", MgmtOnly: false },
+            { Name: "Ethernet 3", Label: "", Type: "1000base-t", MgmtOnly: false },
+            { Name: "Ethernet 4", Label: "", Type: "1000base-t", MgmtOnly: false },
+        },
+    },
+    "RS815&#43;": {
+        Manufacturer: "Synology",
+        Model: "RS815&#43;",
+        Slug: "synology-rs815-plus",
+        UHeight: 1,
+        PartNumber: "RS815&#43;",
+        IsFullDepth: true,
+        Airflow: "",
+        FrontImage: false,
+        RearImage: false,
+        SubdeviceRole: "",
+        Weight: 6.73,
+        WeightUnit: "",
+        IsPowered: false,
+        ConsolePorts: []ConsolePort{
+            { Name: "Console", Type: "de-9", Label: "", Poe: false },
+        },
+        ConsoleServerPorts: []ConsoleServerPort{
+        },
+        PowerPorts: []PowerPort{
+            { Name: "PSU 1", Label: "", Type: "iec-60320-c14", MaximumDraw: 0, AllocatedDraw: 0 },
         },
         PowerOutlets: []PowerOutlet{
         },

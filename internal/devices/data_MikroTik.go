@@ -3547,6 +3547,51 @@ var DeviceTypesMapMikroTik = map[string]*DeviceData{
             { Name: "Wireless 2.4 GHz", Label: "", Type: "ieee802.11g", MgmtOnly: false },
         },
     },
+    "hAP ac2": {
+        Manufacturer: "MikroTik",
+        Model: "hAP ac2",
+        Slug: "mikrotik-hap-ac2",
+        UHeight: 0,
+        PartNumber: "RBD52G-5HacD2HnD-TC",
+        IsFullDepth: false,
+        Airflow: "passive",
+        FrontImage: false,
+        RearImage: false,
+        SubdeviceRole: "",
+        Weight: 0.35,
+        WeightUnit: "",
+        IsPowered: false,
+        ConsolePorts: []ConsolePort{
+            { Name: "Usb-storage", Type: "usb-a", Label: "", Poe: false },
+        },
+        ConsoleServerPorts: []ConsoleServerPort{
+        },
+        PowerPorts: []PowerPort{
+            { Name: "Power", Label: "", Type: "dc-terminal", MaximumDraw: 15, AllocatedDraw: 0 },
+        },
+        PowerOutlets: []PowerOutlet{
+        },
+        FrontPorts: []FrontPort{
+        },
+        RearPorts: []RearPort{
+        },
+        ModuleBays: []ModuleBay{
+        },
+			  DeviceBays: []DeviceBay{
+        },
+        InventoryItems: []InventoryItem{
+        },
+        Interfaces: []Interface{
+            { Name: "Ether1", Label: "", Type: "1000base-t", MgmtOnly: false },
+            { Name: "Ether2", Label: "", Type: "1000base-t", MgmtOnly: false },
+            { Name: "Ether3", Label: "", Type: "1000base-t", MgmtOnly: false },
+            { Name: "Ether4", Label: "", Type: "1000base-t", MgmtOnly: false },
+            { Name: "Ether5", Label: "", Type: "1000base-t", MgmtOnly: false },
+            { Name: "Wireless 2.4 GHz", Label: "", Type: "ieee802.11n", MgmtOnly: false },
+            { Name: "Wireless 5 GHz", Label: "", Type: "ieee802.11ac", MgmtOnly: false },
+            { Name: "usb", Label: "", Type: "lte", MgmtOnly: false },
+        },
+    },
     "hAP lite": {
         Manufacturer: "MikroTik",
         Model: "hAP lite",

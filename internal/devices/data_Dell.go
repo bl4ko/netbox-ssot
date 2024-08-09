@@ -3180,6 +3180,90 @@ var DeviceTypesMapDell = map[string]*DeviceData{
             { Name: "iDRAC", Label: "", Type: "1000base-t", MgmtOnly: true },
         },
     },
+    "PowerScale A300": {
+        Manufacturer: "Dell",
+        Model: "PowerScale A300",
+        Slug: "dell-powerscale-a300",
+        UHeight: 4,
+        PartNumber: "R4U31A",
+        IsFullDepth: true,
+        Airflow: "front-to-rear",
+        FrontImage: false,
+        RearImage: false,
+        SubdeviceRole: "",
+        Weight: 114,
+        WeightUnit: "",
+        IsPowered: false,
+        ConsolePorts: []ConsolePort{
+            { Name: "Serial", Type: "de-9", Label: "", Poe: false },
+        },
+        ConsoleServerPorts: []ConsoleServerPort{
+        },
+        PowerPorts: []PowerPort{
+        },
+        PowerOutlets: []PowerOutlet{
+        },
+        FrontPorts: []FrontPort{
+        },
+        RearPorts: []RearPort{
+        },
+        ModuleBays: []ModuleBay{
+            { Name: "PSU1", Label: "", Position: "PSU1" },
+            { Name: "PSU2", Label: "", Position: "PSU2" },
+        },
+			  DeviceBays: []DeviceBay{
+        },
+        InventoryItems: []InventoryItem{
+        },
+        Interfaces: []Interface{
+            { Name: "Gig-E 1", Label: "", Type: "32gfc-sfp28", MgmtOnly: false },
+            { Name: "Gig-E 2", Label: "", Type: "32gfc-sfp28", MgmtOnly: false },
+            { Name: "Gig-E 3", Label: "", Type: "128gfc-qsfp28", MgmtOnly: false },
+            { Name: "Gig-E 4", Label: "", Type: "128gfc-qsfp28", MgmtOnly: false },
+        },
+    },
+    "PowerScale H700": {
+        Manufacturer: "Dell",
+        Model: "PowerScale H700",
+        Slug: "dell-powerscale-h700",
+        UHeight: 4,
+        PartNumber: "h700",
+        IsFullDepth: true,
+        Airflow: "front-to-rear",
+        FrontImage: false,
+        RearImage: false,
+        SubdeviceRole: "",
+        Weight: 118,
+        WeightUnit: "",
+        IsPowered: false,
+        ConsolePorts: []ConsolePort{
+            { Name: "Serial", Type: "de-9", Label: "", Poe: false },
+        },
+        ConsoleServerPorts: []ConsoleServerPort{
+        },
+        PowerPorts: []PowerPort{
+        },
+        PowerOutlets: []PowerOutlet{
+        },
+        FrontPorts: []FrontPort{
+        },
+        RearPorts: []RearPort{
+        },
+        ModuleBays: []ModuleBay{
+            { Name: "PSU1", Label: "", Position: "PSU1" },
+            { Name: "PSU2", Label: "", Position: "PSU2" },
+        },
+			  DeviceBays: []DeviceBay{
+        },
+        InventoryItems: []InventoryItem{
+        },
+        Interfaces: []Interface{
+            { Name: "Gig-E 1", Label: "", Type: "32gfc-sfp28", MgmtOnly: false },
+            { Name: "Gig-E 2", Label: "", Type: "32gfc-sfp28", MgmtOnly: false },
+            { Name: "Gig-E 3", Label: "", Type: "128gfc-qsfp28", MgmtOnly: false },
+            { Name: "Gig-E 4", Label: "", Type: "128gfc-qsfp28", MgmtOnly: false },
+        },
+    },
     "PowerSwitch N1124P-ON": {
         Manufacturer: "Dell",
         Model: "PowerSwitch N1124P-ON",

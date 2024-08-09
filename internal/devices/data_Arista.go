@@ -104,6 +104,108 @@ var DeviceTypesMapArista = map[string]*DeviceData{
             { Name: "Management1/1", Label: "", Type: "1000base-t", MgmtOnly: true },
         },
     },
+    "AWE-7230R-4TX-4S-F": {
+        Manufacturer: "Arista",
+        Model: "AWE-7230R-4TX-4S-F",
+        Slug: "arista-awe-7230r-4tx-4s-f",
+        UHeight: 1,
+        PartNumber: "AWE-7230R-4TX-4S-F",
+        IsFullDepth: true,
+        Airflow: "front-to-rear",
+        FrontImage: false,
+        RearImage: false,
+        SubdeviceRole: "",
+        Weight: 9.3,
+        WeightUnit: "",
+        IsPowered: false,
+        ConsolePorts: []ConsolePort{
+            { Name: "Console", Type: "rj-45", Label: "", Poe: false },
+        },
+        ConsoleServerPorts: []ConsoleServerPort{
+        },
+        PowerPorts: []PowerPort{
+        },
+        PowerOutlets: []PowerOutlet{
+        },
+        FrontPorts: []FrontPort{
+        },
+        RearPorts: []RearPort{
+        },
+        ModuleBays: []ModuleBay{
+            { Name: "PS1", Label: "", Position: "0" },
+            { Name: "PS2", Label: "", Position: "1" },
+        },
+			  DeviceBays: []DeviceBay{
+        },
+        InventoryItems: []InventoryItem{
+        },
+        Interfaces: []Interface{
+            { Name: "Ethernet1/1", Label: "", Type: "10gbase-t", MgmtOnly: false },
+            { Name: "Ethernet1/2", Label: "", Type: "10gbase-t", MgmtOnly: false },
+            { Name: "Ethernet1/3", Label: "", Type: "10gbase-t", MgmtOnly: false },
+            { Name: "Ethernet1/4", Label: "", Type: "10gbase-t", MgmtOnly: false },
+            { Name: "Ethernet1/5", Label: "", Type: "10gbase-x-sfpp", MgmtOnly: false },
+            { Name: "Ethernet1/6", Label: "", Type: "10gbase-x-sfpp", MgmtOnly: false },
+            { Name: "Ethernet1/7", Label: "", Type: "10gbase-x-sfpp", MgmtOnly: false },
+            { Name: "Ethernet1/8", Label: "", Type: "10gbase-x-sfpp", MgmtOnly: false },
+            { Name: "Management1/1", Label: "", Type: "1000base-t", MgmtOnly: true },
+        },
+    },
+    "AWE-7250R-16S-F": {
+        Manufacturer: "Arista",
+        Model: "AWE-7250R-16S-F",
+        Slug: "arista-awe-7250r-16s-f",
+        UHeight: 2,
+        PartNumber: "AWE-7250R-16S-F",
+        IsFullDepth: true,
+        Airflow: "front-to-rear",
+        FrontImage: false,
+        RearImage: false,
+        SubdeviceRole: "",
+        Weight: 13.6,
+        WeightUnit: "",
+        IsPowered: false,
+        ConsolePorts: []ConsolePort{
+            { Name: "Console", Type: "rj-45", Label: "", Poe: false },
+        },
+        ConsoleServerPorts: []ConsoleServerPort{
+        },
+        PowerPorts: []PowerPort{
+        },
+        PowerOutlets: []PowerOutlet{
+        },
+        FrontPorts: []FrontPort{
+        },
+        RearPorts: []RearPort{
+        },
+        ModuleBays: []ModuleBay{
+            { Name: "PS1", Label: "", Position: "0" },
+            { Name: "PS2", Label: "", Position: "1" },
+        },
+			  DeviceBays: []DeviceBay{
+        },
+        InventoryItems: []InventoryItem{
+        },
+        Interfaces: []Interface{
+            { Name: "Ethernet1/1", Label: "", Type: "10gbase-x-sfpp", MgmtOnly: false },
+            { Name: "Ethernet1/2", Label: "", Type: "10gbase-x-sfpp", MgmtOnly: false },
+            { Name: "Ethernet1/3", Label: "", Type: "10gbase-x-sfpp", MgmtOnly: false },
+            { Name: "Ethernet1/4", Label: "", Type: "10gbase-x-sfpp", MgmtOnly: false },
+            { Name: "Ethernet1/5", Label: "", Type: "10gbase-x-sfpp", MgmtOnly: false },
+            { Name: "Ethernet1/6", Label: "", Type: "10gbase-x-sfpp", MgmtOnly: false },
+            { Name: "Ethernet1/7", Label: "", Type: "10gbase-x-sfpp", MgmtOnly: false },
+            { Name: "Ethernet1/8", Label: "", Type: "10gbase-x-sfpp", MgmtOnly: false },
+            { Name: "Ethernet1/9", Label: "", Type: "10gbase-x-sfpp", MgmtOnly: false },
+            { Name: "Ethernet1/10", Label: "", Type: "10gbase-x-sfpp", MgmtOnly: false },
+            { Name: "Ethernet1/11", Label: "", Type: "10gbase-x-sfpp", MgmtOnly: false },
+            { Name: "Ethernet1/12", Label: "", Type: "10gbase-x-sfpp", MgmtOnly: false },
+            { Name: "Ethernet1/13", Label: "", Type: "10gbase-x-sfpp", MgmtOnly: false },
+            { Name: "Ethernet1/14", Label: "", Type: "10gbase-x-sfpp", MgmtOnly: false },
+            { Name: "Ethernet1/15", Label: "", Type: "10gbase-x-sfpp", MgmtOnly: false },
+            { Name: "Ethernet1/16", Label: "", Type: "10gbase-x-sfpp", MgmtOnly: false },
+            { Name: "Management1/1", Label: "", Type: "1000base-t", MgmtOnly: true },
+        },
+    },
     "CCS-710P-16P": {
         Manufacturer: "Arista",
         Model: "CCS-710P-16P",
@@ -17202,6 +17304,55 @@ var DeviceTypesMapArista = map[string]*DeviceData{
             { Name: "Ethernet44/1", Label: "", Type: "100gbase-x-qsfp28", MgmtOnly: false },
             { Name: "Ethernet45/1", Label: "", Type: "100gbase-x-qsfp28", MgmtOnly: false },
             { Name: "Ethernet46/1", Label: "", Type: "100gbase-x-qsfp28", MgmtOnly: false },
+        },
+    },
+    "DCS-7289R3A-SC-F": {
+        Manufacturer: "Arista",
+        Model: "DCS-7289R3A-SC-F",
+        Slug: "arista-dcs-7289r3a-sc-f",
+        UHeight: 4,
+        PartNumber: "DCS-7289R3A-SC-F",
+        IsFullDepth: false,
+        Airflow: "front-to-rear",
+        FrontImage: false,
+        RearImage: false,
+        SubdeviceRole: "",
+        Weight: 16.3,
+        WeightUnit: "",
+        IsPowered: false,
+        ConsolePorts: []ConsolePort{
+        },
+        ConsoleServerPorts: []ConsoleServerPort{
+        },
+        PowerPorts: []PowerPort{
+        },
+        PowerOutlets: []PowerOutlet{
+        },
+        FrontPorts: []FrontPort{
+        },
+        RearPorts: []RearPort{
+        },
+        ModuleBays: []ModuleBay{
+            { Name: "PSU 1", Label: "", Position: "1" },
+            { Name: "PSU 2", Label: "", Position: "2" },
+            { Name: "PSU 3", Label: "", Position: "3" },
+            { Name: "PSU 4", Label: "", Position: "4" },
+            { Name: "Supervisor1", Label: "", Position: "1" },
+            { Name: "Linecard2", Label: "", Position: "2" },
+            { Name: "Linecard3", Label: "", Position: "3" },
+            { Name: "Linecard4", Label: "", Position: "4" },
+            { Name: "Linecard5", Label: "", Position: "5" },
+            { Name: "Linecard6", Label: "", Position: "6" },
+            { Name: "Linecard7", Label: "", Position: "7" },
+            { Name: "Linecard8", Label: "", Position: "8" },
+            { Name: "Linecard9", Label: "", Position: "9" },
+            { Name: "Linecard10", Label: "", Position: "10" },
+        },
+			  DeviceBays: []DeviceBay{
+        },
+        InventoryItems: []InventoryItem{
+        },
+        Interfaces: []Interface{
         },
     },
     "DCS-7358-F": {

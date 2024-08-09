@@ -2374,6 +2374,43 @@ var DeviceTypesMapAPC = map[string]*DeviceData{
             { Name: "Network", Label: "", Type: "100base-tx", MgmtOnly: true },
         },
     },
+    "APC Smart-UPS SRT, 72 V, 2,2 kVA, Rackmount Battery Module": {
+        Manufacturer: "APC",
+        Model: "APC Smart-UPS SRT, 72 V, 2,2 kVA, Rackmount Battery Module",
+        Slug: "apc-srt72rmbp",
+        UHeight: 2,
+        PartNumber: "SRT72RMBP",
+        IsFullDepth: true,
+        Airflow: "",
+        FrontImage: false,
+        RearImage: false,
+        SubdeviceRole: "",
+        Weight: 0,
+        WeightUnit: "",
+        IsPowered: false,
+        ConsolePorts: []ConsolePort{
+        },
+        ConsoleServerPorts: []ConsoleServerPort{
+        },
+        PowerPorts: []PowerPort{
+            { Name: "XLBP Source", Label: "", Type: "dc-terminal", MaximumDraw: 0, AllocatedDraw: 0 },
+        },
+        PowerOutlets: []PowerOutlet{
+            { Name: "XLBP Output", Type: "dc-terminal", Label: "", PowerPort: "", FeedLeg: "", MaximumDraw: 0, AllocatedDraw: 0 },
+        },
+        FrontPorts: []FrontPort{
+        },
+        RearPorts: []RearPort{
+        },
+        ModuleBays: []ModuleBay{
+        },
+			  DeviceBays: []DeviceBay{
+        },
+        InventoryItems: []InventoryItem{
+        },
+        Interfaces: []Interface{
+        },
+    },
     "APDU9941": {
         Manufacturer: "APC",
         Model: "APDU9941",
@@ -3988,6 +4025,56 @@ var DeviceTypesMapAPC = map[string]*DeviceData{
         RearPorts: []RearPort{
         },
         ModuleBays: []ModuleBay{
+        },
+			  DeviceBays: []DeviceBay{
+        },
+        InventoryItems: []InventoryItem{
+        },
+        Interfaces: []Interface{
+            { Name: "Ethernet", Label: "", Type: "100base-tx", MgmtOnly: true },
+        },
+    },
+    "Smart-UPS SRT 2200VA RM NC": {
+        Manufacturer: "APC",
+        Model: "Smart-UPS SRT 2200VA RM NC",
+        Slug: "apc-smart-ups-srt-2200va-rm-nc",
+        UHeight: 2,
+        PartNumber: "SRT2200RMXLI-NC",
+        IsFullDepth: true,
+        Airflow: "",
+        FrontImage: false,
+        RearImage: false,
+        SubdeviceRole: "",
+        Weight: 0,
+        WeightUnit: "",
+        IsPowered: false,
+        ConsolePorts: []ConsolePort{
+            { Name: "Serial", Type: "rj-45", Label: "", Poe: false },
+        },
+        ConsoleServerPorts: []ConsoleServerPort{
+        },
+        PowerPorts: []PowerPort{
+            { Name: "Inlet", Label: "", Type: "iec-60320-c20", MaximumDraw: 0, AllocatedDraw: 0 },
+            { Name: "XLBP Source", Label: "", Type: "dc-terminal", MaximumDraw: 0, AllocatedDraw: 0 },
+        },
+        PowerOutlets: []PowerOutlet{
+            { Name: "Group 1 Outlet 1", Type: "iec-60320-c13", Label: "", PowerPort: "Inlet", FeedLeg: "", MaximumDraw: 0, AllocatedDraw: 0 },
+            { Name: "Group 1 Outlet 2", Type: "iec-60320-c13", Label: "", PowerPort: "Inlet", FeedLeg: "", MaximumDraw: 0, AllocatedDraw: 0 },
+            { Name: "Group 1 Outlet 3", Type: "iec-60320-c13", Label: "", PowerPort: "Inlet", FeedLeg: "", MaximumDraw: 0, AllocatedDraw: 0 },
+            { Name: "Group 1 Outlet 4", Type: "iec-60320-c13", Label: "", PowerPort: "Inlet", FeedLeg: "", MaximumDraw: 0, AllocatedDraw: 0 },
+            { Name: "Group 2 Outlet 1", Type: "iec-60320-c13", Label: "", PowerPort: "Inlet", FeedLeg: "", MaximumDraw: 0, AllocatedDraw: 0 },
+            { Name: "Group 2 Outlet 2", Type: "iec-60320-c13", Label: "", PowerPort: "Inlet", FeedLeg: "", MaximumDraw: 0, AllocatedDraw: 0 },
+            { Name: "Group 2 Outlet 3", Type: "iec-60320-c13", Label: "", PowerPort: "Inlet", FeedLeg: "", MaximumDraw: 0, AllocatedDraw: 0 },
+            { Name: "Group 2 Outlet 4", Type: "iec-60320-c13", Label: "", PowerPort: "Inlet", FeedLeg: "", MaximumDraw: 0, AllocatedDraw: 0 },
+            { Name: "16A Outlet 1", Type: "iec-60320-c19", Label: "", PowerPort: "Inlet", FeedLeg: "", MaximumDraw: 0, AllocatedDraw: 0 },
+            { Name: "16A Outlet 2", Type: "iec-60320-c19", Label: "", PowerPort: "Inlet", FeedLeg: "", MaximumDraw: 0, AllocatedDraw: 0 },
+        },
+        FrontPorts: []FrontPort{
+        },
+        RearPorts: []RearPort{
+        },
+        ModuleBays: []ModuleBay{
+            { Name: "SmartSlot", Label: "", Position: "Rear" },
         },
 			  DeviceBays: []DeviceBay{
         },

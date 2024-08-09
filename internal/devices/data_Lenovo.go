@@ -179,6 +179,53 @@ var DeviceTypesMapLenovo = map[string]*DeviceData{
             { Name: "IMM", Label: "", Type: "1000base-t", MgmtOnly: true },
         },
     },
+    "ThinkAgile MX3531-F CN": {
+        Manufacturer: "Lenovo",
+        Model: "ThinkAgile MX3531-F CN",
+        Slug: "lenovo-thinkagile-mx3531-f-cn",
+        UHeight: 2,
+        PartNumber: "7D66",
+        IsFullDepth: true,
+        Airflow: "front-to-rear",
+        FrontImage: false,
+        RearImage: false,
+        SubdeviceRole: "parent",
+        Weight: 38.8,
+        WeightUnit: "",
+        IsPowered: false,
+        ConsolePorts: []ConsolePort{
+        },
+        ConsoleServerPorts: []ConsoleServerPort{
+        },
+        PowerPorts: []PowerPort{
+        },
+        PowerOutlets: []PowerOutlet{
+        },
+        FrontPorts: []FrontPort{
+        },
+        RearPorts: []RearPort{
+        },
+        ModuleBays: []ModuleBay{
+            { Name: "PSU-1", Label: "", Position: "PSU-1" },
+            { Name: "PSU-2", Label: "", Position: "PSU-2" },
+            { Name: "OCP slot 1", Label: "", Position: "OCP-1" },
+            { Name: "Riser 1 - PCIe slot 1", Label: "1 PCIe", Position: "PCIe-1" },
+            { Name: "Riser 1 - PCIe slot 2", Label: "2 PCIe", Position: "PCIe-2" },
+            { Name: "Riser 1 - PCIe slot 3", Label: "3 PCIe", Position: "PCIe-3" },
+            { Name: "Riser 2 - PCIe slot 4", Label: "4 PCIe", Position: "PCIe-4" },
+            { Name: "Riser 2 - PCIe slot 5", Label: "5 PCIe", Position: "PCIe-5" },
+            { Name: "Riser 2 - PCIe slot 6", Label: "6 PCIe", Position: "PCIe-6" },
+            { Name: "Riser 3 - PCIe slot 7", Label: "7 PCIe", Position: "PCIe-7" },
+            { Name: "Riser 3 - PCIe slot 8", Label: "8 PCIe", Position: "PCIe-8" },
+        },
+			  DeviceBays: []DeviceBay{
+        },
+        InventoryItems: []InventoryItem{
+        },
+        Interfaces: []Interface{
+            { Name: "XCC", Label: "", Type: "1000base-t", MgmtOnly: true },
+        },
+    },
     "ThinkSystem 10Gb 2-port SFP&#43; LOM": {
         Manufacturer: "Lenovo",
         Model: "ThinkSystem 10Gb 2-port SFP&#43; LOM",
@@ -444,6 +491,53 @@ var DeviceTypesMapLenovo = map[string]*DeviceData{
         RearPorts: []RearPort{
         },
         ModuleBays: []ModuleBay{
+        },
+			  DeviceBays: []DeviceBay{
+        },
+        InventoryItems: []InventoryItem{
+        },
+        Interfaces: []Interface{
+            { Name: "XCC", Label: "", Type: "1000base-t", MgmtOnly: true },
+        },
+    },
+    "ThinkSystem SR650 V2": {
+        Manufacturer: "Lenovo",
+        Model: "ThinkSystem SR650 V2",
+        Slug: "lenovo-thinksystem-sr650-v2",
+        UHeight: 2,
+        PartNumber: "7Z7x",
+        IsFullDepth: true,
+        Airflow: "front-to-rear",
+        FrontImage: false,
+        RearImage: false,
+        SubdeviceRole: "parent",
+        Weight: 38.8,
+        WeightUnit: "",
+        IsPowered: false,
+        ConsolePorts: []ConsolePort{
+        },
+        ConsoleServerPorts: []ConsoleServerPort{
+        },
+        PowerPorts: []PowerPort{
+        },
+        PowerOutlets: []PowerOutlet{
+        },
+        FrontPorts: []FrontPort{
+        },
+        RearPorts: []RearPort{
+        },
+        ModuleBays: []ModuleBay{
+            { Name: "PSU-1", Label: "", Position: "PSU-1" },
+            { Name: "PSU-2", Label: "", Position: "PSU-2" },
+            { Name: "OCP slot 1", Label: "", Position: "OCP-1" },
+            { Name: "Riser 1 - PCIe slot 1", Label: "1 PCIe", Position: "PCIe-1" },
+            { Name: "Riser 1 - PCIe slot 2", Label: "2 PCIe", Position: "PCIe-2" },
+            { Name: "Riser 1 - PCIe slot 3", Label: "3 PCIe", Position: "PCIe-3" },
+            { Name: "Riser 2 - PCIe slot 4", Label: "4 PCIe", Position: "PCIe-4" },
+            { Name: "Riser 2 - PCIe slot 5", Label: "5 PCIe", Position: "PCIe-5" },
+            { Name: "Riser 2 - PCIe slot 6", Label: "6 PCIe", Position: "PCIe-6" },
+            { Name: "Riser 3 - PCIe slot 7", Label: "7 PCIe", Position: "PCIe-7" },
+            { Name: "Riser 3 - PCIe slot 8", Label: "8 PCIe", Position: "PCIe-8" },
         },
 			  DeviceBays: []DeviceBay{
         },
