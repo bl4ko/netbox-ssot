@@ -24,10 +24,11 @@ func (ps *ProxmoxSource) initNodes(ctx context.Context, c *proxmox.Client) error
 	}
 
 	ps.Nodes = make([]*proxmox.Node, 0, len(nodes))
-	ps.NodeNetworks = make(map[string][]*proxmox.NodeNetwork, len(nodes))
+	ps.NodeIfaces = make(map[string][]*proxmox.NodeNetwork, len(nodes))
 	ps.Vms = make(map[string][]*proxmox.VirtualMachine, len(nodes))
+	ps.VMIfaces = make(map[string][]*proxmox.AgentNetworkIface, 0)
 	ps.Containers = make(map[string][]*proxmox.Container, len(nodes))
-	ps.VMNetworks = make(map[string][]*proxmox.AgentNetworkIface, 0)
+	ps.ContainerIfaces = make(map[string][]*proxmox.ContainerInterface, 0)
 
 	for _, node := range nodes {
 		node, err := c.Node(ctx, node.Node)
@@ -60,13 +61,13 @@ func (ps *ProxmoxSource) initNodeNetworks(ctx context.Context, node *proxmox.Nod
 	if err != nil {
 		return fmt.Errorf("init nodeNetworks: %s", err)
 	}
-	ps.NodeNetworks[node.Name] = make([]*proxmox.NodeNetwork, 0, len(nodeNetworks))
+	ps.NodeIfaces[node.Name] = make([]*proxmox.NodeNetwork, 0, len(nodeNetworks))
 	for _, nodeNetwork := range nodeNetworks {
 		nodeIface, err := node.Network(ctx, nodeNetwork.Iface)
 		if err != nil {
 			return fmt.Errorf("init nodeIface: %s", err)
 		}
-		ps.NodeNetworks[node.Name] = append(ps.NodeNetworks[node.Name], nodeIface)
+		ps.NodeIfaces[node.Name] = append(ps.NodeIfaces[node.Name], nodeIface)
 	}
 	return nil
 }
@@ -81,8 +82,8 @@ func (ps *ProxmoxSource) initNodeVMs(ctx context.Context, node *proxmox.Node) er
 	for _, vm := range vms {
 		ps.Vms[node.Name] = append(ps.Vms[node.Name], vm)
 		ifaces, _ := vm.AgentGetNetworkIFaces(ctx)
-		ps.VMNetworks[vm.Name] = make([]*proxmox.AgentNetworkIface, 0, len(ifaces))
-		ps.VMNetworks[vm.Name] = append(ps.VMNetworks[vm.Name], ifaces...)
+		ps.VMIfaces[vm.Name] = make([]*proxmox.AgentNetworkIface, 0, len(ifaces))
+		ps.VMIfaces[vm.Name] = append(ps.VMIfaces[vm.Name], ifaces...)
 	}
 	return nil
 }
@@ -94,12 +95,11 @@ func (ps *ProxmoxSource) initContainers(ctx context.Context, node *proxmox.Node)
 		return err
 	}
 	ps.Containers[node.Name] = make([]*proxmox.Container, 0, len(containers))
-	// ps.VMNetworks = make(map[string][]*proxmox.AgentNetworkIface, len(containers))
 	for _, container := range containers {
 		ps.Containers[node.Name] = append(ps.Containers[node.Name], container)
-		// ifaces, _ := container.AgentGetNetworkIFaces(ctx)
-		// ps.VMNetworks[container.Name] = make([]*proxmox.AgentNetworkIface, 0, len(ifaces))
-		// ps.VMNetworks[container.Name] = append(ps.VMNetworks[container.Name], ifaces...)
+		ifaces, _ := container.Interfaces(ctx)
+		ps.ContainerIfaces[container.Name] = make([]*proxmox.ContainerInterface, 0, len(ifaces))
+		ps.ContainerIfaces[container.Name] = append(ps.ContainerIfaces[container.Name], ifaces...)
 	}
 	return nil
 }

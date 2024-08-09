@@ -128,7 +128,7 @@ func (ps *ProxmoxSource) syncNodes(nbi *inventory.NetboxInventory) error {
 func (ps *ProxmoxSource) syncNodeNetworks(nbi *inventory.NetboxInventory, node *proxmox.Node) error {
 	// hostIPv4Addresses := []*objects.IPAddress TODO
 	// hostIPv6Addresses := []*objects.IPAddress TODO
-	for _, nodeNetwork := range ps.NodeNetworks[node.Name] {
+	for _, nodeNetwork := range ps.NodeIfaces[node.Name] {
 		active := false
 		if nodeNetwork.Active == 1 {
 			active = true
@@ -209,7 +209,7 @@ func (ps *ProxmoxSource) syncVMs(nbi *inventory.NetboxInventory) error {
 func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *objects.VM) error {
 	vmIPv4Addresses := make([]*objects.IPAddress, 0)
 	vmIPv6Addresses := make([]*objects.IPAddress, 0)
-	for _, vmNetwork := range ps.VMNetworks[nbVM.Name] {
+	for _, vmNetwork := range ps.VMIfaces[nbVM.Name] {
 		if utils.FilterInterfaceName(vmNetwork.Name, ps.SourceConfig.InterfaceFilter) {
 			ps.Logger.Debugf(ps.Ctx, "interface %s is filtered out with interface filter %s", vmNetwork.Name, ps.SourceConfig.InterfaceFilter)
 			continue
@@ -317,7 +317,7 @@ func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 				if err != nil {
 					return fmt.Errorf("match vm to tenant: %s", err)
 				}
-				_, err = nbi.AddVM(ps.Ctx, &objects.VM{
+				nbContainer, err := nbi.AddVM(ps.Ctx, &objects.VM{
 					NetboxObject: objects.NetboxObject{
 						Tags: ps.SourceTags,
 						CustomFields: map[string]interface{}{
@@ -340,11 +340,113 @@ func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 					return fmt.Errorf("new vm: %s", err)
 				}
 
-				// err = ps.syncContainerNetworks(nbi, nbContainer)
-				// if err != nil {
-				// 	return fmt.Errorf("sync container networks: %s", err)
-				// }
+				err = ps.syncContainerNetworks(nbi, nbContainer)
+				if err != nil {
+					return fmt.Errorf("sync container networks: %s", err)
+				}
 			}
+		}
+	}
+	return nil
+}
+
+func (ps *ProxmoxSource) syncContainerNetworks(nbi *inventory.NetboxInventory, nbContainer *objects.VM) error {
+	vmIPv4Addresses := make([]*objects.IPAddress, 0)
+	vmIPv6Addresses := make([]*objects.IPAddress, 0)
+	for _, containerIface := range ps.ContainerIfaces[nbContainer.Name] {
+		if utils.FilterInterfaceName(containerIface.Name, ps.SourceConfig.InterfaceFilter) {
+			ps.Logger.Debugf(ps.Ctx, "interface %s is filtered out with interface filter %s", containerIface.Name, ps.SourceConfig.InterfaceFilter)
+			continue
+		}
+		nbVMIface, err := nbi.AddVMInterface(ps.Ctx, &objects.VMInterface{
+			NetboxObject: objects.NetboxObject{
+				Tags: ps.SourceTags,
+				CustomFields: map[string]interface{}{
+					constants.CustomFieldSourceName: ps.SourceConfig.Name,
+				},
+			},
+			Name:       containerIface.Name,
+			MACAddress: strings.ToUpper(containerIface.HWAddr),
+			VM:         nbContainer,
+		})
+		if err != nil {
+			return fmt.Errorf("add vm interface: %s", err)
+		}
+
+		if !utils.SubnetsContainIPAddress(containerIface.Inet, ps.SourceConfig.IgnoredSubnets) {
+			// Check if IPv4 address is present
+			if containerIface.Inet != "" {
+				nbIPAddress, err := nbi.AddIPAddress(ps.Ctx, &objects.IPAddress{
+					NetboxObject: objects.NetboxObject{
+						Tags: ps.SourceTags,
+						CustomFields: map[string]interface{}{
+							constants.CustomFieldSourceName:   ps.SourceConfig.Name,
+							constants.CustomFieldArpEntryName: false,
+						},
+					},
+					Address:            containerIface.Inet,
+					DNSName:            utils.ReverseLookup(containerIface.Inet),
+					Tenant:             nbContainer.Tenant,
+					AssignedObjectType: objects.AssignedObjectTypeVMInterface,
+					AssignedObjectID:   nbVMIface.ID,
+					Status:             &objects.IPAddressStatusActive, //TODO: this is hardcoded
+				})
+				if err != nil {
+					ps.Logger.Warningf(ps.Ctx, "add ip address: %s", err)
+				} else {
+					vmIPv4Addresses = append(vmIPv4Addresses, nbIPAddress)
+					prefix, mask, err := utils.GetPrefixAndMaskFromIPAddress(nbIPAddress.Address)
+					if err != nil {
+						ps.Logger.Warningf(ps.Ctx, "extract prefix from ip address: %s", err)
+					} else if mask != constants.MaxIPv4MaskBits {
+						_, err = nbi.AddPrefix(ps.Ctx, &objects.Prefix{
+							Prefix: prefix,
+						})
+						if err != nil {
+							ps.Logger.Errorf(ps.Ctx, "adding prefix: %s", err)
+						}
+					}
+				}
+			}
+			// Check if IPv6 address is present
+			if containerIface.Inet6 != "" {
+				nbIPAddress, err := nbi.AddIPAddress(ps.Ctx, &objects.IPAddress{
+					NetboxObject: objects.NetboxObject{
+						Tags: ps.SourceTags,
+						CustomFields: map[string]interface{}{
+							constants.CustomFieldSourceName:   ps.SourceConfig.Name,
+							constants.CustomFieldArpEntryName: false,
+						},
+					},
+					Address:            containerIface.Inet6,
+					DNSName:            utils.ReverseLookup(containerIface.Inet6),
+					Tenant:             nbContainer.Tenant,
+					AssignedObjectType: objects.AssignedObjectTypeVMInterface,
+					AssignedObjectID:   nbVMIface.ID,
+					Status:             &objects.IPAddressStatusActive, //TODO: this is hardcoded
+				})
+				if err != nil {
+					ps.Logger.Warningf(ps.Ctx, "add ipv6 address: %s", err)
+				} else {
+					vmIPv6Addresses = append(vmIPv6Addresses, nbIPAddress)
+				}
+			}
+		}
+	}
+	// From all IPv4 addresses and IPv6 addresses determine primary ips
+	if len(vmIPv4Addresses) > 0 || len(vmIPv6Addresses) > 0 {
+		nbContainerCopy := *nbContainer
+		if len(vmIPv4Addresses) > 0 {
+			// TODO: add criteria for primary IPv4
+			nbContainerCopy.PrimaryIPv4 = vmIPv4Addresses[0]
+		}
+		if len(vmIPv6Addresses) > 0 {
+			// TODO add criteria for primary IPv6
+			nbContainerCopy.PrimaryIPv6 = vmIPv6Addresses[0]
+		}
+		_, err := nbi.AddVM(ps.Ctx, &nbContainerCopy)
+		if err != nil {
+			return fmt.Errorf("updating vm primary ip: %s", err)
 		}
 	}
 	return nil

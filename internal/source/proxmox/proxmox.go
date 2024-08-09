@@ -17,12 +17,13 @@ type ProxmoxSource struct {
 	common.Config
 
 	// Proxmox API data initialized in init functions
-	Cluster      *proxmox.Cluster
-	Nodes        []*proxmox.Node
-	NodeNetworks map[string][]*proxmox.NodeNetwork       // NodeName -> NodeNetworks (interfaces)
-	Vms          map[string][]*proxmox.VirtualMachine    // NodeName -> VirtualMachines
-	VMNetworks   map[string][]*proxmox.AgentNetworkIface // VMName -> NetworkDevices
-	Containers   map[string][]*proxmox.Container         // NodeName -> Contatiners
+	Cluster         *proxmox.Cluster
+	Nodes           []*proxmox.Node
+	NodeIfaces      map[string][]*proxmox.NodeNetwork        // NodeName -> NodeNetworks (interfaces)
+	Vms             map[string][]*proxmox.VirtualMachine     // NodeName -> VirtualMachines
+	VMIfaces        map[string][]*proxmox.AgentNetworkIface  // VMName -> NetworkDevices
+	Containers      map[string][]*proxmox.Container          // NodeName -> Contatiners
+	ContainerIfaces map[string][]*proxmox.ContainerInterface // ContainerName -> ContainerInterfaces
 
 	// Netbox related data for easier access. Initialized in sync functions.
 	NetboxCluster *objects.Cluster
