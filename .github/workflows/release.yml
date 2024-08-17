@@ -21,4 +21,4 @@ jobs:
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: npx semantic-release@24.0.0
+        run: npx semantic-release@24.1.0
