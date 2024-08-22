@@ -92,12 +92,12 @@ func (is *IOSXESource) syncInterfaces(nbi *inventory.NetboxInventory) error {
 		var ifaceLinkSpeed objects.InterfaceSpeed
 		switch iface.Ethernet.PortSpeed {
 		case "SPEED_10MB":
-			ifaceLinkSpeed = (10 * constants.MB) / constants.KB //nolint:gomnd
+			ifaceLinkSpeed = (10 * constants.MB) / constants.KB //nolint:mnd
 			if _, ok := objects.IfaceSpeed2IfaceType[ifaceLinkSpeed]; ok {
 				ifaceType = objects.IfaceSpeed2IfaceType[ifaceLinkSpeed]
 			}
 		case "SPEED_100MB":
-			ifaceLinkSpeed = (100 * constants.MB) / constants.KB //nolint:gomnd
+			ifaceLinkSpeed = (100 * constants.MB) / constants.KB //nolint:mnd
 			if _, ok := objects.IfaceSpeed2IfaceType[ifaceLinkSpeed]; ok {
 				ifaceType = objects.IfaceSpeed2IfaceType[ifaceLinkSpeed]
 			}
@@ -107,22 +107,22 @@ func (is *IOSXESource) syncInterfaces(nbi *inventory.NetboxInventory) error {
 				ifaceType = objects.IfaceSpeed2IfaceType[ifaceLinkSpeed]
 			}
 		case "SPEED_10GB":
-			ifaceLinkSpeed = (10 * constants.GB) / constants.KB //nolint:gomnd
+			ifaceLinkSpeed = (10 * constants.GB) / constants.KB //nolint:mnd
 			if _, ok := objects.IfaceSpeed2IfaceType[ifaceLinkSpeed]; ok {
 				ifaceType = objects.IfaceSpeed2IfaceType[ifaceLinkSpeed]
 			}
 		case "SPEED_25GB":
-			ifaceLinkSpeed = (25 * constants.GB) / constants.KB //nolint:gomnd
+			ifaceLinkSpeed = (25 * constants.GB) / constants.KB //nolint:mnd
 			if _, ok := objects.IfaceSpeed2IfaceType[ifaceLinkSpeed]; ok {
 				ifaceType = objects.IfaceSpeed2IfaceType[ifaceLinkSpeed]
 			}
 		case "SPEED_40GB":
-			ifaceLinkSpeed = (40 * constants.GB) / constants.KB //nolint:gomnd
+			ifaceLinkSpeed = (40 * constants.GB) / constants.KB //nolint:mnd
 			if _, ok := objects.IfaceSpeed2IfaceType[ifaceLinkSpeed]; ok {
 				ifaceType = objects.IfaceSpeed2IfaceType[ifaceLinkSpeed]
 			}
 		case "SPEED_100GB":
-			ifaceLinkSpeed = (100 * constants.GB) / constants.KB //nolint:gomnd
+			ifaceLinkSpeed = (100 * constants.GB) / constants.KB //nolint:mnd
 			if _, ok := objects.IfaceSpeed2IfaceType[ifaceLinkSpeed]; ok {
 				ifaceType = objects.IfaceSpeed2IfaceType[ifaceLinkSpeed]
 			}

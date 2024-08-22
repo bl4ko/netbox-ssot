@@ -12,7 +12,7 @@ import (
 
 func ReverseLookup(ipAddress string) string {
 	// Create a context with the specified timeout
-	TIMEOUT := 2 * time.Second //nolint:gomnd
+	TIMEOUT := 2 * time.Second //nolint:mnd
 	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUT)
 	defer cancel()
 

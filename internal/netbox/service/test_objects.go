@@ -21,7 +21,7 @@ var MockDefaultSsotTag = &objects.Tag{
 // Hardcoded mock API responses for tags endpoint.
 var (
 	MockTagsGetResponse = Response[objects.Tag]{
-		Count:    2, //nolint:gomnd
+		Count:    2, //nolint:mnd
 		Next:     nil,
 		Previous: nil,
 		Results: []objects.Tag{
@@ -60,7 +60,7 @@ var (
 // Hardcoded mock api return values for tenant endpoint.
 var (
 	MockTenantsGetResponse = Response[objects.Tenant]{
-		Count:    2, //nolint:gomnd
+		Count:    2, //nolint:mnd
 		Next:     nil,
 		Previous: nil,
 		Results: []objects.Tenant{
@@ -76,7 +76,7 @@ var (
 			},
 			{
 				NetboxObject: objects.NetboxObject{
-					ID: 2, //nolint:gomnd
+					ID: 2, //nolint:mnd
 					Tags: []*objects.Tag{
 						MockDefaultSsotTag,
 					},
@@ -88,7 +88,7 @@ var (
 	}
 	MockTenantCreateResponse = objects.Tenant{
 		NetboxObject: objects.NetboxObject{
-			ID: 3, //nolint:gomnd
+			ID: 3, //nolint:mnd
 		},
 		Name: "MockTenant3",
 		Slug: "mock-tenant-3",
@@ -105,7 +105,7 @@ var (
 // Hardcoded mock api return values for site endpoint.
 var (
 	MockSitesGetResponse = Response[objects.Site]{
-		Count:    2, //nolint:gomnd
+		Count:    2, //nolint:mnd
 		Next:     nil,
 		Previous: nil,
 		Results: []objects.Site{
@@ -121,7 +121,7 @@ var (
 			},
 			{
 				NetboxObject: objects.NetboxObject{
-					ID: 2, //nolint:gomnd
+					ID: 2, //nolint:mnd
 					Tags: []*objects.Tag{
 						MockDefaultSsotTag,
 					},
@@ -133,7 +133,7 @@ var (
 	}
 	MockSiteCreateResponse = objects.Site{
 		NetboxObject: objects.NetboxObject{
-			ID: 3, //nolint:gomnd
+			ID: 3, //nolint:mnd
 		},
 		Name: "MockSite3",
 		Slug: "mock-site-3",
@@ -170,7 +170,7 @@ func CreateMockServer() *httptest.Server {
 			if err != nil {
 				log.Printf("Error marshaling tag patch response: %v", err)
 			}
-			_, err = io.WriteString(w, string(tagStr))
+			_, err = w.Write(tagStr)
 			if err != nil {
 				log.Printf("Error writing response: %v", err)
 			}
@@ -180,7 +180,7 @@ func CreateMockServer() *httptest.Server {
 			if err != nil {
 				log.Printf("Error marshaling tags response: %v", err)
 			}
-			_, err = io.WriteString(w, string(tagsResponseStr))
+			_, err = w.Write(tagsResponseStr)
 			if err != nil {
 				log.Printf("Error writing response")
 			}
@@ -190,7 +190,7 @@ func CreateMockServer() *httptest.Server {
 			if err != nil {
 				log.Printf("Error marshaling tag create response: %v", err)
 			}
-			_, err = io.WriteString(w, string(tagStr))
+			_, err = w.Write(tagStr)
 			if err != nil {
 				log.Printf("Error writing response")
 			}
@@ -208,7 +208,7 @@ func CreateMockServer() *httptest.Server {
 			if err != nil {
 				log.Printf("Error marshaling tenant patch response: %v", err)
 			}
-			_, err = io.WriteString(w, string(tenantStr))
+			_, err = w.Write(tenantStr)
 			if err != nil {
 				log.Printf("Error writing response: %v", err)
 			}
@@ -218,7 +218,7 @@ func CreateMockServer() *httptest.Server {
 			if err != nil {
 				log.Printf("Error marshaling tenants response: %v", err)
 			}
-			_, err = io.WriteString(w, string(tenantsResponseStr))
+			_, err = w.Write(tenantsResponseStr)
 			if err != nil {
 				log.Printf("Error writing response")
 			}
@@ -228,7 +228,7 @@ func CreateMockServer() *httptest.Server {
 			if err != nil {
 				log.Printf("Error marshaling tenant create response: %v", err)
 			}
-			_, err = io.WriteString(w, string(tenantStr))
+			_, err = w.Write(tenantStr)
 			if err != nil {
 				log.Printf("Error writing response")
 			}
@@ -246,7 +246,7 @@ func CreateMockServer() *httptest.Server {
 			if err != nil {
 				log.Printf("Error marshaling site patch response: %v", err)
 			}
-			_, err = io.WriteString(w, string(siteStr))
+			_, err = w.Write(siteStr)
 			if err != nil {
 				log.Printf("Error writing response: %v", err)
 			}
@@ -256,7 +256,7 @@ func CreateMockServer() *httptest.Server {
 			if err != nil {
 				log.Printf("Error marshaling sites response: %v", err)
 			}
-			_, err = io.WriteString(w, string(siteResponseStr))
+			_, err = w.Write(siteResponseStr)
 			if err != nil {
 				log.Printf("Error writing response")
 			}
@@ -266,7 +266,7 @@ func CreateMockServer() *httptest.Server {
 			if err != nil {
 				log.Printf("Error marshaling site create response: %v", err)
 			}
-			_, err = io.WriteString(w, string(siteStr))
+			_, err = w.Write(siteStr)
 			if err != nil {
 				log.Printf("Error writing response")
 			}

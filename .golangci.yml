@@ -40,8 +40,6 @@ linters:
     - durationcheck
     - errchkjson
     - errname
-    - execinquery
-    - exportloopref
     - forcetypeassert
     - gci
     - gocheckcompilerdirectives
@@ -50,7 +48,8 @@ linters:
     - godot
     - goheader
     - goimports
-    - gomnd
+    - mnd
+    - copyloopvar
     - gomoddirectives
     - goprintffuncname
     - gosmopolitan

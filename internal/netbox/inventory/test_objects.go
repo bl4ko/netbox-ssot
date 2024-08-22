@@ -34,7 +34,7 @@ var MockExistingTenants = map[string]*objects.Tenant{
 	},
 	"existing_tenant2": {
 		NetboxObject: objects.NetboxObject{
-			ID:   2, //nolint:gomnd
+			ID:   2, //nolint:mnd
 			Tags: []*objects.Tag{service.MockDefaultSsotTag},
 		},
 		Name: "existing_tenant2",
@@ -53,7 +53,7 @@ var MockExistingSites = map[string]*objects.Site{
 	},
 	"existing_site2": {
 		NetboxObject: objects.NetboxObject{
-			ID:   2, //nolint:gomnd
+			ID:   2, //nolint:mnd
 			Tags: []*objects.Tag{service.MockDefaultSsotTag},
 		},
 		Name: "existing_site2",

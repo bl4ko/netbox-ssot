@@ -164,7 +164,7 @@ func getLatestCommitSHA(ctx context.Context, owner string, repo string, branch s
 
 // writeSHAToFile writes SHA of commit to a file named filename.
 func writeSHAToFile(sha, filename string) error {
-	err := os.WriteFile(filename, []byte(sha), 0644) //nolint:gosec,gomnd
+	err := os.WriteFile(filename, []byte(sha), 0644) //nolint:gosec,mnd
 	if err != nil {
 		return fmt.Errorf("Failed to write to file: %v", err)
 	}

@@ -187,8 +187,8 @@ func (ps *ProxmoxSource) syncVMs(nbi *inventory.NetboxInventory) error {
 				Cluster: ps.NetboxCluster, // Default single proxmox cluster
 				Tenant:  vmTenant,
 				VCPUs:   float32(vm.CPUs),
-				Memory:  int(vm.MaxMem / constants.MiB),  // Memory is in MB
-				Disk:    int(vm.MaxDisk / constants.GiB), // Disk is in GB
+				Memory:  int(vm.MaxMem / constants.MiB),  //nolint:gosec
+				Disk:    int(vm.MaxDisk / constants.GiB), //nolint:gosec
 				Site:    nbHost.Site,
 				Name:    vm.Name,
 				Status:  vmStatus,
@@ -330,8 +330,8 @@ func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 					Cluster: ps.NetboxCluster, // Default single proxmox cluster
 					Tenant:  vmTenant,
 					VCPUs:   float32(container.CPUs),
-					Memory:  int(container.MaxMem / constants.MiB),  // Memory is in MB
-					Disk:    int(container.MaxDisk / constants.GiB), // Disk is in GB
+					Memory:  int(container.MaxMem / constants.MiB),  //nolint:gosec
+					Disk:    int(container.MaxDisk / constants.GiB), //nolint:gosec
 					Site:    nbHost.Site,
 					Name:    container.Name,
 					Status:  containerStatus,
