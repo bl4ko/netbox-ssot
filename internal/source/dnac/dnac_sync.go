@@ -362,6 +362,8 @@ func (ds *DnacSource) getDevice(deviceID string) (*objects.Device, error) {
 
 func (ds *DnacSource) getInterfaceDuplex(duplex string) *objects.InterfaceDuplex {
 	switch duplex {
+	case "":
+		return nil
 	case "FullDuplex":
 		return &objects.DuplexFull
 	case "AutoNegotiate":
@@ -369,7 +371,7 @@ func (ds *DnacSource) getInterfaceDuplex(duplex string) *objects.InterfaceDuplex
 	case "HalfDuplex":
 		return &objects.DuplexHalf
 	default:
-		ds.Logger.Warningf(ds.Ctx, "Unknown duplex value: %s", duplex)
+		ds.Logger.Warningf(ds.Ctx, "Not implemented Duplex value: %s", duplex)
 		return nil
 	}
 }
