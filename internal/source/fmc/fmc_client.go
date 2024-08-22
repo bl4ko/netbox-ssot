@@ -157,6 +157,11 @@ func (fmcc *fmcClient) MakeRequest(ctx context.Context, method, path string, bod
 	)
 
 	for attempt := 0; attempt < maxRetries; attempt++ {
+		// Check if context is already canceled or expired
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+
 		resp, err = fmcc.makeRequestOnce(ctx, method, path, body)
 		if err == nil {
 			return resp, nil
@@ -188,6 +193,7 @@ func (fmcc *fmcClient) GetDomains() ([]Domain, error) {
 	limit := 25
 	domains := []Domain{}
 	ctx := context.Background()
+	defer ctx.Done()
 	for {
 		apiResponse, err := fmcc.MakeRequest(ctx, http.MethodGet, fmt.Sprintf("fmc_platform/v1/info/domain?offset=%d&limit=%d", offset, limit), nil)
 		if err != nil {
@@ -225,6 +231,7 @@ func (fmcc *fmcClient) GetDevices(domainUUID string) ([]Device, error) {
 	limit := 25
 	devices := []Device{}
 	ctx := context.Background()
+	defer ctx.Done()
 	devicesURL := fmt.Sprintf("fmc_config/v1/domain/%s/devices/devicerecords?offset=%d&limit=%d", domainUUID, offset, limit)
 	for {
 		apiResponse, err := fmcc.MakeRequest(ctx, http.MethodGet, devicesURL, nil)
@@ -269,6 +276,7 @@ func (fmcc *fmcClient) GetDevicePhysicalInterfaces(domainUUID string, deviceID s
 	limit := 25
 	pIfaces := []PhysicalInterface{}
 	ctx := context.Background()
+	defer ctx.Done()
 	pInterfacesURL := fmt.Sprintf("fmc_config/v1/domain/%s/devices/devicerecords/%s/physicalinterfaces?offset=%d&limit=%d", domainUUID, deviceID, offset, limit)
 	for {
 		apiResponse, err := fmcc.MakeRequest(ctx, http.MethodGet, pInterfacesURL, nil)
@@ -374,6 +382,7 @@ type PhysicalInterfaceInfo struct {
 func (fmcc *fmcClient) GetPhysicalInterfaceInfo(domainUUID string, deviceID string, interfaceID string) (*PhysicalInterfaceInfo, error) {
 	var pInterfaceInfo PhysicalInterfaceInfo
 	ctx := context.Background()
+	defer ctx.Done()
 	devicesURL := fmt.Sprintf("fmc_config/v1/domain/%s/devices/devicerecords/%s/physicalinterfaces/%s", domainUUID, deviceID, interfaceID)
 	apiResponse, err := fmcc.MakeRequest(ctx, http.MethodGet, devicesURL, nil)
 	if err != nil {
@@ -398,6 +407,7 @@ func (fmcc *fmcClient) GetPhysicalInterfaceInfo(domainUUID string, deviceID stri
 func (fmcc *fmcClient) GetVLANInterfaceInfo(domainUUID string, deviceID string, interfaceID string) (*VLANInterfaceInfo, error) {
 	var vlanInterfaceInfo VLANInterfaceInfo
 	ctx := context.Background()
+	defer ctx.Done()
 	devicesURL := fmt.Sprintf("fmc_config/v1/domain/%s/devices/devicerecords/%s/vlaninterfaces/%s", domainUUID, deviceID, interfaceID)
 	apiResponse, err := fmcc.MakeRequest(ctx, http.MethodGet, devicesURL, nil)
 	if err != nil {

@@ -136,7 +136,6 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 	for hostID, host := range vc.Hosts {
 		var err error
 		hostName := host.Name
-		hostCluster := nbi.ClustersIndexByName[vc.Clusters[vc.Host2Cluster[hostID]].Name]
 
 		hostSite, err := common.MatchHostToSite(vc.Ctx, nbi, hostName, vc.HostSiteRelations)
 		if err != nil {
@@ -145,6 +144,15 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		hostTenant, err := common.MatchHostToTenant(vc.Ctx, nbi, hostName, vc.HostTenantRelations)
 		if err != nil {
 			return fmt.Errorf("hostTenant: %s", err)
+		}
+
+		hostCluster := nbi.ClustersIndexByName[vc.Clusters[vc.Host2Cluster[hostID]].Name]
+		if hostCluster == nil {
+			// Create a hypothetical cluster https://github.com/bl4ko/netbox-ssot/issues/141
+			hostCluster, err = vc.createHypotheticalCluster(nbi, hostName, hostSite, hostTenant)
+			if err != nil {
+				return fmt.Errorf("add hypothetical cluster: %s", err)
+			}
 		}
 
 		// Extract host hardware info
@@ -733,14 +741,6 @@ func (vc *VmwareSource) syncVM(nbi *inventory.NetboxInventory, vmKey string, vm 
 	// Cluster of the vm is same as the host
 	vmCluster := vmHost.Cluster
 
-	// Create a hypothetical cluster if needed
-	if vmCluster == nil {
-		vmCluster, err = vc.createHypotheticalCluster(nbi, vmHost)
-		if err != nil {
-			return fmt.Errorf("add hypothetical cluster: %s", err)
-		}
-	}
-
 	// VM status
 	vmStatus := &objects.VMStatusOffline
 	if vm.Runtime.PowerState == types.VirtualMachinePowerStatePoweredOn {
@@ -1249,7 +1249,7 @@ func (vc *VmwareSource) createVmwareClusterType(nbi *inventory.NetboxInventory) 
 // createHypotheticalCluster creates a cluster with name clusterName. This function is needed
 // for all hosts that are not assigned to cluster so we can assign them to hypotheticalCluster.
 // for more see: https://github.com/bl4ko/netbox-ssot/issues/141
-func (vc *VmwareSource) createHypotheticalCluster(nbi *inventory.NetboxInventory, vmHost *objects.Device) (*objects.Cluster, error) {
+func (vc *VmwareSource) createHypotheticalCluster(nbi *inventory.NetboxInventory, hostName string, hostSite *objects.Site, hostTenant *objects.Tenant) (*objects.Cluster, error) {
 	clusterType, err := vc.createVmwareClusterType(nbi)
 	if err != nil {
 		return nil, fmt.Errorf("failed to add vmware ClusterType: %v", err)
@@ -1261,20 +1261,15 @@ func (vc *VmwareSource) createHypotheticalCluster(nbi *inventory.NetboxInventory
 				constants.CustomFieldSourceName: vc.SourceConfig.Name,
 			},
 		},
-		Name:   vmHost.Name,
+		Name:   hostName,
 		Type:   clusterType,
 		Status: objects.ClusterStatusActive,
-		Site:   vmHost.Site,
-		Tenant: vmHost.Tenant,
+		Site:   hostSite,
+		Tenant: hostTenant,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to add vmware cluster %s as Netbox cluster: %v", vmHost.Name, err)
+		return nil, fmt.Errorf("failed to add vmware hypothetical cluster %s as Netbox cluster: %v", hostName, err)
 	}
-	vmHostCopy := *vmHost
-	vmHostCopy.Cluster = nbCluster
-	_, err = nbi.AddDevice(vc.Ctx, &vmHostCopy)
-	if err != nil {
-		return nil, fmt.Errorf("failed updating existing host with hypothetical cluster: %s", err)
-	}
+
 	return nbCluster, nil
 }
