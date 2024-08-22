@@ -895,7 +895,7 @@ func (o *OVirtSource) syncVMInterfaces(nbi *inventory.NetboxInventory, ovirtVM *
 										})
 
 										if err != nil {
-											o.Logger.Errorf(o.Ctx, "add ip address: %s", err)
+											o.Logger.Warningf(o.Ctx, "add ip address: %s", err)
 											continue
 										}
 
@@ -907,7 +907,7 @@ func (o *OVirtSource) syncVMInterfaces(nbi *inventory.NetboxInventory, ovirtVM *
 												vmCopy.PrimaryIPv4 = newIPAddress
 												_, err := nbi.AddVM(o.Ctx, &vmCopy)
 												if err != nil {
-													o.Logger.Errorf(o.Ctx, "adding vm's primary ipv4 address: %s", err)
+													o.Logger.Warningf(o.Ctx, "adding vm's primary ipv4 address: %s", err)
 													continue
 												}
 											}

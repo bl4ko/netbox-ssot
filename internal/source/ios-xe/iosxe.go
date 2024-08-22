@@ -157,7 +157,7 @@ func (is *IOSXESource) Init() error {
 			return fmt.Errorf("iosxe initialization failure: %v", err)
 		}
 		duration := time.Since(startTime)
-		is.Logger.Infof(is.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionName(initFunc), duration.Seconds())
+		is.Logger.Infof(is.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionNameWithTrimPrefix(initFunc, "init"), duration.Seconds())
 	}
 	return nil
 }
@@ -176,7 +176,7 @@ func (is *IOSXESource) Sync(nbi *inventory.NetboxInventory) error {
 			return err
 		}
 		duration := time.Since(startTime)
-		is.Logger.Infof(is.Ctx, "Successfully synced %s in %f seconds", utils.ExtractFunctionName(syncFunc), duration.Seconds())
+		is.Logger.Infof(is.Ctx, "Successfully synced %s in %f seconds", utils.ExtractFunctionNameWithTrimPrefix(syncFunc, "sync"), duration.Seconds())
 	}
 	return nil
 }

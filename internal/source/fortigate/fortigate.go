@@ -81,8 +81,8 @@ func (fs *FortigateSource) Init() error {
 	fs.Logger.Debugf(fs.Ctx, "HostSiteRelations: %s", fs.HostSiteRelations)
 
 	initFunctions := []func(context.Context, *FortiClient) error{
-		fs.InitSystemInfo,
-		fs.InitInterfaces,
+		fs.initSystemInfo,
+		fs.initInterfaces,
 	}
 	for _, initFunc := range initFunctions {
 		startTime := time.Now()
@@ -90,7 +90,7 @@ func (fs *FortigateSource) Init() error {
 			return fmt.Errorf("fortigate initialization failure: %v", err)
 		}
 		duration := time.Since(startTime)
-		fs.Logger.Infof(fs.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionName(initFunc), duration.Seconds())
+		fs.Logger.Infof(fs.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionNameWithTrimPrefix(initFunc, "init"), duration.Seconds())
 	}
 	return nil
 }
@@ -98,7 +98,7 @@ func (fs *FortigateSource) Init() error {
 func (fs *FortigateSource) Sync(nbi *inventory.NetboxInventory) error {
 	syncFunctions := []func(*inventory.NetboxInventory) error{
 		fs.syncDevice,
-		fs.SyncInterfaces,
+		fs.syncInterfaces,
 	}
 
 	for _, syncFunc := range syncFunctions {
@@ -108,7 +108,7 @@ func (fs *FortigateSource) Sync(nbi *inventory.NetboxInventory) error {
 			return err
 		}
 		duration := time.Since(startTime)
-		fs.Logger.Infof(fs.Ctx, "Successfully synced %s in %f seconds", utils.ExtractFunctionName(syncFunc), duration.Seconds())
+		fs.Logger.Infof(fs.Ctx, "Successfully synced %s in %f seconds", utils.ExtractFunctionNameWithTrimPrefix(syncFunc, "sync"), duration.Seconds())
 	}
 	return nil
 }

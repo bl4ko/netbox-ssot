@@ -7,7 +7,7 @@ import (
 )
 
 // Fetches networks from ovirt api and stores them to local object.
-func (o *OVirtSource) InitNetworks(conn *ovirtsdk4.Connection) error {
+func (o *OVirtSource) initNetworks(conn *ovirtsdk4.Connection) error {
 	networksResponse, err := conn.SystemService().NetworksService().List().Follow("vnicprofiles").Send()
 	if err != nil {
 		return fmt.Errorf("init oVirt networks: %v", err)
@@ -42,7 +42,7 @@ func (o *OVirtSource) InitNetworks(conn *ovirtsdk4.Connection) error {
 	return nil
 }
 
-func (o *OVirtSource) InitDisks(conn *ovirtsdk4.Connection) error {
+func (o *OVirtSource) initDisks(conn *ovirtsdk4.Connection) error {
 	// Get the disks
 	disksResponse, err := conn.SystemService().DisksService().List().Send()
 	if err != nil {
@@ -60,7 +60,7 @@ func (o *OVirtSource) InitDisks(conn *ovirtsdk4.Connection) error {
 	return nil
 }
 
-func (o *OVirtSource) InitDataCenters(conn *ovirtsdk4.Connection) error {
+func (o *OVirtSource) initDataCenters(conn *ovirtsdk4.Connection) error {
 	dataCentersResponse, err := conn.SystemService().DataCentersService().List().Send()
 	if err != nil {
 		return fmt.Errorf("failed to get oVirt data centers: %v", err)
@@ -78,7 +78,7 @@ func (o *OVirtSource) InitDataCenters(conn *ovirtsdk4.Connection) error {
 }
 
 // Function that queries ovirt api for clusters and stores them locally.
-func (o *OVirtSource) InitClusters(conn *ovirtsdk4.Connection) error {
+func (o *OVirtSource) initClusters(conn *ovirtsdk4.Connection) error {
 	clustersResponse, err := conn.SystemService().ClustersService().List().Send()
 	if err != nil {
 		return fmt.Errorf("failed to get oVirt clusters: %v", err)
@@ -96,7 +96,7 @@ func (o *OVirtSource) InitClusters(conn *ovirtsdk4.Connection) error {
 }
 
 // Function that queries ovirt api for hosts and stores them locally.
-func (o *OVirtSource) InitHosts(conn *ovirtsdk4.Connection) error {
+func (o *OVirtSource) initHosts(conn *ovirtsdk4.Connection) error {
 	hostsResponse, err := conn.SystemService().HostsService().List().Follow("nics").Send()
 	if err != nil {
 		return fmt.Errorf("failed to get oVirt hosts: %+v", err)
@@ -114,7 +114,7 @@ func (o *OVirtSource) InitHosts(conn *ovirtsdk4.Connection) error {
 }
 
 // Function that queries the ovirt api for vms and stores them locally.
-func (o *OVirtSource) InitVms(conn *ovirtsdk4.Connection) error {
+func (o *OVirtSource) initVms(conn *ovirtsdk4.Connection) error {
 	vmsResponse, err := conn.SystemService().VmsService().List().Follow("nics,diskattachments,reporteddevices").Send()
 	if err != nil {
 		return fmt.Errorf("failed to get oVirt vms: %+v", err)

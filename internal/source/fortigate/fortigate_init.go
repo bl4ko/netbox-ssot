@@ -33,7 +33,7 @@ type InterfaceResponse struct {
 }
 
 // Init system info collects system info from paloalto.
-func (fs *FortigateSource) InitSystemInfo(ctx context.Context, c *FortiClient) error {
+func (fs *FortigateSource) initSystemInfo(ctx context.Context, c *FortiClient) error {
 	res, err := c.MakeRequest(ctx, http.MethodGet, "cmdb/system/global/", nil)
 	if err != nil {
 		return fmt.Errorf("request error: %s", err)
@@ -65,7 +65,7 @@ func (fs *FortigateSource) InitSystemInfo(ctx context.Context, c *FortiClient) e
 }
 
 // Fetches all information about interfaces from fortigate api.
-func (fs *FortigateSource) InitInterfaces(ctx context.Context, c *FortiClient) error {
+func (fs *FortigateSource) initInterfaces(ctx context.Context, c *FortiClient) error {
 	// Interfaces
 	res, err := c.MakeRequest(ctx, http.MethodGet, "cmdb/system/interface/", nil)
 	if err != nil {

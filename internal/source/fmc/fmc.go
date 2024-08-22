@@ -54,7 +54,7 @@ func (fmcs *FMCSource) Init() error {
 	fmcs.Logger.Debugf(fmcs.Ctx, "HostSiteRelations: %s", fmcs.HostSiteRelations)
 
 	initFunctions := []func(*fmcClient) error{
-		fmcs.init,
+		fmcs.initObjects,
 	}
 	for _, initFunc := range initFunctions {
 		startTime := time.Now()
@@ -62,7 +62,7 @@ func (fmcs *FMCSource) Init() error {
 			return fmt.Errorf("fmc initialization failure: %v", err)
 		}
 		duration := time.Since(startTime)
-		fmcs.Logger.Infof(fmcs.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionName(initFunc), duration.Seconds())
+		fmcs.Logger.Infof(fmcs.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionNameWithTrimPrefix(initFunc, "init"), duration.Seconds())
 	}
 	return nil
 }
@@ -79,7 +79,7 @@ func (fmcs *FMCSource) Sync(nbi *inventory.NetboxInventory) error {
 			return err
 		}
 		duration := time.Since(startTime)
-		fmcs.Logger.Infof(fmcs.Ctx, "Successfully synced %s in %f seconds", utils.ExtractFunctionName(syncFunc), duration.Seconds())
+		fmcs.Logger.Infof(fmcs.Ctx, "Successfully synced %s in %f seconds", utils.ExtractFunctionNameWithTrimPrefix(syncFunc, "sync"), duration.Seconds())
 	}
 	return nil
 }

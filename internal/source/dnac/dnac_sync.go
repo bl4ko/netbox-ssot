@@ -13,7 +13,7 @@ import (
 )
 
 // Syncs dnac sites to netbox inventory.
-func (ds *DnacSource) SyncSites(nbi *inventory.NetboxInventory) error {
+func (ds *DnacSource) syncSites(nbi *inventory.NetboxInventory) error {
 	for _, site := range ds.Sites {
 		dnacSite := &objects.Site{
 			NetboxObject: objects.NetboxObject{
@@ -47,7 +47,7 @@ func (ds *DnacSource) SyncSites(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
-func (ds *DnacSource) SyncVlans(nbi *inventory.NetboxInventory) error {
+func (ds *DnacSource) syncVlans(nbi *inventory.NetboxInventory) error {
 	for vid, vlan := range ds.Vlans {
 		vlanGroup, err := common.MatchVlanToGroup(ds.Ctx, nbi, vlan.InterfaceName, ds.VlanGroupRelations)
 		if err != nil {
@@ -98,7 +98,7 @@ func (ds *DnacSource) SyncVlans(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
-func (ds *DnacSource) SyncDevices(nbi *inventory.NetboxInventory) error {
+func (ds *DnacSource) syncDevices(nbi *inventory.NetboxInventory) error {
 	for deviceID, device := range ds.Devices {
 		var description, comments string
 		if device.Description != "" {
@@ -203,7 +203,7 @@ func (ds *DnacSource) SyncDevices(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
-func (ds *DnacSource) SyncDeviceInterfaces(nbi *inventory.NetboxInventory) error {
+func (ds *DnacSource) syncDeviceInterfaces(nbi *inventory.NetboxInventory) error {
 	for ifaceID, iface := range ds.Interfaces {
 		ifaceDescription := iface.Description
 		ifaceDevice := ds.DeviceID2nbDevice[iface.DeviceID]

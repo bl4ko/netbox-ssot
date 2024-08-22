@@ -3,7 +3,7 @@ package fmc
 import "fmt"
 
 // Init initializes the FMC source.
-func (fmcs *FMCSource) init(c *fmcClient) error {
+func (fmcs *FMCSource) initObjects(c *fmcClient) error {
 	domains, err := fmcs.initDomains(c)
 	if err != nil {
 		return fmt.Errorf("init domains: %s", err)

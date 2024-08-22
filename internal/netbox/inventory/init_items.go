@@ -13,7 +13,7 @@ import (
 )
 
 // Collect all tags from Netbox API and store them in the NetBoxInventory.
-func (nbi *NetboxInventory) InitTags(ctx context.Context) error {
+func (nbi *NetboxInventory) initTags(ctx context.Context) error {
 	nbTags, err := service.GetAll[objects.Tag](ctx, nbi.NetboxAPI, "")
 	if err != nil {
 		return err
@@ -45,7 +45,7 @@ func (nbi *NetboxInventory) InitTags(ctx context.Context) error {
 }
 
 // Collects all tenants from Netbox API and store them in the NetBoxInventory.
-func (nbi *NetboxInventory) InitTenants(ctx context.Context) error {
+func (nbi *NetboxInventory) initTenants(ctx context.Context) error {
 	nbTenants, err := service.GetAll[objects.Tenant](ctx, nbi.NetboxAPI, "")
 	if err != nil {
 		return err
@@ -61,7 +61,7 @@ func (nbi *NetboxInventory) InitTenants(ctx context.Context) error {
 }
 
 // Collects all contacts from Netbox API and store them in the NetBoxInventory.
-func (nbi *NetboxInventory) InitContacts(ctx context.Context) error {
+func (nbi *NetboxInventory) initContacts(ctx context.Context) error {
 	nbContacts, err := service.GetAll[objects.Contact](ctx, nbi.NetboxAPI, "")
 	if err != nil {
 		return err
@@ -81,7 +81,7 @@ func (nbi *NetboxInventory) InitContacts(ctx context.Context) error {
 }
 
 // Collects all contact roles from Netbox API and store them in the NetBoxInventory.
-func (nbi *NetboxInventory) InitContactRoles(ctx context.Context) error {
+func (nbi *NetboxInventory) initContactRoles(ctx context.Context) error {
 	nbContactRoles, err := service.GetAll[objects.ContactRole](ctx, nbi.NetboxAPI, "")
 	if err != nil {
 		return err
@@ -96,7 +96,7 @@ func (nbi *NetboxInventory) InitContactRoles(ctx context.Context) error {
 	return nil
 }
 
-func (nbi *NetboxInventory) InitContactAssignments(ctx context.Context) error {
+func (nbi *NetboxInventory) initContactAssignments(ctx context.Context) error {
 	nbCAs, err := service.GetAll[objects.ContactAssignment](ctx, nbi.NetboxAPI, "")
 	if err != nil {
 		return err
@@ -130,7 +130,7 @@ func (nbi *NetboxInventory) InitContactAssignments(ctx context.Context) error {
 }
 
 // Initializes default admin contact role used for adding admin contacts of vms.
-func (nbi *NetboxInventory) InitAdminContactRole(ctx context.Context) error {
+func (nbi *NetboxInventory) initAdminContactRole(ctx context.Context) error {
 	_, err := nbi.AddContactRole(ctx, &objects.ContactRole{
 		NetboxObject: objects.NetboxObject{
 			Description: "Auto generated contact role by netbox-ssot for admins of vms.",
@@ -148,7 +148,7 @@ func (nbi *NetboxInventory) InitAdminContactRole(ctx context.Context) error {
 }
 
 // Collects all contact groups from Netbox API and store them in the NetBoxInventory.
-func (nbi *NetboxInventory) InitContactGroups(ctx context.Context) error {
+func (nbi *NetboxInventory) initContactGroups(ctx context.Context) error {
 	nbContactGroups, err := service.GetAll[objects.ContactGroup](ctx, nbi.NetboxAPI, "")
 	if err != nil {
 		return err
@@ -164,7 +164,7 @@ func (nbi *NetboxInventory) InitContactGroups(ctx context.Context) error {
 }
 
 // Collects all sites from Netbox API and store them in the NetBoxInventory.
-func (nbi *NetboxInventory) InitSites(ctx context.Context) error {
+func (nbi *NetboxInventory) initSites(ctx context.Context) error {
 	nbSites, err := service.GetAll[objects.Site](ctx, nbi.NetboxAPI, "")
 	if err != nil {
 		return err
@@ -179,9 +179,9 @@ func (nbi *NetboxInventory) InitSites(ctx context.Context) error {
 	return nil
 }
 
-// InitDefaultSite inits default site, which is used for hosts that have no corresponding site.
+// initDefaultSite inits default site, which is used for hosts that have no corresponding site.
 // This is because site is required for adding new hosts.
-func (nbi *NetboxInventory) InitDefaultSite(ctx context.Context) error {
+func (nbi *NetboxInventory) initDefaultSite(ctx context.Context) error {
 	_, err := nbi.AddSite(ctx, &objects.Site{
 		NetboxObject: objects.NetboxObject{
 			Tags:        []*objects.Tag{nbi.SsotTag},
@@ -200,7 +200,7 @@ func (nbi *NetboxInventory) InitDefaultSite(ctx context.Context) error {
 }
 
 // Collects all manufacturers from Netbox API and store them in NetBoxInventory.
-func (nbi *NetboxInventory) InitManufacturers(ctx context.Context) error {
+func (nbi *NetboxInventory) initManufacturers(ctx context.Context) error {
 	nbManufacturers, err := service.GetAll[objects.Manufacturer](ctx, nbi.NetboxAPI, "")
 	if err != nil {
 		return err
@@ -223,7 +223,7 @@ func (nbi *NetboxInventory) InitManufacturers(ctx context.Context) error {
 }
 
 // Collects all platforms from Netbox API and store them in the NetBoxInventory.
-func (nbi *NetboxInventory) InitPlatforms(ctx context.Context) error {
+func (nbi *NetboxInventory) initPlatforms(ctx context.Context) error {
 	nbPlatforms, err := service.GetAll[objects.Platform](ctx, nbi.NetboxAPI, "")
 	if err != nil {
 		return err
@@ -245,7 +245,7 @@ func (nbi *NetboxInventory) InitPlatforms(ctx context.Context) error {
 }
 
 // Collect all devices from Netbox API and store them in the NetBoxInventory.
-func (nbi *NetboxInventory) InitDevices(ctx context.Context) error {
+func (nbi *NetboxInventory) initDevices(ctx context.Context) error {
 	nbDevices, err := service.GetAll[objects.Device](ctx, nbi.NetboxAPI, "")
 	if err != nil {
 		return err
@@ -270,7 +270,7 @@ func (nbi *NetboxInventory) InitDevices(ctx context.Context) error {
 }
 
 // Collect all devices from Netbox API and store them in the NetBoxInventory.
-func (nbi *NetboxInventory) InitVirtualDeviceContexts(ctx context.Context) error {
+func (nbi *NetboxInventory) initVirtualDeviceContexts(ctx context.Context) error {
 	nbVirtualDeviceContexts, err := service.GetAll[objects.VirtualDeviceContext](ctx, nbi.NetboxAPI, "")
 	if err != nil {
 		return err
@@ -296,7 +296,7 @@ func (nbi *NetboxInventory) InitVirtualDeviceContexts(ctx context.Context) error
 
 // Collects all deviceRoles from Netbox API and store them in the
 // NetBoxInventory.
-func (nbi *NetboxInventory) InitDeviceRoles(ctx context.Context) error {
+func (nbi *NetboxInventory) initDeviceRoles(ctx context.Context) error {
 	nbDeviceRoles, err := service.GetAll[objects.DeviceRole](ctx, nbi.NetboxAPI, "")
 	if err != nil {
 		return err
@@ -318,7 +318,7 @@ func (nbi *NetboxInventory) InitDeviceRoles(ctx context.Context) error {
 	return nil
 }
 
-func (nbi *NetboxInventory) InitCustomFields(ctx context.Context) error {
+func (nbi *NetboxInventory) initCustomFields(ctx context.Context) error {
 	customFields, err := service.GetAll[objects.CustomField](ctx, nbi.NetboxAPI, "")
 	if err != nil {
 		return err
@@ -338,7 +338,7 @@ func (nbi *NetboxInventory) InitCustomFields(ctx context.Context) error {
 // - host_cpu_cores
 // - host_memory
 // - sourceId - this is used to store the ID of the source object in Netbox (interfaces).
-func (nbi *NetboxInventory) InitSsotCustomFields(ctx context.Context) error {
+func (nbi *NetboxInventory) initSsotCustomFields(ctx context.Context) error {
 	// Custom field for storing object's source name.
 	_, err := nbi.AddCustomField(ctx, &objects.CustomField{
 		Name:                  constants.CustomFieldSourceName,
@@ -440,7 +440,7 @@ func (nbi *NetboxInventory) InitSsotCustomFields(ctx context.Context) error {
 }
 
 // Collects all nbClusters from Netbox API and stores them in the NetBoxInventory.
-func (nbi *NetboxInventory) InitClusterGroups(ctx context.Context) error {
+func (nbi *NetboxInventory) initClusterGroups(ctx context.Context) error {
 	nbClusterGroups, err := service.GetAll[objects.ClusterGroup](ctx, nbi.NetboxAPI, "")
 	if err != nil {
 		return err
@@ -462,7 +462,7 @@ func (nbi *NetboxInventory) InitClusterGroups(ctx context.Context) error {
 }
 
 // Collects all ClusterTypes from Netbox API and stores them in the NetBoxInventory.
-func (nbi *NetboxInventory) InitClusterTypes(ctx context.Context) error {
+func (nbi *NetboxInventory) initClusterTypes(ctx context.Context) error {
 	nbClusterTypes, err := service.GetAll[objects.ClusterType](ctx, nbi.NetboxAPI, "")
 	if err != nil {
 		return err
@@ -486,7 +486,7 @@ func (nbi *NetboxInventory) InitClusterTypes(ctx context.Context) error {
 }
 
 // Collects all clusters from Netbox API and stores them to local inventory.
-func (nbi *NetboxInventory) InitClusters(ctx context.Context) error {
+func (nbi *NetboxInventory) initClusters(ctx context.Context) error {
 	nbClusters, err := service.GetAll[objects.Cluster](ctx, nbi.NetboxAPI, "")
 	if err != nil {
 		return err
@@ -509,7 +509,7 @@ func (nbi *NetboxInventory) InitClusters(ctx context.Context) error {
 	return nil
 }
 
-func (nbi *NetboxInventory) InitDeviceTypes(ctx context.Context) error {
+func (nbi *NetboxInventory) initDeviceTypes(ctx context.Context) error {
 	nbDeviceTypes, err := service.GetAll[objects.DeviceType](ctx, nbi.NetboxAPI, "")
 	if err != nil {
 		return err
@@ -533,7 +533,7 @@ func (nbi *NetboxInventory) InitDeviceTypes(ctx context.Context) error {
 }
 
 // Collects all interfaces from Netbox API and stores them to local inventory.
-func (nbi *NetboxInventory) InitInterfaces(ctx context.Context) error {
+func (nbi *NetboxInventory) initInterfaces(ctx context.Context) error {
 	nbInterfaces, err := service.GetAll[objects.Interface](ctx, nbi.NetboxAPI, "")
 	if err != nil {
 		return err
@@ -561,7 +561,7 @@ func (nbi *NetboxInventory) InitInterfaces(ctx context.Context) error {
 
 // Inits default VlanGroup, which is required to group all Vlans that are not part of other
 // vlangroups into it. Each vlan is indexed by their (vlanGroup, vid).
-func (nbi *NetboxInventory) InitDefaultVlanGroup(ctx context.Context) error {
+func (nbi *NetboxInventory) initDefaultVlanGroup(ctx context.Context) error {
 	_, err := nbi.AddVlanGroup(ctx, &objects.VlanGroup{
 		NetboxObject: objects.NetboxObject{
 			Tags:        []*objects.Tag{nbi.SsotTag},
@@ -582,7 +582,7 @@ func (nbi *NetboxInventory) InitDefaultVlanGroup(ctx context.Context) error {
 }
 
 // Collects all vlans from Netbox API and stores them to local inventory.
-func (nbi *NetboxInventory) InitVlanGroups(ctx context.Context) error {
+func (nbi *NetboxInventory) initVlanGroups(ctx context.Context) error {
 	nbVlanGroups, err := service.GetAll[objects.VlanGroup](ctx, nbi.NetboxAPI, "")
 	if err != nil {
 		return err
@@ -606,7 +606,7 @@ func (nbi *NetboxInventory) InitVlanGroups(ctx context.Context) error {
 }
 
 // Collects all vlans from Netbox API and stores them to local inventory.
-func (nbi *NetboxInventory) InitVlans(ctx context.Context) error {
+func (nbi *NetboxInventory) initVlans(ctx context.Context) error {
 	nbVlans, err := service.GetAll[objects.Vlan](ctx, nbi.NetboxAPI, "")
 	if err != nil {
 		return err
@@ -642,7 +642,7 @@ func (nbi *NetboxInventory) InitVlans(ctx context.Context) error {
 }
 
 // Collects all vms from Netbox API and stores them to local inventory.
-func (nbi *NetboxInventory) InitVMs(ctx context.Context) error {
+func (nbi *NetboxInventory) initVMs(ctx context.Context) error {
 	nbVMs, err := service.GetAll[objects.VM](ctx, nbi.NetboxAPI, "")
 	if err != nil {
 		return err
@@ -673,7 +673,7 @@ func (nbi *NetboxInventory) InitVMs(ctx context.Context) error {
 }
 
 // Collects all VMInterfaces from Netbox API and stores them to local inventory.
-func (nbi *NetboxInventory) InitVMInterfaces(ctx context.Context) error {
+func (nbi *NetboxInventory) initVMInterfaces(ctx context.Context) error {
 	nbVMInterfaces, err := service.GetAll[objects.VMInterface](ctx, nbi.NetboxAPI, "")
 	if err != nil {
 		return fmt.Errorf("Init vm interfaces: %s", err)
@@ -700,7 +700,7 @@ func (nbi *NetboxInventory) InitVMInterfaces(ctx context.Context) error {
 }
 
 // Collects all IP addresses from Netbox API and stores them to local inventory.
-func (nbi *NetboxInventory) InitIPAddresses(ctx context.Context) error {
+func (nbi *NetboxInventory) initIPAddresses(ctx context.Context) error {
 	ipAddresses, err := service.GetAll[objects.IPAddress](ctx, nbi.NetboxAPI, "")
 	if err != nil {
 		return err
@@ -739,7 +739,7 @@ func (nbi *NetboxInventory) InitIPAddresses(ctx context.Context) error {
 }
 
 // Collects all Prefixes from Netbox API and stores them to local inventory.
-func (nbi *NetboxInventory) InitPrefixes(ctx context.Context) error {
+func (nbi *NetboxInventory) initPrefixes(ctx context.Context) error {
 	prefixes, err := service.GetAll[objects.Prefix](ctx, nbi.NetboxAPI, "")
 	if err != nil {
 		return err

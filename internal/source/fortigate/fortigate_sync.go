@@ -87,8 +87,8 @@ func (fs *FortigateSource) syncDevice(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
-// SyncInterfaces syncs all interfaces for firewall.
-func (fs *FortigateSource) SyncInterfaces(nbi *inventory.NetboxInventory) error {
+// syncInterfaces syncs all interfaces for firewall.
+func (fs *FortigateSource) syncInterfaces(nbi *inventory.NetboxInventory) error {
 	for _, iface := range fs.Ifaces {
 		switch iface.Type {
 		case "loopback":

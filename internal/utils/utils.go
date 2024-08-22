@@ -111,7 +111,16 @@ func ExtractFunctionName(i interface{}) string {
 
 	fullFuncName := runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
 	funcNameParts := strings.Split(fullFuncName, ".")
-	return funcNameParts[len(funcNameParts)-1]
+	funcNameFull := funcNameParts[len(funcNameParts)-1]
+	funcNameFull = strings.TrimSuffix(funcNameFull, "-fm")
+	return funcNameFull
+}
+
+// ExtractFunctionNameWithTrimPrefix extracts the function name and trims the prefix.
+// Note: This function sacrifices type safety and assumes the caller ensures the correct usage.
+func ExtractFunctionNameWithTrimPrefix(i interface{}, prefix string) string {
+	funcNameFull := ExtractFunctionName(i)
+	return strings.TrimPrefix(funcNameFull, prefix)
 }
 
 // Converts strings of format fieldName = value to map[fieldName] = value.

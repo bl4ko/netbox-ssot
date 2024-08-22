@@ -91,7 +91,7 @@ func (ps *ProxmoxSource) Init() error {
 			return fmt.Errorf("proxmox initialization failure: %v", err)
 		}
 		duration := time.Since(startTime)
-		ps.Logger.Infof(ps.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionName(initFunc), duration.Seconds())
+		ps.Logger.Infof(ps.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionNameWithTrimPrefix(initFunc, "init"), duration.Seconds())
 	}
 
 	return nil
@@ -112,7 +112,7 @@ func (ps *ProxmoxSource) Sync(nbi *inventory.NetboxInventory) error {
 			return err
 		}
 		duration := time.Since(startTime)
-		ps.Logger.Infof(ps.Ctx, "Successfully synced %s in %f seconds", utils.ExtractFunctionName(syncFunc), duration.Seconds())
+		ps.Logger.Infof(ps.Ctx, "Successfully synced %s in %f seconds", utils.ExtractFunctionNameWithTrimPrefix(syncFunc, "sync"), duration.Seconds())
 	}
 	return nil
 }

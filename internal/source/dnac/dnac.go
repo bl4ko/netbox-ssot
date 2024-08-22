@@ -55,10 +55,10 @@ func (ds *DnacSource) Init() error {
 
 	// Initialize items from vsphere API to local storage
 	initFunctions := []func(*dnac.Client) error{
-		ds.InitSites,
-		ds.InitMemberships,
-		ds.InitDevices,
-		ds.InitInterfaces,
+		ds.initSites,
+		ds.initMemberships,
+		ds.initDevices,
+		ds.initInterfaces,
 	}
 
 	for _, initFunc := range initFunctions {
@@ -67,7 +67,7 @@ func (ds *DnacSource) Init() error {
 			return fmt.Errorf("dnac initialization failure: %v", err)
 		}
 		duration := time.Since(startTime)
-		ds.Logger.Infof(ds.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionName(initFunc), duration.Seconds())
+		ds.Logger.Infof(ds.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionNameWithTrimPrefix(initFunc, "init"), duration.Seconds())
 	}
 	return nil
 }
@@ -80,10 +80,10 @@ func (ds *DnacSource) Sync(nbi *inventory.NetboxInventory) error {
 	ds.InterfaceID2nbInterface = make(map[string]*objects.Interface)
 
 	syncFunctions := []func(*inventory.NetboxInventory) error{
-		ds.SyncSites,
-		ds.SyncVlans,
-		ds.SyncDevices,
-		ds.SyncDeviceInterfaces,
+		ds.syncSites,
+		ds.syncVlans,
+		ds.syncDevices,
+		ds.syncDeviceInterfaces,
 	}
 
 	for _, syncFunc := range syncFunctions {
@@ -93,7 +93,7 @@ func (ds *DnacSource) Sync(nbi *inventory.NetboxInventory) error {
 			return err
 		}
 		duration := time.Since(startTime)
-		ds.Logger.Infof(ds.Ctx, "Successfully synced %s in %f seconds", utils.ExtractFunctionName(syncFunc), duration.Seconds())
+		ds.Logger.Infof(ds.Ctx, "Successfully synced %s in %f seconds", utils.ExtractFunctionNameWithTrimPrefix(syncFunc, "sync"), duration.Seconds())
 	}
 	return nil
 }

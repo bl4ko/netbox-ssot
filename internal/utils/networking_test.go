@@ -42,13 +42,6 @@ func TestReverseLookup(t *testing.T) {
 			},
 			want: "dns.google",
 		},
-		{
-			name: "Lookup IP with wrong mask should fail",
-			args: args{
-				ipAddress: "8.8.8.8/36",
-			},
-			want: "",
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

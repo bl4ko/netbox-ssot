@@ -91,7 +91,7 @@ func (pas *PaloAltoSource) Init() error {
 			return fmt.Errorf("paloalto initialization failure: %v", err)
 		}
 		duration := time.Since(startTime)
-		pas.Logger.Infof(pas.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionName(initFunc), duration.Seconds())
+		pas.Logger.Infof(pas.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionNameWithTrimPrefix(initFunc, "init"), duration.Seconds())
 	}
 	return nil
 }
@@ -111,7 +111,7 @@ func (pas *PaloAltoSource) Sync(nbi *inventory.NetboxInventory) error {
 			return err
 		}
 		duration := time.Since(startTime)
-		pas.Logger.Infof(pas.Ctx, "Successfully synced %s in %f seconds", utils.ExtractFunctionName(syncFunc), duration.Seconds())
+		pas.Logger.Infof(pas.Ctx, "Successfully synced %s in %f seconds", utils.ExtractFunctionNameWithTrimPrefix(syncFunc, "sync"), duration.Seconds())
 	}
 	return nil
 }

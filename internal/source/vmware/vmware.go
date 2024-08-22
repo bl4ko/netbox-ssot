@@ -182,12 +182,12 @@ func (vc *VmwareSource) Init() error {
 
 	// Initialize items from vsphere API to local storage
 	initFunctions := []func(context.Context, *view.ContainerView) error{
-		vc.InitNetworks,
-		vc.InitDisks,
-		vc.InitDataCenters,
-		vc.InitClusters,
-		vc.InitHosts,
-		vc.InitVms,
+		vc.initNetworks,
+		vc.initDisks,
+		vc.initDataCenters,
+		vc.initClusters,
+		vc.initHosts,
+		vc.initVms,
 	}
 
 	for _, initFunc := range initFunctions {
@@ -196,7 +196,7 @@ func (vc *VmwareSource) Init() error {
 			return fmt.Errorf("vmware initialization failure: %v", err)
 		}
 		duration := time.Since(startTime)
-		vc.Logger.Infof(vc.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionName(initFunc), duration.Seconds())
+		vc.Logger.Infof(vc.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionNameWithTrimPrefix(initFunc, "init"), duration.Seconds())
 	}
 
 	// Ensure the containerView is destroyed after we are done with it
@@ -231,7 +231,7 @@ func (vc *VmwareSource) Sync(nbi *inventory.NetboxInventory) error {
 			return err
 		}
 		duration := time.Since(startTime)
-		vc.Logger.Infof(vc.Ctx, "Successfully synced %s in %f seconds", utils.ExtractFunctionName(syncFunc), duration.Seconds())
+		vc.Logger.Infof(vc.Ctx, "Successfully synced %s in %f seconds", utils.ExtractFunctionNameWithTrimPrefix(syncFunc, "sync"), duration.Seconds())
 	}
 	return nil
 }

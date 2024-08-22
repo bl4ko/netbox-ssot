@@ -190,34 +190,34 @@ func (nbi *NetboxInventory) Init() error {
 
 	// Order matters. TODO: use parallelization in the future, on the init functions that can be parallelized
 	initFunctions := []func(context.Context) error{
-		nbi.InitCustomFields,
-		nbi.InitSsotCustomFields,
-		nbi.InitTags,
-		nbi.InitContactGroups,
-		nbi.InitContactRoles,
-		nbi.InitAdminContactRole,
-		nbi.InitContacts,
-		nbi.InitContactAssignments,
-		nbi.InitTenants,
-		nbi.InitSites,
-		nbi.InitDefaultSite,
-		nbi.InitManufacturers,
-		nbi.InitPlatforms,
-		nbi.InitDevices,
-		nbi.InitVirtualDeviceContexts,
-		nbi.InitInterfaces,
-		nbi.InitIPAddresses,
-		nbi.InitVlanGroups,
-		nbi.InitDefaultVlanGroup,
-		nbi.InitPrefixes,
-		nbi.InitVlans,
-		nbi.InitDeviceRoles,
-		nbi.InitDeviceTypes,
-		nbi.InitClusterGroups,
-		nbi.InitClusterTypes,
-		nbi.InitClusters,
-		nbi.InitVMs,
-		nbi.InitVMInterfaces,
+		nbi.initCustomFields,
+		nbi.initSsotCustomFields,
+		nbi.initTags,
+		nbi.initContactGroups,
+		nbi.initContactRoles,
+		nbi.initAdminContactRole,
+		nbi.initContacts,
+		nbi.initContactAssignments,
+		nbi.initTenants,
+		nbi.initSites,
+		nbi.initDefaultSite,
+		nbi.initManufacturers,
+		nbi.initPlatforms,
+		nbi.initDevices,
+		nbi.initVirtualDeviceContexts,
+		nbi.initInterfaces,
+		nbi.initIPAddresses,
+		nbi.initVlanGroups,
+		nbi.initDefaultVlanGroup,
+		nbi.initPrefixes,
+		nbi.initVlans,
+		nbi.initDeviceRoles,
+		nbi.initDeviceTypes,
+		nbi.initClusterGroups,
+		nbi.initClusterTypes,
+		nbi.initClusters,
+		nbi.initVMs,
+		nbi.initVMInterfaces,
 	}
 	for _, initFunc := range initFunctions {
 		startTime := time.Now()
@@ -225,7 +225,7 @@ func (nbi *NetboxInventory) Init() error {
 			return fmt.Errorf("%s: %s", err, utils.ExtractFunctionName(initFunc))
 		}
 		duration := time.Since(startTime)
-		nbi.Logger.Infof(nbi.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionName(initFunc), duration.Seconds())
+		nbi.Logger.Infof(nbi.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionNameWithTrimPrefix(initFunc, "init"), duration.Seconds())
 	}
 
 	return nil

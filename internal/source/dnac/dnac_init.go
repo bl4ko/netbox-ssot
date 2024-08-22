@@ -7,7 +7,7 @@ import (
 	dnac "github.com/cisco-en-programmability/dnacenter-go-sdk/v5/sdk"
 )
 
-func (ds *DnacSource) InitSites(c *dnac.Client) error {
+func (ds *DnacSource) initSites(c *dnac.Client) error {
 	offset := 0
 	limit := 100
 	allSites := make([]dnac.ResponseSitesGetSiteResponse, 0)
@@ -32,7 +32,7 @@ func (ds *DnacSource) InitSites(c *dnac.Client) error {
 	return nil
 }
 
-func (ds *DnacSource) InitDevices(c *dnac.Client) error {
+func (ds *DnacSource) initDevices(c *dnac.Client) error {
 	offset := 0.
 	limit := 100.
 	allDevices := make([]dnac.ResponseDevicesGetDeviceListResponse, 0)
@@ -72,7 +72,7 @@ func (ds *DnacSource) initVlansForDevice(c *dnac.Client, deviceID string) {
 	}
 }
 
-func (ds *DnacSource) InitInterfaces(c *dnac.Client) error {
+func (ds *DnacSource) initInterfaces(c *dnac.Client) error {
 	offset := 0
 	limit := 100
 	allInterfaces := make([]dnac.ResponseDevicesGetAllInterfacesResponse, 0)
@@ -107,7 +107,7 @@ func (ds *DnacSource) InitInterfaces(c *dnac.Client) error {
 // This is necessary to find relations between devices and sites.
 //
 // This function has to run after InitSites.
-func (ds *DnacSource) InitMemberships(c *dnac.Client) error {
+func (ds *DnacSource) initMemberships(c *dnac.Client) error {
 	offset := 0
 	limit := 100
 	ds.Site2Devices = make(map[string]map[string]bool)

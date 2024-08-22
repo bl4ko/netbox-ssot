@@ -1,30 +1,32 @@
 package utils
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"strings"
+	"time"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
 )
 
-// Function that receives ipAddress and performs a reverse lookup
-// to get the hostname. If the reverse lookup fails, it returns an empty string.
 func ReverseLookup(ipAddress string) string {
-	// Parse the IP address to handle cases where a subnet mask is provided
-	ip, _, err := net.ParseCIDR(ipAddress)
-	if err != nil {
-		// If parsing as CIDR fails, try to parse it as a plain IP address
-		ip = net.ParseIP(ipAddress)
-		if ip == nil {
-			return ""
-		}
-	}
+	// Create a context with the specified timeout
+	TIMEOUT := 2 * time.Second //nolint:gomnd
+	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUT)
+	defer cancel()
 
-	names, err := net.LookupAddr(ip.String())
+	// Check if ipAddress contains a mask, and remove it
+	ipAddress = strings.Split(ipAddress, "/")[0]
+
+	// Use a custom resolver with the context
+	resolver := &net.Resolver{}
+	names, err := resolver.LookupAddr(ctx, ipAddress)
 	if err != nil || len(names) == 0 {
 		return ""
 	}
+
+	// Return the first domain name, stripping the trailing dot if present
 	domain := strings.TrimSuffix(names[0], ".")
 	return domain
 }

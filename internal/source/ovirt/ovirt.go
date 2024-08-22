@@ -85,12 +85,12 @@ func (o *OVirtSource) Init() error {
 
 	// Initialize items to local storage
 	initFunctions := []func(*ovirtsdk4.Connection) error{
-		o.InitNetworks,
-		o.InitDisks,
-		o.InitDataCenters,
-		o.InitClusters,
-		o.InitHosts,
-		o.InitVms,
+		o.initNetworks,
+		o.initDisks,
+		o.initDataCenters,
+		o.initClusters,
+		o.initHosts,
+		o.initVms,
 	}
 
 	for _, initFunc := range initFunctions {
@@ -99,7 +99,7 @@ func (o *OVirtSource) Init() error {
 			return fmt.Errorf("failed to initialize oVirt %s: %v", strings.TrimPrefix(fmt.Sprintf("%T", initFunc), "*source.OVirtSource.Init"), err)
 		}
 		duration := time.Since(startTime)
-		o.Logger.Infof(o.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionName(initFunc), duration.Seconds())
+		o.Logger.Infof(o.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionNameWithTrimPrefix(initFunc, "init"), duration.Seconds())
 	}
 	return nil
 }
@@ -120,7 +120,7 @@ func (o *OVirtSource) Sync(nbi *inventory.NetboxInventory) error {
 			return err
 		}
 		duration := time.Since(startTime)
-		o.Logger.Infof(o.Ctx, "Successfully synced %s in %f seconds", utils.ExtractFunctionName(syncFunc), duration.Seconds())
+		o.Logger.Infof(o.Ctx, "Successfully synced %s in %f seconds", utils.ExtractFunctionNameWithTrimPrefix(syncFunc, "sync"), duration.Seconds())
 	}
 	return nil
 }

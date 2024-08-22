@@ -43,16 +43,12 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/rogpeppe/go-internal v1.12.0 h1:exVL4IDcn6na9z1rAb56Vxr+CgyK3nn3O+epU5NdKM8=
 github.com/rogpeppe/go-internal v1.12.0/go.mod h1:E+RYuTGaKKdloAfM02xzb0FW3Paa99yedzYV+kq4uf4=
-github.com/scrapli/scrapligo v1.3.1 h1:azEcQ2zQ+N6L3Je2IyDrM0/SKuOka7gLZ1z/Q/ZHPUs=
-github.com/scrapli/scrapligo v1.3.1/go.mod h1:VnmqW27qUU1NOt6PNllZNJqAXQddn2vqZpk7g5qxebw=
 github.com/scrapli/scrapligo v1.3.2 h1:9D5TFM/DlqAijqH18uNHygbNos0ReDsJl/vhMRObkhg=
 github.com/scrapli/scrapligo v1.3.2/go.mod h1:VnmqW27qUU1NOt6PNllZNJqAXQddn2vqZpk7g5qxebw=
 github.com/sirikothe/gotextfsm v1.0.1-0.20200816110946-6aa2cfd355e4 h1:FHUL2HofYJuslFOQdy/JjjP36zxqIpd/dcoiwLMIs7k=
 github.com/sirikothe/gotextfsm v1.0.1-0.20200816110946-6aa2cfd355e4/go.mod h1:CJYqpTg9u5VPCoD0VEl9E68prCIiWQD8m457k098DdQ=
 github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsTg=
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
-github.com/vmware/govmomi v0.39.0 h1:soLZ08Q2zvjRSinNup8xVlw0KDDCJPPA1rIDmBhi7As=
-github.com/vmware/govmomi v0.39.0/go.mod h1:oHzAQ1r6152zYDGcUqeK+EO8LhKo5wjtvWZBGHws2Hc=
 github.com/vmware/govmomi v0.40.0 h1:7xzJLA7CD7teyeToYWS3tapZtZX9x0sBfjBvbnsVllI=
 github.com/vmware/govmomi v0.40.0/go.mod h1:1H5LWwsBif8HKZqbFp0FdoKTHyJE4FzL6ACequMKYQg=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
