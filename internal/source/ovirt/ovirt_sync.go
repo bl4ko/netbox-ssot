@@ -126,7 +126,7 @@ func (o *OVirtSource) syncClusters(nbi *inventory.NetboxInventory) error {
 			if mappedName, ok := o.DatacenterClusterGroupRelations[clusterGroupName]; ok {
 				clusterGroupName = mappedName
 			}
-			clusterGroup = nbi.ClusterGroupsIndexByName[clusterGroupName]
+			clusterGroup, _ = nbi.GetClusterGroup(clusterGroupName)
 		}
 
 		clusterSite, err := common.MatchClusterToSite(o.Ctx, nbi, clusterName, o.ClusterSiteRelations)
@@ -170,7 +170,7 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		if !exists {
 			o.Logger.Warningf(o.Ctx, "name of host with id=%s is empty", hostID)
 		}
-		hostCluster := nbi.ClustersIndexByName[o.Clusters[host.MustCluster().MustId()].MustName()]
+		hostCluster, _ := nbi.GetCluster(o.Clusters[host.MustCluster().MustId()].MustName())
 
 		hostSite, err := common.MatchHostToSite(o.Ctx, nbi, hostName, o.HostSiteRelations)
 		if err != nil {
@@ -706,7 +706,7 @@ func (o *OVirtSource) extractVMData(nbi *inventory.NetboxInventory, vmID string,
 	cluster, exists := vm.Cluster()
 	if exists {
 		if _, ok := o.Clusters[cluster.MustId()]; ok {
-			vmCluster = nbi.ClustersIndexByName[o.Clusters[cluster.MustId()].MustName()]
+			vmCluster, _ = nbi.GetCluster(o.Clusters[cluster.MustId()].MustName())
 		}
 	}
 
@@ -737,7 +737,7 @@ func (o *OVirtSource) extractVMData(nbi *inventory.NetboxInventory, vmID string,
 	if host, exists := vm.Host(); exists {
 		if oHost, ok := o.Hosts[host.MustId()]; ok {
 			if oHostName, ok := oHost.Name(); ok {
-				vmHostDevice = nbi.DevicesIndexByNameAndSiteID[oHostName][vmSite.ID]
+				vmHostDevice, _ = nbi.GetDevice(oHostName, vmSite.ID)
 			}
 		}
 	}
@@ -1017,7 +1017,7 @@ func (o *OVirtSource) syncVMNics(nbi *inventory.NetboxInventory, ovirtVM *ovirts
 								o.Logger.Warningf(o.Ctx, "match vlan to group: %s", err)
 								continue
 							}
-							nicVlans = []*objects.Vlan{nbi.VlansIndexByVlanGroupIDAndVID[vlanGroup.ID][int(vlanID)]}
+							nicVlans = []*objects.Vlan{nbi.GetVlan(vlanGroup.ID, int(vlanID))}
 							nicMode = &objects.VMInterfaceModeTagged
 						}
 					}

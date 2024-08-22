@@ -22,7 +22,7 @@ func MatchClusterToTenant(ctx context.Context, nbi *inventory.NetboxInventory, c
 		return nil, fmt.Errorf("matching cluster to tenant: %s", err)
 	}
 	if tenantName != "" {
-		tenant, ok := nbi.TenantsIndexByName[tenantName]
+		tenant, ok := nbi.GetTenant(tenantName)
 		if !ok {
 			tenant, err := nbi.AddTenant(ctx, &objects.Tenant{
 				Name: tenantName,
@@ -50,7 +50,7 @@ func MatchClusterToSite(ctx context.Context, nbi *inventory.NetboxInventory, clu
 		return nil, fmt.Errorf("matching cluster to tenant: %s", err)
 	}
 	if siteName != "" {
-		site, ok := nbi.SitesIndexByName[siteName]
+		site, ok := nbi.GetSite(siteName)
 		if !ok {
 			newSite, err := nbi.AddSite(ctx, &objects.Site{
 				Name: siteName,
@@ -71,14 +71,15 @@ func MatchClusterToSite(ctx context.Context, nbi *inventory.NetboxInventory, clu
 // In case there is no match or regexRelations is nil, it will return default VlanGroup.
 func MatchVlanToGroup(ctx context.Context, nbi *inventory.NetboxInventory, vlanName string, regexRelations map[string]string) (*objects.VlanGroup, error) {
 	if regexRelations == nil {
-		return nbi.VlanGroupsIndexByName[objects.DefaultVlanGroupName], nil
+		vlanGroup, _ := nbi.GetVlanGroup(objects.DefaultVlanGroupName)
+		return vlanGroup, nil
 	}
 	vlanGroupName, err := utils.MatchStringToValue(vlanName, regexRelations)
 	if err != nil {
 		return nil, fmt.Errorf("matching vlan to group: %s", err)
 	}
 	if vlanGroupName != "" {
-		vlanGroup, ok := nbi.VlanGroupsIndexByName[vlanGroupName]
+		vlanGroup, ok := nbi.GetVlanGroup(vlanGroupName)
 		if !ok {
 			// Create vlanGroup
 			vlanGroup, err = nbi.AddVlanGroup(ctx, &objects.VlanGroup{
@@ -94,7 +95,8 @@ func MatchVlanToGroup(ctx context.Context, nbi *inventory.NetboxInventory, vlanN
 		return vlanGroup, nil
 	}
 
-	return nbi.VlanGroupsIndexByName[objects.DefaultVlanGroupName], nil
+	vlanGroup, _ := nbi.GetVlanGroup(objects.DefaultVlanGroupName)
+	return vlanGroup, nil
 }
 
 // Function that matches vlanName to tenant using vlanTenantRelations regex relations map.
@@ -109,7 +111,7 @@ func MatchVlanToTenant(ctx context.Context, nbi *inventory.NetboxInventory, vlan
 		return nil, fmt.Errorf("matching vlan to tenant: %s", err)
 	}
 	if tenantName != "" {
-		tenant, ok := nbi.TenantsIndexByName[tenantName]
+		tenant, ok := nbi.GetTenant(tenantName)
 		if !ok {
 			tenant, err := nbi.AddTenant(ctx, &objects.Tenant{
 				Name: tenantName,
@@ -138,7 +140,7 @@ func MatchHostToSite(ctx context.Context, nbi *inventory.NetboxInventory, hostNa
 		return nil, fmt.Errorf("matching host to site: %s", err)
 	}
 	if siteName != "" {
-		site, ok := nbi.SitesIndexByName[siteName]
+		site, ok := nbi.GetSite(siteName)
 		if !ok {
 			newSite, err := nbi.AddSite(ctx, &objects.Site{
 				Name: siteName,
@@ -151,7 +153,8 @@ func MatchHostToSite(ctx context.Context, nbi *inventory.NetboxInventory, hostNa
 		}
 		return site, nil
 	}
-	return nbi.SitesIndexByName[constants.DefaultSite], nil
+	site, _ := nbi.GetSite(constants.DefaultSite)
+	return site, nil
 }
 
 // Function that matches Host from hostName to Tenant using hostTenantRelations.
@@ -166,7 +169,7 @@ func MatchHostToTenant(ctx context.Context, nbi *inventory.NetboxInventory, host
 		return nil, fmt.Errorf("matching host to tenant: %s", err)
 	}
 	if tenantName != "" {
-		site, ok := nbi.TenantsIndexByName[tenantName]
+		site, ok := nbi.GetTenant(tenantName)
 		if !ok {
 			tenant, err := nbi.AddTenant(ctx, &objects.Tenant{
 				Name: tenantName,
@@ -194,7 +197,7 @@ func MatchVMToTenant(ctx context.Context, nbi *inventory.NetboxInventory, vmName
 		return nil, fmt.Errorf("matching vm to tenant: %s", err)
 	}
 	if tenantName != "" {
-		site, ok := nbi.TenantsIndexByName[tenantName]
+		site, ok := nbi.GetTenant(tenantName)
 		if !ok {
 			tenant, err := nbi.AddTenant(ctx, &objects.Tenant{
 				Name: tenantName,

@@ -95,7 +95,7 @@ func (vc *VmwareSource) syncClusters(nbi *inventory.NetboxInventory) error {
 		if mappedName, ok := vc.DatacenterClusterGroupRelations[clusterGroupName]; ok {
 			clusterGroupName = mappedName
 		}
-		clusterGroup = nbi.ClusterGroupsIndexByName[clusterGroupName]
+		clusterGroup, _ = nbi.GetClusterGroup(clusterGroupName)
 
 		clusterSite, err := common.MatchClusterToSite(vc.Ctx, nbi, clusterName, vc.ClusterSiteRelations)
 		if err != nil {
@@ -146,7 +146,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 			return fmt.Errorf("hostTenant: %s", err)
 		}
 
-		hostCluster := nbi.ClustersIndexByName[vc.Clusters[vc.Host2Cluster[hostID]].Name]
+		hostCluster, _ := nbi.GetCluster(vc.Clusters[vc.Host2Cluster[hostID]].Name)
 		if hostCluster == nil {
 			// Create a hypothetical cluster https://github.com/bl4ko/netbox-ssot/issues/141
 			hostCluster, err = vc.createHypotheticalCluster(nbi, hostName, hostSite, hostTenant)
@@ -736,7 +736,7 @@ func (vc *VmwareSource) syncVM(nbi *inventory.NetboxInventory, vmKey string, vm 
 	if err != nil {
 		return fmt.Errorf("vm's Site: %s", err)
 	}
-	vmHost := nbi.DevicesIndexByNameAndSiteID[vmHostName][vmSite.ID]
+	vmHost, _ := nbi.GetDevice(vmHostName, vmSite.ID)
 
 	// Cluster of the vm is same as the host
 	vmCluster := vmHost.Cluster
