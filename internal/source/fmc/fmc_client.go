@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"time"
 
@@ -21,6 +22,13 @@ type fmcClient struct {
 	RefreshToken   string
 	DefaultTimeout time.Duration
 }
+
+const (
+	maxRetries     = 5
+	initialBackoff = 500 * time.Millisecond
+	backoffFactor  = 2.0
+	maxBackoff     = 16 * time.Second
+)
 
 func newFMCClient(username string, password string, httpScheme string, hostname string, port int, httpClient *http.Client) (*fmcClient, error) {
 	// First we obtain access and refresh token
@@ -43,8 +51,36 @@ func newFMCClient(username string, password string, httpScheme string, hostname 
 	return c, nil
 }
 
+// exponentialBackoff calculates the backoff duration based on the number of attempts.
+func exponentialBackoff(attempt int) time.Duration {
+	backoff := time.Duration(float64(initialBackoff) * math.Pow(backoffFactor, float64(attempt)))
+	if backoff > maxBackoff {
+		backoff = maxBackoff
+	}
+	return backoff
+}
+
 // Authenticate performs authentication on FMC API. If successful it returns access and refresh tokens.
 func (fmcc fmcClient) Authenticate() (string, string, error) {
+	var (
+		accessToken  string
+		refreshToken string
+		err          error
+	)
+
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		accessToken, refreshToken, err = fmcc.authenticateOnce()
+		if err == nil {
+			return accessToken, refreshToken, nil
+		}
+
+		time.Sleep(exponentialBackoff(attempt))
+	}
+
+	return "", "", fmt.Errorf("authentication failed after %d attempts: %w", maxRetries, err)
+}
+
+func (fmcc fmcClient) authenticateOnce() (string, string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), fmcc.DefaultTimeout)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s/fmc_platform/v1/auth/generatetoken", fmcc.BaseURL), nil)
@@ -101,7 +137,39 @@ type Device struct {
 	Name string `json:"name"`
 }
 
+// MakeRequest sends an HTTP request to the specified path using the given method and body.
+// It retries the request with exponential backoff up to a maximum number of attempts.
+// If the request fails after the maximum number of attempts, it returns an error.
+//
+// Parameters:
+//   - ctx: The context.Context for the request.
+//   - method: The HTTP method to use for the request (e.g., GET, POST, PUT, DELETE).
+//   - path: The path of the resource to request.
+//   - body: The request body as an io.Reader.
+//
+// Returns:
+//   - *http.Response: The HTTP response if the request is successful.
+//   - error: An error if the request fails after the maximum number of attempts.
 func (fmcc *fmcClient) MakeRequest(ctx context.Context, method, path string, body io.Reader) (*http.Response, error) {
+	var (
+		resp *http.Response
+		err  error
+	)
+
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		resp, err = fmcc.makeRequestOnce(ctx, method, path, body)
+		if err == nil {
+			return resp, nil
+		}
+		time.Sleep(exponentialBackoff(attempt))
+	}
+
+	return nil, fmt.Errorf("request failed after %d attempts: %w", maxRetries, err)
+}
+
+// makeRequestOnce sends an HTTP request to the specified path using the given method and body.
+// It is a helper function for MakeRequest that sends the request only once.
+func (fmcc *fmcClient) makeRequestOnce(ctx context.Context, method, path string, body io.Reader) (*http.Response, error) {
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, fmcc.DefaultTimeout)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctxWithTimeout, method, fmt.Sprintf("%s/%s", fmcc.BaseURL, path), body)
@@ -113,6 +181,8 @@ func (fmcc *fmcClient) MakeRequest(ctx context.Context, method, path string, bod
 	return fmcc.HTTPClient.Do(req)
 }
 
+// GetDomains returns a list of domains from the FMC API.
+// It sends a GET request to the /fmc_platform/v1/info/domain endpoint.
 func (fmcc *fmcClient) GetDomains() ([]Domain, error) {
 	offset := 0
 	limit := 25
@@ -149,6 +219,7 @@ func (fmcc *fmcClient) GetDomains() ([]Domain, error) {
 	return domains, nil
 }
 
+// GetDevices returns a list of devices from the FMC API for the specified domain.
 func (fmcc *fmcClient) GetDevices(domainUUID string) ([]Device, error) {
 	offset := 0
 	limit := 25
@@ -192,6 +263,7 @@ type PhysicalInterface struct {
 	Name string `json:"name"`
 }
 
+// GetDevicePhysicalInterfaces returns a list of physical interfaces for the specified device in the specified domain.
 func (fmcc *fmcClient) GetDevicePhysicalInterfaces(domainUUID string, deviceID string) ([]PhysicalInterface, error) {
 	offset := 0
 	limit := 25
@@ -347,6 +419,7 @@ func (fmcc *fmcClient) GetVLANInterfaceInfo(domainUUID string, deviceID string, 
 	return &vlanInterfaceInfo, nil
 }
 
+// VLANInterfaceInfo represents information about a VLAN interface.
 type VLANInterfaceInfo struct {
 	Type        string `json:"type"`
 	Mode        string `json:"mode"`
@@ -375,6 +448,7 @@ type VLANInterfaceInfo struct {
 	} `json:"ipv6"`
 }
 
+// DeviceInfo represents information about a FMC device.
 type DeviceInfo struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
@@ -393,6 +467,7 @@ type DeviceInfo struct {
 	} `json:"metadata"`
 }
 
+// GetDeviceInfo returns information about a device in the specified domain.
 func (fmcc *fmcClient) GetDeviceInfo(domainUUID string, deviceID string) (*DeviceInfo, error) {
 	var deviceInfo DeviceInfo
 	ctx := context.Background()
