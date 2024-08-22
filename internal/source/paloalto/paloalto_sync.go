@@ -3,6 +3,7 @@ package paloalto
 import (
 	"fmt"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
@@ -316,31 +317,65 @@ func (pas *PaloAltoSource) syncArpTable(nbi *inventory.NetboxInventory) error {
 	if err != nil {
 		return fmt.Errorf("add custom field: %s", err)
 	}
+
+	const maxGoroutines = 100 // Max number of goroutines running at the same time
+	guard := make(chan struct{}, maxGoroutines)
+	errChan := make(chan error, len(pas.ArpData))
+	var wg sync.WaitGroup
+
 	for _, entry := range pas.ArpData {
 		if entry.MAC != "(incomplete)" {
-			newTags := pas.SourceTags
-			newTags = append(newTags, arpTag)
-			currentTime := time.Now()
-			dnsName := utils.ReverseLookup(entry.IP)
-			defaultMask := 32
-			addressWithMask := fmt.Sprintf("%s/%d", entry.IP, defaultMask)
-			_, err = nbi.AddIPAddress(pas.Ctx, &objects.IPAddress{
-				NetboxObject: objects.NetboxObject{
-					Tags:        newTags,
-					Description: fmt.Sprintf("IP collected from %s arp table", pas.SourceConfig.Name),
-					CustomFields: map[string]interface{}{
-						constants.CustomFieldArpIPLastSeenName: currentTime.Format(constants.ArpLastSeenFormat),
-						constants.CustomFieldArpEntryName:      true,
-					},
-				},
-				Address: addressWithMask,
-				DNSName: dnsName,
-				Status:  &objects.IPAddressStatusActive,
-			})
-			if err != nil {
-				return fmt.Errorf("add arp ip address: %s", err)
-			}
+			guard <- struct{}{} // Block if maxGoroutines are running
+			wg.Add(1)
+
+			go func(entry ArpEntry) {
+				defer wg.Done()
+				defer func() { <-guard }() // Release one spot in the semaphore
+
+				err := pas.syncArpEntry(nbi, entry, arpTag)
+				if err != nil {
+					errChan <- err
+				}
+			}(entry)
 		}
+	}
+
+	wg.Wait()
+	close(errChan)
+	close(guard)
+
+	for err := range errChan {
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (pas *PaloAltoSource) syncArpEntry(nbi *inventory.NetboxInventory, entry ArpEntry, arpTag *objects.Tag) error {
+	newTags := pas.SourceTags
+	newTags = append(newTags, arpTag)
+	currentTime := time.Now()
+	dnsName := utils.ReverseLookup(entry.IP)
+	defaultMask := 32
+	addressWithMask := fmt.Sprintf("%s/%d", entry.IP, defaultMask)
+
+	_, err := nbi.AddIPAddress(pas.Ctx, &objects.IPAddress{
+		NetboxObject: objects.NetboxObject{
+			Tags:        newTags,
+			Description: fmt.Sprintf("IP collected from %s arp table", pas.SourceConfig.Name),
+			CustomFields: map[string]interface{}{
+				constants.CustomFieldArpIPLastSeenName: currentTime.Format(constants.ArpLastSeenFormat),
+				constants.CustomFieldArpEntryName:      true,
+			},
+		},
+		Address: addressWithMask,
+		DNSName: dnsName,
+		Status:  &objects.IPAddressStatusActive,
+	})
+	if err != nil {
+		return fmt.Errorf("add arp ip address: %s", err)
 	}
 	return nil
 }

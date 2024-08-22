@@ -111,7 +111,7 @@ func (o *OVirtSource) Sync(nbi *inventory.NetboxInventory) error {
 		o.syncDatacenters,
 		o.syncClusters,
 		o.syncHosts,
-		o.syncVms,
+		o.syncVMs,
 	}
 	for _, syncFunc := range syncFunctions {
 		startTime := time.Now()

@@ -3,6 +3,7 @@ package ovirt
 import (
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/devices"
@@ -577,7 +578,7 @@ func (o *OVirtSource) collectHostNicsData(nbHost *objects.Device, nbi *inventory
 					return err
 				}
 				// Get vlan from inventory
-				nicVlan = nbi.VlansIndexByVlanGroupIDAndVID[vlanGroup.ID][int(vlanID)]
+				nicVlan = nbi.GetVlan(vlanGroup.ID, int(vlanID))
 			}
 		}
 
@@ -638,24 +639,57 @@ func (o *OVirtSource) collectHostNicsData(nbHost *objects.Device, nbi *inventory
 	return nil
 }
 
-// syncVms synces ovirt vms into netbox inventory.
-func (o *OVirtSource) syncVms(nbi *inventory.NetboxInventory) error {
+// syncVMs synces ovirt vms into netbox inventory.
+func (o *OVirtSource) syncVMs(nbi *inventory.NetboxInventory) error {
+	const maxGoroutines = 50
+	guard := make(chan struct{}, maxGoroutines)
+	errChan := make(chan error, len(o.Vms))
+	var wg sync.WaitGroup
+
 	for vmID, ovirtVM := range o.Vms {
-		collectedVM, err := o.extractVMData(nbi, vmID, ovirtVM)
+		guard <- struct{}{} // Block if maxGoroutines are running
+		wg.Add(1)
+
+		go func(vmID string, ovirtVM *ovirtsdk4.Vm) {
+			defer wg.Done()
+			defer func() { <-guard }() // Release one spot in the semaphore
+
+			if err := o.syncVM(nbi, vmID, ovirtVM); err != nil {
+				errChan <- err
+			}
+		}(vmID, ovirtVM)
+	}
+
+	wg.Wait()
+	close(errChan)
+	close(guard)
+
+	for err := range errChan {
 		if err != nil {
 			return err
 		}
-
-		nbVM, err := nbi.AddVM(o.Ctx, collectedVM)
-		if err != nil {
-			return fmt.Errorf("failed to sync oVirt vm %s: %v", collectedVM.Name, err)
-		}
-
-		err = o.syncVMInterfaces(nbi, ovirtVM, nbVM)
-		if err != nil {
-			return fmt.Errorf("failed to sync oVirt vm %s's interfaces: %v", collectedVM.Name, err)
-		}
 	}
+
+	return nil
+}
+
+// syncVM synces a single ovirt vm into netbox inventory.
+func (o *OVirtSource) syncVM(nbi *inventory.NetboxInventory, vmID string, ovirtVM *ovirtsdk4.Vm) error {
+	collectedVM, err := o.extractVMData(nbi, vmID, ovirtVM)
+	if err != nil {
+		return err
+	}
+
+	nbVM, err := nbi.AddVM(o.Ctx, collectedVM)
+	if err != nil {
+		return fmt.Errorf("failed to sync oVirt vm %s: %v", collectedVM.Name, err)
+	}
+
+	err = o.syncVMInterfaces(nbi, ovirtVM, nbVM)
+	if err != nil {
+		return fmt.Errorf("failed to sync oVirt vm %s's interfaces: %v", collectedVM.Name, err)
+	}
+
 	return nil
 }
 

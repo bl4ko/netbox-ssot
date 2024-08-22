@@ -222,7 +222,7 @@ func (vc *VmwareSource) Sync(nbi *inventory.NetboxInventory) error {
 		vc.syncDatacenters,
 		vc.syncClusters,
 		vc.syncHosts,
-		vc.syncVms,
+		vc.syncVMs,
 	}
 	for _, syncFunc := range syncFunctions {
 		startTime := time.Now()

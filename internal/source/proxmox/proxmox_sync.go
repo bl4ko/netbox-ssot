@@ -3,6 +3,7 @@ package proxmox
 import (
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
@@ -162,47 +163,84 @@ func (ps *ProxmoxSource) syncNodeNetworks(nbi *inventory.NetboxInventory, node *
 
 // Function that synces proxmox vms to the netbox inventory.
 func (ps *ProxmoxSource) syncVMs(nbi *inventory.NetboxInventory) error {
+	const maxGoroutines = 50
+	guard := make(chan struct{}, maxGoroutines)
+	errChan := make(chan error, len(ps.Vms))
+	var wg sync.WaitGroup
+
 	for nodeName, vms := range ps.Vms {
 		nbHost := ps.NetboxNodes[nodeName]
 		for _, vm := range vms {
-			// Determine VM status
-			vmStatus := &objects.VMStatusActive
-			if vm.Status == "stopped" {
-				vmStatus = &objects.VMStatusOffline
-			}
-			// Determine VM tenant
-			vmTenant, err := common.MatchVMToTenant(ps.Ctx, nbi, vm.Name, ps.VMTenantRelations)
-			if err != nil {
-				return fmt.Errorf("match vm to tenant: %s", err)
-			}
-			nbVM, err := nbi.AddVM(ps.Ctx, &objects.VM{
-				NetboxObject: objects.NetboxObject{
-					Tags: ps.SourceTags,
-					CustomFields: map[string]interface{}{
-						constants.CustomFieldSourceName:   ps.SourceConfig.Name,
-						constants.CustomFieldSourceIDName: fmt.Sprintf("%d", vm.VMID),
-					},
-				},
-				Host:    nbHost,
-				Cluster: ps.NetboxCluster, // Default single proxmox cluster
-				Tenant:  vmTenant,
-				VCPUs:   float32(vm.CPUs),
-				Memory:  int(vm.MaxMem / constants.MiB),  //nolint:gosec
-				Disk:    int(vm.MaxDisk / constants.GiB), //nolint:gosec
-				Site:    nbHost.Site,
-				Name:    vm.Name,
-				Status:  vmStatus,
-			})
-			if err != nil {
-				return fmt.Errorf("new vm: %s", err)
-			}
+			guard <- struct{}{} // Block if maxGoroutines are running
+			wg.Add(1)
 
-			err = ps.syncVMNetworks(nbi, nbVM)
-			if err != nil {
-				return fmt.Errorf("sync vm networks: %s", err)
-			}
+			go func(vm *proxmox.VirtualMachine, nbHost *objects.Device) {
+				defer wg.Done()
+				defer func() { <-guard }() // Release one spot in the semaphore
+
+				err := ps.syncVM(nbi, vm, nbHost)
+				if err != nil {
+					errChan <- err
+				}
+			}(vm, nbHost)
 		}
 	}
+
+	wg.Wait()
+	close(errChan)
+	close(guard)
+
+	for err := range errChan {
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (ps *ProxmoxSource) syncVM(nbi *inventory.NetboxInventory, vm *proxmox.VirtualMachine, nbHost *objects.Device) error {
+	// Determine VM status
+	vmStatus := &objects.VMStatusActive
+	if vm.Status == "stopped" {
+		vmStatus = &objects.VMStatusOffline
+	}
+
+	// Determine VM tenant
+	vmTenant, err := common.MatchVMToTenant(ps.Ctx, nbi, vm.Name, ps.VMTenantRelations)
+	if err != nil {
+		return fmt.Errorf("match vm to tenant: %s", err)
+	}
+
+	// Add VM to Netbox
+	nbVM, err := nbi.AddVM(ps.Ctx, &objects.VM{
+		NetboxObject: objects.NetboxObject{
+			Tags: ps.SourceTags,
+			CustomFields: map[string]interface{}{
+				constants.CustomFieldSourceName:   ps.SourceConfig.Name,
+				constants.CustomFieldSourceIDName: fmt.Sprintf("%d", vm.VMID),
+			},
+		},
+		Host:    nbHost,
+		Cluster: ps.NetboxCluster, // Default single proxmox cluster
+		Tenant:  vmTenant,
+		VCPUs:   float32(vm.CPUs),
+		Memory:  int(vm.MaxMem / constants.MiB),  //nolint:gosec
+		Disk:    int(vm.MaxDisk / constants.GiB), //nolint:gosec
+		Site:    nbHost.Site,
+		Name:    vm.Name,
+		Status:  vmStatus,
+	})
+	if err != nil {
+		return fmt.Errorf("new vm: %s", err)
+	}
+
+	// Sync VM networks
+	err = ps.syncVMNetworks(nbi, nbVM)
+	if err != nil {
+		return fmt.Errorf("sync vm networks: %s", err)
+	}
+
 	return nil
 }
 

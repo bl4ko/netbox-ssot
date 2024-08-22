@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/devices"
@@ -378,16 +379,15 @@ func (vc *VmwareSource) collectHostPhysicalNicData(nbi *inventory.NetboxInventor
 				if err != nil {
 					return nil, fmt.Errorf("vlanGroup: %s", err)
 				}
-				vlanIDMap[portgroupData.vlanID] = nbi.VlansIndexByVlanGroupIDAndVID[vlanGroup.ID][portgroupData.vlanID]
+				vlanIDMap[portgroupData.vlanID] = nbi.GetVlan(vlanGroup.ID, portgroupData.vlanID)
 			} else {
 				vlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, portgroupName, vc.VlanGroupRelations)
 				if err != nil {
 					return nil, fmt.Errorf("vlanGroup: %s", err)
 				}
 				var newVlan *objects.Vlan
-				var ok bool
-				newVlan, ok = nbi.VlansIndexByVlanGroupIDAndVID[vlanGroup.ID][portgroupData.vlanID]
-				if !ok {
+				newVlan = nbi.GetVlan(vlanGroup.ID, portgroupData.vlanID)
+				if newVlan != nil {
 					newVlan, err = nbi.AddVlan(vc.Ctx, &objects.Vlan{
 						NetboxObject: objects.NetboxObject{
 							Tags: vc.Config.SourceTags,
@@ -624,7 +624,7 @@ func (vc *VmwareSource) collectHostVirtualNicData(nbi *inventory.NetboxInventory
 		if err != nil {
 			return nil, fmt.Errorf("vlan group: %s", err)
 		}
-		vnicUntaggedVlan = nbi.VlansIndexByVlanGroupIDAndVID[vnicUntaggedVlanGroup.ID][vnicPortgroupVlanID]
+		vnicUntaggedVlan = nbi.GetVlan(vnicUntaggedVlanGroup.ID, vnicPortgroupVlanID)
 		vnicMode = &objects.InterfaceModeAccess
 		// vnicUntaggedVlan = &objects.Vlan{
 		// 	Name:   fmt.Sprintf("ESXi %s (ID: %d) (%s)", vnic.Portgroup, vnicPortgroupVlanId, nbHost.Site.Name),
@@ -643,7 +643,7 @@ func (vc *VmwareSource) collectHostVirtualNicData(nbi *inventory.NetboxInventory
 			if err != nil {
 				return nil, fmt.Errorf("vlan group: %s", err)
 			}
-			vnicTaggedVlans = append(vnicTaggedVlans, nbi.VlansIndexByVlanGroupIDAndVID[vnicTaggedVlanGroup.ID][vnicDvPortgroupDataVlanID])
+			vnicTaggedVlans = append(vnicTaggedVlans, nbi.GetVlan(vnicTaggedVlanGroup.ID, vnicDvPortgroupDataVlanID))
 			// vnicTaggedVlans = append(vnicTaggedVlans, &objects.Vlan{
 			// 	Name:   fmt.Sprintf("%s-%d", vnicDvPortgroupData.Name, vnicDvPortgroupDataVlanId),
 			// 	Vid:    vnicDvPortgroupDataVlanId,
@@ -670,165 +670,195 @@ func (vc *VmwareSource) collectHostVirtualNicData(nbi *inventory.NetboxInventory
 	}, nil
 }
 
-func (vc *VmwareSource) syncVms(nbi *inventory.NetboxInventory) error {
+// syncVMs syncs VMs from the source to Netbox.
+func (vc *VmwareSource) syncVMs(nbi *inventory.NetboxInventory) error {
+	const maxGoroutines = 50                    // Maximum number of goroutines to run concurrently
+	guard := make(chan struct{}, maxGoroutines) // Use a channel as a semaphore to limit the number of goroutines
+	errChan := make(chan error, len(vc.Vms))    // Channel to collect errors
+	var wg sync.WaitGroup                       // WaitGroup to wait for all goroutines to complete
+
+	// Iterate over each VM and start a goroutine to sync it
 	for vmKey, vm := range vc.Vms {
-		// Check if vm is a template, we don't add templates into netbox.
-		if vm.Config != nil {
-			if vm.Config.Template {
-				continue
-			}
-		}
+		guard <- struct{}{} // Block if max goroutines are running
+		wg.Add(1)
 
-		vmName := vm.Name
-		vmHostName := vc.Hosts[vc.VM2Host[vmKey]].Name
+		go func(vmKey string, vm mo.VirtualMachine) {
+			defer wg.Done()
+			defer func() { <-guard }() // Release one spot in the semaphore
 
-		// Tenant is received from VmTenantRelations
-		vmTenant, err := common.MatchVMToTenant(vc.Ctx, nbi, vmName, vc.VMTenantRelations)
-		if err != nil {
-			return fmt.Errorf("vm's Tenant: %s", err)
-		}
-
-		// Site is the same as the Host
-		vmSite, err := common.MatchHostToSite(vc.Ctx, nbi, vmHostName, vc.HostSiteRelations)
-		if err != nil {
-			return fmt.Errorf("vm's Site: %s", err)
-		}
-		vmHost := nbi.DevicesIndexByNameAndSiteID[vmHostName][vmSite.ID]
-
-		// Cluster of the vm is same as the host
-		vmCluster := vmHost.Cluster
-
-		// In the case vmCluster is nil, we have to create hypothetical cluster, so
-		// we can add vm to netbox https://github.com/bl4ko/netbox-ssot/issues/141
-		if vmCluster == nil {
-			vmCluster, err = vc.createHypotheticalCluster(nbi, vmHost)
+			err := vc.syncVM(nbi, vmKey, vm)
 			if err != nil {
-				return fmt.Errorf("add hypothetical cluster: %s", err)
+				errChan <- err
 			}
-		}
+		}(vmKey, vm)
+	}
 
-		// VM status
-		vmStatus := &objects.VMStatusOffline
-		vmPowerState := vm.Runtime.PowerState
-		if vmPowerState == types.VirtualMachinePowerStatePoweredOn {
-			vmStatus = &objects.VMStatusActive
-		}
+	// Wait for all goroutines to complete
+	wg.Wait()
+	close(errChan)
 
-		// vmVCPUs
-		vmVCPUs := vm.Config.Hardware.NumCPU
-
-		// vmMemory
-		vmMemory := vm.Config.Hardware.MemoryMB
-
-		// DisksSize
-		vmDiskSizeB := int64(0)
-		for _, hwDevice := range vm.Config.Hardware.Device {
-			if disk, ok := hwDevice.(*types.VirtualDisk); ok {
-				vmDiskSizeB += disk.CapacityInBytes
-			}
-		}
-
-		// Determine guest OS using fallback mechanisms
-		var platformName string
-		switch {
-		case vm.Summary.Guest != nil && vm.Summary.Guest.GuestFullName != "":
-			platformName = vm.Summary.Guest.GuestFullName
-		case vm.Config.GuestFullName != "":
-			platformName = vm.Config.GuestFullName
-		case vm.Guest.GuestFullName != "":
-			platformName = vm.Guest.GuestFullName
-		}
-
-		vmPlatform, err := nbi.AddPlatform(vc.Ctx, &objects.Platform{
-			Name: platformName,
-			Slug: utils.Slugify(platformName),
-		})
+	// Collect any errors
+	for err := range errChan {
 		if err != nil {
-			return fmt.Errorf("failed adding vmware vm's Platform %v with error: %s", vmPlatform, err)
+			return err
 		}
+	}
 
-		// Extract additional info from CustomFields
-		var vmOwners []string
-		var vmOwnerEmails []string
-		var vmDescription string
-		vmCustomFields := map[string]interface{}{}
-		if len(vm.Summary.CustomValue) > 0 {
-			for _, field := range vm.Summary.CustomValue {
-				if field, ok := field.(*types.CustomFieldStringValue); ok {
-					fieldName := vc.CustomFieldID2Name[field.Key]
+	return nil
+}
 
-					if mappedField, ok := vc.CustomFieldMappings[fieldName]; ok {
-						switch mappedField {
-						case "owner":
-							vmOwners = strings.Split(field.Value, ",")
-						case "email":
-							vmOwnerEmails = strings.Split(field.Value, ",")
-						case "description":
-							vmDescription = strings.TrimSpace(field.Value)
-						}
-					} else {
-						fieldName = utils.Alphanumeric(fieldName)
-						if _, ok := nbi.CustomFieldsIndexByName[fieldName]; !ok {
-							_, err := nbi.AddCustomField(vc.Ctx, &objects.CustomField{
-								Name:                  fieldName,
-								Type:                  objects.CustomFieldTypeText,
-								CustomFieldUIVisible:  &objects.CustomFieldUIVisibleIfSet,
-								CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
-								ObjectTypes:           []objects.ObjectType{objects.ObjectTypeVirtualizationVirtualMachine},
-							})
-							if err != nil {
-								return fmt.Errorf("vm's custom field %s: %s", fieldName, err)
-							}
-						}
-						vmCustomFields[fieldName] = field.Value
+// syncVM synces VM from the source to Netbox.
+func (vc *VmwareSource) syncVM(nbi *inventory.NetboxInventory, vmKey string, vm mo.VirtualMachine) error {
+	// Check if the VM is a template
+	if vm.Config != nil && vm.Config.Template {
+		return nil
+	}
+
+	vmName := vm.Name
+	vmHostName := vc.Hosts[vc.VM2Host[vmKey]].Name
+
+	// Tenant is received from VmTenantRelations
+	vmTenant, err := common.MatchVMToTenant(vc.Ctx, nbi, vmName, vc.VMTenantRelations)
+	if err != nil {
+		return fmt.Errorf("vm's Tenant: %s", err)
+	}
+
+	// Site is the same as the Host
+	vmSite, err := common.MatchHostToSite(vc.Ctx, nbi, vmHostName, vc.HostSiteRelations)
+	if err != nil {
+		return fmt.Errorf("vm's Site: %s", err)
+	}
+	vmHost := nbi.DevicesIndexByNameAndSiteID[vmHostName][vmSite.ID]
+
+	// Cluster of the vm is same as the host
+	vmCluster := vmHost.Cluster
+
+	// Create a hypothetical cluster if needed
+	if vmCluster == nil {
+		vmCluster, err = vc.createHypotheticalCluster(nbi, vmHost)
+		if err != nil {
+			return fmt.Errorf("add hypothetical cluster: %s", err)
+		}
+	}
+
+	// VM status
+	vmStatus := &objects.VMStatusOffline
+	if vm.Runtime.PowerState == types.VirtualMachinePowerStatePoweredOn {
+		vmStatus = &objects.VMStatusActive
+	}
+
+	// vmVCPUs and vmMemory
+	vmVCPUs := vm.Config.Hardware.NumCPU
+	vmMemory := vm.Config.Hardware.MemoryMB
+
+	// DisksSize
+	vmDiskSizeB := int64(0)
+	for _, hwDevice := range vm.Config.Hardware.Device {
+		if disk, ok := hwDevice.(*types.VirtualDisk); ok {
+			vmDiskSizeB += disk.CapacityInBytes
+		}
+	}
+
+	// Determine guest OS using fallback mechanisms
+	var platformName string
+	switch {
+	case vm.Summary.Guest != nil && vm.Summary.Guest.GuestFullName != "":
+		platformName = vm.Summary.Guest.GuestFullName
+	case vm.Config.GuestFullName != "":
+		platformName = vm.Config.GuestFullName
+	case vm.Guest.GuestFullName != "":
+		platformName = vm.Guest.GuestFullName
+	}
+
+	vmPlatform, err := nbi.AddPlatform(vc.Ctx, &objects.Platform{
+		Name: platformName,
+		Slug: utils.Slugify(platformName),
+	})
+	if err != nil {
+		return fmt.Errorf("failed adding vmware vm's Platform %v with error: %s", vmPlatform, err)
+	}
+
+	// Extract additional info from CustomFields
+	var vmOwners []string
+	var vmOwnerEmails []string
+	var vmDescription string
+	vmCustomFields := map[string]interface{}{}
+	if len(vm.Summary.CustomValue) > 0 {
+		for _, field := range vm.Summary.CustomValue {
+			if field, ok := field.(*types.CustomFieldStringValue); ok {
+				fieldName := vc.CustomFieldID2Name[field.Key]
+
+				if mappedField, ok := vc.CustomFieldMappings[fieldName]; ok {
+					switch mappedField {
+					case "owner":
+						vmOwners = strings.Split(field.Value, ",")
+					case "email":
+						vmOwnerEmails = strings.Split(field.Value, ",")
+					case "description":
+						vmDescription = strings.TrimSpace(field.Value)
 					}
+				} else {
+					fieldName = utils.Alphanumeric(fieldName)
+					if _, ok := nbi.CustomFieldsIndexByName[fieldName]; !ok {
+						_, err := nbi.AddCustomField(vc.Ctx, &objects.CustomField{
+							Name:                  fieldName,
+							Type:                  objects.CustomFieldTypeText,
+							CustomFieldUIVisible:  &objects.CustomFieldUIVisibleIfSet,
+							CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
+							ObjectTypes:           []objects.ObjectType{objects.ObjectTypeVirtualizationVirtualMachine},
+						})
+						if err != nil {
+							return fmt.Errorf("vm's custom field %s: %s", fieldName, err)
+						}
+					}
+					vmCustomFields[fieldName] = field.Value
 				}
 			}
 		}
-		vmCustomFields[constants.CustomFieldSourceName] = vc.SourceConfig.Name
-
-		// netbox description has constraint <= len(200 characters)
-		// In this case we make a comment
-		var vmComments string
-		if len(vmDescription) >= objects.MaxDescriptionLength {
-			vmDescription = "See comments."
-			vmComments = vmDescription
-		}
-
-		newVM, err := nbi.AddVM(vc.Ctx, &objects.VM{
-			NetboxObject: objects.NetboxObject{
-				Tags:         vc.Config.SourceTags,
-				Description:  vmDescription,
-				CustomFields: vmCustomFields,
-			},
-			Name:     vmName,
-			Cluster:  vmCluster,
-			Site:     vmSite,
-			Tenant:   vmTenant,
-			Status:   vmStatus,
-			Host:     vmHost,
-			Platform: vmPlatform,
-			VCPUs:    float32(vmVCPUs),
-			Memory:   int(vmMemory),                                                    // MBs
-			Disk:     int(vmDiskSizeB / constants.KiB / constants.KiB / constants.KiB), // GBs
-			Comments: vmComments,
-		})
-
-		if err != nil {
-			return fmt.Errorf("failed to sync vmware VM %s: %v", vmName, err)
-		}
-
-		err = vc.addVMContact(nbi, newVM, vmOwners, vmOwnerEmails)
-		if err != nil {
-			return fmt.Errorf("adding %s's contact: %s", newVM, err)
-		}
-
-		// Sync vm interfaces
-		err = vc.syncVMInterfaces(nbi, vm, newVM)
-		if err != nil {
-			return fmt.Errorf("failed to sync vmware %s's interfaces: %v", newVM, err)
-		}
 	}
+	vmCustomFields[constants.CustomFieldSourceName] = vc.SourceConfig.Name
+
+	// netbox description has constraint <= len(200 characters)
+	// In this case we make a comment
+	var vmComments string
+	if len(vmDescription) >= objects.MaxDescriptionLength {
+		vmDescription = "See comments."
+		vmComments = vmDescription
+	}
+
+	newVM, err := nbi.AddVM(vc.Ctx, &objects.VM{
+		NetboxObject: objects.NetboxObject{
+			Tags:         vc.Config.SourceTags,
+			Description:  vmDescription,
+			CustomFields: vmCustomFields,
+		},
+		Name:     vmName,
+		Cluster:  vmCluster,
+		Site:     vmSite,
+		Tenant:   vmTenant,
+		Status:   vmStatus,
+		Host:     vmHost,
+		Platform: vmPlatform,
+		VCPUs:    float32(vmVCPUs),
+		Memory:   int(vmMemory),                                                    // MBs
+		Disk:     int(vmDiskSizeB / constants.KiB / constants.KiB / constants.KiB), // GBs
+		Comments: vmComments,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to sync vmware VM %s: %v", vmName, err)
+	}
+
+	err = vc.addVMContact(nbi, newVM, vmOwners, vmOwnerEmails)
+	if err != nil {
+		return fmt.Errorf("adding %s's contact: %s", newVM, err)
+	}
+
+	// Sync vm interfaces
+	err = vc.syncVMInterfaces(nbi, vm, newVM)
+	if err != nil {
+		return fmt.Errorf("failed to sync vmware %s's interfaces: %v", newVM, err)
+	}
+
 	return nil
 }
 
@@ -1021,7 +1051,7 @@ func (vc *VmwareSource) collectVMInterfaceData(nbi *inventory.NetboxInventory, n
 			if err != nil {
 				return nicIPv4Addresses, nicIPv6Addresses, nil, fmt.Errorf("vlan group: %s", err)
 			}
-			intUntaggedVlan = nbi.VlansIndexByVlanGroupIDAndVID[nicUntaggedVlanGroup.ID][vidID]
+			intUntaggedVlan = nbi.GetVlan(nicUntaggedVlanGroup.ID, vidID)
 		} else {
 			intTaggedVlanList = []*objects.Vlan{}
 			for _, intNetworkVlanID := range intNetworkVlanIDs {

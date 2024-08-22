@@ -3,10 +3,10 @@ package dnac
 import (
 	"fmt"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
-	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 	dnac "github.com/cisco-en-programmability/dnacenter-go-sdk/v5/sdk"
@@ -27,10 +27,10 @@ type DnacSource struct {
 	DeviceID2InterfaceIDs map[string][]string        // DeviceID -> []InterfaceID
 
 	// Netbox related data for easier access. Initialized in sync functions.
-	VID2nbVlan              map[int]*objects.Vlan         // VlanID -> nbVlan
-	SiteID2nbSite           map[string]*objects.Site      // SiteID -> nbSite
-	DeviceID2nbDevice       map[string]*objects.Device    // DeviceID -> nbDevice
-	InterfaceID2nbInterface map[string]*objects.Interface // InterfaceID -> nbInterface
+	VID2nbVlan              sync.Map // VlanID -> nbVlan
+	SiteID2nbSite           sync.Map // SiteID -> nbSite
+	DeviceID2nbDevice       sync.Map // DeviceID -> nbDevice
+	InterfaceID2nbInterface sync.Map // InterfaceID -> nbInterface
 
 	// User defined relations
 	HostTenantRelations map[string]string
@@ -73,12 +73,6 @@ func (ds *DnacSource) Init() error {
 }
 
 func (ds *DnacSource) Sync(nbi *inventory.NetboxInventory) error {
-	// initialize variables, that are shared between sync functions
-	ds.VID2nbVlan = make(map[int]*objects.Vlan)
-	ds.SiteID2nbSite = make(map[string]*objects.Site)
-	ds.DeviceID2nbDevice = make(map[string]*objects.Device)
-	ds.InterfaceID2nbInterface = make(map[string]*objects.Interface)
-
 	syncFunctions := []func(*inventory.NetboxInventory) error{
 		ds.syncSites,
 		ds.syncVlans,
