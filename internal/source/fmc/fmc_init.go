@@ -1,9 +1,13 @@
 package fmc
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/bl4ko/netbox-ssot/internal/source/fmc/client"
+)
 
 // Init initializes the FMC source.
-func (fmcs *FMCSource) initObjects(c *fmcClient) error {
+func (fmcs *FMCSource) initObjects(c *client.FMCClient) error {
 	domains, err := fmcs.initDomains(c)
 	if err != nil {
 		return fmt.Errorf("init domains: %s", err)
@@ -17,10 +21,9 @@ func (fmcs *FMCSource) initObjects(c *fmcClient) error {
 	return nil
 }
 
-func (fmcs *FMCSource) initDomains(c *fmcClient) ([]Domain, error) {
-	fmcs.Domains = make(map[string]Domain)
-	domains, err := c.GetDomains()
+func (fmcs *FMCSource) initDomains(c *client.FMCClient) ([]client.Domain, error) {
 	fmcs.Logger.Debug(fmcs.Ctx, "Getting domains from fmc...")
+	domains, err := c.GetDomains()
 	if err != nil {
 		return nil, fmt.Errorf("get domains: %s", err)
 	}
@@ -31,11 +34,7 @@ func (fmcs *FMCSource) initDomains(c *fmcClient) ([]Domain, error) {
 	return domains, nil
 }
 
-func (fmcs *FMCSource) initDevices(c *fmcClient, domain Domain) error {
-	fmcs.Devices = make(map[string]*DeviceInfo)
-	fmcs.DevicePhysicalIfaces = make(map[string][]*PhysicalInterfaceInfo)
-	fmcs.DeviceVlanIfaces = make(map[string][]*VLANInterfaceInfo)
-
+func (fmcs *FMCSource) initDevices(c *client.FMCClient, domain client.Domain) error {
 	fmcs.Logger.Debugf(fmcs.Ctx, "Getting devices for %s domain...", domain.Name)
 	devices, err := c.GetDevices(domain.UUID)
 	if err != nil {
@@ -67,8 +66,7 @@ func (fmcs *FMCSource) initDevices(c *fmcClient, domain Domain) error {
 	return nil
 }
 
-func (fmcs *FMCSource) initDevicePhysicalInterfaces(c *fmcClient, domain Domain, device Device) error {
-	fmcs.DevicePhysicalIfaces[device.ID] = make([]*PhysicalInterfaceInfo, 0)
+func (fmcs *FMCSource) initDevicePhysicalInterfaces(c *client.FMCClient, domain client.Domain, device client.Device) error {
 	pIfaces, err := c.GetDevicePhysicalInterfaces(domain.UUID, device.ID)
 	if err != nil {
 		return fmt.Errorf("error getting physical interfaces: %s", err)
@@ -83,8 +81,7 @@ func (fmcs *FMCSource) initDevicePhysicalInterfaces(c *fmcClient, domain Domain,
 	return nil
 }
 
-func (fmcs *FMCSource) initDeviceVLANInterfaces(c *fmcClient, domain Domain, device Device) error {
-	fmcs.DeviceVlanIfaces[device.ID] = make([]*VLANInterfaceInfo, 0)
+func (fmcs *FMCSource) initDeviceVLANInterfaces(c *client.FMCClient, domain client.Domain, device client.Device) error {
 	vlanIfaces, err := c.GetDeviceVLANInterfaces(domain.UUID, device.ID)
 	if err != nil {
 		return fmt.Errorf("error getting vlan interfaces: %s", err)

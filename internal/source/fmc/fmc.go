@@ -7,6 +7,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
+	"github.com/bl4ko/netbox-ssot/internal/source/fmc/client"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
@@ -17,10 +18,10 @@ type FMCSource struct {
 	common.Config
 
 	// FMC data. Initialized in init functions.
-	Domains              map[string]Domain
-	Devices              map[string]*DeviceInfo
-	DevicePhysicalIfaces map[string][]*PhysicalInterfaceInfo
-	DeviceVlanIfaces     map[string][]*VLANInterfaceInfo
+	Domains              map[string]client.Domain
+	Devices              map[string]*client.DeviceInfo
+	DevicePhysicalIfaces map[string][]*client.PhysicalInterfaceInfo
+	DeviceVlanIfaces     map[string][]*client.VLANInterfaceInfo
 
 	// Netbox devices representing firewalls.
 	NBDevices map[string]*objects.Device
@@ -38,7 +39,7 @@ func (fmcs *FMCSource) Init() error {
 		return fmt.Errorf("create new http client: %s", err)
 	}
 
-	c, err := newFMCClient(fmcs.SourceConfig.Username, fmcs.SourceConfig.Password, string(fmcs.SourceConfig.HTTPScheme), fmcs.SourceConfig.Hostname, fmcs.SourceConfig.Port, httpClient)
+	c, err := client.NewFMCClient(fmcs.Ctx, fmcs.SourceConfig.Username, fmcs.SourceConfig.Password, string(fmcs.SourceConfig.HTTPScheme), fmcs.SourceConfig.Hostname, fmcs.SourceConfig.Port, httpClient, fmcs.Logger)
 	if err != nil {
 		return fmt.Errorf("create FMC client: %s", err)
 	}
@@ -53,7 +54,13 @@ func (fmcs *FMCSource) Init() error {
 	fmcs.HostSiteRelations = utils.ConvertStringsToRegexPairs(fmcs.SourceConfig.HostSiteRelations)
 	fmcs.Logger.Debugf(fmcs.Ctx, "HostSiteRelations: %s", fmcs.HostSiteRelations)
 
-	initFunctions := []func(*fmcClient) error{
+	// Init FMC objects
+	fmcs.Domains = make(map[string]client.Domain)
+	fmcs.Devices = make(map[string]*client.DeviceInfo)
+	fmcs.DevicePhysicalIfaces = make(map[string][]*client.PhysicalInterfaceInfo)
+	fmcs.DeviceVlanIfaces = make(map[string][]*client.VLANInterfaceInfo)
+
+	initFunctions := []func(*client.FMCClient) error{
 		fmcs.initObjects,
 	}
 	for _, initFunc := range initFunctions {
