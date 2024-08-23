@@ -341,7 +341,7 @@ func (ds *DnacSource) syncDeviceInterface(nbi *inventory.NetboxInventory, ifaceI
 		return fmt.Errorf("add device interface: %s", err)
 	}
 
-	err = ds.addIPAddressToInterface(nbi, nbIface, iface)
+	err = ds.addIPAddressToInterface(nbi, nbIface, iface, ifaceDevice)
 	if err != nil {
 		ds.Logger.Errorf(ds.Ctx, "adding IP address: %s", err)
 	}
@@ -438,7 +438,7 @@ func (ds *DnacSource) getVlanModeAndAccessVlan(portMode, vlanID string) (*object
 	}
 }
 
-func (ds *DnacSource) addIPAddressToInterface(nbi *inventory.NetboxInventory, iface *objects.Interface, ifaceDetails dnac.ResponseDevicesGetAllInterfacesResponse) error {
+func (ds *DnacSource) addIPAddressToInterface(nbi *inventory.NetboxInventory, iface *objects.Interface, ifaceDetails dnac.ResponseDevicesGetAllInterfacesResponse, ifaceDevice *objects.Device) error {
 	if ifaceDetails.IPv4Address == "" || utils.SubnetsContainIPAddress(ifaceDetails.IPv4Address, ds.SourceConfig.IgnoredSubnets) {
 		return nil
 	}
@@ -488,7 +488,7 @@ func (ds *DnacSource) addIPAddressToInterface(nbi *inventory.NetboxInventory, if
 	// Set the interface as the primary IPv4 if it matches the device's management IP
 	deviceManagementIP := ds.Devices[ifaceDetails.DeviceID].ManagementIPAddress
 	if deviceManagementIP == ifaceDetails.IPv4Address {
-		deviceCopy := *iface.Device
+		deviceCopy := *ifaceDevice
 		deviceCopy.PrimaryIPv4 = nbIPAddress
 		_, err := nbi.AddDevice(ds.Ctx, &deviceCopy)
 		if err != nil {
