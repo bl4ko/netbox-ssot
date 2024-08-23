@@ -252,7 +252,7 @@ func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *ob
 			ps.Logger.Debugf(ps.Ctx, "interface %s is filtered out with interface filter %s", vmNetwork.Name, ps.SourceConfig.InterfaceFilter)
 			continue
 		}
-		nbVMIface, err := nbi.AddVMInterface(ps.Ctx, &objects.VMInterface{
+		vmInterfaceStruct := &objects.VMInterface{
 			NetboxObject: objects.NetboxObject{
 				Tags: ps.SourceTags,
 				CustomFields: map[string]interface{}{
@@ -262,14 +262,15 @@ func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *ob
 			Name:       vmNetwork.Name,
 			MACAddress: strings.ToUpper(vmNetwork.HardwareAddress),
 			VM:         nbVM,
-		})
+		}
+		nbVMIface, err := nbi.AddVMInterface(ps.Ctx, vmInterfaceStruct)
 		if err != nil {
-			return fmt.Errorf("add vm interface: %s", err)
+			return fmt.Errorf("add vm interface %s: %s", vmInterfaceStruct, err)
 		}
 
 		for _, ipAddress := range vmNetwork.IPAddresses {
 			if !utils.SubnetsContainIPAddress(ipAddress.IPAddress, ps.SourceConfig.IgnoredSubnets) {
-				nbIPAddress, err := nbi.AddIPAddress(ps.Ctx, &objects.IPAddress{
+				ipAddressStruct := &objects.IPAddress{
 					NetboxObject: objects.NetboxObject{
 						Tags: ps.SourceTags,
 						CustomFields: map[string]interface{}{
@@ -283,9 +284,10 @@ func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *ob
 					AssignedObjectType: objects.AssignedObjectTypeVMInterface,
 					AssignedObjectID:   nbVMIface.ID,
 					Status:             &objects.IPAddressStatusActive, //TODO: this is hardcoded
-				})
+				}
+				nbIPAddress, err := nbi.AddIPAddress(ps.Ctx, ipAddressStruct)
 				if err != nil {
-					ps.Logger.Warningf(ps.Ctx, "add ip address: %s", err)
+					ps.Logger.Warningf(ps.Ctx, "failed adding ip address %s with: %s", ipAddressStruct, err)
 					continue
 				}
 				switch ipAddress.IPAddressType {
@@ -294,11 +296,11 @@ func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *ob
 				case "ipv6":
 					vmIPv6Addresses = append(vmIPv6Addresses, nbIPAddress)
 				default:
-					ps.Logger.Warningf(ps.Ctx, "wrong IP type: %s", ipAddress.IPAddressType)
+					ps.Logger.Warningf(ps.Ctx, "wrong IP type: %s for ip %s", ipAddress.IPAddressType, ipAddress.IPAddress)
 				}
 				prefix, mask, err := utils.GetPrefixAndMaskFromIPAddress(nbIPAddress.Address)
 				if err != nil {
-					ps.Logger.Warningf(ps.Ctx, "extract prefix from ip address: %s", err)
+					ps.Logger.Warningf(ps.Ctx, "failed extracting prefix from ip address %s with: %s", nbIPAddress.Address, err)
 				} else if (ipAddress.IPAddressType == "ipv4" && mask != constants.MaxIPv4MaskBits) || (ipAddress.IPAddressType == "ipv6" && mask != constants.MaxIPv6MaskBits) {
 					_, err = nbi.AddPrefix(ps.Ctx, &objects.Prefix{
 						Prefix: prefix,
