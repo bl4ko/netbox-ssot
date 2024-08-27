@@ -32,43 +32,46 @@ func (pas *PaloAltoSource) syncDevice(nbi *inventory.NetboxInventory) error {
 	if err != nil {
 		return fmt.Errorf("failed adding manufacturer: %s", err)
 	}
-	deviceType, err := nbi.AddDeviceType(pas.Ctx, &objects.DeviceType{
+	deviceTypeStruct := &objects.DeviceType{
 		Manufacturer: deviceManufacturer,
 		Model:        deviceModel,
 		Slug:         utils.Slugify(deviceManufacturer.Name + deviceModel),
-	})
+	}
+	deviceType, err := nbi.AddDeviceType(pas.Ctx, deviceTypeStruct)
 	if err != nil {
-		return fmt.Errorf("add device type: %s", err)
+		return fmt.Errorf("add device type %+v: %s", deviceTypeStruct, err)
 	}
 
 	deviceTenant, err := common.MatchHostToTenant(pas.Ctx, nbi, deviceName, pas.HostTenantRelations)
 	if err != nil {
-		return fmt.Errorf("match host to tenant: %s", err)
+		return fmt.Errorf("match host %s to tenant: %s", deviceName, err)
 	}
 
-	deviceRole, err := nbi.AddDeviceRole(pas.Ctx, &objects.DeviceRole{
+	deviceRoleStruct := &objects.DeviceRole{
 		Name:   constants.DeviceRoleFirewall,
 		Slug:   utils.Slugify(constants.DeviceRoleFirewall),
 		Color:  constants.DeviceRoleFirewallColor,
 		VMRole: false,
-	})
+	}
+	deviceRole, err := nbi.AddDeviceRole(pas.Ctx, deviceRoleStruct)
 	if err != nil {
-		return fmt.Errorf("add DeviceRole: %s", err)
+		return fmt.Errorf("add DeviceRole %+v: %s", deviceRoleStruct, err)
 	}
 	deviceSite, err := common.MatchHostToSite(pas.Ctx, nbi, deviceName, pas.HostSiteRelations)
 	if err != nil {
 		return fmt.Errorf("match host to site: %s", err)
 	}
 	devicePlatformName := fmt.Sprintf("PAN-OS %s", pas.SystemInfo["sw-version"])
-	devicePlatform, err := nbi.AddPlatform(pas.Ctx, &objects.Platform{
+	platformStruct := &objects.Platform{
 		Name:         devicePlatformName,
 		Slug:         utils.Slugify(devicePlatformName),
 		Manufacturer: deviceManufacturer,
-	})
+	}
+	devicePlatform, err := nbi.AddPlatform(pas.Ctx, platformStruct)
 	if err != nil {
 		return fmt.Errorf("add platform: %s", err)
 	}
-	NBDevice, err := nbi.AddDevice(pas.Ctx, &objects.Device{
+	deviceStruct := &objects.Device{
 		NetboxObject: objects.NetboxObject{
 			Tags: pas.SourceTags,
 		},
@@ -80,7 +83,8 @@ func (pas *PaloAltoSource) syncDevice(nbi *inventory.NetboxInventory) error {
 		Tenant:       deviceTenant,
 		Platform:     devicePlatform,
 		SerialNumber: deviceSerialNumber,
-	})
+	}
+	NBDevice, err := nbi.AddDevice(pas.Ctx, deviceStruct)
 	if err != nil {
 		return fmt.Errorf("add device: %s", err)
 	}
@@ -167,7 +171,7 @@ func (pas *PaloAltoSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 				if err != nil {
 					return fmt.Errorf("match vlan to tenant: %s", err)
 				}
-				subIfaceVlan, err = nbi.AddVlan(pas.Ctx, &objects.Vlan{
+				vlanStruct := &objects.Vlan{
 					NetboxObject: objects.NetboxObject{
 						Tags:        pas.SourceTags,
 						Description: subIface.Comment,
@@ -177,9 +181,10 @@ func (pas *PaloAltoSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 					Vid:    subIface.Tag,
 					Tenant: vlanTenant,
 					Group:  vlanGroup,
-				})
+				}
+				subIfaceVlan, err = nbi.AddVlan(pas.Ctx, vlanStruct)
 				if err != nil {
-					return fmt.Errorf("add vlan: %s", err)
+					return fmt.Errorf("add vlan %+v: %s", vlanStruct, err)
 				}
 				subIfaceVlans = append(subIfaceVlans, subIfaceVlan)
 				subifaceMode = &objects.InterfaceModeTagged
@@ -188,7 +193,7 @@ func (pas *PaloAltoSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 			if vdc := pas.getVirtualDeviceContext(nbi, subIfaceName); vdc != nil {
 				vdcs = []*objects.VirtualDeviceContext{vdc}
 			}
-			nbSubIface, err := nbi.AddInterface(pas.Ctx, &objects.Interface{
+			interfaceStruct := &objects.Interface{
 				NetboxObject: objects.NetboxObject{
 					Tags:        pas.SourceTags,
 					Description: subIface.Comment,
@@ -201,9 +206,10 @@ func (pas *PaloAltoSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 				ParentInterface: nbIface,
 				MTU:             subIface.Mtu,
 				Vdcs:            vdcs,
-			})
+			}
+			nbSubIface, err := nbi.AddInterface(pas.Ctx, interfaceStruct)
 			if err != nil {
-				return fmt.Errorf("add subinterface: %s", err)
+				return fmt.Errorf("add subinterface +%v: %s", interfaceStruct, err)
 			}
 			if len(subIface.StaticIps) > 0 {
 				pas.syncIPs(nbi, nbSubIface, subIface.StaticIps, subIfaceVlan)
@@ -243,13 +249,14 @@ func (pas *PaloAltoSource) syncIPs(nbi *inventory.NetboxInventory, nbIface *obje
 				if prefixVlan != nil {
 					prefixTenant = prefixVlan.Tenant
 				}
-				_, err = nbi.AddPrefix(pas.Ctx, &objects.Prefix{
+				prefixStruct := &objects.Prefix{
 					Prefix: prefix,
 					Tenant: prefixTenant,
 					Vlan:   prefixVlan,
-				})
+				}
+				_, err = nbi.AddPrefix(pas.Ctx, prefixStruct)
 				if err != nil {
-					pas.Logger.Errorf(pas.Ctx, "adding prefix: %s", err)
+					pas.Logger.Errorf(pas.Ctx, "adding prefix %+v: %s", prefixStruct, err)
 				}
 			}
 		}
@@ -260,16 +267,17 @@ func (pas *PaloAltoSource) syncIPs(nbi *inventory.NetboxInventory, nbIface *obje
 // They are all added as part of main paloalto firewall device.
 func (pas *PaloAltoSource) syncSecurityZones(nbi *inventory.NetboxInventory) error {
 	for _, securityZone := range pas.SecurityZones {
-		_, err := nbi.AddVirtualDeviceContext(pas.Ctx, &objects.VirtualDeviceContext{
+		virtualDeviceContextStruct := &objects.VirtualDeviceContext{
 			NetboxObject: objects.NetboxObject{
 				Tags: pas.SourceTags,
 			},
 			Name:   securityZone.Name,
 			Device: pas.NBFirewall,
 			Status: &objects.VDCStatusActive,
-		})
+		}
+		_, err := nbi.AddVirtualDeviceContext(pas.Ctx, virtualDeviceContextStruct)
 		if err != nil {
-			return fmt.Errorf("add VirtualDeviceContext: %s", err)
+			return fmt.Errorf("add VirtualDeviceContext %+v: %s", virtualDeviceContextStruct, err)
 		}
 	}
 	return nil
@@ -302,7 +310,7 @@ func (pas *PaloAltoSource) syncArpTable(nbi *inventory.NetboxInventory) error {
 		return fmt.Errorf("add tag: %s", err)
 	}
 	// We create custom field for tracking when was arp entry last seen
-	_, err = nbi.AddCustomField(pas.Ctx, &objects.CustomField{
+	customFieldStruct := &objects.CustomField{
 		Name:                  constants.CustomFieldArpIPLastSeenName,
 		Label:                 constants.CustomFieldArpIPLastSeenLabel,
 		Type:                  objects.CustomFieldTypeText,
@@ -313,9 +321,10 @@ func (pas *PaloAltoSource) syncArpTable(nbi *inventory.NetboxInventory) error {
 		Description:           constants.CustomFieldArpIPLastSeenDescription,
 		SearchWeight:          objects.SearchWeightDefault,
 		ObjectTypes:           []objects.ObjectType{objects.ObjectTypeIpamIPAddress},
-	})
+	}
+	_, err = nbi.AddCustomField(pas.Ctx, customFieldStruct)
 	if err != nil {
-		return fmt.Errorf("add custom field: %s", err)
+		return fmt.Errorf("add custom field %+v: %s", customFieldStruct, err)
 	}
 
 	const maxGoroutines = 100 // Max number of goroutines running at the same time
@@ -361,7 +370,7 @@ func (pas *PaloAltoSource) syncArpEntry(nbi *inventory.NetboxInventory, entry Ar
 	defaultMask := 32
 	addressWithMask := fmt.Sprintf("%s/%d", entry.IP, defaultMask)
 
-	_, err := nbi.AddIPAddress(pas.Ctx, &objects.IPAddress{
+	ipAddressStruct := &objects.IPAddress{
 		NetboxObject: objects.NetboxObject{
 			Tags:        newTags,
 			Description: fmt.Sprintf("IP collected from %s arp table", pas.SourceConfig.Name),
@@ -373,7 +382,8 @@ func (pas *PaloAltoSource) syncArpEntry(nbi *inventory.NetboxInventory, entry Ar
 		Address: addressWithMask,
 		DNSName: dnsName,
 		Status:  &objects.IPAddressStatusActive,
-	})
+	}
+	_, err := nbi.AddIPAddress(pas.Ctx, ipAddressStruct)
 	if err != nil {
 		return fmt.Errorf("add arp ip address: %s", err)
 	}

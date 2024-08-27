@@ -22,7 +22,7 @@ func (ps *ProxmoxSource) syncCluster(nbi *inventory.NetboxInventory) error {
 	if err != nil {
 		return err
 	}
-	clusterType, err := nbi.AddClusterType(ps.Ctx, &objects.ClusterType{
+	clusterTypeStruct := &objects.ClusterType{
 		NetboxObject: objects.NetboxObject{
 			Tags: ps.Config.SourceTags,
 			CustomFields: map[string]interface{}{
@@ -31,9 +31,10 @@ func (ps *ProxmoxSource) syncCluster(nbi *inventory.NetboxInventory) error {
 		},
 		Name: "Proxmox",
 		Slug: utils.Slugify("Proxmox"),
-	})
+	}
+	clusterType, err := nbi.AddClusterType(ps.Ctx, clusterTypeStruct)
 	if err != nil {
-		return fmt.Errorf("proxmox cluster type: %s", err)
+		return fmt.Errorf("add cluster type %+v: %s", clusterTypeStruct, err)
 	}
 
 	// Check if proxmox is running standalon node (in that case cluster name is empty)
@@ -41,7 +42,7 @@ func (ps *ProxmoxSource) syncCluster(nbi *inventory.NetboxInventory) error {
 		ps.Cluster.Name = "ProxmoxStandalone"
 	}
 
-	nbCluster, err := nbi.AddCluster(ps.Ctx, &objects.Cluster{
+	clusterStruct := &objects.Cluster{
 		NetboxObject: objects.NetboxObject{
 			Tags: ps.SourceTags,
 			CustomFields: map[string]interface{}{
@@ -52,9 +53,10 @@ func (ps *ProxmoxSource) syncCluster(nbi *inventory.NetboxInventory) error {
 		Type:   clusterType,
 		Site:   clusterSite,
 		Tenant: clusterTenant,
-	})
+	}
+	nbCluster, err := nbi.AddCluster(ps.Ctx, clusterStruct)
 	if err != nil {
-		return fmt.Errorf("sync cluster: %s", err)
+		return fmt.Errorf("add cluster %+v: %s", clusterStruct, err)
 	}
 	ps.NetboxCluster = nbCluster
 	return nil
@@ -76,25 +78,33 @@ func (ps *ProxmoxSource) syncNodes(nbi *inventory.NetboxInventory) error {
 			return fmt.Errorf("match host to tenant: %s", err)
 		}
 		// TODO: find a way to get device type info from proxmox
-		hostManufacturer, err := nbi.AddManufacturer(ps.Ctx, &objects.Manufacturer{
+		manufacturerStruct := &objects.Manufacturer{
 			Name: constants.DefaultManufacturer,
 			Slug: utils.Slugify(constants.DefaultManufacturer),
-		})
-		if err != nil {
-			return fmt.Errorf("adding host manufacturer: %s", err)
 		}
-		hostDeviceType, err := nbi.AddDeviceType(ps.Ctx, &objects.DeviceType{
+		hostManufacturer, err := nbi.AddManufacturer(ps.Ctx, manufacturerStruct)
+		if err != nil {
+			return fmt.Errorf("adding host manufacturer %+v: %s", manufacturerStruct, err)
+		}
+		deviceTypeStruct := &objects.DeviceType{
 			Manufacturer: hostManufacturer,
 			Model:        constants.DefaultModel,
 			Slug:         utils.Slugify(hostManufacturer.Name + constants.DefaultModel),
-		})
+		}
+		hostDeviceType, err := nbi.AddDeviceType(ps.Ctx, deviceTypeStruct)
 		if err != nil {
-			return fmt.Errorf("adding host device type: %s", err)
+			return fmt.Errorf("adding host device type %+v: %s", deviceTypeStruct, err)
 		}
 
-		hostDeviceRole, err := nbi.AddDeviceRole(ps.Ctx, &objects.DeviceRole{Name: constants.DeviceRoleServer, Slug: utils.Slugify(constants.DeviceRoleServer), Color: constants.DeviceRoleServerColor, VMRole: false})
+		deviceRoleStruct := &objects.DeviceRole{
+			Name:   constants.DeviceRoleServer,
+			Slug:   utils.Slugify(constants.DeviceRoleServer),
+			Color:  constants.DeviceRoleServerColor,
+			VMRole: false,
+		}
+		hostDeviceRole, err := nbi.AddDeviceRole(ps.Ctx, deviceRoleStruct)
 		if err != nil {
-			return err
+			return fmt.Errorf("add device role %+v, %s", deviceRoleStruct, err)
 		}
 
 		nbHost, err := nbi.AddDevice(ps.Ctx, &objects.Device{
@@ -213,7 +223,7 @@ func (ps *ProxmoxSource) syncVM(nbi *inventory.NetboxInventory, vm *proxmox.Virt
 	}
 
 	// Add VM to Netbox
-	nbVM, err := nbi.AddVM(ps.Ctx, &objects.VM{
+	vmStruct := &objects.VM{
 		NetboxObject: objects.NetboxObject{
 			Tags: ps.SourceTags,
 			CustomFields: map[string]interface{}{
@@ -230,9 +240,10 @@ func (ps *ProxmoxSource) syncVM(nbi *inventory.NetboxInventory, vm *proxmox.Virt
 		Site:    nbHost.Site,
 		Name:    vm.Name,
 		Status:  vmStatus,
-	})
+	}
+	nbVM, err := nbi.AddVM(ps.Ctx, vmStruct)
 	if err != nil {
-		return fmt.Errorf("new vm: %s", err)
+		return fmt.Errorf("add vm: %s", err)
 	}
 
 	// Sync VM networks
@@ -265,7 +276,7 @@ func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *ob
 		}
 		nbVMIface, err := nbi.AddVMInterface(ps.Ctx, vmInterfaceStruct)
 		if err != nil {
-			return fmt.Errorf("add vm interface %s: %s", vmInterfaceStruct, err)
+			return fmt.Errorf("add vm interface %+v: %s", vmInterfaceStruct, err)
 		}
 
 		for _, ipAddress := range vmNetwork.IPAddresses {
@@ -398,7 +409,7 @@ func (ps *ProxmoxSource) syncContainerNetworks(nbi *inventory.NetboxInventory, n
 			ps.Logger.Debugf(ps.Ctx, "interface %s is filtered out with interface filter %s", containerIface.Name, ps.SourceConfig.InterfaceFilter)
 			continue
 		}
-		nbVMIface, err := nbi.AddVMInterface(ps.Ctx, &objects.VMInterface{
+		vmIfaceStruct := &objects.VMInterface{
 			NetboxObject: objects.NetboxObject{
 				Tags: ps.SourceTags,
 				CustomFields: map[string]interface{}{
@@ -408,7 +419,8 @@ func (ps *ProxmoxSource) syncContainerNetworks(nbi *inventory.NetboxInventory, n
 			Name:       containerIface.Name,
 			MACAddress: strings.ToUpper(containerIface.HWAddr),
 			VM:         nbContainer,
-		})
+		}
+		nbVMIface, err := nbi.AddVMInterface(ps.Ctx, vmIfaceStruct)
 		if err != nil {
 			return fmt.Errorf("add vm interface: %s", err)
 		}
