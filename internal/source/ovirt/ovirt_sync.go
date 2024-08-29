@@ -433,14 +433,15 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 				}
 				nbIPAddress, err := nbi.AddIPAddress(o.Ctx, ipAddressStruct)
 				if err != nil {
-					return fmt.Errorf("add ipv4 address %+v: %s", ipAddressStruct, err)
+					o.Logger.Warningf(o.Ctx, "add ipv4 address %+v: %s", ipAddressStruct, err)
+					continue
 				}
 				if address == hostIP {
 					hostCopy := *nbHost
 					hostCopy.PrimaryIPv4 = nbIPAddress
 					_, err := nbi.AddDevice(o.Ctx, &hostCopy)
 					if err != nil {
-						return fmt.Errorf("adding primary ipv4 address %+v: %s", nbIPAddress, err)
+						o.Logger.Warningf(o.Ctx, "adding primary ipv4 address %+v: %s", nbIPAddress, err)
 					}
 				}
 
