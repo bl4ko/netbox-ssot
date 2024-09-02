@@ -117,6 +117,8 @@ type DeviceRole struct {
 	NetboxObject
 	// Name is the name of the device role. This field is required.
 	Name string `json:"name,omitempty"`
+	// Description is the description of the device Role.
+	Description string `json:"description,omitempty"`
 	// URL-friendly unique shorthand. This field is required.
 	Slug string `json:"slug,omitempty"`
 	// Color of the device role. This field is required.

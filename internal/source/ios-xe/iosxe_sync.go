@@ -40,10 +40,11 @@ func (is *IOSXESource) syncDevice(nbi *inventory.NetboxInventory) error {
 	}
 
 	deviceRole, err := nbi.AddDeviceRole(is.Ctx, &objects.DeviceRole{
-		Name:   constants.DeviceRoleSwitch,
-		Slug:   utils.Slugify(constants.DeviceRoleSwitch),
-		Color:  constants.DeviceRoleSwitchColor,
-		VMRole: false,
+		Name:        constants.DeviceRoleSwitch,
+		Description: constants.DeviceRoleSwitchDescription,
+		Slug:        utils.Slugify(constants.DeviceRoleSwitch),
+		Color:       constants.DeviceRoleSwitchColor,
+		VMRole:      false,
 	})
 	if err != nil {
 		return fmt.Errorf("add device role: %s", err)

@@ -48,10 +48,11 @@ func (pas *PaloAltoSource) syncDevice(nbi *inventory.NetboxInventory) error {
 	}
 
 	deviceRoleStruct := &objects.DeviceRole{
-		Name:   constants.DeviceRoleFirewall,
-		Slug:   utils.Slugify(constants.DeviceRoleFirewall),
-		Color:  constants.DeviceRoleFirewallColor,
-		VMRole: false,
+		Name:        constants.DeviceRoleFirewall,
+		Description: constants.DeviceRoleFirewallDescription,
+		Slug:        utils.Slugify(constants.DeviceRoleFirewall),
+		Color:       constants.DeviceRoleFirewallColor,
+		VMRole:      false,
 	}
 	deviceRole, err := nbi.AddDeviceRole(pas.Ctx, deviceRoleStruct)
 	if err != nil {

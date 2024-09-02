@@ -97,10 +97,11 @@ func (ps *ProxmoxSource) syncNodes(nbi *inventory.NetboxInventory) error {
 		}
 
 		deviceRoleStruct := &objects.DeviceRole{
-			Name:   constants.DeviceRoleServer,
-			Slug:   utils.Slugify(constants.DeviceRoleServer),
-			Color:  constants.DeviceRoleServerColor,
-			VMRole: false,
+			Name:        constants.DeviceRoleServer,
+			Description: constants.DeviceRoleServerDescription,
+			Slug:        utils.Slugify(constants.DeviceRoleServer),
+			Color:       constants.DeviceRoleServerColor,
+			VMRole:      false,
 		}
 		hostDeviceRole, err := nbi.AddDeviceRole(ps.Ctx, deviceRoleStruct)
 		if err != nil {
@@ -347,10 +348,11 @@ func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 	if len(ps.Containers) > 0 {
 		// Create container role
 		containerRole, err := nbi.AddDeviceRole(ps.Ctx, &objects.DeviceRole{
-			Name:   constants.DeviceRoleContainer,
-			Slug:   utils.Slugify(constants.DeviceRoleContainer),
-			Color:  constants.DeviceRoleContainerColor,
-			VMRole: true,
+			Name:        constants.DeviceRoleContainer,
+			Description: constants.DeviceRoleContainerDescription,
+			Slug:        utils.Slugify(constants.DeviceRoleContainer),
+			Color:       constants.DeviceRoleContainerColor,
+			VMRole:      true,
 		})
 		if err != nil {
 			return fmt.Errorf("create container role: %s", err)

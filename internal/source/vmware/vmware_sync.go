@@ -250,10 +250,11 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		hostMemGB := host.Summary.Hardware.MemorySize / constants.KiB / constants.KiB / constants.KiB
 
 		deviceRoleStruct := &objects.DeviceRole{
-			Name:   constants.DeviceRoleServer,
-			Slug:   utils.Slugify(constants.DeviceRoleServer),
-			Color:  constants.DeviceRoleServerColor,
-			VMRole: false,
+			Name:        constants.DeviceRoleServer,
+			Description: constants.DeviceRoleServerDescription,
+			Slug:        utils.Slugify(constants.DeviceRoleServer),
+			Color:       constants.DeviceRoleServerColor,
+			VMRole:      false,
 		}
 		hostDeviceRole, err := nbi.AddDeviceRole(vc.Ctx, deviceRoleStruct)
 		if err != nil {
@@ -737,10 +738,11 @@ func (vc *VmwareSource) syncVM(nbi *inventory.NetboxInventory, vmKey string, vm 
 	var templateRole *objects.DeviceRole
 	if isTemplate {
 		templateRoleStruct := &objects.DeviceRole{
-			Name:   constants.DeviceRoleVMTemplate,
-			Slug:   utils.Slugify(constants.DeviceRoleVMTemplate),
-			Color:  constants.DeviceRoleVMTemplateColor,
-			VMRole: true,
+			Name:        constants.DeviceRoleVMTemplate,
+			Description: constants.DeviceRoleVMTemplateDescription,
+			Slug:        utils.Slugify(constants.DeviceRoleVMTemplate),
+			Color:       constants.DeviceRoleVMTemplateColor,
+			VMRole:      true,
 		}
 		var err error
 		templateRole, err = nbi.AddDeviceRole(vc.Ctx, templateRoleStruct)

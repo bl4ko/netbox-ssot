@@ -43,10 +43,11 @@ func (fmcs *FMCSource) syncDevices(nbi *inventory.NetboxInventory) error {
 			return fmt.Errorf("match host to tenant %s", err)
 		}
 		deviceRole, err := nbi.AddDeviceRole(fmcs.Ctx, &objects.DeviceRole{
-			Name:   constants.DeviceRoleFirewall,
-			Slug:   utils.Slugify(constants.DeviceRoleFirewall),
-			Color:  constants.DeviceRoleFirewallColor,
-			VMRole: false,
+			Name:        constants.DeviceRoleFirewall,
+			Description: constants.DeviceRoleFirewallDescription,
+			Slug:        utils.Slugify(constants.DeviceRoleFirewall),
+			Color:       constants.DeviceRoleFirewallColor,
+			VMRole:      false,
 		})
 		if err != nil {
 			return fmt.Errorf("add DeviceRole: %s", err)

@@ -45,10 +45,11 @@ func (fs *FortigateSource) syncDevice(nbi *inventory.NetboxInventory) error {
 	}
 
 	deviceRole, err := nbi.AddDeviceRole(fs.Ctx, &objects.DeviceRole{
-		Name:   constants.DeviceRoleFirewall,
-		Slug:   utils.Slugify(constants.DeviceRoleFirewall),
-		Color:  constants.DeviceRoleFirewallColor,
-		VMRole: false,
+		Name:        constants.DeviceRoleFirewall,
+		Description: constants.DeviceRoleFirewallDescription,
+		Slug:        utils.Slugify(constants.DeviceRoleFirewall),
+		Color:       constants.DeviceRoleFirewallColor,
+		VMRole:      false,
 	})
 	if err != nil {
 		return fmt.Errorf("add DeviceRole: %s", err)

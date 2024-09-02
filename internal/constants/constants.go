@@ -158,20 +158,25 @@ const (
 
 // Device Role constants.
 const (
-	DeviceRoleFirewall      = "Firewall"
-	DeviceRoleFirewallColor = "f57842"
+	DeviceRoleFirewall            = "Firewall"
+	DeviceRoleFirewallDescription = "Device role for marking firewall device."
+	DeviceRoleFirewallColor       = "f57842"
 
-	DeviceRoleSwitch      = "Switch"
-	DeviceRoleSwitchColor = "7aefea"
+	DeviceRoleSwitch            = "Switch"
+	DeviceRoleSwitchDescription = "Device role for marking switch device."
+	DeviceRoleSwitchColor       = "7aefea"
 
-	DeviceRoleServer      = "Server"
-	DeviceRoleServerColor = "00add8"
+	DeviceRoleServer            = "Server"
+	DeviceRoleServerDescription = "Device role for marking server."
+	DeviceRoleServerColor       = "00add8"
 
-	DeviceRoleContainer      = "Container"
-	DeviceRoleContainerColor = "0db7ed"
+	DeviceRoleContainer            = "Container"
+	DeviceRoleContainerDescription = "VM role for separating containers from VMs."
+	DeviceRoleContainerColor       = "0db7ed"
 
-	DeviceRoleVMTemplate      = "VM Template"
-	DeviceRoleVMTemplateColor = "82c1ea"
+	DeviceRoleVMTemplate            = "VM Template"
+	DeviceRoleVMTemplateDescription = "VM role for separating VM templates from VMs."
+	DeviceRoleVMTemplateColor       = "82c1ea"
 )
 
 // Constants used for variables in our contexts.
