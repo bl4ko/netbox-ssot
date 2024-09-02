@@ -5,7 +5,7 @@ go 1.23
 require (
 	github.com/PaloAltoNetworks/pango v0.10.2
 	github.com/cisco-en-programmability/dnacenter-go-sdk/v5 v5.0.32
-	github.com/luthermonson/go-proxmox v0.1.0
+	github.com/luthermonson/go-proxmox v0.1.1
 	github.com/ovirt/go-ovirt v4.3.4+incompatible
 	github.com/scrapli/scrapligo v1.3.2
 	github.com/vmware/govmomi v0.42.0
