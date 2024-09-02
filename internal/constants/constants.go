@@ -89,7 +89,7 @@ var SourceTypeTagColorMap = map[SourceType]string{
 
 const (
 	// API timeout in seconds.
-	DefaultAPITimeout = 45
+	DefaultAPITimeout = 15
 )
 
 // Magic numbers for dealing with bytes.

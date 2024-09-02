@@ -77,12 +77,42 @@ func (fmcc FMCClient) authenticateOnce() (string, string, error) {
 	return accessToken, refreshToken, nil
 }
 
+// makeRequestOnce sends an HTTP request to the specified path using the given method and body.
+// It reads the response body and returns it along with the response object.
+func (fmcc *FMCClient) makeRequestOnce(ctx context.Context, method, path string, body io.Reader) (*http.Response, []byte, error) {
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, fmcc.DefaultTimeout)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctxWithTimeout, method, fmt.Sprintf("%s/%s", fmcc.BaseURL, path), body)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Set the Authorization header.
+	req.Header.Set("X-auth-access-token", fmcc.AccessToken)
+
+	resp, err := fmcc.HTTPClient.Do(req)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Ensure the response body is fully read before the context is canceled
+	bodyBytes, err := io.ReadAll(resp.Body)
+	resp.Body.Close() // Close the response body immediately after reading
+	if err != nil {
+		return resp, nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	return resp, bodyBytes, nil
+}
+
 // MakeRequest sends an HTTP request to the specified path using the given method and body.
 // It retries the request with exponential backoff up to a maximum number of attempts.
 // If the request fails after the maximum number of attempts, it returns an error.
 func (fmcc *FMCClient) MakeRequest(ctx context.Context, method, path string, body io.Reader, result interface{}) error {
 	var (
 		resp           *http.Response
+		bodyBytes      []byte
 		err            error
 		tokenRefreshed bool
 	)
@@ -93,8 +123,17 @@ func (fmcc *FMCClient) MakeRequest(ctx context.Context, method, path string, bod
 			return ctx.Err()
 		}
 
-		resp, err = fmcc.makeRequestOnce(ctx, method, path, body)
+		// Recreate context on each attempt
+		reqCtx, cancel := context.WithTimeout(ctx, fmcc.DefaultTimeout)
+		defer cancel()
+
+		resp, bodyBytes, err = fmcc.makeRequestOnce(reqCtx, method, path, body)
 		if err != nil {
+			if reqCtx.Err() == context.Canceled || reqCtx.Err() == context.DeadlineExceeded {
+				fmcc.Logger.Debugf(ctx, "request attempt %d failed due to context timeout/cancellation: %s", attempt, err)
+				time.Sleep(exponentialBackoff(attempt))
+				continue
+			}
 			fmcc.Logger.Debugf(ctx, "request attempt %d failed: %s", attempt, err)
 			time.Sleep(exponentialBackoff(attempt))
 			continue
@@ -120,16 +159,11 @@ func (fmcc *FMCClient) MakeRequest(ctx context.Context, method, path string, bod
 			// If the token has already been refreshed, return the 401 error.
 			return fmt.Errorf("request failed with 401 Unauthorized after token refresh")
 		}
+		defer resp.Body.Close()
 
 		// Process the response if it's not a 401
 		if resp.StatusCode != http.StatusOK {
 			return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
-		}
-
-		bodyBytes, err := io.ReadAll(resp.Body)
-		defer resp.Body.Close()
-		if err != nil {
-			return fmt.Errorf("failed to read response body: %w", err)
 		}
 
 		err = json.Unmarshal(bodyBytes, result)
@@ -141,20 +175,6 @@ func (fmcc *FMCClient) MakeRequest(ctx context.Context, method, path string, bod
 	}
 
 	return fmt.Errorf("request failed after %d attempts: %w", maxRetries, err)
-}
-
-// makeRequestOnce sends an HTTP request to the specified path using the given method and body.
-// It is a helper function for MakeRequest that sends the request only once.
-func (fmcc *FMCClient) makeRequestOnce(ctx context.Context, method, path string, body io.Reader) (*http.Response, error) {
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, fmcc.DefaultTimeout)
-	defer cancel()
-	req, err := http.NewRequestWithContext(ctxWithTimeout, method, fmt.Sprintf("%s/%s", fmcc.BaseURL, path), body)
-	if err != nil {
-		return nil, err
-	}
-	// Set the Authorization header.
-	req.Header.Set("X-auth-access-token", fmcc.AccessToken)
-	return fmcc.HTTPClient.Do(req)
 }
 
 // GetDomains returns a list of domains from the FMC API.
