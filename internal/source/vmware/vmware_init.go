@@ -191,7 +191,7 @@ func (vc *VmwareSource) initHosts(ctx context.Context, containerView *view.Conta
 
 func (vc *VmwareSource) initVms(ctx context.Context, containerView *view.ContainerView) error {
 	var vms []mo.VirtualMachine
-	err := containerView.Retrieve(ctx, []string{"VirtualMachine"}, []string{"summary", "name", "runtime", "guest", "config.hardware", "config.guestFullName"}, &vms)
+	err := containerView.Retrieve(ctx, []string{"VirtualMachine"}, []string{"summary", "name", "runtime", "guest", "config.hardware", "config.template", "config.guestFullName"}, &vms)
 	if err != nil {
 		return fmt.Errorf("failed retrieving vms: %s", err)
 	}

@@ -729,8 +729,24 @@ func (vc *VmwareSource) syncVMs(nbi *inventory.NetboxInventory) error {
 // syncVM synces VM from the source to Netbox.
 func (vc *VmwareSource) syncVM(nbi *inventory.NetboxInventory, vmKey string, vm mo.VirtualMachine) error {
 	// Check if the VM is a template
+	isTemplate := false
 	if vm.Config != nil && vm.Config.Template {
-		return nil
+		isTemplate = true
+	}
+
+	var templateRole *objects.DeviceRole
+	if isTemplate {
+		templateRoleStruct := &objects.DeviceRole{
+			Name:   constants.DeviceRoleVMTemplate,
+			Slug:   utils.Slugify(constants.DeviceRoleVMTemplate),
+			Color:  constants.DeviceRoleVMTemplateColor,
+			VMRole: true,
+		}
+		var err error
+		templateRole, err = nbi.AddDeviceRole(vc.Ctx, templateRoleStruct)
+		if err != nil {
+			vc.Logger.Errorf(vc.Ctx, "add device role %+v: %s", templateRoleStruct, err)
+		}
 	}
 
 	vmName := vm.Name
@@ -856,23 +872,26 @@ func (vc *VmwareSource) syncVM(nbi *inventory.NetboxInventory, vmKey string, vm 
 		Memory:   int(vmMemory),                                                    // MBs
 		Disk:     int(vmDiskSizeB / constants.KiB / constants.KiB / constants.KiB), // GBs
 		Comments: vmComments,
+		Role:     templateRole,
 	}
 	newVM, err := nbi.AddVM(vc.Ctx, vmStruct)
 	if err != nil {
 		return fmt.Errorf("failed to sync vmware VM %s: %v", vmName, err)
 	}
 
-	err = vc.addVMContact(nbi, newVM, vmOwners, vmOwnerEmails)
-	if err != nil {
-		return fmt.Errorf("adding %s's contact: %s", newVM, err)
-	}
+	// For non template VMS also sync contacts and their network interfaces
+	if !isTemplate {
+		err = vc.addVMContact(nbi, newVM, vmOwners, vmOwnerEmails)
+		if err != nil {
+			return fmt.Errorf("adding %s's contact: %s", newVM, err)
+		}
 
-	// Sync vm interfaces
-	err = vc.syncVMInterfaces(nbi, vm, newVM)
-	if err != nil {
-		return fmt.Errorf("failed to sync vmware %s's interfaces: %v", newVM, err)
+		// Sync vm interfaces
+		err = vc.syncVMInterfaces(nbi, vm, newVM)
+		if err != nil {
+			return fmt.Errorf("failed to sync vmware %s's interfaces: %v", newVM, err)
+		}
 	}
-
 	return nil
 }
 

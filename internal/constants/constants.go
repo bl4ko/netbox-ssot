@@ -169,6 +169,9 @@ const (
 
 	DeviceRoleContainer      = "Container"
 	DeviceRoleContainerColor = "0db7ed"
+
+	DeviceRoleVMTemplate      = "VM Template"
+	DeviceRoleVMTemplateColor = "82c1ea"
 )
 
 // Constants used for variables in our contexts.
