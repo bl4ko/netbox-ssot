@@ -238,7 +238,9 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		}
 
 		var hostPlatform *objects.Platform
-		var osDistribution, osVersion, osArch string
+		osDistribution := constants.DefaultOSName
+		osVersion := constants.DefaultOSVersion
+		cpuArch := constants.DefaultCPUArch
 		if os, exists := host.Os(); exists {
 			if ovirtOsType, exists := os.Type(); exists {
 				osDistribution = ovirtOsType
@@ -250,13 +252,13 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 			}
 			// We extract architecture from reported_kernel_cmdline
 			if reportedKernelCmdline, exists := os.ReportedKernelCmdline(); exists {
-				osArch = utils.ExtractCPUArch(reportedKernelCmdline)
-				if bitArch, ok := constants.Arch2Bit[osArch]; ok {
-					osArch = bitArch
+				cpuArch = utils.ExtractCPUArch(reportedKernelCmdline)
+				if bitArch, ok := constants.Arch2Bit[cpuArch]; ok {
+					cpuArch = bitArch
 				}
 			}
 		}
-		platformName := utils.GeneratePlatformName(osDistribution, osVersion, osArch)
+		platformName := utils.GeneratePlatformName(osDistribution, osVersion, cpuArch)
 		hostPlatformStruct := &objects.Platform{
 			Name: platformName,
 			Slug: utils.Slugify(platformName),
