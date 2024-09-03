@@ -223,6 +223,11 @@ func (ps *ProxmoxSource) syncVM(nbi *inventory.NetboxInventory, vm *proxmox.Virt
 		return fmt.Errorf("match vm to tenant: %s", err)
 	}
 
+	vmRole, err := nbi.GetVMDeviceRole(ps.Ctx)
+	if err != nil {
+		return fmt.Errorf("get vm device role: %s", err)
+	}
+
 	// Add VM to Netbox
 	vmStruct := &objects.VM{
 		NetboxObject: objects.NetboxObject{
@@ -235,6 +240,7 @@ func (ps *ProxmoxSource) syncVM(nbi *inventory.NetboxInventory, vm *proxmox.Virt
 		Host:    nbHost,
 		Cluster: ps.NetboxCluster, // Default single proxmox cluster
 		Tenant:  vmTenant,
+		Role:    vmRole,
 		VCPUs:   float32(vm.CPUs),
 		Memory:  int(vm.MaxMem / constants.MiB),  //nolint:gosec
 		Disk:    int(vm.MaxDisk / constants.GiB), //nolint:gosec

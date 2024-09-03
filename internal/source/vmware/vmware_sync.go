@@ -391,15 +391,17 @@ func (vc *VmwareSource) collectHostPhysicalNicData(nbi *inventory.NetboxInventor
 				if err != nil {
 					return nil, fmt.Errorf("vlanGroup: %s", err)
 				}
-				vlanIDMap[portgroupData.vlanID] = nbi.GetVlan(vlanGroup.ID, portgroupData.vlanID)
+				vlan, vlanExists := nbi.GetVlan(vlanGroup.ID, portgroupData.vlanID)
+				if vlanExists {
+					vlanIDMap[portgroupData.vlanID] = vlan
+				}
 			} else {
 				vlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, portgroupName, vc.VlanGroupRelations)
 				if err != nil {
 					return nil, fmt.Errorf("vlanGroup: %s", err)
 				}
-				var newVlan *objects.Vlan
-				newVlan = nbi.GetVlan(vlanGroup.ID, portgroupData.vlanID)
-				if newVlan != nil {
+				newVlan, newVlanExists := nbi.GetVlan(vlanGroup.ID, portgroupData.vlanID)
+				if newVlanExists {
 					vlanStruct := &objects.Vlan{
 						NetboxObject: objects.NetboxObject{
 							Tags: vc.Config.SourceTags,
@@ -637,7 +639,7 @@ func (vc *VmwareSource) collectHostVirtualNicData(nbi *inventory.NetboxInventory
 		if err != nil {
 			return nil, fmt.Errorf("vlan group: %s", err)
 		}
-		vnicUntaggedVlan = nbi.GetVlan(vnicUntaggedVlanGroup.ID, vnicPortgroupVlanID)
+		vnicUntaggedVlan, _ = nbi.GetVlan(vnicUntaggedVlanGroup.ID, vnicPortgroupVlanID)
 		vnicMode = &objects.InterfaceModeAccess
 		// vnicUntaggedVlan = &objects.Vlan{
 		// 	Name:   fmt.Sprintf("ESXi %s (ID: %d) (%s)", vnic.Portgroup, vnicPortgroupVlanId, nbHost.Site.Name),
@@ -656,7 +658,10 @@ func (vc *VmwareSource) collectHostVirtualNicData(nbi *inventory.NetboxInventory
 			if err != nil {
 				return nil, fmt.Errorf("vlan group: %s", err)
 			}
-			vnicTaggedVlans = append(vnicTaggedVlans, nbi.GetVlan(vnicTaggedVlanGroup.ID, vnicDvPortgroupDataVlanID))
+			taggedVlan, taggedVlanExists := nbi.GetVlan(vnicTaggedVlanGroup.ID, vnicDvPortgroupDataVlanID)
+			if taggedVlanExists {
+				vnicTaggedVlans = append(vnicTaggedVlans, taggedVlan)
+			}
 			// vnicTaggedVlans = append(vnicTaggedVlans, &objects.Vlan{
 			// 	Name:   fmt.Sprintf("%s-%d", vnicDvPortgroupData.Name, vnicDvPortgroupDataVlanId),
 			// 	Vid:    vnicDvPortgroupDataVlanId,
@@ -728,12 +733,17 @@ func (vc *VmwareSource) syncVM(nbi *inventory.NetboxInventory, vmKey string, vm 
 		isTemplate = true
 	}
 
-	var templateRole *objects.DeviceRole
+	var vmRole *objects.DeviceRole
+	var err error
 	if isTemplate {
-		var err error
-		templateRole, err = nbi.GetVMTemplateDeviceRole(vc.Ctx)
+		vmRole, err = nbi.GetVMTemplateDeviceRole(vc.Ctx)
 		if err != nil {
-			vc.Logger.Errorf(vc.Ctx, "add template device role: %s", err)
+			return fmt.Errorf("add template device role: %s", err)
+		}
+	} else {
+		vmRole, err = nbi.GetVMDeviceRole(vc.Ctx)
+		if err != nil {
+			return fmt.Errorf("get vm device role: %s", err)
 		}
 	}
 
@@ -860,7 +870,7 @@ func (vc *VmwareSource) syncVM(nbi *inventory.NetboxInventory, vmKey string, vm 
 		Memory:   int(vmMemory),                                                    // MBs
 		Disk:     int(vmDiskSizeB / constants.KiB / constants.KiB / constants.KiB), // GBs
 		Comments: vmComments,
-		Role:     templateRole,
+		Role:     vmRole,
 	}
 	newVM, err := nbi.AddVM(vc.Ctx, vmStruct)
 	if err != nil {
@@ -1072,7 +1082,7 @@ func (vc *VmwareSource) collectVMInterfaceData(nbi *inventory.NetboxInventory, n
 			if err != nil {
 				return nicIPv4Addresses, nicIPv6Addresses, nil, fmt.Errorf("vlan group: %s", err)
 			}
-			intUntaggedVlan = nbi.GetVlan(nicUntaggedVlanGroup.ID, vidID)
+			intUntaggedVlan, _ = nbi.GetVlan(nicUntaggedVlanGroup.ID, vidID)
 		} else {
 			intTaggedVlanList = []*objects.Vlan{}
 			for _, intNetworkVlanID := range intNetworkVlanIDs {

@@ -593,7 +593,7 @@ func (o *OVirtSource) collectHostNicsData(nbHost *objects.Device, nbi *inventory
 					return err
 				}
 				// Get vlan from inventory
-				nicVlan = nbi.GetVlan(vlanGroup.ID, int(vlanID))
+				nicVlan, _ = nbi.GetVlan(vlanGroup.ID, int(vlanID))
 			}
 		}
 
@@ -830,12 +830,17 @@ func (o *OVirtSource) extractVMData(nbi *inventory.NetboxInventory, vmID string,
 			}
 		}
 	}
+	vmRole, err := nbi.GetVMDeviceRole(o.Ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get vm device role: %s", err)
+	}
+
 	platformName := utils.GeneratePlatformName(vmOsType, vmOsVersion, vmCPUArch)
 	platformStruct := &objects.Platform{
 		Name: platformName,
 		Slug: utils.Slugify(platformName),
 	}
-	vmPlatform, err := nbi.AddPlatform(o.Ctx, platformStruct)
+	vmPlatform, err = nbi.AddPlatform(o.Ctx, platformStruct)
 	if err != nil {
 		return nil, fmt.Errorf("failed adding oVirt vm's Platform %v with error: %s", platformStruct, err)
 	}
@@ -854,6 +859,7 @@ func (o *OVirtSource) extractVMData(nbi *inventory.NetboxInventory, vmID string,
 		TenantGroup: vmTenantGroup,
 		Status:      vmStatus,
 		Host:        vmHostDevice,
+		Role:        vmRole,
 		Platform:    vmPlatform,
 		Comments:    vmComments,
 		VCPUs:       vmVCPUs,
@@ -1035,7 +1041,8 @@ func (o *OVirtSource) syncVMNics(nbi *inventory.NetboxInventory, ovirtVM *ovirts
 								o.Logger.Warningf(o.Ctx, "match vlan to group: %s", err)
 								continue
 							}
-							nicVlans = []*objects.Vlan{nbi.GetVlan(vlanGroup.ID, int(vlanID))}
+							nicVlan, _ := nbi.GetVlan(vlanGroup.ID, int(vlanID))
+							nicVlans = []*objects.Vlan{nicVlan}
 							nicMode = &objects.VMInterfaceModeTagged
 						}
 					}

@@ -1,80 +1,112 @@
 package inventory
 
 import (
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 )
 
-// GetVlan returns vlan for the given vlanGroupID and vlanID.
-// Returns nil if vlan is not found.
+// GetVlan returns the VLAN for the given groupID and vlanID.
+// It returns nil if the VLAN is not found.
 // This function is thread-safe.
-func (nbi *NetboxInventory) GetVlan(vlanGroupID int, vlanID int) *objects.Vlan {
+func (nbi *NetboxInventory) GetVlan(groupID, vlanID int) (*objects.Vlan, bool) {
 	nbi.VlansLock.Lock()
 	defer nbi.VlansLock.Unlock()
-	if _, ok := nbi.VlansIndexByVlanGroupIDAndVID[vlanGroupID]; !ok {
-		return nil
+
+	vlanGroup, groupExists := nbi.VlansIndexByVlanGroupIDAndVID[groupID]
+	if !groupExists {
+		return nil, false
 	}
-	return nbi.VlansIndexByVlanGroupIDAndVID[vlanGroupID][vlanID]
+
+	vlan, vlanExists := vlanGroup[vlanID]
+	if !vlanExists {
+		return nil, false
+	}
+
+	// Remove the VLAN from the OrphanManager if found.
+	delete(nbi.OrphanManager[constants.VlansAPIPath], vlan.ID)
+	return vlan, true
 }
 
 func (nbi *NetboxInventory) GetTenant(tenantName string) (*objects.Tenant, bool) {
 	nbi.TenantsLock.Lock()
 	defer nbi.TenantsLock.Unlock()
-	if _, ok := nbi.TenantsIndexByName[tenantName]; !ok {
+	tenant, tenantExists := nbi.TenantsIndexByName[tenantName]
+	if !tenantExists {
 		return nil, false
 	}
-	return nbi.TenantsIndexByName[tenantName], true
+	// Remove the Tenmant from the OrphanManager if found
+	delete(nbi.OrphanManager[constants.TenantsAPIPath], tenant.ID)
+	return tenant, true
 }
 
 func (nbi *NetboxInventory) GetSite(siteName string) (*objects.Site, bool) {
 	nbi.SitesLock.Lock()
 	defer nbi.SitesLock.Unlock()
-	if _, ok := nbi.SitesIndexByName[siteName]; !ok {
+	site, siteExists := nbi.SitesIndexByName[siteName]
+	if !siteExists {
 		return nil, false
 	}
-	return nbi.SitesIndexByName[siteName], true
+	// Remove the Site from the OrphanManager if found
+	delete(nbi.OrphanManager[constants.SitesAPIPath], site.ID)
+	return site, true
 }
 
 func (nbi *NetboxInventory) GetVlanGroup(vlanGroupName string) (*objects.VlanGroup, bool) {
 	nbi.VlanGroupsLock.Lock()
 	defer nbi.VlanGroupsLock.Unlock()
-	if _, ok := nbi.VlanGroupsIndexByName[vlanGroupName]; !ok {
+	vlanGroup, vlanGroupExists := nbi.VlanGroupsIndexByName[vlanGroupName]
+	if !vlanGroupExists {
 		return nil, false
 	}
-	return nbi.VlanGroupsIndexByName[vlanGroupName], true
+	// Remove the VlanGroup from the OrphanManager if found
+	delete(nbi.OrphanManager[constants.VlanGroupsAPIPath], vlanGroup.ID)
+	return vlanGroup, true
 }
 
 func (nbi *NetboxInventory) GetClusterGroup(clusterGroupName string) (*objects.ClusterGroup, bool) {
 	nbi.ClusterGroupsLock.Lock()
 	defer nbi.ClusterGroupsLock.Unlock()
-	if _, ok := nbi.ClusterGroupsIndexByName[clusterGroupName]; !ok {
+	clusterGroup, clusterGroupExists := nbi.ClusterGroupsIndexByName[clusterGroupName]
+	if !clusterGroupExists {
 		return nil, false
 	}
-	return nbi.ClusterGroupsIndexByName[clusterGroupName], true
+	// Remove the clusterGroup from the OrphanManager if found
+	delete(nbi.OrphanManager[constants.ClusterGroupsAPIPath], clusterGroup.ID)
+	return clusterGroup, true
 }
 
 func (nbi *NetboxInventory) GetCluster(clusterName string) (*objects.Cluster, bool) {
 	nbi.ClustersLock.Lock()
 	defer nbi.ClustersLock.Unlock()
-	if _, ok := nbi.ClustersIndexByName[clusterName]; !ok {
+	cluster, clusterExists := nbi.ClustersIndexByName[clusterName]
+	if !clusterExists {
 		return nil, false
 	}
-	return nbi.ClustersIndexByName[clusterName], true
+	// Remove the cluster from the OrphanManager if found
+	delete(nbi.OrphanManager[constants.ClustersAPIPath], cluster.ID)
+	return cluster, true
 }
 
 func (nbi *NetboxInventory) GetDevice(deviceName string, siteID int) (*objects.Device, bool) {
 	nbi.DevicesLock.Lock()
 	defer nbi.DevicesLock.Unlock()
-	if device, ok := nbi.DevicesIndexByNameAndSiteID[deviceName][siteID]; ok {
-		return device, true
+	device, deviceExists := nbi.DevicesIndexByNameAndSiteID[deviceName][siteID]
+	if !deviceExists {
+		return nil, false
 	}
-	return nil, false
+	// Remove the device from the OrphanManager if found
+	delete(nbi.OrphanManager[constants.DevicesAPIPath], device.ID)
+	return device, true
 }
 
 func (nbi *NetboxInventory) GetDeviceRole(deviceRoleName string) (*objects.DeviceRole, bool) {
 	nbi.DeviceRolesLock.Lock()
 	defer nbi.DeviceRolesLock.Unlock()
-	if deviceRole, ok := nbi.DeviceRolesIndexByName[deviceRoleName]; ok {
-		return deviceRole, true
+	deviceRole, deviceRoleExists := nbi.DeviceRolesIndexByName[deviceRoleName]
+	if !deviceRoleExists {
+		return nil, false
 	}
-	return nil, false
+	// Remove the deviceRole from the OrphanManager if found
+	delete(nbi.OrphanManager[constants.DeviceRolesAPIPath], deviceRole.ID)
+	return deviceRole, true
 }

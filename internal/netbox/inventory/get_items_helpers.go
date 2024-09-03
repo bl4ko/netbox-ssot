@@ -80,6 +80,24 @@ func (nbi *NetboxInventory) GetServerDeviceRole(ctx context.Context) (*objects.D
 	return newRole, nil
 }
 
+func (nbi *NetboxInventory) GetVMDeviceRole(ctx context.Context) (*objects.DeviceRole, error) {
+	if role, ok := nbi.GetDeviceRole(constants.DeviceRoleVM); ok {
+		return role, nil
+	}
+	newRole, err := nbi.AddDeviceRole(ctx, &objects.DeviceRole{
+		Name:        constants.DeviceRoleVM,
+		Description: constants.DeviceRoleVMDescription,
+		Slug:        utils.Slugify(constants.DeviceRoleVM),
+		Color:       constants.DeviceRoleVMColor,
+		VMRole:      false,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return newRole, nil
+}
+
 func (nbi *NetboxInventory) GetVMTemplateDeviceRole(ctx context.Context) (*objects.DeviceRole, error) {
 	if role, ok := nbi.GetDeviceRole(constants.DeviceRoleVMTemplate); ok {
 		return role, nil
