@@ -174,6 +174,10 @@ const (
 	DeviceRoleContainerDescription = "VM role for separating containers from VMs."
 	DeviceRoleContainerColor       = "0db7ed"
 
+	DeviceRoleVM            = "VM"
+	DeviceRoleVMDescription = "Role for representing VMs."
+	DeviceRoleVMColor       = "81eaea"
+
 	DeviceRoleVMTemplate            = "VM Template"
 	DeviceRoleVMTemplateDescription = "VM role for separating VM templates from VMs."
 	DeviceRoleVMTemplateColor       = "82c1ea"

@@ -1,6 +1,8 @@
 package inventory
 
-import "github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+import (
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+)
 
 // GetVlan returns vlan for the given vlanGroupID and vlanID.
 // Returns nil if vlan is not found.
@@ -64,6 +66,15 @@ func (nbi *NetboxInventory) GetDevice(deviceName string, siteID int) (*objects.D
 	defer nbi.DevicesLock.Unlock()
 	if device, ok := nbi.DevicesIndexByNameAndSiteID[deviceName][siteID]; ok {
 		return device, true
+	}
+	return nil, false
+}
+
+func (nbi *NetboxInventory) GetDeviceRole(deviceRoleName string) (*objects.DeviceRole, bool) {
+	nbi.DeviceRolesLock.Lock()
+	defer nbi.DeviceRolesLock.Unlock()
+	if deviceRole, ok := nbi.DeviceRolesIndexByName[deviceRoleName]; ok {
+		return deviceRole, true
 	}
 	return nil, false
 }

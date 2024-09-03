@@ -347,13 +347,7 @@ func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *ob
 func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 	if len(ps.Containers) > 0 {
 		// Create container role
-		containerRole, err := nbi.AddDeviceRole(ps.Ctx, &objects.DeviceRole{
-			Name:        constants.DeviceRoleContainer,
-			Description: constants.DeviceRoleContainerDescription,
-			Slug:        utils.Slugify(constants.DeviceRoleContainer),
-			Color:       constants.DeviceRoleContainerColor,
-			VMRole:      true,
-		})
+		containerRole, err := nbi.GetContainerDeviceRole(ps.Ctx)
 		if err != nil {
 			return fmt.Errorf("create container role: %s", err)
 		}

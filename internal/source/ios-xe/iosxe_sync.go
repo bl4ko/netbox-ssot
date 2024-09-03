@@ -39,13 +39,7 @@ func (is *IOSXESource) syncDevice(nbi *inventory.NetboxInventory) error {
 		return fmt.Errorf("match host to tenant: %s", err)
 	}
 
-	deviceRole, err := nbi.AddDeviceRole(is.Ctx, &objects.DeviceRole{
-		Name:        constants.DeviceRoleSwitch,
-		Description: constants.DeviceRoleSwitchDescription,
-		Slug:        utils.Slugify(constants.DeviceRoleSwitch),
-		Color:       constants.DeviceRoleSwitchColor,
-		VMRole:      false,
-	})
+	deviceRole, err := nbi.GetSwitchDeviceRole(is.Ctx)
 	if err != nil {
 		return fmt.Errorf("add device role: %s", err)
 	}

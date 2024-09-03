@@ -44,15 +44,9 @@ func (fs *FortigateSource) syncDevice(nbi *inventory.NetboxInventory) error {
 		return fmt.Errorf("match host to tenant: %s", err)
 	}
 
-	deviceRole, err := nbi.AddDeviceRole(fs.Ctx, &objects.DeviceRole{
-		Name:        constants.DeviceRoleFirewall,
-		Description: constants.DeviceRoleFirewallDescription,
-		Slug:        utils.Slugify(constants.DeviceRoleFirewall),
-		Color:       constants.DeviceRoleFirewallColor,
-		VMRole:      false,
-	})
+	deviceRole, err := nbi.GetFirewallDeviceRole(fs.Ctx)
 	if err != nil {
-		return fmt.Errorf("add DeviceRole: %s", err)
+		return fmt.Errorf("add DeviceRole firewall: %s", err)
 	}
 	deviceSite, err := common.MatchHostToSite(fs.Ctx, nbi, deviceName, fs.HostSiteRelations)
 	if err != nil {
