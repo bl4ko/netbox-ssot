@@ -260,8 +260,9 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		}
 		platformName := utils.GeneratePlatformName(osDistribution, osVersion, cpuArch)
 		hostPlatformStruct := &objects.Platform{
-			Name: platformName,
-			Slug: utils.Slugify(platformName),
+			Name:         platformName,
+			Slug:         utils.Slugify(platformName),
+			Manufacturer: hostManufacturer,
 		}
 		hostPlatform, err = nbi.AddPlatform(o.Ctx, hostPlatformStruct)
 		if err != nil {
@@ -799,7 +800,9 @@ func (o *OVirtSource) extractVMData(nbi *inventory.NetboxInventory, vmID string,
 
 	// VM's Platform
 	var vmPlatform *objects.Platform
-	var vmOsType, vmOsVersion, vmCPUArch string
+	vmOsType := constants.DefaultOSName
+	vmCPUArch := constants.DefaultCPUArch
+	vmOsVersion := constants.DefaultOSVersion
 	if guestOs, exists := vm.GuestOperatingSystem(); exists {
 		if guestOsType, exists := guestOs.Distribution(); exists {
 			vmOsType = guestOsType

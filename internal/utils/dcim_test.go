@@ -250,6 +250,13 @@ func TestSerializeOSName(t *testing.T) {
 			},
 			want: "Custom OS",
 		},
+		{
+			name: "Don't serialize default OS name",
+			args: args{
+				os: constants.DefaultOSName,
+			},
+			want: constants.DefaultOSName,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

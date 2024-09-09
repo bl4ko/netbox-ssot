@@ -54,15 +54,13 @@ func GeneratePlatformName(osDistribution string, osMajorVersion string, cpuArch 
 	if osDistribution != "" {
 		osDistribution = SerializeOSName(osDistribution)
 	} else {
-		return constants.DefaultOSName
+		osDistribution = constants.DefaultOSName
 	}
+
 	if osMajorVersion != "" {
-		if !strings.Contains(osDistribution, "(") {
-			osMajorVersion = fmt.Sprintf(" %s", osMajorVersion)
-		} else {
-			osMajorVersion = ""
-		}
+		osMajorVersion = fmt.Sprintf(" %s", osMajorVersion)
 	}
+
 	if cpuArch != "" {
 		// Check if cpuArch was extreacted from osDistribution
 		if !strings.Contains(osDistribution, "(") {
@@ -71,6 +69,7 @@ func GeneratePlatformName(osDistribution string, osMajorVersion string, cpuArch 
 			cpuArch = ""
 		}
 	}
+
 	return fmt.Sprintf("%s%s%s", osDistribution, osMajorVersion, cpuArch)
 }
 
@@ -147,6 +146,9 @@ var UniversalOSMap = map[string]string{
 
 // SerializeOSName returns serialized OS name from the given string.
 func SerializeOSName(os string) string {
+	if os == constants.DefaultOSName {
+		return os
+	}
 	for regex, name := range SpecificOSMap {
 		matched, _ := regexp.MatchString(regex, os)
 		if matched {
