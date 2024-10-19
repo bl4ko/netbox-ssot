@@ -46,6 +46,8 @@ github.com/luthermonson/go-proxmox v0.1.2 h1:64dykGgeiWyrk4Iehz63YUpx46AOPuosNJ+
 github.com/luthermonson/go-proxmox v0.1.2/go.mod h1:wkD6045y9lKBCP0sJGjNqmlBCo0vwRwnfhmsrPBTu34=
 github.com/luthermonson/go-proxmox v0.2.0 h1:zO6a6ajOd6DeVktvdypr7+2NSWh6MYqI6zz6Hf8HvdM=
 github.com/luthermonson/go-proxmox v0.2.0/go.mod h1:wkD6045y9lKBCP0sJGjNqmlBCo0vwRwnfhmsrPBTu34=
+github.com/luthermonson/go-proxmox v0.2.1 h1:RkVM1oS9PxpS336FoM9nZujbpUwNwTCvAdOlPLsGxf4=
+github.com/luthermonson/go-proxmox v0.2.1/go.mod h1:wkD6045y9lKBCP0sJGjNqmlBCo0vwRwnfhmsrPBTu34=
 github.com/magefile/mage v1.15.0 h1:BvGheCMAsG3bWUDbZ8AyXXpCNwU9u5CB6sM+HNb9HYg=
 github.com/magefile/mage v1.15.0/go.mod h1:z5UZb/iS3GoOSn0JgWuiw7dxlurVYTu+/jHXqQg881A=
 github.com/ovirt/go-ovirt v4.3.4+incompatible h1:jXcJpcXyNZ3mXJ1IVU3l3tMpE4JEUSNjqRiEJnVpG40=
