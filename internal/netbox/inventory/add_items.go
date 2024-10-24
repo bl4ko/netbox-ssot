@@ -209,18 +209,18 @@ func (nbi *NetboxInventory) AddContact(ctx context.Context, newContact *objects.
 func (nbi *NetboxInventory) AddContactAssignment(ctx context.Context, newCA *objects.ContactAssignment) (*objects.ContactAssignment, error) {
 	nbi.ContactAssignmentsLock.Lock()
 	defer nbi.ContactAssignmentsLock.Unlock()
-	if nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ObjectType] == nil {
-		nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ObjectType] = make(map[int]map[int]map[int]*objects.ContactAssignment)
+	if nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ModelType] == nil {
+		nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ModelType] = make(map[int]map[int]map[int]*objects.ContactAssignment)
 	}
-	if nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ObjectType][newCA.ObjectID] == nil {
-		nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ObjectType][newCA.ObjectID] = make(map[int]map[int]*objects.ContactAssignment)
+	if nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ModelType][newCA.ObjectID] == nil {
+		nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ModelType][newCA.ObjectID] = make(map[int]map[int]*objects.ContactAssignment)
 	}
-	if nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ObjectType][newCA.ObjectID][newCA.Contact.ID] == nil {
-		nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ObjectType][newCA.ObjectID][newCA.Contact.ID] = make(map[int]*objects.ContactAssignment)
+	if nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ModelType][newCA.ObjectID][newCA.Contact.ID] == nil {
+		nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ModelType][newCA.ObjectID][newCA.Contact.ID] = make(map[int]*objects.ContactAssignment)
 	}
 	newCA.Tags = append(newCA.Tags, nbi.SsotTag)
-	if _, ok := nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ObjectType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID]; ok {
-		oldCA := nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ObjectType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID]
+	if _, ok := nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ModelType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID]; ok {
+		oldCA := nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ModelType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID]
 		delete(nbi.OrphanManager[constants.ContactAssignmentsAPIPath], oldCA.ID)
 		diffMap, err := utils.JSONDiffMapExceptID(newCA, oldCA, false, nbi.SourcePriority)
 		if err != nil {
@@ -232,7 +232,7 @@ func (nbi *NetboxInventory) AddContactAssignment(ctx context.Context, newCA *obj
 			if err != nil {
 				return nil, err
 			}
-			nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ObjectType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID] = patchedCA
+			nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ModelType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID] = patchedCA
 		} else {
 			nbi.Logger.Debug(ctx, "ContactAssignment ", newCA.ID, " already exists in Netbox and is up to date...")
 		}
@@ -242,9 +242,9 @@ func (nbi *NetboxInventory) AddContactAssignment(ctx context.Context, newCA *obj
 		if err != nil {
 			return nil, err
 		}
-		nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ObjectType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID] = newCA
+		nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ModelType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID] = newCA
 	}
-	return nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ObjectType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID], nil
+	return nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ModelType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID], nil
 }
 
 // AddCustomField adds a custom field to the Netbox inventory.
@@ -882,4 +882,66 @@ func addSourceNameCustomField(ctx context.Context, netboxObject *objects.NetboxO
 		netboxObject.CustomFields = make(map[string]interface{})
 	}
 	netboxObject.CustomFields[constants.CustomFieldSourceName] = ctx.Value(constants.CtxSourceKey).(string) //nolint
+}
+
+func (nbi *NetboxInventory) AddWirelessLAN(ctx context.Context, newWirelessLan *objects.WirelessLAN) (*objects.WirelessLAN, error) {
+	newWirelessLan.Tags = append(newWirelessLan.Tags, nbi.SsotTag)
+	if _, ok := nbi.WirelessLANsIndexBySSID[newWirelessLan.SSID]; ok {
+		// Remove id from orphan manager, because it still exists in the sources
+		oldWirelessLan := nbi.WirelessLANsIndexBySSID[newWirelessLan.SSID]
+		delete(nbi.OrphanManager[constants.WirelessLANsAPIPath], oldWirelessLan.ID)
+		diffMap, err := utils.JSONDiffMapExceptID(newWirelessLan, oldWirelessLan, false, nbi.SourcePriority)
+		if err != nil {
+			return nil, err
+		}
+		if len(diffMap) > 0 {
+			nbi.Logger.Debug(ctx, "WirelessLAN ", newWirelessLan.SSID, " already exists in Netbox but is out of date. Patching it...")
+			patchedWirelessLan, err := service.Patch[objects.WirelessLAN](ctx, nbi.NetboxAPI, oldWirelessLan.ID, diffMap)
+			if err != nil {
+				return nil, err
+			}
+			nbi.WirelessLANsIndexBySSID[newWirelessLan.SSID] = patchedWirelessLan
+		} else {
+			nbi.Logger.Debug(ctx, "WirelessLAN ", newWirelessLan.SSID, " already exists in Netbox and is up to date...")
+		}
+	} else {
+		nbi.Logger.Debug(ctx, "WirelessLAN ", newWirelessLan.SSID, " does not exist in Netbox. Creating it...")
+		newWirelessLan, err := service.Create[objects.WirelessLAN](ctx, nbi.NetboxAPI, newWirelessLan)
+		if err != nil {
+			return nil, err
+		}
+		nbi.WirelessLANsIndexBySSID[newWirelessLan.SSID] = newWirelessLan
+	}
+	return nbi.WirelessLANsIndexBySSID[newWirelessLan.SSID], nil
+}
+
+func (nbi *NetboxInventory) AddWirelessLANGroup(ctx context.Context, newWirelessLANGroup *objects.WirelessLANGroup) (*objects.WirelessLANGroup, error) {
+	newWirelessLANGroup.Tags = append(newWirelessLANGroup.Tags, nbi.SsotTag)
+	if _, ok := nbi.WirelessLANGroupsIndexByName[newWirelessLANGroup.Name]; ok {
+		// Remove id from orphan manager, because it still exists in the sources
+		oldWirelessLANGroup := nbi.WirelessLANGroupsIndexByName[newWirelessLANGroup.Name]
+		delete(nbi.OrphanManager[constants.WirelessLANGroupsAPIPath], oldWirelessLANGroup.ID)
+		diffMap, err := utils.JSONDiffMapExceptID(newWirelessLANGroup, oldWirelessLANGroup, false, nbi.SourcePriority)
+		if err != nil {
+			return nil, err
+		}
+		if len(diffMap) > 0 {
+			nbi.Logger.Debug(ctx, "WirelessLANGroup ", newWirelessLANGroup.Name, " already exists in Netbox but is out of date. Patching it...")
+			patchedWirelessLANGroup, err := service.Patch[objects.WirelessLANGroup](ctx, nbi.NetboxAPI, oldWirelessLANGroup.ID, diffMap)
+			if err != nil {
+				return nil, err
+			}
+			nbi.WirelessLANGroupsIndexByName[newWirelessLANGroup.Name] = patchedWirelessLANGroup
+		} else {
+			nbi.Logger.Debug(ctx, "WirelessLANGroup ", newWirelessLANGroup.Name, " already exists in Netbox and is up to date...")
+		}
+	} else {
+		nbi.Logger.Debug(ctx, "WirelessLANGroup ", newWirelessLANGroup.Name, " does not exist in Netbox. Creating it...")
+		newWirelessLANGroup, err := service.Create[objects.WirelessLANGroup](ctx, nbi.NetboxAPI, newWirelessLANGroup)
+		if err != nil {
+			return nil, err
+		}
+		nbi.WirelessLANGroupsIndexByName[newWirelessLANGroup.Name] = newWirelessLANGroup
+	}
+	return nbi.WirelessLANGroupsIndexByName[newWirelessLANGroup.Name], nil
 }

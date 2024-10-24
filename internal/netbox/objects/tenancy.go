@@ -1,6 +1,10 @@
 package objects
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/bl4ko/netbox-ssot/internal/constants"
+)
 
 type TenantGroup struct {
 	NetboxObject
@@ -91,7 +95,7 @@ var (
 type ContactAssignment struct {
 	NetboxObject
 	// Content type (e.g. virtualization.virtualmachine). This field is necessary
-	ObjectType ObjectType `json:"object_type,omitempty"`
+	ModelType constants.ContentType `json:"object_type,omitempty"`
 	// ID of the dependent object. This field is necessary
 	ObjectID int `json:"object_id,omitempty"`
 	// Contact for this assignment. This field is necessary
@@ -103,5 +107,5 @@ type ContactAssignment struct {
 }
 
 func (ca ContactAssignment) String() string {
-	return fmt.Sprintf("ContactAssignment{ObjectType: %s, ObjectID: %d, %v, %v}", ca.ObjectType, ca.ObjectID, ca.Contact, ca.Role)
+	return fmt.Sprintf("ContactAssignment{ObjectType: %s, ObjectID: %d, %v, %v}", ca.ModelType, ca.ObjectID, ca.Contact, ca.Role)
 }

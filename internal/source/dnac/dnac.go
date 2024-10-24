@@ -17,10 +17,15 @@ type DnacSource struct {
 	common.Config
 
 	// Dnac fetched data. Initialized in init functions.
-	Sites      map[string]dnac.ResponseSitesGetSiteResponse                // SiteID -> Site
-	Devices    map[string]dnac.ResponseDevicesGetDeviceListResponse        // DeviceID -> Device
-	Interfaces map[string]dnac.ResponseDevicesGetAllInterfacesResponse     // InterfaceID -> Interface
-	Vlans      map[int]dnac.ResponseDevicesGetDeviceInterfaceVLANsResponse // VlanID -> Vlan
+	Sites                           map[string]dnac.ResponseSitesGetSiteResponse                // SiteID -> Site
+	Devices                         map[string]dnac.ResponseDevicesGetDeviceListResponse        // DeviceID -> Device
+	Interfaces                      map[string]dnac.ResponseDevicesGetAllInterfacesResponse     // InterfaceID -> Interface
+	Vlans                           map[int]dnac.ResponseDevicesGetDeviceInterfaceVLANsResponse // VlanID -> Vlan
+	WirelessLANInterfaceName2VlanID map[string]int                                              // InterfaceName -> VlanID
+	SSID2WirelessProfileDetails     map[string]dnac.ResponseItemWirelessGetWirelessProfileProfileDetailsSSIDDetails
+	SSID2WlanGroupName              map[string]string                                                // SSID -> WirelessLANGroup name
+	SSID2SecurityDetails            map[string]dnac.ResponseItemWirelessGetEnterpriseSSIDSSIDDetails // WirelessLANName -> SSIDDetails
+
 	// Relations between dnac data. Initialized in init functions.
 	Site2Devices          map[string]map[string]bool // Site ID - > set of device IDs
 	Device2Site           map[string]string          // Device ID -> Site ID
@@ -36,6 +41,7 @@ type DnacSource struct {
 	HostTenantRelations map[string]string
 	VlanGroupRelations  map[string]string
 	VlanTenantRelations map[string]string
+	WlanTenantRelations map[string]string
 }
 
 func (ds *DnacSource) Init() error {
@@ -52,6 +58,7 @@ func (ds *DnacSource) Init() error {
 	ds.Logger.Debugf(ds.Ctx, "VlanTenantRelations: %s", ds.VlanTenantRelations)
 	ds.HostTenantRelations = utils.ConvertStringsToRegexPairs(ds.SourceConfig.HostTenantRelations)
 	ds.Logger.Debugf(ds.Ctx, "HostTenantRelations: %s", ds.HostTenantRelations)
+	ds.WlanTenantRelations = utils.ConvertStringsToRegexPairs(ds.SourceConfig.WlanTenantRelations)
 
 	// Initialize items from vsphere API to local storage
 	initFunctions := []func(*dnac.Client) error{
@@ -59,6 +66,7 @@ func (ds *DnacSource) Init() error {
 		ds.initMemberships,
 		ds.initDevices,
 		ds.initInterfaces,
+		ds.initWirelessLANs,
 	}
 
 	for _, initFunc := range initFunctions {
@@ -78,6 +86,7 @@ func (ds *DnacSource) Sync(nbi *inventory.NetboxInventory) error {
 		ds.syncVlans,
 		ds.syncDevices,
 		ds.syncDeviceInterfaces,
+		ds.syncWirelessLANs,
 	}
 
 	for _, syncFunc := range syncFunctions {

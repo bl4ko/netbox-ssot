@@ -16,7 +16,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
 )
 
-var filename = flag.String("config", "config.yaml", "Path to the configuration file")
+var configPath = flag.String("config", "config.yaml", "Path to the configuration file")
 
 func main() {
 	startTime := time.Now()
@@ -24,7 +24,7 @@ func main() {
 	// Parse configuration
 	fmt.Printf("Netbox-SSOT has started at %s\n", startTime.Format(time.RFC3339))
 	flag.Parse()
-	config, err := parser.ParseConfig(*filename)
+	config, err := parser.ParseConfig(*configPath)
 	if err != nil {
 		fmt.Println("Parser:", err)
 		os.Exit(1)

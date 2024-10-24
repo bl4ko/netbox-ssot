@@ -3,6 +3,8 @@ package objects
 import (
 	"fmt"
 	"testing"
+
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 )
 
 func TestTenant_String(t *testing.T) {
@@ -80,7 +82,7 @@ func TestContactAssignment_String(t *testing.T) {
 				NetboxObject: NetboxObject{
 					ID: 1,
 				},
-				ObjectType: ObjectTypeVirtualizationVirtualMachine,
+				ModelType: constants.ContentTypeVirtualizationVirtualMachine,
 				Contact: &Contact{
 					Name: "Test contact",
 				},
@@ -89,7 +91,7 @@ func TestContactAssignment_String(t *testing.T) {
 				},
 				ObjectID: 5,
 			},
-			want: fmt.Sprintf("ContactAssignment{ObjectType: %s, ObjectID: %d, %v, %v}", ObjectTypeVirtualizationVirtualMachine, 5, Contact{Name: "Test contact"}, ContactRole{Name: "Test contact role"}),
+			want: fmt.Sprintf("ContactAssignment{ObjectType: %s, ObjectID: %d, %v, %v}", constants.ContentTypeVirtualizationVirtualMachine, 5, Contact{Name: "Test contact"}, ContactRole{Name: "Test contact role"}),
 		},
 	}
 	for _, tt := range tests {

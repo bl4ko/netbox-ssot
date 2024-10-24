@@ -50,6 +50,8 @@ var type2path = map[reflect.Type]string{
 	reflect.TypeOf((*objects.Tag)(nil)).Elem():                  constants.TagsAPIPath,
 	reflect.TypeOf((*objects.ContactAssignment)(nil)).Elem():    constants.ContactAssignmentsAPIPath,
 	reflect.TypeOf((*objects.Prefix)(nil)).Elem():               constants.PrefixesAPIPath,
+	reflect.TypeOf((*objects.WirelessLAN)(nil)).Elem():          constants.WirelessLANsAPIPath,
+	reflect.TypeOf((*objects.WirelessLANGroup)(nil)).Elem():     constants.WirelessLANGroupsAPIPath,
 }
 
 // Function that queries and returns netbox version on success.
@@ -79,6 +81,9 @@ func GetAll[T any](ctx context.Context, netboxClient *NetboxClient, extraParams 
 	var allResults []T
 	var dummy T // Dummy variable for extracting type of generic
 	path := type2path[reflect.TypeOf(dummy)]
+	if path == "" {
+		return nil, fmt.Errorf("path not found for type %T", dummy)
+	}
 	limit := 100
 	offset := 0
 
@@ -120,6 +125,9 @@ func GetAll[T any](ctx context.Context, netboxClient *NetboxClient, extraParams 
 func Patch[T any](ctx context.Context, netboxClient *NetboxClient, objectID int, body map[string]interface{}) (*T, error) {
 	var dummy T // dummy variable for printf
 	path := type2path[reflect.TypeOf(dummy)]
+	if path == "" {
+		return nil, fmt.Errorf("path not found for type %T", dummy)
+	}
 	path = fmt.Sprintf("%s%d/", path, objectID)
 	netboxClient.Logger.Debugf(ctx, "Patching %T with path %s with data: %v", dummy, path, body)
 
@@ -152,8 +160,11 @@ func Patch[T any](ctx context.Context, netboxClient *NetboxClient, objectID int,
 func Create[T any](ctx context.Context, netboxClient *NetboxClient, object *T) (*T, error) {
 	var dummy T // dummy variable for printf
 	path := type2path[reflect.TypeOf(dummy)]
-	netboxClient.Logger.Debugf(ctx, "Creating %T with path %s with data: %v", dummy, path, object)
+	if path == "" {
+		return nil, fmt.Errorf("path not found for type %T", dummy)
+	}
 
+	netboxClient.Logger.Debugf(ctx, "Creating %T with path %s with data: %v", dummy, path, object)
 	requestBody, err := utils.NetboxJSONMarshal(object)
 	if err != nil {
 		return nil, err

@@ -67,37 +67,6 @@ const (
 	SearchWeightDefault  = 1000
 )
 
-type ObjectType string
-
-// All content types from netbox.
-const (
-	ObjectTypeDcimDevice                   ObjectType = "dcim.device"
-	ObjectTypeDcimDeviceRole               ObjectType = "dcim.devicerole"
-	ObjectTypeDcimDeviceType               ObjectType = "dcim.devicetype"
-	ObjectTypeDcimInterface                ObjectType = "dcim.interface"
-	ObjectTypeDcimLocation                 ObjectType = "dcim.location"
-	ObjectTypeDcimManufacturer             ObjectType = "dcim.manufacturer"
-	ObjectTypeDcimPlatform                 ObjectType = "dcim.platform"
-	ObjectTypeDcimRegion                   ObjectType = "dcim.region"
-	ObjectTypeDcimSite                     ObjectType = "dcim.site"
-	ObjectTypeVirtualDeviceContext         ObjectType = "dcim.virtualdevicecontext"
-	ObjectTypeIpamIPAddress                ObjectType = "ipam.ipaddress"
-	ObjectTypeIpamVlanGroup                ObjectType = "ipam.vlangroup"
-	ObjectTypeIpamVlan                     ObjectType = "ipam.vlan"
-	ObjectTypeIpamPrefix                   ObjectType = "ipam.prefix"
-	ObjectTypeTenancyTenantGroup           ObjectType = "tenancy.tenantgroup"
-	ObjectTypeTenancyTenant                ObjectType = "tenancy.tenant"
-	ObjectTypeTenancyContact               ObjectType = "tenancy.contact"
-	ObjectTypeTenancyContactAssignment     ObjectType = "tenancy.contactassignment"
-	ObjectTypeTenancyContactGroup          ObjectType = "tenancy.contactgroup"
-	ObjectTypeTenancyContactRole           ObjectType = "tenancy.contactrole"
-	ObjectTypeVirtualizationCluster        ObjectType = "virtualization.cluster"
-	ObjectTypeVirtualizationClusterGroup   ObjectType = "virtualization.clustergroup"
-	ObjectTypeVirtualizationClusterType    ObjectType = "virtualization.clustertype"
-	ObjectTypeVirtualizationVirtualMachine ObjectType = "virtualization.virtualmachine"
-	ObjectTypeVirtualizationVMInterface    ObjectType = "virtualization.vminterface"
-)
-
 type CustomField struct {
 	ID int `json:"id,omitempty"`
 	// Name of the custom field (e.g. host_cpu_cores). This field is required.
@@ -107,7 +76,7 @@ type CustomField struct {
 	// Type is the type of the custom field. Valid choices are: text, integer, boolean, date, url, select, multiselect. This field is required.
 	Type CustomFieldType `json:"type,omitempty"`
 	// Type of the related object (for object/multi-object fields only) (e.g. objects.device). This field is required.
-	ObjectTypes []ObjectType `json:"object_types,omitempty"`
+	ObjectTypes []constants.ContentType `json:"object_types,omitempty"`
 	// Description is a description of the field. This field is optional.
 	Description string `json:"description,omitempty"`
 	// Weighting for search. Lower values are considered more important. Default (1000).

@@ -439,7 +439,7 @@ func (ds *DnacSource) getVlanModeAndAccessVlan(portMode, vlanID string) (*object
 }
 
 func (ds *DnacSource) addIPAddressToInterface(nbi *inventory.NetboxInventory, iface *objects.Interface, ifaceDetails dnac.ResponseDevicesGetAllInterfacesResponse, ifaceDevice *objects.Device) error {
-	if ifaceDetails.IPv4Address == "" || utils.SubnetsContainIPAddress(ifaceDetails.IPv4Address, ds.SourceConfig.IgnoredSubnets) {
+	if ifaceDetails.IPv4Address == "" || utils.SubnetsContainIPAddress(ifaceDetails.IPv4Address, ds.Config.SourceConfig.IgnoredSubnets) {
 		return nil
 	}
 
@@ -496,5 +496,73 @@ func (ds *DnacSource) addIPAddressToInterface(nbi *inventory.NetboxInventory, if
 		}
 	}
 
+	return nil
+}
+
+func (ds *DnacSource) syncWirelessLANs(nbi *inventory.NetboxInventory) error {
+	// First we sync wirelessLANGroups
+	for wlanName, wlanSecDetails := range ds.SSID2SecurityDetails {
+		wlanWirelessProfile := ds.SSID2WirelessProfileDetails[wlanName]
+		wlanGroupName := ds.SSID2WlanGroupName[wlanName]
+		wlanGroup, err := nbi.AddWirelessLANGroup(ds.Ctx, &objects.WirelessLANGroup{
+			NetboxObject: objects.NetboxObject{
+				Tags: ds.Config.SourceTags,
+				CustomFields: map[string]interface{}{
+					constants.CustomFieldSourceName: ds.SourceConfig.Name,
+				},
+			},
+			Name: wlanGroupName,
+			Slug: utils.Slugify(wlanGroupName),
+		})
+		if err != nil {
+			return fmt.Errorf("add wirelessLANGroup %s: %s", wlanGroup, err)
+		}
+		vlanGroup, err := common.MatchVlanToGroup(ds.Ctx, nbi, wlanWirelessProfile.InterfaceName, ds.VlanGroupRelations)
+		if err != nil {
+			return err
+		}
+		var wlanAuthType *objects.WirelessLANAuthType
+		switch wlanSecDetails.SecurityLevel {
+		case "wpa2_personal":
+			wlanAuthType = &objects.WirelessLanAuthTypeWpaPersonal
+		case "wpa2_enterprise":
+			wlanAuthType = &objects.WirelessLanAuthTypeWpaEnterprise
+		case "open":
+			wlanAuthType = &objects.WirelessLanAuthTypeOpen
+		case "wep":
+			wlanAuthType = &objects.WirelessLanAuthTypeWep
+		default:
+			ds.Logger.Debugf(ds.Ctx, "wlan auth type %s is not implemented yet", wlanSecDetails.SecurityLevel)
+		}
+
+		var wlanStatus *objects.WirelessLANStatus
+		switch *wlanSecDetails.IsEnabled {
+		case true:
+			wlanStatus = &objects.WirelessLanStatusActive
+		case false:
+			wlanStatus = &objects.WirelessLanStatusDisabled
+		}
+
+		wlanVID := ds.WirelessLANInterfaceName2VlanID[wlanWirelessProfile.InterfaceName]
+		vlan, _ := nbi.GetVlan(vlanGroup.ID, wlanVID)
+		wlanStruct := &objects.WirelessLAN{
+			NetboxObject: objects.NetboxObject{
+				Tags: ds.Config.SourceTags,
+				CustomFields: map[string]interface{}{
+					constants.CustomFieldSourceName: ds.SourceConfig.Name,
+				},
+			},
+			SSID:     wlanName,
+			Vlan:     vlan,
+			Group:    wlanGroup,
+			AuthType: wlanAuthType,
+			Status:   wlanStatus,
+		}
+
+		_, err = nbi.AddWirelessLAN(ds.Ctx, wlanStruct)
+		if err != nil {
+			return fmt.Errorf("add wirelessLAN %+v: %s", wlanStruct, err)
+		}
+	}
 	return nil
 }

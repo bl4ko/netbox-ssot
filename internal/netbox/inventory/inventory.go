@@ -35,7 +35,7 @@ type NetboxInventory struct {
 	// ContactsIndexByName is a map of all contacts in the Netbox's inventory, indexed by their names
 	ContactsIndexByName map[string]*objects.Contact
 	// ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID is a map of all contact assignments indexed by their content type, object id, contact id and role id.
-	ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID map[objects.ObjectType]map[int]map[int]map[int]*objects.ContactAssignment
+	ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID map[constants.ContentType]map[int]map[int]map[int]*objects.ContactAssignment
 	// SitesIndexByName is a map of all sites in the Netbox's inventory, indexed by their name
 	SitesIndexByName map[string]*objects.Site
 	// ManufacturersIndexByName is a map of all manufacturers in the Netbox's inventory, indexed by their name
@@ -76,6 +76,10 @@ type NetboxInventory struct {
 	VMInterfacesIndexByVMIdAndName map[int]map[string]*objects.VMInterface
 	// IPAdressesIndexByAddress is a map of all IP addresses in the inventory, indexed by their address
 	IPAdressesIndexByAddress map[string]*objects.IPAddress
+	// WirelessLANGroupsIndexByName is a map of all wireless lan groups in the Netbox's inventory, indexed by their name
+	WirelessLANGroupsIndexByName map[string]*objects.WirelessLANGroup
+	// WirelessLANsIndexBySSID is a map of all wireless lans in the Netbox's inventory, indexed by their ssid
+	WirelessLANsIndexBySSID map[string]*objects.WirelessLAN
 
 	// We also store locks for all objects, so inventory can be updated by multiple parallel goroutines
 	TenantsLock            sync.Mutex
@@ -101,6 +105,8 @@ type NetboxInventory struct {
 	VMInterfacesLock       sync.Mutex
 	IPAddressesLock        sync.Mutex
 	PrefixesLock           sync.Mutex
+	WirelessLANGroupsLock  sync.Mutex
+	WirelessLANsLock       sync.Mutex
 
 	// Orphan manager is a map of objectAPIPath to a set of managed ids for that object type.
 	//
@@ -167,6 +173,8 @@ func NewNetboxInventory(ctx context.Context, logger *logger.Logger, nbConfig *pa
 		15: constants.ClusterGroupsAPIPath,
 		16: constants.ContactAssignmentsAPIPath,
 		17: constants.ContactsAPIPath,
+		18: constants.WirelessLANsAPIPath,
+		19: constants.WirelessLANGroupsAPIPath,
 	}
 	nbi := &NetboxInventory{Ctx: ctx, Logger: logger, NetboxConfig: nbConfig, SourcePriority: sourcePriority, OrphanManager: make(map[string]map[int]bool), OrphanObjectPriority: orphanObjectPriority}
 	return nbi
@@ -218,6 +226,8 @@ func (nbi *NetboxInventory) Init() error {
 		nbi.initClusters,
 		nbi.initVMs,
 		nbi.initVMInterfaces,
+		nbi.initWirelessLANs,
+		nbi.initWirelessLANGroups,
 	}
 	for _, initFunc := range initFunctions {
 		startTime := time.Now()

@@ -67,7 +67,6 @@ func (pas *PaloAltoSource) Init() error {
 		return fmt.Errorf("paloalto failed to initialize client: %s", err)
 	}
 
-	// Initialize regex relations for the sourcce
 	// Initialize regex relations for this source
 	pas.VlanGroupRelations = utils.ConvertStringsToRegexPairs(pas.SourceConfig.VlanGroupRelations)
 	pas.Logger.Debugf(pas.Ctx, "VlanGroupRelations: %s", pas.VlanGroupRelations)

@@ -7,6 +7,8 @@ import (
 	dnac "github.com/cisco-en-programmability/dnacenter-go-sdk/v5/sdk"
 )
 
+// Collects all sites from DNAC API and stores them in the
+// local source inventory.
 func (ds *DnacSource) initSites(c *dnac.Client) error {
 	offset := 0
 	limit := 100
@@ -32,6 +34,8 @@ func (ds *DnacSource) initSites(c *dnac.Client) error {
 	return nil
 }
 
+// Collects all devices from DNAC API and stores them in the
+// local source inventory.
 func (ds *DnacSource) initDevices(c *dnac.Client) error {
 	offset := 0.
 	limit := 100.
@@ -60,7 +64,8 @@ func (ds *DnacSource) initDevices(c *dnac.Client) error {
 	return nil
 }
 
-// Function that gets all vlans for device id.
+// initVlansForDevice collects all VLANs for a device from DNAC API
+// and stores them in the local source inventory.
 func (ds *DnacSource) initVlansForDevice(c *dnac.Client, deviceID string) {
 	vlans, _, _ := c.Devices.GetDeviceInterfaceVLANs(deviceID, nil)
 	if vlans != nil {
@@ -72,6 +77,8 @@ func (ds *DnacSource) initVlansForDevice(c *dnac.Client, deviceID string) {
 	}
 }
 
+// Collects all interfaces from DNAC API and stores them in the
+// local source inventory.
 func (ds *DnacSource) initInterfaces(c *dnac.Client) error {
 	offset := 0
 	limit := 100
@@ -139,5 +146,63 @@ func (ds *DnacSource) initMemberships(c *dnac.Client) error {
 			offset += limit
 		}
 	}
+	return nil
+}
+
+// initWirelessLANs collects all wireless profiles, dynamic interfaces
+// and enterprise SSIDs from DNAC API and stores them in the local source inventory.
+// All this data is necessary to create WirelessLANs and WirelessLANGroups in netbox.
+func (ds *DnacSource) initWirelessLANs(c *dnac.Client) error {
+	// Get all WirelessProfiles
+	wirelessProfiles, response, err := c.Wireless.GetWirelessProfile(nil)
+	if err != nil {
+		return fmt.Errorf("init wireless profiles: %s", err)
+	}
+	if response.StatusCode() != http.StatusOK {
+		return fmt.Errorf("init wireless profiles response code: %s", response.String())
+	}
+
+	// Get wireless lan vlan relation.
+	wirelessDynamicInterfaces, response, err := c.Wireless.GetDynamicInterface(nil)
+	if err != nil {
+		return fmt.Errorf("init wireless dynamic interfaces: %s", err)
+	}
+	if response.StatusCode() != http.StatusOK {
+		return fmt.Errorf("init wireless dynamic interfaces: %s", response.String())
+	}
+
+	// Get wireless lan data.
+	enterpriseSsids, response, err := c.Wireless.GetEnterpriseSSID(nil)
+	if err != nil {
+		return fmt.Errorf("init enterprise ssids: %s", err)
+	}
+	if response.StatusCode() != http.StatusOK {
+		return fmt.Errorf("init enterprise ssids response code: %s", response.String())
+	}
+
+	// Create a map of IntefaceName -> VLAN
+	ds.WirelessLANInterfaceName2VlanID = make(map[string]int)
+	for _, dynamicInterface := range *wirelessDynamicInterfaces {
+		ds.WirelessLANInterfaceName2VlanID[dynamicInterface.InterfaceName] = int(*dynamicInterface.VLANID)
+	}
+
+	// Create a map of SSID -> WirelessLANGroup
+	ds.SSID2WlanGroupName = make(map[string]string)
+	ds.SSID2WirelessProfileDetails = make(map[string]dnac.ResponseItemWirelessGetWirelessProfileProfileDetailsSSIDDetails)
+	for _, wirelessProfile := range *wirelessProfiles {
+		for _, ssid := range *wirelessProfile.ProfileDetails.SSIDDetails {
+			ds.SSID2WirelessProfileDetails[ssid.Name] = ssid
+			ds.SSID2WlanGroupName[ssid.Name] = wirelessProfile.ProfileDetails.Name
+		}
+	}
+
+	// sync enterprise SSID
+	ds.SSID2SecurityDetails = make(map[string]dnac.ResponseItemWirelessGetEnterpriseSSIDSSIDDetails)
+	for _, enterpriseSSID := range *enterpriseSsids {
+		for _, SSIDDetails := range *enterpriseSSID.SSIDDetails {
+			ds.SSID2SecurityDetails[SSIDDetails.Name] = SSIDDetails
+		}
+	}
+
 	return nil
 }

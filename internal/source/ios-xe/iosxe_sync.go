@@ -171,7 +171,7 @@ func (is *IOSXESource) syncArpTable(nbi *inventory.NetboxInventory) error {
 		DisplayWeight:         objects.DisplayWeightDefault,
 		Description:           constants.CustomFieldArpIPLastSeenDescription,
 		SearchWeight:          objects.SearchWeightDefault,
-		ObjectTypes:           []objects.ObjectType{objects.ObjectTypeIpamIPAddress},
+		ObjectTypes:           []constants.ContentType{constants.ContentTypeIpamIPAddress},
 	})
 	if err != nil {
 		return fmt.Errorf("add custom field: %s", err)

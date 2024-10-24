@@ -83,13 +83,14 @@ type SourceConfig struct {
 	VMTenantRelations               []string `yaml:"vmTenantRelations"`
 	VlanGroupRelations              []string `yaml:"vlanGroupRelations"`
 	VlanTenantRelations             []string `yaml:"vlanTenantRelations"`
+	WlanTenantRelations             []string `yaml:"wlanTenantRelations"`
 
 	// Vmware specific relations
 	CustomFieldMappings []string `yaml:"customFieldMappings"`
 }
 
 func (s SourceConfig) String() string {
-	return fmt.Sprintf("SourceConfig{Name: %s, Type: %s, HTTPScheme: %s, Hostname: %s, Port: %d, Username: %s, Password: %s, PermittedSubnets: %v, ValidateCert: %t, Tag: %s, TagColor: %s, DatacenterClusterGroupRelations: %s, HostSiteRelations: %v, ClusterSiteRelations: %v, clusterTenantRelations: %v, HostTenantRelations: %v, VmTenantRelations %v, VlanGroupRelations: %v, VlanTenantRelations: %v}", s.Name, s.Type, s.HTTPScheme, s.Hostname, s.Port, s.Username, s.Password, s.IgnoredSubnets, s.ValidateCert, s.Tag, s.TagColor, s.DatacenterClusterGroupRelations, s.HostSiteRelations, s.ClusterSiteRelations, s.ClusterTenantRelations, s.HostTenantRelations, s.VMTenantRelations, s.VlanGroupRelations, s.VlanTenantRelations)
+	return fmt.Sprintf("SourceConfig{Name: %s, Type: %s, HTTPScheme: %s, Hostname: %s, Port: %d, Username: %s, Password: %s, PermittedSubnets: %v, ValidateCert: %t, Tag: %s, TagColor: %s, DatacenterClusterGroupRelations: %s, HostSiteRelations: %v, ClusterSiteRelations: %v, clusterTenantRelations: %v, HostTenantRelations: %v, VmTenantRelations %v, VlanGroupRelations: %v, VlanTenantRelations: %v, WlanTenantRelations: %v}", s.Name, s.Type, s.HTTPScheme, s.Hostname, s.Port, s.Username, s.Password, s.IgnoredSubnets, s.ValidateCert, s.Tag, s.TagColor, s.DatacenterClusterGroupRelations, s.HostSiteRelations, s.ClusterSiteRelations, s.ClusterTenantRelations, s.HostTenantRelations, s.VMTenantRelations, s.VlanGroupRelations, s.VlanTenantRelations, s.WlanTenantRelations)
 }
 
 // Validates the user's config for limits and required fields.
@@ -308,12 +309,18 @@ func validateSourceConfigRelations(externalSource *SourceConfig, externalSourceS
 			return fmt.Errorf("%s.vlanTenantRelations: %v", externalSourceStr, err)
 		}
 	}
+	if len(externalSource.WlanTenantRelations) > 0 {
+		err := utils.ValidateRegexRelations((externalSource.WlanTenantRelations))
+		if err != nil {
+			return fmt.Errorf("%s.wlanTenantRelations: %v", externalSourceStr, err)
+		}
+	}
 	return nil
 }
 
-func ParseConfig(filename string) (*Config, error) {
+func ParseConfig(configFilename string) (*Config, error) {
 	// First we read the config file
-	file, err := os.Open(filename)
+	file, err := os.Open(configFilename)
 	if err != nil {
 		return nil, err
 	}

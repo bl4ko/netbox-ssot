@@ -145,7 +145,7 @@ const (
 	CustomFieldDeviceUUIDLabel       = "uuid"
 	CustomFieldDeviceUUIDDescription = "Universally Unique Identifier for a device"
 
-	// Custom field for ObjectTypeIPAddress, so we can determine if an ip is part of an arp table or not.
+	// Custom field for ModelTypeIPAddress, so we can determine if an ip is part of an arp table or not.
 	CustomFieldArpEntryName        = "arp_entry"
 	CustomFieldArpEntryLabel       = "Arp Entry"
 	CustomFieldArpEntryDescription = "Was this IP collected from ARP table"
@@ -197,6 +197,49 @@ const (
 	TaggedVID   = 4095
 )
 
+type ContentType string
+
+// Content types predefined in netbox.
+const (
+	// DCIM object types.
+	ContentTypeDcimDevice           ContentType = "dcim.device"
+	ContentTypeDcimDeviceRole       ContentType = "dcim.devicerole"
+	ContentTypeDcimDeviceType       ContentType = "dcim.devicetype"
+	ContentTypeDcimInterface        ContentType = "dcim.interface"
+	ContentTypeDcimLocation         ContentType = "dcim.location"
+	ContentTypeDcimManufacturer     ContentType = "dcim.manufacturer"
+	ContentTypeDcimPlatform         ContentType = "dcim.platform"
+	ContentTypeDcimRegion           ContentType = "dcim.region"
+	ContentTypeDcimSite             ContentType = "dcim.site"
+	ContentTypeVirtualDeviceContext ContentType = "dcim.virtualdevicecontext"
+
+	// IPAM object types.
+	ContentTypeIpamIPAddress ContentType = "ipam.ipaddress"
+	ContentTypeIpamVlanGroup ContentType = "ipam.vlangroup"
+	ContentTypeIpamVlan      ContentType = "ipam.vlan"
+	ContentTypeIpamPrefix    ContentType = "ipam.prefix"
+
+	// Tenancy object types.
+	ContentTypeTenancyTenantGroup       ContentType = "tenancy.tenantgroup"
+	ContentTypeTenancyTenant            ContentType = "tenancy.tenant"
+	ContentTypeTenancyContact           ContentType = "tenancy.contact"
+	ContentTypeTenancyContactAssignment ContentType = "tenancy.contactassignment"
+	ContentTypeTenancyContactGroup      ContentType = "tenancy.contactgroup"
+	ContentTypeTenancyContactRole       ContentType = "tenancy.contactrole"
+
+	// Virtualization object types.
+	ContentTypeVirtualizationCluster        ContentType = "virtualization.cluster"
+	ContentTypeVirtualizationClusterGroup   ContentType = "virtualization.clustergroup"
+	ContentTypeVirtualizationClusterType    ContentType = "virtualization.clustertype"
+	ContentTypeVirtualizationVirtualMachine ContentType = "virtualization.virtualmachine"
+	ContentTypeVirtualizationVMInterface    ContentType = "virtualization.vminterface"
+
+	// Wireless object type.
+	ContentTypeWirelessLink     ContentType = "wireless.wirelesslink"
+	ContentTypeWirelessLAN      ContentType = "wireless.wirelesslan"
+	ContentTypeWirelessLANGroup ContentType = "wireless.wirelesslangroup"
+)
+
 // Here all mappings are defined so we don't hardcode api paths of objects
 // in our code.
 const (
@@ -229,6 +272,10 @@ const (
 	ManufacturersAPIPath         = "/api/dcim/manufacturers/"
 	PlatformsAPIPath             = "/api/dcim/platforms/"
 	VirtualDeviceContextsAPIPath = "/api/dcim/virtual-device-contexts/"
+
+	// Wireless paths.
+	WirelessLANsAPIPath      = "/api/wireless/wireless-lans/"
+	WirelessLANGroupsAPIPath = "/api/wireless/wireless-lan-groups/"
 
 	// Extras paths.
 	CustomFieldsAPIPath = "/api/extras/custom-fields/"
