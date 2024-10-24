@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
       - id: check-yaml
       - id: check-json
@@ -18,11 +18,11 @@ repos:
       - id: go-mod-tidy
 
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.19.3
+    rev: v8.21.1
     hooks:
       - id: gitleaks
 
   - repo: https://github.com/streetsidesoftware/cspell-cli
-    rev: v8.13.3
+    rev: v8.15.2
     hooks:
       - id: cspell
