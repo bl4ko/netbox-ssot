@@ -50,3 +50,7 @@ jobs:
             ghcr.io/bl4ko/netbox-ssot:latest
             ghcr.io/bl4ko/netbox-ssot:${{ github.ref_name }}
           push: true
+          build-args: |
+            VERSION=${{ github.ref_name }}
+            CREATED=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+            COMMIT=${{ github.sha }}
