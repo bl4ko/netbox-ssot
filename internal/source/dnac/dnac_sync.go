@@ -477,6 +477,9 @@ func (ds *DnacSource) addIPAddressToInterface(nbi *inventory.NetboxInventory, if
 		ds.Logger.Warningf(ds.Ctx, "failed extracting prefix from IPAddress: %s", err)
 	} else if mask != constants.MaxIPv4MaskBits {
 		_, err = nbi.AddPrefix(ds.Ctx, &objects.Prefix{
+			NetboxObject: objects.NetboxObject{
+				Tags: ds.Config.SourceTags,
+			},
 			Prefix: prefix,
 			Tenant: iface.Device.Tenant,
 		})
@@ -486,10 +489,12 @@ func (ds *DnacSource) addIPAddressToInterface(nbi *inventory.NetboxInventory, if
 	}
 
 	// Set the interface as the primary IPv4 if it matches the device's management IP
-	deviceManagementIP := ds.Devices[ifaceDetails.DeviceID].ManagementIPAddress
+	dnacDevice := ds.Devices[ifaceDetails.DeviceID]
+	deviceManagementIP := dnacDevice.ManagementIPAddress
 	if deviceManagementIP == ifaceDetails.IPv4Address {
 		deviceCopy := *ifaceDevice
 		deviceCopy.PrimaryIPv4 = nbIPAddress
+		ds.DeviceID2isMissingPrimaryIP[dnacDevice.ID] = false
 		_, err := nbi.AddDevice(ds.Ctx, &deviceCopy)
 		if err != nil {
 			ds.Logger.Errorf(ds.Ctx, "adding primary IPv4 address: %s", err)
@@ -562,6 +567,69 @@ func (ds *DnacSource) syncWirelessLANs(nbi *inventory.NetboxInventory) error {
 		_, err = nbi.AddWirelessLAN(ds.Ctx, wlanStruct)
 		if err != nil {
 			return fmt.Errorf("add wirelessLAN %+v: %s", wlanStruct, err)
+		}
+	}
+	return nil
+}
+
+// Fallback mechanism of assigning management IPs to devices if these management
+// IPs are not assigned to any interface found in /interface endpoint.
+// These devices are usually APs, whose interfaces are not returned
+// by the /interface endpoint.
+func (ds *DnacSource) syncMissingDevicePrimaryIPs(nbi *inventory.NetboxInventory) error {
+	for dnacDeviceID, isMissingPrimaryIP := range ds.DeviceID2isMissingPrimaryIP {
+		if isMissingPrimaryIP {
+			device := ds.Devices[dnacDeviceID]
+			if device.ManagementIPAddress == "" {
+				ds.Logger.Debugf(ds.Ctx, "Device %s has no management IP assigned", dnacDeviceID)
+				continue
+			}
+
+			nbDeviceAny, _ := ds.DeviceID2nbDevice.Load(dnacDeviceID)
+			nbDevice := nbDeviceAny.(*objects.Device) //nolint:forcetypeassert
+
+			// We create a management interface for a device
+			managementInterfaceStruct := &objects.Interface{
+				NetboxObject: objects.NetboxObject{
+					Tags:        ds.Config.SourceTags,
+					Description: "Management interface",
+				},
+				Device: nbDevice,
+				Name:   "mgmt",
+				Type:   &objects.OtherInterfaceType,
+				Status: true,
+				MAC:    device.MacAddress,
+			}
+			nbiIface, err := nbi.AddInterface(ds.Ctx, managementInterfaceStruct)
+			if err != nil {
+				return fmt.Errorf("add interface %+v: %s", managementInterfaceStruct, err)
+			}
+
+			nbIPAddressStruct := &objects.IPAddress{
+				NetboxObject: objects.NetboxObject{
+					Tags: ds.Config.SourceTags,
+					CustomFields: map[string]interface{}{
+						constants.CustomFieldSourceName:   ds.SourceConfig.Name,
+						constants.CustomFieldArpEntryName: false,
+					},
+				},
+				Address:            fmt.Sprintf("%s/32", device.ManagementIPAddress),
+				Status:             &objects.IPAddressStatusActive,
+				DNSName:            utils.ReverseLookup(device.ManagementIPAddress),
+				Tenant:             nbDevice.Tenant,
+				AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
+				AssignedObjectID:   nbiIface.ID,
+			}
+			nbIPAddress, err := nbi.AddIPAddress(ds.Ctx, nbIPAddressStruct)
+			if err != nil {
+				return fmt.Errorf("add IP address %+v: %s", nbIPAddressStruct, err)
+			}
+			updatedDevice := *nbDevice
+			updatedDevice.PrimaryIPv4 = nbIPAddress
+			_, err = nbi.AddDevice(ds.Ctx, &updatedDevice)
+			if err != nil {
+				return fmt.Errorf("add primary IPv4 address %+v: %s", updatedDevice, err)
+			}
 		}
 	}
 	return nil

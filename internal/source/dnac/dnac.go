@@ -25,6 +25,7 @@ type DnacSource struct {
 	SSID2WirelessProfileDetails     map[string]dnac.ResponseItemWirelessGetWirelessProfileProfileDetailsSSIDDetails
 	SSID2WlanGroupName              map[string]string                                                // SSID -> WirelessLANGroup name
 	SSID2SecurityDetails            map[string]dnac.ResponseItemWirelessGetEnterpriseSSIDSSIDDetails // WirelessLANName -> SSIDDetails
+	DeviceID2isMissingPrimaryIP     map[string]bool                                                  // Variable for storing devices without primary IP. See ds.syncMissingDevicePrimaryIPs
 
 	// Relations between dnac data. Initialized in init functions.
 	Site2Devices          map[string]map[string]bool // Site ID - > set of device IDs
@@ -87,6 +88,7 @@ func (ds *DnacSource) Sync(nbi *inventory.NetboxInventory) error {
 		ds.syncDevices,
 		ds.syncDeviceInterfaces,
 		ds.syncWirelessLANs,
+		ds.syncMissingDevicePrimaryIPs,
 	}
 
 	for _, syncFunc := range syncFunctions {
