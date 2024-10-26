@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// This function takes an object pointer, and returns a json body,
+// NetboxJSONMarshal takes an object pointer, and returns a json body,
 // that can be used to create that object in netbox API.
 // This is essential because default marshal of the object
 // isn't compatible with netbox API when attributes have nested
@@ -17,7 +17,7 @@ func NetboxJSONMarshal(obj interface{}) ([]byte, error) {
 	return json, err
 }
 
-// Function that converts an object to a map[string]interface{}
+// StructToNetboxJSONMap converts an object to a map[string]interface{}
 // which can be used to create a json body for netbox API, especially
 // for POST requests.
 func StructToNetboxJSONMap(obj interface{}) map[string]interface{} {
@@ -48,6 +48,10 @@ func StructToNetboxJSONMap(obj interface{}) map[string]interface{} {
 
 		// If field is a pointer, we need to get the element it points to
 		if fieldValue.Kind() == reflect.Ptr {
+			// Filter out nil pointers
+			if fieldValue.IsNil() {
+				continue
+			}
 			fieldValue = fieldValue.Elem()
 		}
 
@@ -65,6 +69,10 @@ func StructToNetboxJSONMap(obj interface{}) map[string]interface{} {
 			for j := 0; j < fieldValue.Len(); j++ {
 				attribute := fieldValue.Index(j)
 				if attribute.Kind() == reflect.Ptr {
+					// Filter out nil pointers
+					if attribute.IsNil() {
+						continue
+					}
 					attribute = attribute.Elem()
 				}
 				if attribute.Kind() == reflect.Struct {
@@ -77,6 +85,10 @@ func StructToNetboxJSONMap(obj interface{}) map[string]interface{} {
 				} else {
 					sliceItems = append(sliceItems, attribute.Interface())
 				}
+			}
+			// Slices with only nil values are skipped
+			if len(sliceItems) == 0 {
+				continue
 			}
 			netboxJSONMap[jsonTag] = sliceItems
 		case reflect.Struct:

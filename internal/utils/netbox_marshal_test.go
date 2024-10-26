@@ -2,14 +2,13 @@ package utils
 
 import (
 	"encoding/json"
-	"fmt"
 	"reflect"
 	"testing"
 
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 )
 
-func TestNetboxMarshal(t *testing.T) {
+func TestComplexClusterMarshal(t *testing.T) {
 	newObj := &objects.Cluster{
 		NetboxObject: objects.NetboxObject{
 			Description: "Test Description",
@@ -155,7 +154,6 @@ func TestNetboxJsonMarshalWithChoiceAttr(t *testing.T) {
 		t.Errorf("NetboxMarshal() error = %v", err)
 	}
 	responseJSON, err := NetboxJSONMarshal(device)
-	fmt.Println(string(responseJSON))
 	if err != nil {
 		t.Errorf("NetboxMarshal() error = %v", err)
 	}
@@ -163,32 +161,6 @@ func TestNetboxJsonMarshalWithChoiceAttr(t *testing.T) {
 		t.Errorf("NetboxMarshal() = %s\nwant %s", string(responseJSON), string(expectedJSON))
 	}
 }
-
-// func TestNetboxJsonMarshalComplex(t *testing.T) {
-// 	testDevice := objects.Interface{
-// 		NetboxObject: objects.NetboxObject{
-// 			Tags: []*objects.Tag{
-// 				&objects.Tag{
-// 					ID: 4,
-// 				},
-// 				&objects.Tag{
-// 					ID: 22,
-// 				},
-// 				&objects.Tag{
-// 					ID: 14,
-// 				},
-// 			},
-// 			Description: "10GB/s pNIC (vSwitch0)",
-// 		},
-// 		Name:   "vmnic0",
-// 		Status: true,
-// 		Type:   &objects.OtherInterfaceType,
-// 		Speed:  10000,
-// 		MTU:    1500,
-// 		Mode:   &objects.InterfaceModeTagged,
-// 		TaggedVlans: ,
-// 	}
-// }
 
 type testStruct struct {
 	Test string `json:"test"`
@@ -236,6 +208,16 @@ func TestNetboxJSONMarshal(t *testing.T) {
 				obj: testStructWithStructAttribute{Test: testStruct{Test: "test"}},
 			},
 			want: []byte("{\"test\":{\"test\":\"test\"}}"),
+		},
+		{
+			name: "Struct with nulls inside of a slice attribute",
+			args: args{
+				obj: &objects.Interface{
+					Name:        "vmnic0",
+					TaggedVlans: []*objects.Vlan{nil, nil},
+				},
+			},
+			want: []byte("{\"name\":\"vmnic0\"}"),
 		},
 	}
 	for _, tt := range tests {

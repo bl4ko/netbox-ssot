@@ -110,7 +110,7 @@ func (vc *VmwareSource) Init() error {
 	vc.Logger.Debug(vc.Ctx, "CustomFieldMappings: ", vc.CustomFieldMappings)
 
 	// Initialize the connection
-	vc.Logger.Debug(vc.Ctx, "Initializing oVirt source ", vc.SourceConfig.Name)
+	vc.Logger.Debug(vc.Ctx, "vmware source ", vc.SourceConfig.Name)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

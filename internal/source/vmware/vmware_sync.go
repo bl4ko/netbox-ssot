@@ -401,7 +401,7 @@ func (vc *VmwareSource) collectHostPhysicalNicData(nbi *inventory.NetboxInventor
 					return nil, fmt.Errorf("vlanGroup: %s", err)
 				}
 				newVlan, newVlanExists := nbi.GetVlan(vlanGroup.ID, portgroupData.vlanID)
-				if newVlanExists {
+				if !newVlanExists {
 					vlanStruct := &objects.Vlan{
 						NetboxObject: objects.NetboxObject{
 							Tags: vc.Config.SourceTags,

@@ -620,3 +620,24 @@ func TestGetManufacturerFromString(t *testing.T) {
 		})
 	}
 }
+
+func TestExtractFunctionNameWithTrimPrefix(t *testing.T) {
+	type args struct {
+		i      interface{}
+		prefix string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ExtractFunctionNameWithTrimPrefix(tt.args.i, tt.args.prefix); got != tt.want {
+				t.Errorf("ExtractFunctionNameWithTrimPrefix() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
