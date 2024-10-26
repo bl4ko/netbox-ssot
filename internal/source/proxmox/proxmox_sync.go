@@ -25,9 +25,6 @@ func (ps *ProxmoxSource) syncCluster(nbi *inventory.NetboxInventory) error {
 	clusterTypeStruct := &objects.ClusterType{
 		NetboxObject: objects.NetboxObject{
 			Tags: ps.Config.SourceTags,
-			CustomFields: map[string]interface{}{
-				constants.CustomFieldSourceName: ps.SourceConfig.Name,
-			},
 		},
 		Name: "Proxmox",
 		Slug: utils.Slugify("Proxmox"),
@@ -45,9 +42,6 @@ func (ps *ProxmoxSource) syncCluster(nbi *inventory.NetboxInventory) error {
 	clusterStruct := &objects.Cluster{
 		NetboxObject: objects.NetboxObject{
 			Tags: ps.SourceTags,
-			CustomFields: map[string]interface{}{
-				constants.CustomFieldSourceName: ps.SourceConfig.Name,
-			},
 		},
 		Name:   ps.Cluster.Name,
 		Type:   clusterType,
@@ -112,7 +106,6 @@ func (ps *ProxmoxSource) syncNodes(nbi *inventory.NetboxInventory) error {
 			NetboxObject: objects.NetboxObject{
 				Tags: ps.Config.SourceTags,
 				CustomFields: map[string]interface{}{
-					constants.CustomFieldSourceName:       ps.SourceConfig.Name,
 					constants.CustomFieldHostCPUCoresName: fmt.Sprintf("%d", node.CPUInfo.CPUs),
 					constants.CustomFieldHostMemoryName:   fmt.Sprintf("%d GB", node.Memory.Total/constants.GiB),
 				},
@@ -153,9 +146,6 @@ func (ps *ProxmoxSource) syncNodeNetworks(nbi *inventory.NetboxInventory, node *
 		_, err := nbi.AddInterface(ps.Ctx, &objects.Interface{
 			NetboxObject: objects.NetboxObject{
 				Tags: ps.Config.SourceTags,
-				CustomFields: map[string]interface{}{
-					constants.CustomFieldSourceName: ps.SourceConfig.Name,
-				},
 			},
 			Device: nbHost,
 			Name:   nodeNetwork.Iface,
@@ -273,9 +263,6 @@ func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *ob
 		vmInterfaceStruct := &objects.VMInterface{
 			NetboxObject: objects.NetboxObject{
 				Tags: ps.SourceTags,
-				CustomFields: map[string]interface{}{
-					constants.CustomFieldSourceName: ps.SourceConfig.Name,
-				},
 			},
 			Name:       vmNetwork.Name,
 			MACAddress: strings.ToUpper(vmNetwork.HardwareAddress),
@@ -292,7 +279,6 @@ func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *ob
 					NetboxObject: objects.NetboxObject{
 						Tags: ps.SourceTags,
 						CustomFields: map[string]interface{}{
-							constants.CustomFieldSourceName:   ps.SourceConfig.Name,
 							constants.CustomFieldArpEntryName: false,
 						},
 					},
@@ -374,7 +360,6 @@ func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 					NetboxObject: objects.NetboxObject{
 						Tags: ps.SourceTags,
 						CustomFields: map[string]interface{}{
-							constants.CustomFieldSourceName:   ps.SourceConfig.Name,
 							constants.CustomFieldSourceIDName: fmt.Sprintf("%d", container.VMID),
 						},
 					},
@@ -414,9 +399,6 @@ func (ps *ProxmoxSource) syncContainerNetworks(nbi *inventory.NetboxInventory, n
 		vmIfaceStruct := &objects.VMInterface{
 			NetboxObject: objects.NetboxObject{
 				Tags: ps.SourceTags,
-				CustomFields: map[string]interface{}{
-					constants.CustomFieldSourceName: ps.SourceConfig.Name,
-				},
 			},
 			Name:       containerIface.Name,
 			MACAddress: strings.ToUpper(containerIface.HWAddr),
@@ -434,7 +416,6 @@ func (ps *ProxmoxSource) syncContainerNetworks(nbi *inventory.NetboxInventory, n
 					NetboxObject: objects.NetboxObject{
 						Tags: ps.SourceTags,
 						CustomFields: map[string]interface{}{
-							constants.CustomFieldSourceName:   ps.SourceConfig.Name,
 							constants.CustomFieldArpEntryName: false,
 						},
 					},
@@ -468,7 +449,6 @@ func (ps *ProxmoxSource) syncContainerNetworks(nbi *inventory.NetboxInventory, n
 					NetboxObject: objects.NetboxObject{
 						Tags: ps.SourceTags,
 						CustomFields: map[string]interface{}{
-							constants.CustomFieldSourceName:   ps.SourceConfig.Name,
 							constants.CustomFieldArpEntryName: false,
 						},
 					},

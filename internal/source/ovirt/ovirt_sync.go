@@ -39,9 +39,6 @@ func (o *OVirtSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 					NetboxObject: objects.NetboxObject{
 						Description: description,
 						Tags:        o.Config.SourceTags,
-						CustomFields: map[string]interface{}{
-							constants.CustomFieldSourceName: o.SourceConfig.Name,
-						},
 					},
 					Name:     name,
 					Group:    vlanGroup,
@@ -76,9 +73,6 @@ func (o *OVirtSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
 			NetboxObject: objects.NetboxObject{
 				Description: description,
 				Tags:        o.Config.SourceTags,
-				CustomFields: map[string]interface{}{
-					constants.CustomFieldSourceName: o.SourceConfig.Name,
-				},
 			},
 			Name: nbClusterGroupName,
 			Slug: utils.Slugify(nbClusterGroupName),
@@ -95,9 +89,6 @@ func (o *OVirtSource) syncClusters(nbi *inventory.NetboxInventory) error {
 	clusterTypeStruct := &objects.ClusterType{
 		NetboxObject: objects.NetboxObject{
 			Tags: o.Config.SourceTags,
-			CustomFields: map[string]interface{}{
-				constants.CustomFieldSourceName: o.SourceConfig.Name,
-			},
 		},
 		Name: "oVirt",
 		Slug: "ovirt",
@@ -144,9 +135,6 @@ func (o *OVirtSource) syncClusters(nbi *inventory.NetboxInventory) error {
 			NetboxObject: objects.NetboxObject{
 				Description: description,
 				Tags:        o.Config.SourceTags,
-				CustomFields: map[string]interface{}{
-					constants.CustomFieldSourceName: o.SourceConfig.Name,
-				},
 			},
 			Name:   clusterName,
 			Type:   nbClusterType,
@@ -307,7 +295,6 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 				Description: hostDescription,
 				Tags:        o.Config.SourceTags,
 				CustomFields: map[string]interface{}{
-					constants.CustomFieldSourceName:       o.SourceConfig.Name,
 					constants.CustomFieldSourceIDName:     hostID,
 					constants.CustomFieldHostCPUCoresName: hostCPUCores,
 					constants.CustomFieldHostMemoryName:   fmt.Sprintf("%d GB", mem),
@@ -425,7 +412,6 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 					NetboxObject: objects.NetboxObject{
 						Tags: o.Config.SourceTags,
 						CustomFields: map[string]interface{}{
-							constants.CustomFieldSourceName:   o.SourceConfig.Name,
 							constants.CustomFieldArpEntryName: false,
 						},
 					},
@@ -470,7 +456,6 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 				NetboxObject: objects.NetboxObject{
 					Tags: o.Config.SourceTags,
 					CustomFields: map[string]interface{}{
-						constants.CustomFieldSourceName:   o.SourceConfig.Name,
 						constants.CustomFieldArpEntryName: false,
 					},
 				},
@@ -609,9 +594,6 @@ func (o *OVirtSource) collectHostNicsData(nbHost *objects.Device, nbi *inventory
 			NetboxObject: objects.NetboxObject{
 				Tags:        o.Config.SourceTags,
 				Description: nicComment,
-				CustomFields: map[string]interface{}{
-					constants.CustomFieldSourceName: o.SourceConfig.Name,
-				},
 			},
 			Device:      nbHost,
 			Name:        nicName,
@@ -901,9 +883,6 @@ func (o *OVirtSource) syncVMInterfaces(nbi *inventory.NetboxInventory, ovirtVM *
 							NetboxObject: objects.NetboxObject{
 								Tags:        o.Config.SourceTags,
 								Description: reportedDevice.MustDescription(),
-								CustomFields: map[string]interface{}{
-									constants.CustomFieldSourceName: o.SourceConfig.Name,
-								},
 							},
 							VM:         netboxVM,
 							Name:       reportedDeviceName,

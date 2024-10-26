@@ -134,9 +134,6 @@ func (nbi *NetboxInventory) initAdminContactRole(ctx context.Context) error {
 	_, err := nbi.AddContactRole(ctx, &objects.ContactRole{
 		NetboxObject: objects.NetboxObject{
 			Description: "Auto generated contact role by netbox-ssot for admins of vms.",
-			CustomFields: map[string]interface{}{
-				constants.CustomFieldSourceName: nbi.SsotTag.Name,
-			},
 		},
 		Name: objects.AdminContactRoleName,
 		Slug: utils.Slugify(objects.AdminContactRoleName),

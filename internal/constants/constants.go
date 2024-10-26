@@ -298,3 +298,12 @@ var Arch2Bit = map[string]string{
 	"riscv64": "64-bit",
 	"unknown": "unknown",
 }
+
+// Limitations for max length of name fields (see link below)
+// https://github.com/netbox-community/netbox/commit/d03d302eef3819db64cad8ae74dc5255647045f6
+const (
+	MaxDeviceNameLength      = 64
+	MaxInterfaceNameLength   = 64
+	MaxVMNameLength          = 64
+	MaxVMInterfaceNameLength = 64
+)
