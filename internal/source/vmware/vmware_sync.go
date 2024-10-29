@@ -311,7 +311,7 @@ func (vc *VmwareSource) syncHostNics(nbi *inventory.NetboxInventory, vcHost mo.H
 }
 
 func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetboxInventory, vcHost mo.HostSystem, nbHost *objects.Device, deviceData *devices.DeviceData) error {
-	if vcHost.Config.Network.Pnic != nil {
+	if vcHost.Config != nil && vcHost.Config.Network != nil && vcHost.Config.Network.Pnic != nil {
 		for _, pnic := range vcHost.Config.Network.Pnic {
 			hostPnic, err := vc.collectHostPhysicalNicData(nbi, nbHost, pnic, deviceData)
 			if err != nil {
@@ -465,7 +465,7 @@ func (vc *VmwareSource) collectHostPhysicalNicData(nbi *inventory.NetboxInventor
 
 func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetboxInventory, vcHost mo.HostSystem, nbHost *objects.Device, hostIPv4Addresses []*objects.IPAddress, hostIPv6Addresses []*objects.IPAddress) error {
 	// Collect data over all virtual interfaces
-	if vcHost.Config.Network.Vnic != nil {
+	if vcHost.Config != nil && vcHost.Config.Network != nil && vcHost.Config.Network.Vnic != nil {
 		for _, vnic := range vcHost.Config.Network.Vnic {
 			hostVnic, err := vc.collectHostVirtualNicData(nbi, nbHost, vcHost, vnic)
 			if err != nil {
