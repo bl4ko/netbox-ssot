@@ -409,6 +409,7 @@ func (ps *ProxmoxSource) syncContainerNetworks(nbi *inventory.NetboxInventory, n
 			return fmt.Errorf("add vm interface: %s", err)
 		}
 
+		// Check if IPv4 address is present
 		if !utils.SubnetsContainIPAddress(containerIface.Inet, ps.SourceConfig.IgnoredSubnets) {
 			// Check if IPv4 address is present
 			if containerIface.Inet != "" {
@@ -443,7 +444,9 @@ func (ps *ProxmoxSource) syncContainerNetworks(nbi *inventory.NetboxInventory, n
 					}
 				}
 			}
-			// Check if IPv6 address is present
+		}
+		// Check if IPv6 address is present
+		if !utils.SubnetsContainIPAddress(containerIface.Inet6, ps.SourceConfig.IgnoredSubnets) {
 			if containerIface.Inet6 != "" {
 				nbIPAddress, err := nbi.AddIPAddress(ps.Ctx, &objects.IPAddress{
 					NetboxObject: objects.NetboxObject{

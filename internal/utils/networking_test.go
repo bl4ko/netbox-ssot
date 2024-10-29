@@ -266,6 +266,30 @@ func TestSubnetsContainIPAddress(t *testing.T) {
 			},
 			want: false,
 		},
+		{
+			name: "Test ipv6 should be filtered out",
+			args: args{
+				ipAddress: "fe80::2744:6e22:ce45:c4b3",
+				subnets:   []string{"::/0"},
+			},
+			want: true,
+		},
+		{
+			name: "Test ipv6 with zone should be filtered out",
+			args: args{
+				ipAddress: "fe80::2744:6e22:ce45:c4b3%27/64",
+				subnets:   []string{"::/0"},
+			},
+			want: true,
+		},
+		{
+			name: "Doesn't contain ipv6 address",
+			args: args{
+				ipAddress: "fe80::2744:6e22:ce45:c4b3",
+				subnets:   []string{"10.0.0.0/8"},
+			},
+			want: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -352,6 +376,46 @@ func TestGetPrefixAndMaskFromIPAddress(t *testing.T) {
 			}
 			if got1 != tt.want1 {
 				t.Errorf("GetPrefixAndMaskFromIPAddress() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
+}
+
+func TestRemoveZoneIndexFromIPAddress(t *testing.T) {
+	type args struct {
+		ipAddress string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "Test valid ip address",
+			args: args{
+				ipAddress: "192.168.1.0",
+			},
+			want: "192.168.1.0",
+		},
+		{
+			name: "Test zone index ipv6 address",
+			args: args{
+				ipAddress: "fe80::2744:6e22:ce45:c4b3%27/64",
+			},
+			want: "fe80::2744:6e22:ce45:c4b3/64",
+		},
+		{
+			name: "Test zone index ipv6 address",
+			args: args{
+				ipAddress: "fe80::2744:6e22:ce45:c4b3%eth1",
+			},
+			want: "fe80::2744:6e22:ce45:c4b3",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := RemoveZoneIndexFromIPAddress(tt.args.ipAddress); got != tt.want {
+				t.Errorf("RemoveZoneIndexFromIPAddress() = %v, want %v", got, tt.want)
 			}
 		})
 	}

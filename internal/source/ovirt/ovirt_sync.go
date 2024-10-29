@@ -452,35 +452,37 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 		for nicID, ipv6 := range nicID2IPv6 {
 			nbNic := nicID2nic[nicID]
 			address := strings.Split(ipv6, "/")[0]
-			ipAddressStruct := &objects.IPAddress{
-				NetboxObject: objects.NetboxObject{
-					Tags: o.Config.SourceTags,
-					CustomFields: map[string]interface{}{
-						constants.CustomFieldArpEntryName: false,
+			if !utils.SubnetsContainIPAddress(address, o.SourceConfig.IgnoredSubnets) {
+				ipAddressStruct := &objects.IPAddress{
+					NetboxObject: objects.NetboxObject{
+						Tags: o.Config.SourceTags,
+						CustomFields: map[string]interface{}{
+							constants.CustomFieldArpEntryName: false,
+						},
 					},
-				},
-				Address:            ipv6,
-				Status:             &objects.IPAddressStatusActive, // TODO
-				DNSName:            utils.ReverseLookup(address),
-				AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
-				AssignedObjectID:   nbNic.ID,
-			}
-			nbIPAddress, err := nbi.AddIPAddress(o.Ctx, ipAddressStruct)
-			if err != nil {
-				return fmt.Errorf("add ipv6 address %+v: %s", ipAddressStruct, err)
-			}
-
-			// Also create prefix if it doesn't exist yet
-			prefix, mask, err := utils.GetPrefixAndMaskFromIPAddress(nbIPAddress.Address)
-			if err != nil {
-				o.Logger.Warningf(o.Ctx, "error extracting prefix from IP address: %s", err)
-			} else if mask != constants.MaxIPv4MaskBits {
-				prefixStruct := &objects.Prefix{
-					Prefix: prefix,
+					Address:            ipv6,
+					Status:             &objects.IPAddressStatusActive, // TODO
+					DNSName:            utils.ReverseLookup(address),
+					AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
+					AssignedObjectID:   nbNic.ID,
 				}
-				_, err = nbi.AddPrefix(o.Ctx, prefixStruct)
+				nbIPAddress, err := nbi.AddIPAddress(o.Ctx, ipAddressStruct)
 				if err != nil {
-					o.Logger.Warningf(o.Ctx, "adding prefix %+v: %s", prefixStruct, err)
+					return fmt.Errorf("add ipv6 address %+v: %s", ipAddressStruct, err)
+				}
+
+				// Also create prefix if it doesn't exist yet
+				prefix, mask, err := utils.GetPrefixAndMaskFromIPAddress(nbIPAddress.Address)
+				if err != nil {
+					o.Logger.Warningf(o.Ctx, "error extracting prefix from IP address: %s", err)
+				} else if mask != constants.MaxIPv4MaskBits {
+					prefixStruct := &objects.Prefix{
+						Prefix: prefix,
+					}
+					_, err = nbi.AddPrefix(o.Ctx, prefixStruct)
+					if err != nil {
+						o.Logger.Warningf(o.Ctx, "adding prefix %+v: %s", prefixStruct, err)
+					}
 				}
 			}
 		}

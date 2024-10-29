@@ -143,23 +143,25 @@ func (fs *FortigateSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 		var NBIPAddress *objects.IPAddress
 		ipAndMask := strings.Split(iface.IP, " ")
 		if len(ipAndMask) == 2 && ipAndMask[0] != "0.0.0.0" {
-			maskBits, err := utils.MaskToBits(ipAndMask[1])
-			if err != nil {
-				return fmt.Errorf("mask to bits: %s", err)
-			}
-			NBIPAddress, err = nbi.AddIPAddress(fs.Ctx, &objects.IPAddress{
-				NetboxObject: objects.NetboxObject{
-					Tags: fs.SourceTags,
-					CustomFields: map[string]interface{}{
-						constants.CustomFieldArpEntryName: false,
+			if !utils.SubnetsContainIPAddress(ipAndMask[0], fs.SourceConfig.IgnoredSubnets) {
+				maskBits, err := utils.MaskToBits(ipAndMask[1])
+				if err != nil {
+					return fmt.Errorf("mask to bits: %s", err)
+				}
+				NBIPAddress, err = nbi.AddIPAddress(fs.Ctx, &objects.IPAddress{
+					NetboxObject: objects.NetboxObject{
+						Tags: fs.SourceTags,
+						CustomFields: map[string]interface{}{
+							constants.CustomFieldArpEntryName: false,
+						},
 					},
-				},
-				Address:            fmt.Sprintf("%s/%d", ipAndMask[0], maskBits),
-				AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
-				AssignedObjectID:   NBIface.ID,
-			})
-			if err != nil {
-				return fmt.Errorf("add ip address: %s", err)
+					Address:            fmt.Sprintf("%s/%d", ipAndMask[0], maskBits),
+					AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
+					AssignedObjectID:   NBIface.ID,
+				})
+				if err != nil {
+					return fmt.Errorf("add ip address: %s", err)
+				}
 			}
 		}
 

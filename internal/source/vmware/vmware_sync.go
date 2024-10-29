@@ -1138,33 +1138,35 @@ func (vc *VmwareSource) addVMInterfaceIPs(nbi *inventory.NetboxInventory, netbox
 
 	// Add all collected ipv6 addresses for the interface to netbox
 	for _, ipv6Address := range nicIPv6Addresses {
-		nbIPv6Address, err := nbi.AddIPAddress(vc.Ctx, &objects.IPAddress{
-			NetboxObject: objects.NetboxObject{
-				Tags: vc.Config.SourceTags,
-				CustomFields: map[string]interface{}{
-					constants.CustomFieldArpEntryName: false,
+		if !utils.SubnetsContainIPAddress(ipv6Address, vc.SourceConfig.IgnoredSubnets) {
+			nbIPv6Address, err := nbi.AddIPAddress(vc.Ctx, &objects.IPAddress{
+				NetboxObject: objects.NetboxObject{
+					Tags: vc.Config.SourceTags,
+					CustomFields: map[string]interface{}{
+						constants.CustomFieldArpEntryName: false,
+					},
 				},
-			},
-			Address:            ipv6Address,
-			DNSName:            utils.ReverseLookup(ipv6Address),
-			AssignedObjectType: objects.AssignedObjectTypeVMInterface,
-			AssignedObjectID:   nbVMInterface.ID,
-		})
-		if err != nil {
-			vc.Logger.Warningf(vc.Ctx, "adding ipv6 address: %s", err)
-			continue
-		}
-		vmIPv6Addresses = append(vmIPv6Addresses, nbIPv6Address)
-		prefix, mask, err := utils.GetPrefixAndMaskFromIPAddress(nbIPv6Address.Address)
-		if err != nil {
-			vc.Logger.Warningf(vc.Ctx, "extract prefix from ip address: %s", err)
-		} else if mask != constants.MaxIPv6MaskBits {
-			prefixStruct := &objects.Prefix{
-				Prefix: prefix,
-			}
-			_, err = nbi.AddPrefix(vc.Ctx, prefixStruct)
+				Address:            ipv6Address,
+				DNSName:            utils.ReverseLookup(ipv6Address),
+				AssignedObjectType: objects.AssignedObjectTypeVMInterface,
+				AssignedObjectID:   nbVMInterface.ID,
+			})
 			if err != nil {
-				vc.Logger.Errorf(vc.Ctx, "add prefix: %s", err)
+				vc.Logger.Warningf(vc.Ctx, "adding ipv6 address: %s", err)
+				continue
+			}
+			vmIPv6Addresses = append(vmIPv6Addresses, nbIPv6Address)
+			prefix, mask, err := utils.GetPrefixAndMaskFromIPAddress(nbIPv6Address.Address)
+			if err != nil {
+				vc.Logger.Warningf(vc.Ctx, "extract prefix from ip address: %s", err)
+			} else if mask != constants.MaxIPv6MaskBits {
+				prefixStruct := &objects.Prefix{
+					Prefix: prefix,
+				}
+				_, err = nbi.AddPrefix(vc.Ctx, prefixStruct)
+				if err != nil {
+					vc.Logger.Errorf(vc.Ctx, "add prefix: %s", err)
+				}
 			}
 		}
 	}

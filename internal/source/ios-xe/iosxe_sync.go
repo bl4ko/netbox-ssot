@@ -178,27 +178,29 @@ func (is *IOSXESource) syncArpTable(nbi *inventory.NetboxInventory) error {
 	}
 
 	for _, arpEntry := range is.ArpEntries {
-		newTags := is.SourceTags
-		newTags = append(newTags, arpTag)
-		currentTime := time.Now()
-		dnsName := utils.ReverseLookup(arpEntry.Address)
-		defaultMask := 32
-		addressWithMask := fmt.Sprintf("%s/%d", arpEntry.Address, defaultMask)
-		_, err := nbi.AddIPAddress(is.Ctx, &objects.IPAddress{
-			NetboxObject: objects.NetboxObject{
-				Tags:        newTags,
-				Description: fmt.Sprintf("IP collected from %s arp table", is.SourceConfig.Name),
-				CustomFields: map[string]interface{}{
-					constants.CustomFieldArpIPLastSeenName: currentTime.Format(constants.ArpLastSeenFormat),
-					constants.CustomFieldArpEntryName:      true,
+		if !utils.SubnetsContainIPAddress(arpEntry.Address, is.SourceConfig.IgnoredSubnets) {
+			newTags := is.SourceTags
+			newTags = append(newTags, arpTag)
+			currentTime := time.Now()
+			dnsName := utils.ReverseLookup(arpEntry.Address)
+			defaultMask := 32
+			addressWithMask := fmt.Sprintf("%s/%d", arpEntry.Address, defaultMask)
+			_, err := nbi.AddIPAddress(is.Ctx, &objects.IPAddress{
+				NetboxObject: objects.NetboxObject{
+					Tags:        newTags,
+					Description: fmt.Sprintf("IP collected from %s arp table", is.SourceConfig.Name),
+					CustomFields: map[string]interface{}{
+						constants.CustomFieldArpIPLastSeenName: currentTime.Format(constants.ArpLastSeenFormat),
+						constants.CustomFieldArpEntryName:      true,
+					},
 				},
-			},
-			Address: addressWithMask,
-			DNSName: dnsName,
-			Status:  &objects.IPAddressStatusActive,
-		})
-		if err != nil {
-			is.Logger.Warningf(is.Ctx, "error creating ip address: %s", err)
+				Address: addressWithMask,
+				DNSName: dnsName,
+				Status:  &objects.IPAddressStatusActive,
+			})
+			if err != nil {
+				is.Logger.Warningf(is.Ctx, "error creating ip address: %s", err)
+			}
 		}
 	}
 	return nil

@@ -364,29 +364,31 @@ func (pas *PaloAltoSource) syncArpTable(nbi *inventory.NetboxInventory) error {
 }
 
 func (pas *PaloAltoSource) syncArpEntry(nbi *inventory.NetboxInventory, entry ArpEntry, arpTag *objects.Tag) error {
-	newTags := pas.SourceTags
-	newTags = append(newTags, arpTag)
-	currentTime := time.Now()
-	dnsName := utils.ReverseLookup(entry.IP)
-	defaultMask := 32
-	addressWithMask := fmt.Sprintf("%s/%d", entry.IP, defaultMask)
+	if !utils.SubnetsContainIPAddress(entry.IP, pas.SourceConfig.IgnoredSubnets) {
+		newTags := pas.SourceTags
+		newTags = append(newTags, arpTag)
+		currentTime := time.Now()
+		dnsName := utils.ReverseLookup(entry.IP)
+		defaultMask := 32
+		addressWithMask := fmt.Sprintf("%s/%d", entry.IP, defaultMask)
 
-	ipAddressStruct := &objects.IPAddress{
-		NetboxObject: objects.NetboxObject{
-			Tags:        newTags,
-			Description: fmt.Sprintf("IP collected from %s arp table", pas.SourceConfig.Name),
-			CustomFields: map[string]interface{}{
-				constants.CustomFieldArpIPLastSeenName: currentTime.Format(constants.ArpLastSeenFormat),
-				constants.CustomFieldArpEntryName:      true,
+		ipAddressStruct := &objects.IPAddress{
+			NetboxObject: objects.NetboxObject{
+				Tags:        newTags,
+				Description: fmt.Sprintf("IP collected from %s arp table", pas.SourceConfig.Name),
+				CustomFields: map[string]interface{}{
+					constants.CustomFieldArpIPLastSeenName: currentTime.Format(constants.ArpLastSeenFormat),
+					constants.CustomFieldArpEntryName:      true,
+				},
 			},
-		},
-		Address: addressWithMask,
-		DNSName: dnsName,
-		Status:  &objects.IPAddressStatusActive,
-	}
-	_, err := nbi.AddIPAddress(pas.Ctx, ipAddressStruct)
-	if err != nil {
-		return fmt.Errorf("add arp ip address: %s", err)
+			Address: addressWithMask,
+			DNSName: dnsName,
+			Status:  &objects.IPAddressStatusActive,
+		}
+		_, err := nbi.AddIPAddress(pas.Ctx, ipAddressStruct)
+		if err != nil {
+			return fmt.Errorf("add arp ip address: %s", err)
+		}
 	}
 	return nil
 }

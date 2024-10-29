@@ -65,10 +65,29 @@ func GetIPVersion(ipAddress string) int {
 	return constants.IPv6
 }
 
-// Function that checks if given IP address is part of the
-// given subnet (e.g. ipAddress "172.31.4.129" and subnet "172.31.4.145/25").
+// RemoveZoneIndexFromIPAddress removes zone index from the IPv6 address:
+// e.g. 2001:db8::1%eth0 -> 2001:db8::1.
+// e.g. 2001:db8::1%2/64 -> 2001:db8::1/64.
+func RemoveZoneIndexFromIPAddress(ipAddress string) string {
+	if strings.Contains(ipAddress, "%") {
+		base := strings.Split(ipAddress, "%")[0]
+		maskArr := strings.Split(ipAddress, "/")
+		mask := ""
+		if len(maskArr) > 1 {
+			mask = "/" + maskArr[1]
+		}
+		ipAddress = base + mask
+	}
+	return ipAddress
+}
+
+// SubnetContainsIPAddress checks if given IP address is part of the
+// given subnet (e.g. ipAddress "172.31.4.129" and
+// subnet "172.31.4.145/25").
 func SubnetContainsIPAddress(ipAddress string, subnet string) bool {
-	ip := net.ParseIP(ipAddress)
+	ipAddress = RemoveZoneIndexFromIPAddress(ipAddress)
+	address := strings.Split(ipAddress, "/")[0]
+	ip := net.ParseIP(address)
 	if ip == nil {
 		return false
 	}
