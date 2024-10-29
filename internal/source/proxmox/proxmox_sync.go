@@ -275,6 +275,7 @@ func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *ob
 
 		for _, ipAddress := range vmNetwork.IPAddresses {
 			if !utils.SubnetsContainIPAddress(ipAddress.IPAddress, ps.SourceConfig.IgnoredSubnets) {
+				ipAddress.IPAddress = utils.RemoveZoneIndexFromIPAddress(ipAddress.IPAddress)
 				ipAddressStruct := &objects.IPAddress{
 					NetboxObject: objects.NetboxObject{
 						Tags: ps.SourceTags,
@@ -448,6 +449,7 @@ func (ps *ProxmoxSource) syncContainerNetworks(nbi *inventory.NetboxInventory, n
 		// Check if IPv6 address is present
 		if !utils.SubnetsContainIPAddress(containerIface.Inet6, ps.SourceConfig.IgnoredSubnets) {
 			if containerIface.Inet6 != "" {
+				containerIface.Inet6 = utils.RemoveZoneIndexFromIPAddress(containerIface.Inet6)
 				nbIPAddress, err := nbi.AddIPAddress(ps.Ctx, &objects.IPAddress{
 					NetboxObject: objects.NetboxObject{
 						Tags: ps.SourceTags,
