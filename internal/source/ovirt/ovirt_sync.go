@@ -326,86 +326,63 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
+// syncHostNics syncs collected host nics from ovirt api to netbox inventory.
 func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ovirtsdk4.Host, nbHost *objects.Device) error {
 	if nics, exists := ovirtHost.Nics(); exists {
-		master2slave := make(map[string][]string) // masterId: [slaveId1, slaveId2, ...]
-		parent2child := make(map[string][]string) // parentId: [childId, ... ]
-		processedNicsIDs := make(map[string]bool) // set of all nic ids that have already been processed
-
-		nicID2nic := map[string]*objects.Interface{} // nicId: nic
-		nicID2IPv4 := map[string]string{}            // nicId: ipAv4address/mask
-		nicID2IPv6 := map[string]string{}            // nicId: ipv6Address/mask
+		// masterId: [slaveId1, slaveId2, ...]
+		masterID2slaveIDs := make(map[string][]string)
+		// parentId: [childId, ... ]
+		parentID2childID := make(map[string][]string)
+		// set of all nic ids that have already been processed
+		processedNicsIDs := make(map[string]bool)
+		// nicName -> nicID
+		nicName2nicID := map[string]string{}
+		// nicID -> netbox nic
+		nicID2nbNic := map[string]*objects.Interface{} // nicId: nic
+		// nic ID -> [ipv4Address/mask, ...]
+		nicID2IPv4 := map[string]string{}
+		// nic ID -> [ipv6Address/mask, ...]
+		nicID2IPv6 := map[string]string{}
 
 		var hostIP string
 		if hostAddress, exists := ovirtHost.Address(); exists {
 			hostIP = utils.Lookup(hostAddress)
 		}
 
-		// First loop, we loop through all the nics and collect all the information
-		err := o.collectHostNicsData(nbHost, nbi, nics, parent2child, master2slave, nicID2nic, processedNicsIDs, nicID2IPv4, nicID2IPv6)
+		// Firstly we loop through all the host's nics and collect
+		// all the relevant information from ovirt API.
+		err := o.collectHostNicsData(nbHost, nbi, nics, parentID2childID, masterID2slaveIDs, nicName2nicID, nicID2nbNic, processedNicsIDs, nicID2IPv4, nicID2IPv6)
 		if err != nil {
 			return fmt.Errorf("collect host nics data: %s", err)
 		}
 
-		// Second loop to add relations between interfaces (e.g. [eno1, eno2] -> bond1)
-		for masterID, slavesIDs := range master2slave {
-			var err error
-			masterInterface := nicID2nic[masterID]
-			if _, ok := processedNicsIDs[masterID]; ok {
-				masterInterface, err = nbi.AddInterface(o.Ctx, masterInterface)
-				if err != nil {
-					return fmt.Errorf("failed to add oVirt master interface %+v with error: %v", masterInterface, err)
-				}
-				delete(processedNicsIDs, masterID)
-				nicID2nic[masterID] = masterInterface
-			}
-			for _, slaveID := range slavesIDs {
-				slaveInterface := nicID2nic[slaveID]
-				slaveInterface.LAG = masterInterface
-				slaveInterface, err := nbi.AddInterface(o.Ctx, slaveInterface)
-				if err != nil {
-					return fmt.Errorf("failed to add oVirt slave interface %+v with error: %v", slaveInterface, err)
-				}
-				delete(processedNicsIDs, slaveID)
-				nicID2nic[slaveID] = slaveInterface
-			}
+		// Secondly we loop to add relations between interfaces
+		// (e.g. [eno1, eno2] -> bond1).
+		err = o.matchHostMasterAndSlaveNics(nbi, masterID2slaveIDs, nicID2nbNic, processedNicsIDs)
+		if err != nil {
+			return fmt.Errorf("match host master and slave nics: %s", err)
 		}
 
-		// Third loop we connect children with parents (e.g. [bond1.605, bond1.604, bond1.603] -> bond1)
-		for parent, children := range parent2child {
-			parentInterface := nicID2nic[parent]
-			if _, ok := processedNicsIDs[parent]; ok {
-				parentInterface, err := nbi.AddInterface(o.Ctx, parentInterface)
-				if err != nil {
-					return fmt.Errorf("failed to add oVirt parent interface %+v with error: %v", parentInterface, err)
-				}
-				nicID2nic[parent] = parentInterface
-				delete(processedNicsIDs, parent)
-			}
-			for _, child := range children {
-				childInterface := nicID2nic[child]
-				childInterface.ParentInterface = parentInterface
-				childInterface, err := nbi.AddInterface(o.Ctx, childInterface)
-				if err != nil {
-					return fmt.Errorf("failed to add oVirt child interface %+v with error: %v", childInterface, err)
-				}
-				nicID2nic[child] = childInterface
-				delete(processedNicsIDs, child)
-			}
+		// Thirdly we connect children nics with parents
+		// (e.g. [bond1.605, bond1.604, bond1.603] -> bond1).
+		err = o.matchHostParentAndChildNics(nbi, parentID2childID, nicName2nicID, nicID2nbNic, processedNicsIDs)
+		if err != nil {
+			return fmt.Errorf("match host parent and child nics: %s", err)
 		}
 
-		// Fourth loop we check if there are any nics that were not processed
+		// Fourthly we check if there were any nics that were not processed.
+		// This is needed because some nics might not have any relations.
 		for nicID := range processedNicsIDs {
-			nbNic, err := nbi.AddInterface(o.Ctx, nicID2nic[nicID])
+			nbNic, err := nbi.AddInterface(o.Ctx, nicID2nbNic[nicID])
 			if err != nil {
-				return fmt.Errorf("failed to add oVirt interface %+v with error: %v", nicID2nic[nicID], err)
+				return fmt.Errorf("failed to add oVirt interface %+v with error: %v", nicID2nbNic[nicID], err)
 			}
-			nicID2nic[nicID] = nbNic
+			nicID2nbNic[nicID] = nbNic
 		}
 
 		// Fifth loop we add ip addresses to interfaces
 		for nicID, ipv4 := range nicID2IPv4 {
-			nbNic := nicID2nic[nicID]
+			nbNic := nicID2nbNic[nicID]
 			address := strings.Split(ipv4, "/")[0]
 			if !utils.SubnetsContainIPAddress(address, o.SourceConfig.IgnoredSubnets) {
 				ipAddressStruct := &objects.IPAddress{
@@ -450,7 +427,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 			}
 		}
 		for nicID, ipv6 := range nicID2IPv6 {
-			nbNic := nicID2nic[nicID]
+			nbNic := nicID2nbNic[nicID]
 			address := strings.Split(ipv6, "/")[0]
 			if !utils.SubnetsContainIPAddress(address, o.SourceConfig.IgnoredSubnets) {
 				ipAddressStruct := &objects.IPAddress{
@@ -490,7 +467,61 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 	return nil
 }
 
-func (o *OVirtSource) collectHostNicsData(nbHost *objects.Device, nbi *inventory.NetboxInventory, nics *ovirtsdk4.HostNicSlice, parent2child map[string][]string, master2slave map[string][]string, nicID2nic map[string]*objects.Interface, processedNicsIDs map[string]bool, nicID2IPv4 map[string]string, nicID2IPv6 map[string]string) error {
+func (o *OVirtSource) matchHostMasterAndSlaveNics(nbi *inventory.NetboxInventory, masterID2slaveIDs map[string][]string, nicID2nbNic map[string]*objects.Interface, processedNicsIDs map[string]bool) error {
+	for masterID, slavesIDs := range masterID2slaveIDs {
+		var err error
+		masterInterface := nicID2nbNic[masterID]
+		if _, ok := processedNicsIDs[masterID]; ok {
+			masterInterface, err = nbi.AddInterface(o.Ctx, masterInterface)
+			if err != nil {
+				return fmt.Errorf("failed to add oVirt master interface %+v with error: %v", masterInterface, err)
+			}
+			delete(processedNicsIDs, masterID)
+			nicID2nbNic[masterID] = masterInterface
+		}
+		for _, slaveID := range slavesIDs {
+			slaveInterface := nicID2nbNic[slaveID]
+			slaveInterface.LAG = masterInterface
+			slaveInterface, err := nbi.AddInterface(o.Ctx, slaveInterface)
+			if err != nil {
+				return fmt.Errorf("failed to add oVirt slave interface %+v with error: %v", slaveInterface, err)
+			}
+			delete(processedNicsIDs, slaveID)
+			nicID2nbNic[slaveID] = slaveInterface
+		}
+	}
+	return nil
+}
+
+func (o *OVirtSource) matchHostParentAndChildNics(nbi *inventory.NetboxInventory, parentID2childID map[string][]string, nicName2nicID map[string]string, nicID2nbNic map[string]*objects.Interface, processedNicsIDs map[string]bool) error {
+	for parent, children := range parentID2childID {
+		parentNicID := nicName2nicID[parent]
+		parentInterface := nicID2nbNic[parentNicID]
+		if _, ok := processedNicsIDs[parentNicID]; ok {
+			parentInterface, err := nbi.AddInterface(o.Ctx, parentInterface)
+			if err != nil {
+				return fmt.Errorf("failed to add oVirt parent interface %+v with error: %v", parentInterface, err)
+			}
+			delete(processedNicsIDs, parentNicID)
+		}
+		for _, child := range children {
+			childInterface := nicID2nbNic[child]
+			childInterface.ParentInterface = parentInterface
+			if childInterface.MAC == "" {
+				childInterface.MAC = parentInterface.MAC
+			}
+			childInterface, err := nbi.AddInterface(o.Ctx, childInterface)
+			if err != nil {
+				return fmt.Errorf("failed to add oVirt child interface %+v with error: %v", childInterface, err)
+			}
+			nicID2nbNic[child] = childInterface
+			delete(processedNicsIDs, child)
+		}
+	}
+	return nil
+}
+
+func (o *OVirtSource) collectHostNicsData(nbHost *objects.Device, nbi *inventory.NetboxInventory, nics *ovirtsdk4.HostNicSlice, parentID2childID map[string][]string, master2slave map[string][]string, nicName2nicID map[string]string, nicID2nbNic map[string]*objects.Interface, processedNicsIDs map[string]bool, nicID2IPv4 map[string]string, nicID2IPv6 map[string]string) error {
 	for _, nic := range nics.Slice() {
 		nicID, exists := nic.Id()
 		if !exists {
@@ -502,7 +533,7 @@ func (o *OVirtSource) collectHostNicsData(nbHost *objects.Device, nbi *inventory
 			o.Logger.Warning(o.Ctx, "name for oVirt nic with id ", nicID, " is empty.")
 			continue
 		}
-
+		nicName2nicID[nicName] = nicID
 		// Filter out interfaces with user provided filter
 		if utils.FilterInterfaceName(nicName, o.SourceConfig.InterfaceFilter) {
 			o.Logger.Debugf(o.Ctx, "interface %s is filtered out with interfaceFilter %s", nicName, o.SourceConfig.InterfaceFilter)
@@ -548,7 +579,7 @@ func (o *OVirtSource) collectHostNicsData(nbHost *objects.Device, nbi *inventory
 		if exists {
 			// This interface is a vlan bond. We treat is as a virtual interface
 			nicType = &objects.VirtualInterfaceType
-			parent2child[nicBaseInterface] = append(parent2child[nicBaseInterface], nicID)
+			parentID2childID[nicBaseInterface] = append(parentID2childID[nicBaseInterface], nicID)
 		}
 
 		nicBonding, exists := nic.Bonding()
@@ -592,6 +623,15 @@ func (o *OVirtSource) collectHostNicsData(nbHost *objects.Device, nbi *inventory
 			nicTaggedVlans = []*objects.Vlan{nicVlan}
 		}
 
+		var nicMAC string
+		nicMac, exists := nic.Mac()
+		if exists {
+			nicMacAddress, exists := nicMac.Address()
+			if exists {
+				nicMAC = nicMacAddress
+			}
+		}
+
 		newInterface := &objects.Interface{
 			NetboxObject: objects.NetboxObject{
 				Tags:        o.Config.SourceTags,
@@ -602,6 +642,7 @@ func (o *OVirtSource) collectHostNicsData(nbHost *objects.Device, nbi *inventory
 			Speed:       objects.InterfaceSpeed(nicSpeedKbps),
 			Status:      nicEnabled,
 			MTU:         int(nicMtu),
+			MAC:         nicMAC,
 			Type:        nicType,
 			TaggedVlans: nicTaggedVlans,
 		}
@@ -636,7 +677,7 @@ func (o *OVirtSource) collectHostNicsData(nbHost *objects.Device, nbi *inventory
 		}
 
 		processedNicsIDs[nicID] = true
-		nicID2nic[nicID] = newInterface
+		nicID2nbNic[nicID] = newInterface
 	}
 	return nil
 }
