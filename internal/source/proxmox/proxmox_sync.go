@@ -233,7 +233,7 @@ func (ps *ProxmoxSource) syncVM(nbi *inventory.NetboxInventory, vm *proxmox.Virt
 		Role:    vmRole,
 		VCPUs:   float32(vm.CPUs),
 		Memory:  int(vm.MaxMem / constants.MiB),  //nolint:gosec
-		Disk:    int(vm.MaxDisk / constants.GiB), //nolint:gosec
+		Disk:    int(vm.MaxDisk / constants.MiB), //nolint:gosec
 		Site:    nbHost.Site,
 		Name:    vm.Name,
 		Status:  vmStatus,

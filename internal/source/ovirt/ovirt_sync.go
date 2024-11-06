@@ -852,8 +852,8 @@ func (o *OVirtSource) extractVMData(nbi *inventory.NetboxInventory, vmID string,
 		Platform:    vmPlatform,
 		Comments:    vmComments,
 		VCPUs:       vmVCPUs,
-		Memory:      int(vmMemorySizeBytes / constants.KiB / constants.KiB),               // MBs
-		Disk:        int(vmDiskSizeBytes / constants.KiB / constants.KiB / constants.KiB), // GBs
+		Memory:      int(vmMemorySizeBytes) / constants.MB, // MBs (default in netbox)
+		Disk:        int(vmDiskSizeBytes) / constants.MB,   // MBs (default in netbox)
 	}, nil
 }
 

@@ -762,7 +762,7 @@ func (vc *VmwareSource) syncVM(nbi *inventory.NetboxInventory, vmKey string, vm 
 
 	// vmVCPUs and vmMemory
 	vmVCPUs := vm.Config.Hardware.NumCPU
-	vmMemory := vm.Config.Hardware.MemoryMB
+	vmMemoryMB := vm.Config.Hardware.MemoryMB
 
 	// DisksSize
 	vmDiskSizeB := int64(0)
@@ -855,8 +855,8 @@ func (vc *VmwareSource) syncVM(nbi *inventory.NetboxInventory, vmKey string, vm 
 		Host:     vmHost,
 		Platform: vmPlatform,
 		VCPUs:    float32(vmVCPUs),
-		Memory:   int(vmMemory),                                                    // MBs
-		Disk:     int(vmDiskSizeB / constants.KiB / constants.KiB / constants.KiB), // GBs
+		Memory:   int(vmMemoryMB) / constants.MB,  // MBs default unit for ram in netbox
+		Disk:     int(vmDiskSizeB) / constants.MB, // MBs default unit for disk in netbox
 		Comments: vmComments,
 		Role:     vmRole,
 	}
