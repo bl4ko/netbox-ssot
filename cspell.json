@@ -1,6 +1,4 @@
-// cSpell Settings
 {
-  "language": "en",
   "dictionaries": [
     "project-words"
   ],
@@ -10,6 +8,7 @@
       "path": "./project-words.txt"
     }
   ],
+  "enabled": false,
   "ignorePaths": [
     ".git/*",
     ".git/!{COMMIT_EDITMSG,EDITMSG}",
@@ -20,5 +19,5 @@
     "go.mod",
     "go.sum"
   ],
-  "enabled": false
+  "language": "en"
 }

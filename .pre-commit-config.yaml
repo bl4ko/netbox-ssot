@@ -10,10 +10,14 @@ repos:
       - id: pretty-format-json
       - id: check-case-conflict
 
+  - repo: https://github.com/golangci/golangci-lint
+    rev: v1.61.0
+    hooks:
+      - id: golangci-lint
+
   - repo: https://github.com/dnephin/pre-commit-golang
     rev: v0.5.1
     hooks:
-      - id: golangci-lint
       - id: go-unit-tests
       - id: go-mod-tidy
 
@@ -23,6 +27,6 @@ repos:
       - id: gitleaks
 
   - repo: https://github.com/streetsidesoftware/cspell-cli
-    rev: v8.15.2
+    rev: v8.15.3
     hooks:
       - id: cspell
