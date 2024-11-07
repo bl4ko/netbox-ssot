@@ -642,7 +642,7 @@ func (o *OVirtSource) collectHostNicsData(nbHost *objects.Device, nbi *inventory
 			Speed:       objects.InterfaceSpeed(nicSpeedKbps),
 			Status:      nicEnabled,
 			MTU:         int(nicMtu),
-			MAC:         nicMAC,
+			MAC:         strings.ToUpper(nicMAC),
 			Type:        nicType,
 			TaggedVlans: nicTaggedVlans,
 		}

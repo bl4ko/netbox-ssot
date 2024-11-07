@@ -30,3 +30,17 @@ repos:
     rev: v8.15.3
     hooks:
       - id: cspell
+
+  - repo: https://github.com/mxab/pre-commit-trivy.git
+    rev: v0.13.0
+    hooks:
+      - id: trivyfs-docker
+        args:
+          - --skip-dirs
+          - ./tests
+          - . # last arg indicates the path/file to scan
+      - id: trivyconfig-docker
+        args:
+          - --skip-dirs
+          - ./tests
+          - . # last arg indicates the path/file to scan
