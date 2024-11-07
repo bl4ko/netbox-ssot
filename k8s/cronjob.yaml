@@ -10,7 +10,7 @@ spec:
         spec:
           containers:
             - name: netbox-ssot
-              image: ghcr.io/bl4ko/netbox-ssot:latest
+              image: ghcr.io/bl4ko/netbox-ssot:v1.5.2
               imagePullPolicy: Always
               resources:
                 limits:
@@ -23,6 +23,16 @@ spec:
                 - name: netbox-ssot-secret
                   mountPath: /app/config.yaml
                   subPath: config.yaml
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+                runAsNonRoot: true
+                readOnlyRootFilesystem: true
+                runAsUser: 10001
+                runAsGroup: 10001
+                seccompProfile:
+                  type: RuntimeDefault
           volumes:
             - name: netbox-ssot-secret
               secret:

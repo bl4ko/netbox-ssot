@@ -32,3 +32,5 @@ main
 go.work
 
 # End of https://www.toptal.com/developers/gitignore/api/go
+
+.pre-commit-trivy-cache
