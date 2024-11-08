@@ -1,9 +1,10 @@
 module github.com/bl4ko/netbox-ssot
 
-go 1.23
+go 1.23.1
 
 require (
 	github.com/PaloAltoNetworks/pango v0.10.2
+	github.com/bl4ko/go-devicetype-library v0.0.0-20241108075604-c61253424aae
 	github.com/cisco-en-programmability/dnacenter-go-sdk/v5 v5.0.32
 	github.com/luthermonson/go-proxmox v0.2.1
 	github.com/ovirt/go-ovirt v4.3.4+incompatible

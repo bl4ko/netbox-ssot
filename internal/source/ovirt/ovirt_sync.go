@@ -5,8 +5,8 @@ import (
 	"strings"
 	"sync"
 
+	devices "github.com/bl4ko/go-devicetype-library/pkg"
 	"github.com/bl4ko/netbox-ssot/internal/constants"
-	"github.com/bl4ko/netbox-ssot/internal/devices"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
