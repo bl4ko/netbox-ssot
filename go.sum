@@ -2,6 +2,8 @@ github.com/PaloAltoNetworks/pango v0.10.2 h1:Tjn6vIzzAq6Dd7N0mDuiP8w8pz8k5W9zz/T
 github.com/PaloAltoNetworks/pango v0.10.2/go.mod h1:GztcRnVLur7G+VFG7Z5ZKNFgScLtsycwPMp1qVebE5g=
 github.com/bl4ko/go-devicetype-library v0.0.0-20241108075604-c61253424aae h1:e6DT8HYb19nzPeMU/TAEmYVoSjcLjgth0YuX7sLW1FY=
 github.com/bl4ko/go-devicetype-library v0.0.0-20241108075604-c61253424aae/go.mod h1:Pzm1BlRyR4uECezsRINDA6ZieFPumdFL+6yySpXM6t8=
+github.com/bl4ko/go-devicetype-library v0.1.0 h1:7h9r0lg0yzcxviwxlo51BMdSZZo6bHQ3eJixrgoFNiI=
+github.com/bl4ko/go-devicetype-library v0.1.0/go.mod h1:Pzm1BlRyR4uECezsRINDA6ZieFPumdFL+6yySpXM6t8=
 github.com/buger/goterm v1.0.4 h1:Z9YvGmOih81P0FbVtEYTFF6YsSgxSUKEhf/f9bTMXbY=
 github.com/buger/goterm v1.0.4/go.mod h1:HiFWV3xnkolgrBV3mY8m0X0Pumt4zg4QhbdOzQtB8tE=
 github.com/cisco-en-programmability/dnacenter-go-sdk/v5 v5.0.32 h1:aEWjd0o0/IwBxJluO7aZPueTrCu16bVsD+Zael9zQSw=
@@ -104,6 +106,8 @@ golang.org/x/text v0.3.7/go.mod h1:u+2+/6zg+i71rQMx5EYifcz6MCKuco9NR6JIITiCfzQ=
 golang.org/x/text v0.7.0/go.mod h1:mrYo+phRRbMaCq/xk9113O4dZlRixOauAjOtrjsXDZ8=
 golang.org/x/text v0.19.0 h1:kTxAhCbGbxhK0IwgSKiMO5awPoDQ0RpfiVYBfK860YM=
 golang.org/x/text v0.19.0/go.mod h1:BuEKDfySbSR4drPmRPG/7iBdf8hvFMuRexcpahXilzY=
+golang.org/x/text v0.20.0 h1:gK/Kv2otX8gz+wn7Rmb3vT96ZwuoxnQlY+HlJVj7Qug=
+golang.org/x/text v0.20.0/go.mod h1:D4IsuqiFMhST5bX19pQ9ikHC2GsaKyk/oF+pn3ducp4=
 golang.org/x/time v0.6.0 h1:eTDhh4ZXt5Qf0augr54TN6suAUudPcawVZeIAPU7D4U=
 golang.org/x/time v0.6.0/go.mod h1:3BpzKBy/shNhVucY/MWOyx10tF3SFh9QdLuxbVysPQM=
 golang.org/x/tools v0.0.0-20180917221912-90fa682c2a6e/go.mod h1:n7NCudcB/nEzxVGmLbDWY5pfWTLqBcC2KZ6jyYvM4mQ=
