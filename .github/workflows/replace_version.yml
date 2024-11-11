@@ -32,3 +32,4 @@ jobs:
         uses: ad-m/github-push-action@d91a481090679876dfc4178fef17f286781251df # v0.8.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          force: true
