@@ -25,7 +25,6 @@ type DnacSource struct {
 	SSID2WirelessProfileDetails     map[string]dnac.ResponseItemWirelessGetWirelessProfileProfileDetailsSSIDDetails
 	SSID2WlanGroupName              map[string]string                                                // SSID -> WirelessLANGroup name
 	SSID2SecurityDetails            map[string]dnac.ResponseItemWirelessGetEnterpriseSSIDSSIDDetails // WirelessLANName -> SSIDDetails
-	DeviceID2isMissingPrimaryIP     map[string]bool                                                  // Variable for storing devices without primary IP. See ds.syncMissingDevicePrimaryIPs
 
 	// Relations between dnac data. Initialized in init functions.
 	Site2Devices          map[string]map[string]bool // Site ID - > set of device IDs
@@ -33,10 +32,11 @@ type DnacSource struct {
 	DeviceID2InterfaceIDs map[string][]string        // DeviceID -> []InterfaceID
 
 	// Netbox related data for easier access. Initialized in sync functions.
-	VID2nbVlan              sync.Map // VlanID -> nbVlan
-	SiteID2nbSite           sync.Map // SiteID -> nbSite
-	DeviceID2nbDevice       sync.Map // DeviceID -> nbDevice
-	InterfaceID2nbInterface sync.Map // InterfaceID -> nbInterface
+	DeviceID2isMissingPrimaryIP sync.Map // Variable for storing devices without primary IP. See ds.syncMissingDevicePrimaryIPs
+	VID2nbVlan                  sync.Map // VlanID -> nbVlan
+	SiteID2nbSite               sync.Map // SiteID -> nbSite
+	DeviceID2nbDevice           sync.Map // DeviceID -> nbDevice
+	InterfaceID2nbInterface     sync.Map // InterfaceID -> nbInterface
 
 	// User defined relations
 	HostTenantRelations map[string]string

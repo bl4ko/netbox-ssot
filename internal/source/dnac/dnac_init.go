@@ -57,10 +57,9 @@ func (ds *DnacSource) initDevices(c *dnac.Client) error {
 
 	ds.Devices = make(map[string]dnac.ResponseDevicesGetDeviceListResponse, len(allDevices))
 	ds.Vlans = make(map[int]dnac.ResponseDevicesGetDeviceInterfaceVLANsResponse)
-	ds.DeviceID2isMissingPrimaryIP = make(map[string]bool)
 	for _, device := range allDevices {
 		ds.Devices[device.ID] = device
-		ds.DeviceID2isMissingPrimaryIP[device.ID] = true
+		ds.DeviceID2isMissingPrimaryIP.Store(device.ID, true)
 		ds.initVlansForDevice(c, device.ID)
 	}
 	return nil

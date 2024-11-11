@@ -494,7 +494,7 @@ func (ds *DnacSource) addIPAddressToInterface(nbi *inventory.NetboxInventory, if
 	if deviceManagementIP == ifaceDetails.IPv4Address {
 		deviceCopy := *ifaceDevice
 		deviceCopy.PrimaryIPv4 = nbIPAddress
-		ds.DeviceID2isMissingPrimaryIP[dnacDevice.ID] = false
+		ds.DeviceID2isMissingPrimaryIP.Store(dnacDevice.ID, false)
 		_, err := nbi.AddDevice(ds.Ctx, &deviceCopy)
 		if err != nil {
 			ds.Logger.Errorf(ds.Ctx, "adding primary IPv4 address: %s", err)
@@ -577,12 +577,24 @@ func (ds *DnacSource) syncWirelessLANs(nbi *inventory.NetboxInventory) error {
 // These devices are usually APs, whose interfaces are not returned
 // by the /interface endpoint.
 func (ds *DnacSource) syncMissingDevicePrimaryIPs(nbi *inventory.NetboxInventory) error {
-	for dnacDeviceID, isMissingPrimaryIP := range ds.DeviceID2isMissingPrimaryIP {
+	var syncErr error
+	ds.DeviceID2isMissingPrimaryIP.Range(func(key, value interface{}) bool {
+		dnacDeviceID, ok := key.(string)
+		if !ok {
+			ds.Logger.Errorf(ds.Ctx, "Invalid type for key in DeviceID2isMissingPrimaryIP map")
+			return false
+		}
+		isMissingPrimaryIP, ok := value.(bool)
+		if !ok {
+			ds.Logger.Errorf(ds.Ctx, "Invalid type for value in DeviceID2isMissingPrimaryIP map")
+			return false
+		}
+
 		if isMissingPrimaryIP {
 			device := ds.Devices[dnacDeviceID]
 			if device.ManagementIPAddress == "" {
 				ds.Logger.Debugf(ds.Ctx, "Device %s has no management IP assigned", dnacDeviceID)
-				continue
+				return true
 			}
 
 			nbDeviceAny, _ := ds.DeviceID2nbDevice.Load(dnacDeviceID)
@@ -602,7 +614,8 @@ func (ds *DnacSource) syncMissingDevicePrimaryIPs(nbi *inventory.NetboxInventory
 			}
 			nbiIface, err := nbi.AddInterface(ds.Ctx, managementInterfaceStruct)
 			if err != nil {
-				return fmt.Errorf("add interface %+v: %s", managementInterfaceStruct, err)
+				syncErr = fmt.Errorf("add interface %+v: %s", managementInterfaceStruct, err)
+				return false
 			}
 
 			nbIPAddressStruct := &objects.IPAddress{
@@ -622,15 +635,21 @@ func (ds *DnacSource) syncMissingDevicePrimaryIPs(nbi *inventory.NetboxInventory
 			}
 			nbIPAddress, err := nbi.AddIPAddress(ds.Ctx, nbIPAddressStruct)
 			if err != nil {
-				return fmt.Errorf("add IP address %+v: %s", nbIPAddressStruct, err)
+				syncErr = fmt.Errorf("add IP address %+v: %s", nbIPAddressStruct, err)
+				return false
 			}
 			updatedDevice := *nbDevice
 			updatedDevice.PrimaryIPv4 = nbIPAddress
 			_, err = nbi.AddDevice(ds.Ctx, &updatedDevice)
 			if err != nil {
-				return fmt.Errorf("add primary IPv4 address %+v: %s", updatedDevice, err)
+				syncErr = fmt.Errorf("add primary IPv4 address %+v: %s", updatedDevice, err)
+				return false
 			}
 		}
+		return true
+	})
+	if syncErr != nil {
+		return syncErr
 	}
 	return nil
 }
