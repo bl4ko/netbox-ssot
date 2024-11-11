@@ -2,27 +2,24 @@ name: Replace version in k8s manifests on main tag push
 on:
   push:
     tags:
-      - 'v*.*.*'
-
+      - "v*.*.*"
 jobs:
   replace_version:
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
-    if: endsWith(github.ref, 'main')
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           persist-credentials: false
 
-
       - name: Replace image version in k8s manifests
         run: |
-         for file in k8s/*.yaml; do
-            sed -i "s|ghcr.io/bl4ko/netbox-ssot:v.*.*.*|ghcr.io/bl4ko/netbox-ssot:${{ github.ref }}|g" "$file"
-          done
+          for file in k8s/*.yaml; do
+             sed -i "s|ghcr.io/bl4ko/netbox-ssot:v.*.*.*|ghcr.io/bl4ko/netbox-ssot:${{ github.ref }}|g" "$file"
+           done
 
       - name: Commit changes
         run: |
