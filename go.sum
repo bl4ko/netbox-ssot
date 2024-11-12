@@ -60,6 +60,8 @@ github.com/rogpeppe/go-internal v1.12.0 h1:exVL4IDcn6na9z1rAb56Vxr+CgyK3nn3O+epU
 github.com/rogpeppe/go-internal v1.12.0/go.mod h1:E+RYuTGaKKdloAfM02xzb0FW3Paa99yedzYV+kq4uf4=
 github.com/scrapli/scrapligo v1.3.2 h1:9D5TFM/DlqAijqH18uNHygbNos0ReDsJl/vhMRObkhg=
 github.com/scrapli/scrapligo v1.3.2/go.mod h1:VnmqW27qUU1NOt6PNllZNJqAXQddn2vqZpk7g5qxebw=
+github.com/scrapli/scrapligo v1.3.3 h1:D9zj1QrOYNYAQ30YT7wfQBINvPGxvs5L5Lz+2LnL7V4=
+github.com/scrapli/scrapligo v1.3.3/go.mod h1:pOWxVyPsQRrWTrkoSSDg05tjOqtWfLffAZtAsCc0w3M=
 github.com/sirikothe/gotextfsm v1.0.1-0.20200816110946-6aa2cfd355e4 h1:FHUL2HofYJuslFOQdy/JjjP36zxqIpd/dcoiwLMIs7k=
 github.com/sirikothe/gotextfsm v1.0.1-0.20200816110946-6aa2cfd355e4/go.mod h1:CJYqpTg9u5VPCoD0VEl9E68prCIiWQD8m457k098DdQ=
 github.com/sirupsen/logrus v1.9.4-0.20230606125235-dd1b4c2e81af h1:Sp5TG9f7K39yfB+If0vjp97vuT74F72r8hfRpP8jLU0=
