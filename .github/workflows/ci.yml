@@ -88,6 +88,10 @@ jobs:
       - name: Run Trivy vulnerability scanner
         if: steps.changed-files.outputs.any_modified == 'true'
         uses: aquasecurity/trivy-action@master
+        # We use proxies to avoid rate limiting for trivy database
+        env:
+          TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db
+          TRIVY_JAVA_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-java-db
         with:
           image-ref: netbox-ssot:${{ github.sha }}
           format: table
