@@ -155,7 +155,7 @@ source:
       - .* = MyTenant
     hostSiteRelations:
       - .* = MyTenant
-    hostTenantRelations:
+    vlanTenantRelations:
       - .* = MyTenant
 
   - name: pa-uk
