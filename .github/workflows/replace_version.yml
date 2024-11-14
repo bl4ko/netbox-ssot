@@ -14,6 +14,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           persist-credentials: false
+          token: ${{ secrets.GH_TOKEN }}
 
       - name: Replace image version in k8s manifests
         run: |
@@ -21,15 +22,10 @@ jobs:
              sed -i "s|ghcr.io/bl4ko/netbox-ssot:v.*.*.*|ghcr.io/bl4ko/netbox-ssot:${{ github.ref }}|g" "$file"
            done
 
-      - name: Commit changes
+      - name: Commit and push changes
         run: |
           git config --global user.name "svccicd"
           git config --global user.email "187764736+svccicd@users.noreply.github.com"
           git add .
           git commit -m "chore(k8s): Replace version in k8s manifests"
-
-      - name: Push changes
-        uses: ad-m/github-push-action@d91a481090679876dfc4178fef17f286781251df # v0.8.0
-        with:
-          github_token: ${{ secrets.GH_TOKEN }}
-          force: true
+          git push -f origin main
