@@ -79,7 +79,7 @@ Example configuration can be found [here](#example-config).
 | `source.port`                            | Port of the data source.                                                                                                                                                               | all                        | int      | 0-65536                                  | 443        | No       |
 | `source.username`                        | Username of the data source account.                                                                                                                                                   | all                        | str      | any                                      | ""         | Yes      |
 | `source.password`                        | Password of the data source account.                                                                                                                                                   | all                        | str      | any                                      | ""         | Yes      |
-| `source.apiToken`                        | Password of the data source account.                                                                                                                                                   | [**fortigate**]            | str      | any                                      | ""         | Yes      |
+| `source.apiToken`                        | API token of the data source account.                                                                                                                                                   | [**fortigate**]            | str      | any                                      | ""         | Yes      |
 | `source.validateCert`                    | Enforce TLS certificate validation.                                                                                                                                                    | all                        | bool     | [true, false]                            | false      | No       |
 | `source.tagColor`                        | TagColor for the source tag.                                                                                                                                                           | all                        | string   | any                                      | Predefined | No       |
 | `source.ignoredSubnets`                  | List of subnets, which will be ignored (e.g. IPs won't be synced).                                                                                                                     | all                        | []string | any                                      | []         | No       |
@@ -155,7 +155,7 @@ source:
       - .* = MyTenant
     hostSiteRelations:
       - .* = MyTenant
-    hostTenantRelations:
+    vlanTenantRelations:
       - .* = MyTenant
 
   - name: pa-uk
