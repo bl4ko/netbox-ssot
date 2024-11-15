@@ -19,7 +19,7 @@ jobs:
       - name: Replace image version in k8s manifests
         run: |
           for file in k8s/*.yaml; do
-             sed -i "s|ghcr.io/bl4ko/netbox-ssot:v.*.*.*|ghcr.io/bl4ko/netbox-ssot:${{ github.ref }}|g" "$file"
+             sed -i "s|ghcr.io/bl4ko/netbox-ssot:v.*.*.*|ghcr.io/bl4ko/netbox-ssot:${{ github.ref_name }}|g" "$file"
            done
 
       - name: Commit and push changes
