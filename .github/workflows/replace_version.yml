@@ -15,6 +15,7 @@ jobs:
         with:
           persist-credentials: false
           token: ${{ secrets.GH_TOKEN }}
+          ref: main
 
       - name: Replace image version in k8s manifests
         run: |
