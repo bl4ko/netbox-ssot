@@ -73,6 +73,9 @@ func (ps *ProxmoxSource) syncNodes(nbi *inventory.NetboxInventory) error {
 		}
 		// TODO: find a way to get device type info from proxmox
 		manufacturerStruct := &objects.Manufacturer{
+			NetboxObject: objects.NetboxObject{
+				Description: constants.DefaultManufacturerDescription,
+			},
 			Name: constants.DefaultManufacturer,
 			Slug: utils.Slugify(constants.DefaultManufacturer),
 		}
@@ -81,6 +84,9 @@ func (ps *ProxmoxSource) syncNodes(nbi *inventory.NetboxInventory) error {
 			return fmt.Errorf("adding host manufacturer %+v: %s", manufacturerStruct, err)
 		}
 		deviceTypeStruct := &objects.DeviceType{
+			NetboxObject: objects.NetboxObject{
+				Description: constants.DefaultDeviceTypeDescription,
+			},
 			Manufacturer: hostManufacturer,
 			Model:        constants.DefaultModel,
 			Slug:         utils.Slugify(hostManufacturer.Name + constants.DefaultModel),
@@ -91,11 +97,13 @@ func (ps *ProxmoxSource) syncNodes(nbi *inventory.NetboxInventory) error {
 		}
 
 		deviceRoleStruct := &objects.DeviceRole{
-			Name:        constants.DeviceRoleServer,
-			Description: constants.DeviceRoleServerDescription,
-			Slug:        utils.Slugify(constants.DeviceRoleServer),
-			Color:       constants.DeviceRoleServerColor,
-			VMRole:      false,
+			NetboxObject: objects.NetboxObject{
+				Description: constants.DeviceRoleServerDescription,
+			},
+			Name:   constants.DeviceRoleServer,
+			Slug:   utils.Slugify(constants.DeviceRoleServer),
+			Color:  constants.DeviceRoleServerColor,
+			VMRole: false,
 		}
 		hostDeviceRole, err := nbi.AddDeviceRole(ps.Ctx, deviceRoleStruct)
 		if err != nil {

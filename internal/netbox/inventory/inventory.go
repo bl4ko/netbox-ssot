@@ -107,33 +107,10 @@ type NetboxInventory struct {
 	PrefixesLock           sync.Mutex
 	WirelessLANGroupsLock  sync.Mutex
 	WirelessLANsLock       sync.Mutex
-
-	// Orphan manager is a map of objectAPIPath to a set of managed ids for that object type.
-	//
-	// {
-	//		"/api/dcim/devices/": {22: true, 3: true, ...},
-	//		"/api/dcim/interface/": {15: true, 36: true, ...},
-	//  	"/api/virtualization/clusters/": {121: true, 122: true, ...},
-	//  	"...": [...]
-	// }
-	//
-	// It stores which objects have been created by netbox-ssot and can be deleted
-	// because they are not available in the sources anymore
-	OrphanManager map[string]map[int]bool
-
-	// OrphanObjectPriority is a map that stores priorities for each object. This is necessary
-	// because map order is non deterministic and if we delete dependent object first we will
-	// get the dependency error.
-	//
-	// {
-	//   0: service.TagApiPath,
-	//   1: service.CustomFieldApiPath,
-	//   ...
-	// }
-	OrphanObjectPriority map[int]string
-
 	// ArpDataLifeSpan determines the lifespan of arp entries in seconds.
 	ArpDataLifeSpan int
+	// OrphanManager object that manages orphaned objects.
+	OrphanManager *OrphanManager
 	// Tag used by netbox-ssot to mark devices that are managed by it.
 	SsotTag *objects.Tag
 	// Default context for the inventory, we use it to pass sourcename to functions for logging.
@@ -153,30 +130,9 @@ func NewNetboxInventory(ctx context.Context, logger *logger.Logger, nbConfig *pa
 	for i, sourceName := range nbConfig.SourcePriority {
 		sourcePriority[sourceName] = i
 	}
-	// Starts with 0 for easier integration with for loops
-	orphanObjectPriority := map[int]string{
-		0:  constants.VlanGroupsAPIPath,
-		1:  constants.PrefixesAPIPath,
-		2:  constants.VlansAPIPath,
-		3:  constants.IPAddressesAPIPath,
-		4:  constants.VirtualDeviceContextsAPIPath,
-		5:  constants.InterfacesAPIPath,
-		6:  constants.VMInterfacesAPIPath,
-		7:  constants.VirtualMachinesAPIPath,
-		8:  constants.DevicesAPIPath,
-		9:  constants.PlatformsAPIPath,
-		10: constants.DeviceTypesAPIPath,
-		11: constants.ManufacturersAPIPath,
-		12: constants.DeviceRolesAPIPath,
-		13: constants.ClustersAPIPath,
-		14: constants.ClusterTypesAPIPath,
-		15: constants.ClusterGroupsAPIPath,
-		16: constants.ContactAssignmentsAPIPath,
-		17: constants.ContactsAPIPath,
-		18: constants.WirelessLANsAPIPath,
-		19: constants.WirelessLANGroupsAPIPath,
-	}
-	nbi := &NetboxInventory{Ctx: ctx, Logger: logger, NetboxConfig: nbConfig, SourcePriority: sourcePriority, OrphanManager: make(map[string]map[int]bool), OrphanObjectPriority: orphanObjectPriority}
+	orphanManager := NewOrphanManager(logger)
+
+	nbi := &NetboxInventory{Ctx: ctx, Logger: logger, NetboxConfig: nbConfig, SourcePriority: sourcePriority, OrphanManager: orphanManager}
 	return nbi
 }
 
