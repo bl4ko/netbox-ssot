@@ -15,7 +15,7 @@ import (
 
 var MockDefaultSsotTag = &objects.Tag{
 	ID:   0,
-	Name: constants.DefaultSourceName,
+	Name: constants.SsotTagName,
 }
 
 // Hardcoded mock API responses for tags endpoint.

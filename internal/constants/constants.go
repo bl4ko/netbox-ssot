@@ -13,8 +13,16 @@ const (
 	IOSXE     SourceType = "ios-xe"
 )
 
-const DefaultNetboxTagColor = "00add8"
-const DefaultSourceName = "netbox-ssot"
+const SsotTagColor = "00add8"
+const SsotTagName = "netbox-ssot"
+const SsotTagDescription = "Tag used by netbox-ssot to mark devices that are managed by it"
+
+const OrphanTagName = "orphan"
+const OrphanTagColor = ColorGrey
+const OrphanTagDescription = "Tag used by netbox-ssot to mark orphaned objects"
+
+const DefaultVlanGroupName = "Default netbox-ssot vlan group"
+const DefaultVlanGroupDescription = "Default netbox-ssot VlanGroup for all vlans that are not part of any other vlanGroup. This group is required for netbox-ssot vlan index to work."
 
 const DefaultArpTagName = "arp-entry"
 const DefaultArpTagColor = ColorRed
@@ -23,12 +31,14 @@ const ArpLastSeenFormat = "2006-01-02 15:04:05"
 const DefaultArpDataLifeSpan = 60 * 60 * 24 * 2 // 2 days in seconds
 
 const (
-	DefaultOSName       string = "Unknown"
-	DefaultOSVersion    string = "X"
-	DefaultCPUArch      string = "unknown"
-	DefaultManufacturer string = "Generic Manufacturer"
-	DefaultModel        string = "Generic Model"
-	DefaultSite         string = "DefaultSite"
+	DefaultOSName                  string = "Unknown"
+	DefaultOSVersion               string = "X"
+	DefaultCPUArch                 string = "unknown"
+	DefaultManufacturer            string = "Generic Manufacturer"
+	DefaultManufacturerDescription string = "Generic Manufacturer created by netbox-ssot"
+	DefaultModel                   string = "Generic Model"
+	DefaultSite                    string = "DefaultSite"
+	DefaultDeviceTypeDescription   string = "Generic Device Type created by netbox-ssot"
 )
 
 type Color string

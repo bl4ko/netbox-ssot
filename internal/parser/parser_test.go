@@ -23,8 +23,8 @@ func TestValidonfig(t *testing.T) {
 			Port:            666,
 			ValidateCert:    false, // Default
 			Timeout:         constants.DefaultAPITimeout,
-			Tag:             constants.DefaultSourceName,      // Default
-			TagColor:        constants.DefaultNetboxTagColor,  // Default
+			Tag:             constants.SsotTagName,            // Default
+			TagColor:        constants.SsotTagColor,           // Default
 			RemoveOrphans:   true,                             // Default
 			ArpDataLifeSpan: constants.DefaultArpDataLifeSpan, // Default
 		},

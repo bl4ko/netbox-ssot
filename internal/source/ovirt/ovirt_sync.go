@@ -279,11 +279,13 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		mem /= (constants.KiB * constants.KiB * constants.KiB) // Value is in Bytes, we convert to GB
 
 		hostDeviceRoleStruct := &objects.DeviceRole{
-			Name:        constants.DeviceRoleServer,
-			Description: constants.DeviceRoleServerDescription,
-			Slug:        utils.Slugify(constants.DeviceRoleServer),
-			Color:       constants.DeviceRoleServerColor,
-			VMRole:      false,
+			NetboxObject: objects.NetboxObject{
+				Description: constants.DeviceRoleServerDescription,
+			},
+			Name:   constants.DeviceRoleServer,
+			Slug:   utils.Slugify(constants.DeviceRoleServer),
+			Color:  constants.DeviceRoleServerColor,
+			VMRole: false,
 		}
 		hostDeviceRole, err := nbi.AddDeviceRole(o.Ctx, hostDeviceRoleStruct)
 		if err != nil {

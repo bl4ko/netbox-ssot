@@ -1,7 +1,10 @@
 // This file contains all objects that are common to all Netbox objects.
 package objects
 
-import "fmt"
+import (
+	"fmt"
+	"slices"
+)
 
 // Choice represents a choice in a Netbox's choice field.
 // This struct is used as an embedded struct in other structs that represent Choice fields.
@@ -34,4 +37,42 @@ type NetboxObject struct {
 
 func (n NetboxObject) String() string {
 	return fmt.Sprintf("ID: %d, Tags: %s, Description: %s", n.ID, n.Tags, n.Description)
+}
+
+// AddTag adds a tag to the NetboxObject if
+// it doesn't have it already. If the tag is already present,
+// nothing happens.
+func (n *NetboxObject) AddTag(newTag *Tag) {
+	if slices.IndexFunc(n.Tags, func(t *Tag) bool {
+		return t.Name == newTag.Name
+	}) == -1 {
+		n.Tags = append(n.Tags, newTag)
+	}
+}
+
+// HasTag checks if the NetboxObject has a tag.
+// It returns true if the object has the tag, otherwise false.
+func (n *NetboxObject) HasTag(tag *Tag) bool {
+	return slices.IndexFunc(n.Tags, func(t *Tag) bool {
+		return t.Name == tag.Name
+	}) >= 0
+}
+
+// HasTagByName checks if the NetboxObject has a tag by name.
+// It returns true if the object has the tag, otherwise false.
+func (n *NetboxObject) HasTagByName(tagName string) bool {
+	return slices.IndexFunc(n.Tags, func(t *Tag) bool {
+		return t.Name == tagName
+	}) >= 0
+}
+
+// RemoveTag removes a tag from the NetboxObject.
+// If the tag is not present, nothing happens.
+func (n *NetboxObject) RemoveTag(tag *Tag) {
+	index := slices.IndexFunc(n.Tags, func(t *Tag) bool {
+		return t.Name == tag.Name
+	})
+	if index >= 0 {
+		n.Tags = append(n.Tags[:index], n.Tags[index+1:]...)
+	}
 }

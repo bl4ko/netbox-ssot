@@ -23,7 +23,7 @@ func (nbi *NetboxInventory) GetVlan(groupID, vlanID int) (*objects.Vlan, bool) {
 	}
 
 	// Remove the VLAN from the OrphanManager if found.
-	delete(nbi.OrphanManager[constants.VlansAPIPath], vlan.ID)
+	nbi.OrphanManager.RemoveItem(constants.VlansAPIPath, &vlan.NetboxObject)
 	return vlan, true
 }
 
@@ -35,7 +35,7 @@ func (nbi *NetboxInventory) GetTenant(tenantName string) (*objects.Tenant, bool)
 		return nil, false
 	}
 	// Remove the Tenmant from the OrphanManager if found
-	delete(nbi.OrphanManager[constants.TenantsAPIPath], tenant.ID)
+	nbi.OrphanManager.RemoveItem(constants.TenantsAPIPath, &tenant.NetboxObject)
 	return tenant, true
 }
 
@@ -47,7 +47,7 @@ func (nbi *NetboxInventory) GetSite(siteName string) (*objects.Site, bool) {
 		return nil, false
 	}
 	// Remove the Site from the OrphanManager if found
-	delete(nbi.OrphanManager[constants.SitesAPIPath], site.ID)
+	nbi.OrphanManager.RemoveItem(constants.SitesAPIPath, &site.NetboxObject)
 	return site, true
 }
 
@@ -59,7 +59,7 @@ func (nbi *NetboxInventory) GetVlanGroup(vlanGroupName string) (*objects.VlanGro
 		return nil, false
 	}
 	// Remove the VlanGroup from the OrphanManager if found
-	delete(nbi.OrphanManager[constants.VlanGroupsAPIPath], vlanGroup.ID)
+	nbi.OrphanManager.RemoveItem(constants.VlanGroupsAPIPath, &vlanGroup.NetboxObject)
 	return vlanGroup, true
 }
 
@@ -71,7 +71,7 @@ func (nbi *NetboxInventory) GetClusterGroup(clusterGroupName string) (*objects.C
 		return nil, false
 	}
 	// Remove the clusterGroup from the OrphanManager if found
-	delete(nbi.OrphanManager[constants.ClusterGroupsAPIPath], clusterGroup.ID)
+	nbi.OrphanManager.RemoveItem(constants.ClusterGroupsAPIPath, &clusterGroup.NetboxObject)
 	return clusterGroup, true
 }
 
@@ -83,7 +83,7 @@ func (nbi *NetboxInventory) GetCluster(clusterName string) (*objects.Cluster, bo
 		return nil, false
 	}
 	// Remove the cluster from the OrphanManager if found
-	delete(nbi.OrphanManager[constants.ClustersAPIPath], cluster.ID)
+	nbi.OrphanManager.RemoveItem(constants.ClustersAPIPath, &cluster.NetboxObject)
 	return cluster, true
 }
 
@@ -95,7 +95,7 @@ func (nbi *NetboxInventory) GetDevice(deviceName string, siteID int) (*objects.D
 		return nil, false
 	}
 	// Remove the device from the OrphanManager if found
-	delete(nbi.OrphanManager[constants.DevicesAPIPath], device.ID)
+	nbi.OrphanManager.RemoveItem(constants.DevicesAPIPath, &device.NetboxObject)
 	return device, true
 }
 
@@ -107,6 +107,6 @@ func (nbi *NetboxInventory) GetDeviceRole(deviceRoleName string) (*objects.Devic
 		return nil, false
 	}
 	// Remove the deviceRole from the OrphanManager if found
-	delete(nbi.OrphanManager[constants.DeviceRolesAPIPath], deviceRole.ID)
+	nbi.OrphanManager.RemoveItem(constants.DeviceRolesAPIPath, &deviceRole.NetboxObject)
 	return deviceRole, true
 }

@@ -60,11 +60,6 @@ func (ip IPAddress) String() string {
 	return fmt.Sprintf("IPAddress{ID: %d, Address: %s, Status: %s, DNSName: %s}", ip.ID, ip.Address, ip.Status, ip.DNSName)
 }
 
-const (
-	// Default vlan group for all objects, that are not party of any other vlan group.
-	DefaultVlanGroupName = "Default netbox-ssot vlan group"
-)
-
 type VlanGroup struct {
 	NetboxObject
 	// Name of the VlanGroup. This field is required.
