@@ -6,14 +6,10 @@ on:
 jobs:
   replace_version:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
-          persist-credentials: false
           token: ${{ secrets.GH_TOKEN }}
           ref: main
 
@@ -29,4 +25,4 @@ jobs:
           git config --global user.email "187764736+svccicd@users.noreply.github.com"
           git add .
           git commit -m "chore(k8s): Replace version in k8s manifests"
-          git push -f origin main
+          git push -f
