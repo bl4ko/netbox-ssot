@@ -18,12 +18,12 @@ func (nbi *NetboxInventory) initTags(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	nbi.TagsIndexByName = make(map[string]*objects.Tag)
+	nbi.tagsIndexByName = make(map[string]*objects.Tag)
 	for i := range nbTags {
 		tag := nbTags[i]
-		nbi.TagsIndexByName[tag.Name] = &tag
+		nbi.tagsIndexByName[tag.Name] = &tag
 	}
-	nbi.Logger.Debug(ctx, "Successfully collected tags from Netbox: ", nbi.TagsIndexByName)
+	nbi.Logger.Debug(ctx, "Successfully collected tags from Netbox: ", nbi.tagsIndexByName)
 
 	// Create default tag for netbox-ssot microservice
 	ssotTag, err := nbi.AddTag(ctx, &objects.Tag{Name: constants.SsotTagName, Slug: constants.SsotTagName, Description: constants.SsotTagDescription, Color: constants.SsotTagColor})
@@ -49,12 +49,12 @@ func (nbi *NetboxInventory) initTenants(ctx context.Context) error {
 		return err
 	}
 	// We also create an index of tenants by name for easier access
-	nbi.TenantsIndexByName = make(map[string]*objects.Tenant)
+	nbi.tenantsIndexByName = make(map[string]*objects.Tenant)
 	for i := range nbTenants {
 		tenant := &nbTenants[i]
-		nbi.TenantsIndexByName[tenant.Name] = tenant
+		nbi.tenantsIndexByName[tenant.Name] = tenant
 	}
-	nbi.Logger.Debug(ctx, "Successfully collected tenants from Netbox: ", nbi.TenantsIndexByName)
+	nbi.Logger.Debug(ctx, "Successfully collected tenants from Netbox: ", nbi.tenantsIndexByName)
 	return nil
 }
 
@@ -65,13 +65,13 @@ func (nbi *NetboxInventory) initContacts(ctx context.Context) error {
 		return err
 	}
 	// We also create an index of contacts by name for easier access
-	nbi.ContactsIndexByName = make(map[string]*objects.Contact)
+	nbi.contactsIndexByName = make(map[string]*objects.Contact)
 	for i := range nbContacts {
 		contact := &nbContacts[i]
-		nbi.ContactsIndexByName[contact.Name] = contact
-		nbi.OrphanManager.AddItem(constants.ContactsAPIPath, &contact.NetboxObject)
+		nbi.contactsIndexByName[contact.Name] = contact
+		nbi.OrphanManager.AddItem(constants.ContactsAPIPath, contact)
 	}
-	nbi.Logger.Debug(ctx, "Successfully collected contacts from Netbox: ", nbi.ContactsIndexByName)
+	nbi.Logger.Debug(ctx, "Successfully collected contacts from Netbox: ", nbi.contactsIndexByName)
 	return nil
 }
 
@@ -82,12 +82,12 @@ func (nbi *NetboxInventory) initContactRoles(ctx context.Context) error {
 		return err
 	}
 	// We also create an index of contact roles by name for easier access
-	nbi.ContactRolesIndexByName = make(map[string]*objects.ContactRole)
+	nbi.contactRolesIndexByName = make(map[string]*objects.ContactRole)
 	for i := range nbContactRoles {
 		contactRole := &nbContactRoles[i]
-		nbi.ContactRolesIndexByName[contactRole.Name] = contactRole
+		nbi.contactRolesIndexByName[contactRole.Name] = contactRole
 	}
-	nbi.Logger.Debug(ctx, "Successfully collected ContactRoles from Netbox: ", nbi.ContactRolesIndexByName)
+	nbi.Logger.Debug(ctx, "Successfully collected ContactRoles from Netbox: ", nbi.contactRolesIndexByName)
 	return nil
 }
 
@@ -97,7 +97,7 @@ func (nbi *NetboxInventory) initContactAssignments(ctx context.Context) error {
 		return err
 	}
 	// We also create an index of contacts by name for easier access
-	nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID = make(map[constants.ContentType]map[int]map[int]map[int]*objects.ContactAssignment)
+	nbi.contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID = make(map[constants.ContentType]map[int]map[int]map[int]*objects.ContactAssignment)
 	debugIDs := map[int]bool{} // Netbox pagination bug duplicates
 	for i := range nbCAs {
 		cA := &nbCAs[i]
@@ -105,19 +105,19 @@ func (nbi *NetboxInventory) initContactAssignments(ctx context.Context) error {
 			fmt.Printf("Already been here: %d", cA.ID)
 		}
 		debugIDs[cA.ID] = true
-		if nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[cA.ModelType] == nil {
-			nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[cA.ModelType] = make(map[int]map[int]map[int]*objects.ContactAssignment)
+		if nbi.contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[cA.ModelType] == nil {
+			nbi.contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[cA.ModelType] = make(map[int]map[int]map[int]*objects.ContactAssignment)
 		}
-		if nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[cA.ModelType][cA.ObjectID] == nil {
-			nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[cA.ModelType][cA.ObjectID] = make(map[int]map[int]*objects.ContactAssignment)
+		if nbi.contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[cA.ModelType][cA.ObjectID] == nil {
+			nbi.contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[cA.ModelType][cA.ObjectID] = make(map[int]map[int]*objects.ContactAssignment)
 		}
-		if nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[cA.ModelType][cA.ObjectID][cA.Contact.ID] == nil {
-			nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[cA.ModelType][cA.ObjectID][cA.Contact.ID] = make(map[int]*objects.ContactAssignment)
+		if nbi.contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[cA.ModelType][cA.ObjectID][cA.Contact.ID] == nil {
+			nbi.contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[cA.ModelType][cA.ObjectID][cA.Contact.ID] = make(map[int]*objects.ContactAssignment)
 		}
-		nbi.ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[cA.ModelType][cA.ObjectID][cA.Contact.ID][cA.Role.ID] = cA
-		nbi.OrphanManager.AddItem(constants.ContactAssignmentsAPIPath, &cA.NetboxObject)
+		nbi.contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[cA.ModelType][cA.ObjectID][cA.Contact.ID][cA.Role.ID] = cA
+		nbi.OrphanManager.AddItem(constants.ContactAssignmentsAPIPath, cA)
 	}
-	nbi.Logger.Debug(ctx, "Successfully collected contacts from Netbox: ", nbi.ContactsIndexByName)
+	nbi.Logger.Debug(ctx, "Successfully collected contacts from Netbox: ", nbi.contactsIndexByName)
 	return nil
 }
 
@@ -143,12 +143,12 @@ func (nbi *NetboxInventory) initContactGroups(ctx context.Context) error {
 		return err
 	}
 	// We also create an index of contact groups by name for easier access
-	nbi.ContactGroupsIndexByName = make(map[string]*objects.ContactGroup)
+	nbi.contactGroupsIndexByName = make(map[string]*objects.ContactGroup)
 	for i := range nbContactGroups {
 		contactGroup := &nbContactGroups[i]
-		nbi.ContactGroupsIndexByName[contactGroup.Name] = contactGroup
+		nbi.contactGroupsIndexByName[contactGroup.Name] = contactGroup
 	}
-	nbi.Logger.Debug(ctx, "Successfully collected ContactGroups from Netbox: ", nbi.ContactGroupsIndexByName)
+	nbi.Logger.Debug(ctx, "Successfully collected ContactGroups from Netbox: ", nbi.contactGroupsIndexByName)
 	return nil
 }
 
@@ -159,12 +159,12 @@ func (nbi *NetboxInventory) initSites(ctx context.Context) error {
 		return err
 	}
 	// We also create an index of sites by name for easier access
-	nbi.SitesIndexByName = make(map[string]*objects.Site)
+	nbi.sitesIndexByName = make(map[string]*objects.Site)
 	for i := range nbSites {
 		site := &nbSites[i]
-		nbi.SitesIndexByName[site.Name] = site
+		nbi.sitesIndexByName[site.Name] = site
 	}
-	nbi.Logger.Debug(ctx, "Successfully collected sites from Netbox: ", nbi.SitesIndexByName)
+	nbi.Logger.Debug(ctx, "Successfully collected sites from Netbox: ", nbi.sitesIndexByName)
 	return nil
 }
 
@@ -195,14 +195,14 @@ func (nbi *NetboxInventory) initManufacturers(ctx context.Context) error {
 		return err
 	}
 	// Initialize internal index of manufacturers by name
-	nbi.ManufacturersIndexByName = make(map[string]*objects.Manufacturer)
+	nbi.manufacturersIndexByName = make(map[string]*objects.Manufacturer)
 	for i := range nbManufacturers {
 		manufacturer := &nbManufacturers[i]
-		nbi.ManufacturersIndexByName[manufacturer.Name] = manufacturer
-		nbi.OrphanManager.AddItem(constants.ManufacturersAPIPath, &manufacturer.NetboxObject)
+		nbi.manufacturersIndexByName[manufacturer.Name] = manufacturer
+		nbi.OrphanManager.AddItem(constants.ManufacturersAPIPath, manufacturer)
 	}
 
-	nbi.Logger.Debug(ctx, "Successfully collected manufacturers from Netbox: ", nbi.ManufacturersIndexByName)
+	nbi.Logger.Debug(ctx, "Successfully collected manufacturers from Netbox: ", nbi.manufacturersIndexByName)
 	return nil
 }
 
@@ -213,15 +213,15 @@ func (nbi *NetboxInventory) initPlatforms(ctx context.Context) error {
 		return err
 	}
 	// Initialize internal index of platforms by name
-	nbi.PlatformsIndexByName = make(map[string]*objects.Platform)
+	nbi.platformsIndexByName = make(map[string]*objects.Platform)
 
 	for i, platform := range nbPlatforms {
 		nbPlatform := &nbPlatforms[i]
-		nbi.PlatformsIndexByName[platform.Name] = nbPlatform
-		nbi.OrphanManager.AddItem(constants.PlatformsAPIPath, &nbPlatform.NetboxObject)
+		nbi.platformsIndexByName[platform.Name] = nbPlatform
+		nbi.OrphanManager.AddItem(constants.PlatformsAPIPath, nbPlatform)
 	}
 
-	nbi.Logger.Debug(ctx, "Successfully collected platforms from Netbox: ", nbi.PlatformsIndexByName)
+	nbi.Logger.Debug(ctx, "Successfully collected platforms from Netbox: ", nbi.platformsIndexByName)
 	return nil
 }
 
@@ -232,18 +232,18 @@ func (nbi *NetboxInventory) initDevices(ctx context.Context) error {
 		return err
 	}
 	// Initialize internal index of devices by Name and SiteId
-	nbi.DevicesIndexByNameAndSiteID = make(map[string]map[int]*objects.Device)
+	nbi.devicesIndexByNameAndSiteID = make(map[string]map[int]*objects.Device)
 
 	for i, device := range nbDevices {
 		nbDevice := &nbDevices[i]
-		if nbi.DevicesIndexByNameAndSiteID[device.Name] == nil {
-			nbi.DevicesIndexByNameAndSiteID[device.Name] = make(map[int]*objects.Device)
+		if nbi.devicesIndexByNameAndSiteID[device.Name] == nil {
+			nbi.devicesIndexByNameAndSiteID[device.Name] = make(map[int]*objects.Device)
 		}
-		nbi.DevicesIndexByNameAndSiteID[device.Name][device.Site.ID] = nbDevice
-		nbi.OrphanManager.AddItem(constants.DevicesAPIPath, &nbDevice.NetboxObject)
+		nbi.devicesIndexByNameAndSiteID[device.Name][device.Site.ID] = nbDevice
+		nbi.OrphanManager.AddItem(constants.DevicesAPIPath, nbDevice)
 	}
 
-	nbi.Logger.Debug(ctx, "Successfully collected devices from Netbox: ", nbi.DevicesIndexByNameAndSiteID)
+	nbi.Logger.Debug(ctx, "Successfully collected devices from Netbox: ", nbi.devicesIndexByNameAndSiteID)
 	return nil
 }
 
@@ -254,17 +254,17 @@ func (nbi *NetboxInventory) initVirtualDeviceContexts(ctx context.Context) error
 		return err
 	}
 	// Initialize internal index of devices by Name and SiteId
-	nbi.VirtualDeviceContextsIndexByNameAndDeviceID = make(map[string]map[int]*objects.VirtualDeviceContext)
+	nbi.virtualDeviceContextsIndexByNameAndDeviceID = make(map[string]map[int]*objects.VirtualDeviceContext)
 	for i, virtualDeviceContext := range nbVirtualDeviceContexts {
 		nbVirtualDeviceContext := &nbVirtualDeviceContexts[i]
-		if nbi.VirtualDeviceContextsIndexByNameAndDeviceID[virtualDeviceContext.Name] == nil {
-			nbi.VirtualDeviceContextsIndexByNameAndDeviceID[virtualDeviceContext.Name] = make(map[int]*objects.VirtualDeviceContext)
+		if nbi.virtualDeviceContextsIndexByNameAndDeviceID[virtualDeviceContext.Name] == nil {
+			nbi.virtualDeviceContextsIndexByNameAndDeviceID[virtualDeviceContext.Name] = make(map[int]*objects.VirtualDeviceContext)
 		}
-		nbi.VirtualDeviceContextsIndexByNameAndDeviceID[virtualDeviceContext.Name][virtualDeviceContext.Device.ID] = nbVirtualDeviceContext
-		nbi.OrphanManager.AddItem(constants.VirtualDeviceContextsAPIPath, &nbVirtualDeviceContext.NetboxObject)
+		nbi.virtualDeviceContextsIndexByNameAndDeviceID[virtualDeviceContext.Name][virtualDeviceContext.Device.ID] = nbVirtualDeviceContext
+		nbi.OrphanManager.AddItem(constants.VirtualDeviceContextsAPIPath, nbVirtualDeviceContext)
 	}
 
-	nbi.Logger.Debug(ctx, "Successfully collected VirtualDeviceContexts from Netbox: ", nbi.VirtualDeviceContextsIndexByNameAndDeviceID)
+	nbi.Logger.Debug(ctx, "Successfully collected VirtualDeviceContexts from Netbox: ", nbi.virtualDeviceContextsIndexByNameAndDeviceID)
 	return nil
 }
 
@@ -276,15 +276,15 @@ func (nbi *NetboxInventory) initDeviceRoles(ctx context.Context) error {
 		return err
 	}
 	// We also create an index of device roles by name for easier access
-	nbi.DeviceRolesIndexByName = make(map[string]*objects.DeviceRole)
+	nbi.deviceRolesIndexByName = make(map[string]*objects.DeviceRole)
 
 	for i := range nbDeviceRoles {
 		deviceRole := &nbDeviceRoles[i]
-		nbi.DeviceRolesIndexByName[deviceRole.Name] = deviceRole
-		nbi.OrphanManager.AddItem(constants.DeviceRolesAPIPath, &deviceRole.NetboxObject)
+		nbi.deviceRolesIndexByName[deviceRole.Name] = deviceRole
+		nbi.OrphanManager.AddItem(constants.DeviceRolesAPIPath, deviceRole)
 	}
 
-	nbi.Logger.Debug(ctx, "Successfully collected device roles from Netbox: ", nbi.DeviceRolesIndexByName)
+	nbi.Logger.Debug(ctx, "Successfully collected device roles from Netbox: ", nbi.deviceRolesIndexByName)
 	return nil
 }
 
@@ -294,12 +294,12 @@ func (nbi *NetboxInventory) initCustomFields(ctx context.Context) error {
 		return err
 	}
 	// Initialize internal index of custom fields by name
-	nbi.CustomFieldsIndexByName = make(map[string]*objects.CustomField, len(customFields))
+	nbi.customFieldsIndexByName = make(map[string]*objects.CustomField, len(customFields))
 	for i := range customFields {
 		customField := &customFields[i]
-		nbi.CustomFieldsIndexByName[customField.Name] = customField
+		nbi.customFieldsIndexByName[customField.Name] = customField
 	}
-	nbi.Logger.Debug(ctx, "Successfully collected custom fields from Netbox: ", nbi.CustomFieldsIndexByName)
+	nbi.Logger.Debug(ctx, "Successfully collected custom fields from Netbox: ", nbi.customFieldsIndexByName)
 	return nil
 }
 
@@ -416,14 +416,14 @@ func (nbi *NetboxInventory) initClusterGroups(ctx context.Context) error {
 		return err
 	}
 	// Initialize internal index of cluster groups by name
-	nbi.ClusterGroupsIndexByName = make(map[string]*objects.ClusterGroup)
+	nbi.clusterGroupsIndexByName = make(map[string]*objects.ClusterGroup)
 
 	for i := range nbClusterGroups {
 		clusterGroup := &nbClusterGroups[i]
-		nbi.ClusterGroupsIndexByName[clusterGroup.Name] = clusterGroup
-		nbi.OrphanManager.AddItem(constants.ClusterGroupsAPIPath, &clusterGroup.NetboxObject)
+		nbi.clusterGroupsIndexByName[clusterGroup.Name] = clusterGroup
+		nbi.OrphanManager.AddItem(constants.ClusterGroupsAPIPath, clusterGroup)
 	}
-	nbi.Logger.Debug(ctx, "Successfully collected cluster groups from Netbox: ", nbi.ClusterGroupsIndexByName)
+	nbi.Logger.Debug(ctx, "Successfully collected cluster groups from Netbox: ", nbi.clusterGroupsIndexByName)
 	return nil
 }
 
@@ -435,14 +435,14 @@ func (nbi *NetboxInventory) initClusterTypes(ctx context.Context) error {
 	}
 
 	// Initialize internal index of cluster types by name
-	nbi.ClusterTypesIndexByName = make(map[string]*objects.ClusterType)
+	nbi.clusterTypesIndexByName = make(map[string]*objects.ClusterType)
 	for i := range nbClusterTypes {
 		clusterType := &nbClusterTypes[i]
-		nbi.ClusterTypesIndexByName[clusterType.Name] = clusterType
-		nbi.OrphanManager.AddItem(constants.ClusterTypesAPIPath, &clusterType.NetboxObject)
+		nbi.clusterTypesIndexByName[clusterType.Name] = clusterType
+		nbi.OrphanManager.AddItem(constants.ClusterTypesAPIPath, clusterType)
 	}
 
-	nbi.Logger.Debug(ctx, "Successfully collected cluster types from Netbox: ", nbi.ClusterTypesIndexByName)
+	nbi.Logger.Debug(ctx, "Successfully collected cluster types from Netbox: ", nbi.clusterTypesIndexByName)
 	return nil
 }
 
@@ -454,15 +454,15 @@ func (nbi *NetboxInventory) initClusters(ctx context.Context) error {
 	}
 
 	// Initialize internal index of clusters by name
-	nbi.ClustersIndexByName = make(map[string]*objects.Cluster)
+	nbi.clustersIndexByName = make(map[string]*objects.Cluster)
 
 	for i := range nbClusters {
 		cluster := &nbClusters[i]
-		nbi.ClustersIndexByName[cluster.Name] = cluster
-		nbi.OrphanManager.AddItem(constants.ClustersAPIPath, &cluster.NetboxObject)
+		nbi.clustersIndexByName[cluster.Name] = cluster
+		nbi.OrphanManager.AddItem(constants.ClustersAPIPath, cluster)
 	}
 
-	nbi.Logger.Debug(ctx, "Successfully collected clusters from Netbox: ", nbi.ClustersIndexByName)
+	nbi.Logger.Debug(ctx, "Successfully collected clusters from Netbox: ", nbi.clustersIndexByName)
 	return nil
 }
 
@@ -473,14 +473,14 @@ func (nbi *NetboxInventory) initDeviceTypes(ctx context.Context) error {
 	}
 
 	// Initialize internal index of device types by model
-	nbi.DeviceTypesIndexByModel = make(map[string]*objects.DeviceType)
+	nbi.deviceTypesIndexByModel = make(map[string]*objects.DeviceType)
 	for i := range nbDeviceTypes {
 		deviceType := &nbDeviceTypes[i]
-		nbi.DeviceTypesIndexByModel[deviceType.Model] = deviceType
-		nbi.OrphanManager.AddItem(constants.DeviceTypesAPIPath, &deviceType.NetboxObject)
+		nbi.deviceTypesIndexByModel[deviceType.Model] = deviceType
+		nbi.OrphanManager.AddItem(constants.DeviceTypesAPIPath, deviceType)
 	}
 
-	nbi.Logger.Debug(ctx, "Successfully collected device types from Netbox: ", nbi.DeviceTypesIndexByModel)
+	nbi.Logger.Debug(ctx, "Successfully collected device types from Netbox: ", nbi.deviceTypesIndexByModel)
 	return nil
 }
 
@@ -492,18 +492,18 @@ func (nbi *NetboxInventory) initInterfaces(ctx context.Context) error {
 	}
 
 	// Initialize internal index of interfaces by device id and name
-	nbi.InterfacesIndexByDeviceIDAndName = make(map[int]map[string]*objects.Interface)
+	nbi.interfacesIndexByDeviceIDAndName = make(map[int]map[string]*objects.Interface)
 
 	for i := range nbInterfaces {
 		intf := &nbInterfaces[i]
-		if nbi.InterfacesIndexByDeviceIDAndName[intf.Device.ID] == nil {
-			nbi.InterfacesIndexByDeviceIDAndName[intf.Device.ID] = make(map[string]*objects.Interface)
+		if nbi.interfacesIndexByDeviceIDAndName[intf.Device.ID] == nil {
+			nbi.interfacesIndexByDeviceIDAndName[intf.Device.ID] = make(map[string]*objects.Interface)
 		}
-		nbi.InterfacesIndexByDeviceIDAndName[intf.Device.ID][intf.Name] = intf
-		nbi.OrphanManager.AddItem(constants.InterfacesAPIPath, &intf.NetboxObject)
+		nbi.interfacesIndexByDeviceIDAndName[intf.Device.ID][intf.Name] = intf
+		nbi.OrphanManager.AddItem(constants.InterfacesAPIPath, intf)
 	}
 
-	nbi.Logger.Debug(ctx, "Successfully collected interfaces from Netbox: ", nbi.InterfacesIndexByDeviceIDAndName)
+	nbi.Logger.Debug(ctx, "Successfully collected interfaces from Netbox: ", nbi.interfacesIndexByDeviceIDAndName)
 	return nil
 }
 
@@ -537,15 +537,15 @@ func (nbi *NetboxInventory) initVlanGroups(ctx context.Context) error {
 	}
 
 	// Initialize internal index of vlans by name
-	nbi.VlanGroupsIndexByName = make(map[string]*objects.VlanGroup)
+	nbi.vlanGroupsIndexByName = make(map[string]*objects.VlanGroup)
 
 	for i := range nbVlanGroups {
 		vlanGroup := &nbVlanGroups[i]
-		nbi.VlanGroupsIndexByName[vlanGroup.Name] = vlanGroup
-		nbi.OrphanManager.AddItem(constants.VlanGroupsAPIPath, &vlanGroup.NetboxObject)
+		nbi.vlanGroupsIndexByName[vlanGroup.Name] = vlanGroup
+		nbi.OrphanManager.AddItem(constants.VlanGroupsAPIPath, vlanGroup)
 	}
 
-	nbi.Logger.Debug(ctx, "Successfully collected vlans from Netbox: ", nbi.VlanGroupsIndexByName)
+	nbi.Logger.Debug(ctx, "Successfully collected vlans from Netbox: ", nbi.vlanGroupsIndexByName)
 	return nil
 }
 
@@ -557,27 +557,27 @@ func (nbi *NetboxInventory) initVlans(ctx context.Context) error {
 	}
 
 	// Initialize internal index of vlans by VlanGroupId and Vid
-	nbi.VlansIndexByVlanGroupIDAndVID = make(map[int]map[int]*objects.Vlan)
+	nbi.vlansIndexByVlanGroupIDAndVID = make(map[int]map[int]*objects.Vlan)
 
 	for i := range nbVlans {
 		vlan := &nbVlans[i]
 		if vlan.Group == nil {
 			// Update all existing vlans with default vlanGroup. This only happens
 			// when there are predefined vlans in netbox.
-			vlan.Group = nbi.VlanGroupsIndexByName[constants.DefaultVlanGroupName] // This should not fail, because InitDefaultVlanGroup executes before InitVlans
+			vlan.Group = nbi.vlanGroupsIndexByName[constants.DefaultVlanGroupName] // This should not fail, because InitDefaultVlanGroup executes before InitVlans
 			vlan, err = nbi.AddVlan(ctx, vlan)
 			if err != nil {
 				return err
 			}
 		}
-		if nbi.VlansIndexByVlanGroupIDAndVID[vlan.Group.ID] == nil {
-			nbi.VlansIndexByVlanGroupIDAndVID[vlan.Group.ID] = make(map[int]*objects.Vlan)
+		if nbi.vlansIndexByVlanGroupIDAndVID[vlan.Group.ID] == nil {
+			nbi.vlansIndexByVlanGroupIDAndVID[vlan.Group.ID] = make(map[int]*objects.Vlan)
 		}
-		nbi.VlansIndexByVlanGroupIDAndVID[vlan.Group.ID][vlan.Vid] = vlan
-		nbi.OrphanManager.AddItem(constants.VlansAPIPath, &vlan.NetboxObject)
+		nbi.vlansIndexByVlanGroupIDAndVID[vlan.Group.ID][vlan.Vid] = vlan
+		nbi.OrphanManager.AddItem(constants.VlansAPIPath, vlan)
 	}
 
-	nbi.Logger.Debug(ctx, "Successfully collected vlans from Netbox: ", nbi.VlansIndexByVlanGroupIDAndVID)
+	nbi.Logger.Debug(ctx, "Successfully collected vlans from Netbox: ", nbi.vlansIndexByVlanGroupIDAndVID)
 	return nil
 }
 
@@ -589,22 +589,22 @@ func (nbi *NetboxInventory) initVMs(ctx context.Context) error {
 	}
 
 	// Initialize internal index of VMs by name and cluster id
-	nbi.VMsIndexByNameAndClusterID = make(map[string]map[int]*objects.VM)
+	nbi.vmsIndexByNameAndClusterID = make(map[string]map[int]*objects.VM)
 
 	for i := range nbVMs {
 		vm := &nbVMs[i]
-		if nbi.VMsIndexByNameAndClusterID[vm.Name] == nil {
-			nbi.VMsIndexByNameAndClusterID[vm.Name] = make(map[int]*objects.VM)
+		if nbi.vmsIndexByNameAndClusterID[vm.Name] == nil {
+			nbi.vmsIndexByNameAndClusterID[vm.Name] = make(map[int]*objects.VM)
 		}
 		if vm.Cluster == nil {
-			nbi.VMsIndexByNameAndClusterID[vm.Name][-1] = vm
+			nbi.vmsIndexByNameAndClusterID[vm.Name][-1] = vm
 		} else {
-			nbi.VMsIndexByNameAndClusterID[vm.Name][vm.Cluster.ID] = vm
+			nbi.vmsIndexByNameAndClusterID[vm.Name][vm.Cluster.ID] = vm
 		}
-		nbi.OrphanManager.AddItem(constants.VirtualMachinesAPIPath, &vm.NetboxObject)
+		nbi.OrphanManager.AddItem(constants.VirtualMachinesAPIPath, vm)
 	}
 
-	nbi.Logger.Debug(ctx, "Successfully collected VMs from Netbox: ", nbi.VMsIndexByNameAndClusterID)
+	nbi.Logger.Debug(ctx, "Successfully collected VMs from Netbox: ", nbi.vmsIndexByNameAndClusterID)
 	return nil
 }
 
@@ -616,17 +616,17 @@ func (nbi *NetboxInventory) initVMInterfaces(ctx context.Context) error {
 	}
 
 	// Initialize internal index of VM interfaces by VM id and name
-	nbi.VMInterfacesIndexByVMIdAndName = make(map[int]map[string]*objects.VMInterface)
+	nbi.vmInterfacesIndexByVMIdAndName = make(map[int]map[string]*objects.VMInterface)
 	for i := range nbVMInterfaces {
 		vmIntf := &nbVMInterfaces[i]
-		if nbi.VMInterfacesIndexByVMIdAndName[vmIntf.VM.ID] == nil {
-			nbi.VMInterfacesIndexByVMIdAndName[vmIntf.VM.ID] = make(map[string]*objects.VMInterface)
+		if nbi.vmInterfacesIndexByVMIdAndName[vmIntf.VM.ID] == nil {
+			nbi.vmInterfacesIndexByVMIdAndName[vmIntf.VM.ID] = make(map[string]*objects.VMInterface)
 		}
-		nbi.VMInterfacesIndexByVMIdAndName[vmIntf.VM.ID][vmIntf.Name] = vmIntf
-		nbi.OrphanManager.AddItem(constants.VMInterfacesAPIPath, &vmIntf.NetboxObject)
+		nbi.vmInterfacesIndexByVMIdAndName[vmIntf.VM.ID][vmIntf.Name] = vmIntf
+		nbi.OrphanManager.AddItem(constants.VMInterfacesAPIPath, vmIntf)
 	}
 
-	nbi.Logger.Debug(ctx, "Successfully collected VM interfaces from Netbox: ", nbi.VMInterfacesIndexByVMIdAndName)
+	nbi.Logger.Debug(ctx, "Successfully collected VM interfaces from Netbox: ", nbi.vmInterfacesIndexByVMIdAndName)
 	return nil
 }
 
@@ -638,11 +638,11 @@ func (nbi *NetboxInventory) initIPAddresses(ctx context.Context) error {
 	}
 
 	// Initializes internal index of IP addresses by address
-	nbi.IPAdressesIndexByAddress = make(map[string]*objects.IPAddress)
+	nbi.ipAdressesIndexByAddress = make(map[string]*objects.IPAddress)
 
 	for i := range ipAddresses {
 		ipAddr := &ipAddresses[i]
-		nbi.IPAdressesIndexByAddress[ipAddr.Address] = ipAddr
+		nbi.ipAdressesIndexByAddress[ipAddr.Address] = ipAddr
 		if slices.IndexFunc(ipAddr.Tags, func(t *objects.Tag) bool { return t.Slug == nbi.SsotTag.Slug }) >= 0 {
 			// Also check if IP is of type arp entry, if entry is older
 			if isArpEntry, ok := ipAddr.CustomFields[constants.CustomFieldArpEntryName]; ok {
@@ -659,11 +659,11 @@ func (nbi *NetboxInventory) initIPAddresses(ctx context.Context) error {
 					}
 				}
 			}
-			nbi.OrphanManager.AddItem(constants.IPAddressesAPIPath, &ipAddr.NetboxObject)
+			nbi.OrphanManager.AddItem(constants.IPAddressesAPIPath, ipAddr)
 		}
 	}
 
-	nbi.Logger.Debug(ctx, "Successfully collected IP addresses from Netbox: ", nbi.IPAdressesIndexByAddress)
+	nbi.Logger.Debug(ctx, "Successfully collected IP addresses from Netbox: ", nbi.ipAdressesIndexByAddress)
 	return nil
 }
 
@@ -675,15 +675,15 @@ func (nbi *NetboxInventory) initPrefixes(ctx context.Context) error {
 	}
 
 	// Initializes internal index of prefixes by prefix
-	nbi.PrefixesIndexByPrefix = make(map[string]*objects.Prefix)
+	nbi.prefixesIndexByPrefix = make(map[string]*objects.Prefix)
 
 	for i := range prefixes {
 		prefix := &prefixes[i]
-		nbi.PrefixesIndexByPrefix[prefix.Prefix] = prefix
-		nbi.OrphanManager.AddItem(constants.PrefixesAPIPath, &prefix.NetboxObject)
+		nbi.prefixesIndexByPrefix[prefix.Prefix] = prefix
+		nbi.OrphanManager.AddItem(constants.PrefixesAPIPath, prefix)
 	}
 
-	nbi.Logger.Debug(ctx, "Successfully collected prefixes from Netbox: ", nbi.PrefixesIndexByPrefix)
+	nbi.Logger.Debug(ctx, "Successfully collected prefixes from Netbox: ", nbi.prefixesIndexByPrefix)
 	return nil
 }
 
@@ -695,14 +695,14 @@ func (nbi *NetboxInventory) initWirelessLANs(ctx context.Context) error {
 	}
 
 	// Initialize internal index of WirelessLANs by SSID
-	nbi.WirelessLANsIndexBySSID = make(map[string]*objects.WirelessLAN)
+	nbi.wirelessLANsIndexBySSID = make(map[string]*objects.WirelessLAN)
 
 	for i := range nbWirelessLans {
 		wirelessLan := &nbWirelessLans[i]
-		nbi.WirelessLANsIndexBySSID[wirelessLan.SSID] = wirelessLan
-		nbi.OrphanManager.AddItem(constants.WirelessLANsAPIPath, &wirelessLan.NetboxObject)
+		nbi.wirelessLANsIndexBySSID[wirelessLan.SSID] = wirelessLan
+		nbi.OrphanManager.AddItem(constants.WirelessLANsAPIPath, wirelessLan)
 	}
-	nbi.Logger.Debug(ctx, "Successfully collected wireless-lans from Netbox: ", nbi.WirelessLANsIndexBySSID)
+	nbi.Logger.Debug(ctx, "Successfully collected wireless-lans from Netbox: ", nbi.wirelessLANsIndexBySSID)
 	return nil
 }
 
@@ -714,13 +714,13 @@ func (nbi *NetboxInventory) initWirelessLANGroups(ctx context.Context) error {
 	}
 
 	// Initialize internal index of WirelessLanGroups by SSID
-	nbi.WirelessLANGroupsIndexByName = make(map[string]*objects.WirelessLANGroup)
+	nbi.wirelessLANGroupsIndexByName = make(map[string]*objects.WirelessLANGroup)
 
 	for i := range nbWirelessLanGroups {
 		wirelessLanGroup := &nbWirelessLanGroups[i]
-		nbi.WirelessLANGroupsIndexByName[wirelessLanGroup.Name] = wirelessLanGroup
-		nbi.OrphanManager.AddItem(constants.WirelessLANGroupsAPIPath, &wirelessLanGroup.NetboxObject)
+		nbi.wirelessLANGroupsIndexByName[wirelessLanGroup.Name] = wirelessLanGroup
+		nbi.OrphanManager.AddItem(constants.WirelessLANGroupsAPIPath, wirelessLanGroup)
 	}
-	nbi.Logger.Debug(ctx, "Successfully collected wireless-lan-groups from Netbox: ", nbi.WirelessLANGroupsIndexByName)
+	nbi.Logger.Debug(ctx, "Successfully collected wireless-lan-groups from Netbox: ", nbi.wirelessLANGroupsIndexByName)
 	return nil
 }

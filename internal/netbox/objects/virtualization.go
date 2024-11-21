@@ -11,6 +11,20 @@ type ClusterGroup struct {
 	// Description is a description of the cluster group.
 }
 
+func (cg ClusterGroup) String() string {
+	return fmt.Sprintf("ClusterGroup{Name: %s}", cg.Name)
+}
+
+// ClusterGroup implements IDItem interface.
+func (cg *ClusterGroup) GetID() int {
+	return cg.ID
+}
+
+// ClusterGroup implements OrphanItem interface.
+func (cg *ClusterGroup) GetNetboxObject() *NetboxObject {
+	return &cg.NetboxObject
+}
+
 type ClusterType struct {
 	NetboxObject
 	// Name is the name of the cluster type. This field is required.
@@ -21,6 +35,16 @@ type ClusterType struct {
 
 func (ct ClusterType) String() string {
 	return fmt.Sprintf("ClusterType{Name: %s}", ct.Name)
+}
+
+// ClusterType implements IDItem interface.
+func (ct *ClusterType) GetID() int {
+	return ct.ID
+}
+
+// ClusterType implements OrphanItem interface.
+func (ct *ClusterType) GetNetboxObject() *NetboxObject {
+	return &ct.NetboxObject
 }
 
 type ClusterStatus struct {
@@ -53,6 +77,16 @@ type Cluster struct {
 
 func (c Cluster) String() string {
 	return fmt.Sprintf("Cluster{Name: %s, Type: %s}", c.Name, c.Type)
+}
+
+// Cluster implements IDItem interface.
+func (c *Cluster) GetID() int {
+	return c.ID
+}
+
+// Cluster implements OrphanItem interface.
+func (c *Cluster) GetNetboxObject() *NetboxObject {
+	return &c.NetboxObject
 }
 
 type VMStatus struct {
@@ -107,6 +141,16 @@ func (vm VM) String() string {
 	return fmt.Sprintf("VM{Name: %s, Cluster: %s}", vm.Name, vm.Cluster)
 }
 
+// VM implements IDItem interface.
+func (vm *VM) GetID() int {
+	return vm.ID
+}
+
+// VM implements OrphanItem interface.
+func (vm *VM) GetNetboxObject() *NetboxObject {
+	return &vm.NetboxObject
+}
+
 // 802.1Q VLAN Tagging Mode (Access, Tagged, Tagged All).
 type VMInterfaceMode struct {
 	Choice
@@ -144,4 +188,14 @@ type VMInterface struct {
 
 func (vmi VMInterface) String() string {
 	return fmt.Sprintf("VMInterface{Name: %s, VM: %s}", vmi.Name, vmi.VM.Name)
+}
+
+// VMInterface implements IDItem interface.
+func (vmi *VMInterface) GetID() int {
+	return vmi.ID
+}
+
+// VMInterface implements OrphanItem interface.
+func (vmi *VMInterface) GetNetboxObject() *NetboxObject {
+	return &vmi.NetboxObject
 }

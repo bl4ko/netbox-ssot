@@ -16,6 +16,16 @@ func (wlg WirelessLANGroup) String() string {
 	return fmt.Sprintf("WirelessLANGroup{Name: %s, Slug: %s}", wlg.Name, wlg.Slug)
 }
 
+// WirelessLANGroup implements IDItem interface.
+func (wlg *WirelessLANGroup) GetID() int {
+	return wlg.ID
+}
+
+// WirelessLANGroup implements OrphanItem interface.
+func (wlg *WirelessLANGroup) GetNetboxObject() *NetboxObject {
+	return &wlg.NetboxObject
+}
+
 // https://github.com/netbox-community/netbox/blob/2e74952ac6cc68348284dee8b9517fe0a36179a2/netbox/wireless/choices.py#L16
 type WirelessLANStatus struct {
 	Choice
@@ -73,4 +83,14 @@ type WirelessLAN struct {
 
 func (wl WirelessLAN) String() string {
 	return fmt.Sprintf("WirelessLAN{SSID: %s}", wl.SSID)
+}
+
+// WirelessLAN implements IDItem interface.
+func (wl *WirelessLAN) GetID() int {
+	return wl.ID
+}
+
+// WirelessLAN implements OrphanItem interface.
+func (wl *WirelessLAN) GetNetboxObject() *NetboxObject {
+	return &wl.NetboxObject
 }

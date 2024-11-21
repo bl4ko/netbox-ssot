@@ -60,6 +60,16 @@ func (ip IPAddress) String() string {
 	return fmt.Sprintf("IPAddress{ID: %d, Address: %s, Status: %s, DNSName: %s}", ip.ID, ip.Address, ip.Status, ip.DNSName)
 }
 
+// IPAddress implements IDItem interface.
+func (ip *IPAddress) GetID() int {
+	return ip.ID
+}
+
+// IPAddress implements OrphanItem interface.
+func (ip *IPAddress) GetNetboxObject() *NetboxObject {
+	return &ip.NetboxObject
+}
+
 type VlanGroup struct {
 	NetboxObject
 	// Name of the VlanGroup. This field is required.
@@ -74,6 +84,16 @@ type VlanGroup struct {
 
 func (vg VlanGroup) String() string {
 	return fmt.Sprintf("VlanGroup{Name: %s, MinVid: %d, MaxVid: %d}", vg.Name, vg.MinVid, vg.MaxVid)
+}
+
+// VlanGroup implements IDItem interface.
+func (vg *VlanGroup) GetID() int {
+	return vg.ID
+}
+
+// VlanGroup implements OrphanItem interface.
+func (vg *VlanGroup) GetNetboxObject() *NetboxObject {
+	return &vg.NetboxObject
 }
 
 type VlanStatus struct {
@@ -106,6 +126,16 @@ type Vlan struct {
 
 func (v Vlan) String() string {
 	return fmt.Sprintf("Vlan{ID: %d, Name: %s, Vid: %d, Status: %s}", v.ID, v.Name, v.Vid, v.Status)
+}
+
+// Vlan implements IDItem interface.
+func (v *Vlan) GetID() int {
+	return v.ID
+}
+
+// Vlan implements OrphanItem interface.
+func (v *Vlan) GetNetboxObject() *NetboxObject {
+	return &v.NetboxObject
 }
 
 type IPRange struct {
@@ -144,4 +174,14 @@ type Prefix struct {
 
 func (p Prefix) String() string {
 	return fmt.Sprintf("Prefix{Prefix: %s}", p.Prefix)
+}
+
+// Prefix implements IDItem interface.
+func (p *Prefix) GetID() int {
+	return p.ID
+}
+
+// Prefix implements OrphanItem interface.
+func (p *Prefix) GetNetboxObject() *NetboxObject {
+	return &p.NetboxObject
 }

@@ -24,97 +24,148 @@ type NetboxInventory struct {
 	NetboxConfig *parser.NetboxConfig
 	// NetboxAPI is the Netbox API object, for communicating with the Netbox API
 	NetboxAPI *service.NetboxClient
-	// SourcePriority: if object is found on multiple sources, which source has the priority for the object attributes.
+	// SourcePriority: if object is found on multiple sources, which source has
+	// the priority for the object attributes.
 	SourcePriority map[string]int
-	// TagsIndexByName is a map of all tags in the Netbox's inventory, indexed by their name
-	TagsIndexByName map[string]*objects.Tag
-	// ContactGroupsIndexByName is a map of all contact groups indexed by their names.
-	ContactGroupsIndexByName map[string]*objects.ContactGroup
-	// ContactRolesIndexByName is a map of all contact roles indexed by their names.
-	ContactRolesIndexByName map[string]*objects.ContactRole
-	// ContactsIndexByName is a map of all contacts in the Netbox's inventory, indexed by their names
-	ContactsIndexByName map[string]*objects.Contact
-	// ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID is a map of all contact assignments indexed by their content type, object id, contact id and role id.
-	ContactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID map[constants.ContentType]map[int]map[int]map[int]*objects.ContactAssignment
-	// SitesIndexByName is a map of all sites in the Netbox's inventory, indexed by their name
-	SitesIndexByName map[string]*objects.Site
-	// ManufacturersIndexByName is a map of all manufacturers in the Netbox's inventory, indexed by their name
-	ManufacturersIndexByName map[string]*objects.Manufacturer
-	// PlatformsIndexByName is a map of all platforms in the Netbox's inventory, indexed by their name
-	PlatformsIndexByName map[string]*objects.Platform
-	// TenantsIndexByName is a map of all tenants in the Netbox's inventory, indexed by their name
-	TenantsIndexByName map[string]*objects.Tenant
-	// DeviceTypesIndexByModel is a map of all device types in the Netbox's inventory, indexed by their model
-	DeviceTypesIndexByModel map[string]*objects.DeviceType
-	// DevicesIndexByNameAndSiteID is a map of all devices in the Netbox's inventory, indexed by their name, and
-	// site ID (This is because, netbox constraints: https://github.com/netbox-community/netbox/blob/3d941411d438f77b66d2036edf690c14b459af58/netbox/dcim/models/devices.py#L775)
-	DevicesIndexByNameAndSiteID map[string]map[int]*objects.Device
-	// VirtualDeviceContextsIndexByNameAndDeviceID is a map of all virtual device contexts in the Netbox's inventory indexed by their name and device ID.
-	VirtualDeviceContextsIndexByNameAndDeviceID map[string]map[int]*objects.VirtualDeviceContext
-	// PrefixesIndexByPrefix is a map of all prefixes in the Netbox's inventory, indexed by their prefix
-	PrefixesIndexByPrefix map[string]*objects.Prefix
-	// VlanGroupsIndexByName is a map of all VlanGroups in the Netbox's inventory, indexed by their name
-	VlanGroupsIndexByName map[string]*objects.VlanGroup
-	// VlansIndexByVlanGroupIDAndVID is a map of all vlans in the Netbox's inventory, indexed by their VlanGroup and vid.
-	VlansIndexByVlanGroupIDAndVID map[int]map[int]*objects.Vlan
-	// ClusterGroupsIndexByName is a map of all cluster groups in the Netbox's inventory, indexed by their name
-	ClusterGroupsIndexByName map[string]*objects.ClusterGroup
-	// ClusterTypesIndexByName is a map of all cluster types in the Netbox's inventory, indexed by their name
-	ClusterTypesIndexByName map[string]*objects.ClusterType
-	// ClustersIndexByName is a map of all clusters in the Netbox's inventory, indexed by their name
-	ClustersIndexByName map[string]*objects.Cluster
-	// Netbox's Device Roles is a map of all device roles in the inventory, indexed by name
-	DeviceRolesIndexByName map[string]*objects.DeviceRole
-	// CustomFieldsIndexByName is a map of all custom fields in the inventory, indexed by name
-	CustomFieldsIndexByName map[string]*objects.CustomField
-	// InterfacesIndexByDeviceAnName is a map of all interfaces in the inventory, indexed by their's
-	// device id and their name.
-	InterfacesIndexByDeviceIDAndName map[int]map[string]*objects.Interface
-	// VMsIndexByNameAndClusterID is a map of all virtual machines in the inventory, indexed by their name and their cluster id
-	VMsIndexByNameAndClusterID map[string]map[int]*objects.VM
-	// VirtualMachineInterfacesIndexByVMAndName is a map of all virtual machine interfaces in the inventory, indexed by their's virtual machine id and their name
-	VMInterfacesIndexByVMIdAndName map[int]map[string]*objects.VMInterface
-	// IPAdressesIndexByAddress is a map of all IP addresses in the inventory, indexed by their address
-	IPAdressesIndexByAddress map[string]*objects.IPAddress
-	// WirelessLANGroupsIndexByName is a map of all wireless lan groups in the Netbox's inventory, indexed by their name
-	WirelessLANGroupsIndexByName map[string]*objects.WirelessLANGroup
-	// WirelessLANsIndexBySSID is a map of all wireless lans in the Netbox's inventory, indexed by their ssid
-	WirelessLANsIndexBySSID map[string]*objects.WirelessLAN
-
-	// We also store locks for all objects, so inventory can be updated by multiple parallel goroutines
-	TenantsLock            sync.Mutex
-	TagsLock               sync.Mutex
-	SitesLock              sync.Mutex
-	ContactRolesLock       sync.Mutex
-	ContactGroupsLock      sync.Mutex
-	ContactsLock           sync.Mutex
-	ContactAssignmentsLock sync.Mutex
-	CustomFieldsLock       sync.Mutex
-	ClusterGroupsLock      sync.Mutex
-	ClusterTypesLock       sync.Mutex
-	ClustersLock           sync.Mutex
-	DeviceRolesLock        sync.Mutex
-	ManufacturersLock      sync.Mutex
-	DeviceTypesLock        sync.Mutex
-	PlatformsLock          sync.Mutex
-	DevicesLock            sync.Mutex
-	VlanGroupsLock         sync.Mutex
-	VlansLock              sync.Mutex
-	InterfacesLock         sync.Mutex
-	VMsLock                sync.Mutex
-	VMInterfacesLock       sync.Mutex
-	IPAddressesLock        sync.Mutex
-	PrefixesLock           sync.Mutex
-	WirelessLANGroupsLock  sync.Mutex
-	WirelessLANsLock       sync.Mutex
 	// ArpDataLifeSpan determines the lifespan of arp entries in seconds.
 	ArpDataLifeSpan int
 	// OrphanManager object that manages orphaned objects.
 	OrphanManager *OrphanManager
 	// Tag used by netbox-ssot to mark devices that are managed by it.
 	SsotTag *objects.Tag
-	// Default context for the inventory, we use it to pass sourcename to functions for logging.
+	// Default context for the inventory, we use it to pass sourcename
+	// to functions for logging.
 	Ctx context.Context //nolint:containedctx
+
+	// tagsIndexByName is a map of all tags in the Netbox's inventory,
+	// indexed by their name
+	tagsIndexByName map[string]*objects.Tag
+	tagsLock        sync.Mutex
+
+	// contactGroupsIndexByName is a map of all contact groups
+	// indexed by their names.
+	contactGroupsIndexByName map[string]*objects.ContactGroup
+	contactGroupsLock        sync.Mutex
+
+	// contactRolesIndexByName is a map of all contact roles
+	// indexed by their names.
+	contactRolesIndexByName map[string]*objects.ContactRole
+	contactRolesLock        sync.Mutex
+
+	// contactsIndexByName is a map of all contacts in the Netbox's inventory,
+	// indexed by their names
+	contactsIndexByName map[string]*objects.Contact
+	contactsLock        sync.Mutex
+
+	// contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID is a
+	// map of all contact assignments indexed by their
+	// content type, object id, contact id and role id.
+	contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID map[constants.ContentType]map[int]map[int]map[int]*objects.ContactAssignment
+	contactAssignmentsLock                                              sync.Mutex
+
+	// sitesIndexByName is a map of all sites in the Netbox's inventory,
+	// indexed by their name
+	sitesIndexByName map[string]*objects.Site
+	sitesLock        sync.Mutex
+
+	// manufacturersIndexByName is a map of all manufacturers in the Netbox's inventory,
+	// indexed by their name
+	manufacturersIndexByName map[string]*objects.Manufacturer
+	manufacturersLock        sync.Mutex
+
+	// platformsIndexByName is a map of all platforms in the Netbox's inventory, indexed by their name
+	platformsIndexByName map[string]*objects.Platform
+	platformsLock        sync.Mutex
+
+	// tenantsIndexByName is a map of all tenants in the Netbox's inventory,
+	// indexed by their name
+	tenantsIndexByName map[string]*objects.Tenant
+	tenantsLock        sync.Mutex
+
+	// deviceTypesIndexByModel is a map of all device types in the Netbox's inventory,
+	// indexed by their model
+	deviceTypesIndexByModel map[string]*objects.DeviceType
+	deviceTypesLock         sync.Mutex
+
+	// devicesIndexByNameAndSiteID is a map of all devices in the Netbox's inventory,
+	// indexed by their name and SiteID
+	devicesIndexByNameAndSiteID map[string]map[int]*objects.Device
+	devicesLock                 sync.Mutex
+
+	// virtualDeviceContextsIndexByNameAndDeviceID is a map of all virtual device contexts
+	// in the Netbox's inventory indexed by their name and device ID.
+	virtualDeviceContextsIndexByNameAndDeviceID map[string]map[int]*objects.VirtualDeviceContext
+	virtualDeviceContextsLock                   sync.Mutex
+
+	// prefixesIndexByPrefix is a map of all prefixes in the Netbox's inventory,
+	// indexed by their prefix.
+	prefixesIndexByPrefix map[string]*objects.Prefix
+	prefixesLock          sync.Mutex
+
+	// vlanGroupsIndexByName is a map of all VlanGroups in the Netbox's inventory,
+	// indexed by their name.
+	vlanGroupsIndexByName map[string]*objects.VlanGroup
+	vlanGroupsLock        sync.Mutex
+
+	// vlansIndexByVlanGroupIDAndVID is a map of all vlans in the Netbox's inventory,
+	// indexed by their VlanGroup and vid.
+	vlansIndexByVlanGroupIDAndVID map[int]map[int]*objects.Vlan
+	vlansLock                     sync.Mutex
+
+	// clusterGroupsIndexByName is a map of all cluster groups in the Netbox's
+	// inventory indexed by their name
+	clusterGroupsIndexByName map[string]*objects.ClusterGroup
+	clusterGroupsLock        sync.Mutex
+
+	// clusterTypesIndexByName is a map of all cluster types in the Netbox's
+	// inventory, indexed by their name
+	clusterTypesIndexByName map[string]*objects.ClusterType
+	clusterTypesLock        sync.Mutex
+
+	// clustersIndexByName is a map of all clusters in the Netbox's inventory,
+	// indexed by their name
+	clustersIndexByName map[string]*objects.Cluster
+	clustersLock        sync.Mutex
+
+	// Netbox's Device Roles is a map of all device roles in the inventory,
+	// indexed by name.
+	deviceRolesIndexByName map[string]*objects.DeviceRole
+	deviceRolesLock        sync.Mutex
+
+	// customFieldsIndexByName is a map of all custom fields in the inventory,
+	// indexed by name.
+	customFieldsIndexByName map[string]*objects.CustomField
+	customFieldsLock        sync.Mutex
+
+	// InterfacesIndexByDeviceAnName is a map of all interfaces in the inventory,
+	// indexed by their's device id and their name.
+	interfacesIndexByDeviceIDAndName map[int]map[string]*objects.Interface
+	interfacesLock                   sync.Mutex
+
+	// vmsIndexByNameAndClusterID is a map of all virtual machines in the inventory,
+	// indexed by their name and their cluster id
+	vmsIndexByNameAndClusterID map[string]map[int]*objects.VM
+	vmsLock                    sync.Mutex
+
+	// vmInterfacesIndexByVMAndName is a map of all virtual machine interfaces in the
+	// inventory, indexed by their's virtual machine id and their name
+	vmInterfacesIndexByVMIdAndName map[int]map[string]*objects.VMInterface
+	vmInterfacesLock               sync.Mutex
+
+	// ipAdressesIndexByAddress is a map of all IP addresses in the inventory,
+	// indexed by their address
+	ipAdressesIndexByAddress map[string]*objects.IPAddress
+	ipAddressesLock          sync.Mutex
+
+	// wirelessLANGroupsIndexByName is a map of all wireless lan groups in the Netbox's
+	// inventory, indexed by their name
+	wirelessLANGroupsIndexByName map[string]*objects.WirelessLANGroup
+	wirelessLANGroupsLock        sync.Mutex
+
+	// wirelessLANsIndexBySSID is a map of all wireless lans in the Netbox's inventory,
+	// indexed by their ssid
+	wirelessLANsIndexBySSID map[string]*objects.WirelessLAN
+	wirelessLANsLock        sync.Mutex
 }
 
 // Func string representation.
@@ -152,7 +203,7 @@ func (nbi *NetboxInventory) Init() error {
 		return err
 	}
 
-	// Order matters. TODO: use parallelization in the future, on the init functions that can be parallelized
+	// WARNING: Order matters
 	initFunctions := []func(context.Context) error{
 		nbi.initCustomFields,
 		nbi.initSsotCustomFields,
@@ -212,4 +263,96 @@ func (nbi *NetboxInventory) checkVersion() error {
 		return fmt.Errorf("this version of netbox-ssot works only with netbox version > 4.x.x, but received version: %s", version)
 	}
 	return nil
+}
+
+func (nbi *NetboxInventory) DeleteOrphans(hard bool) error {
+	for i := 0; i < len(nbi.OrphanManager.OrphanObjectPriority); i++ {
+		deleteTypeStr := "soft"
+		if hard {
+			deleteTypeStr = "hard"
+		}
+		objectAPIPath := nbi.OrphanManager.OrphanObjectPriority[i]
+		id2orphanItem := nbi.OrphanManager.Items[objectAPIPath]
+		if len(id2orphanItem) == 0 {
+			continue
+		}
+
+		nbi.OrphanManager.Logger.Infof(nbi.Ctx, "Performing %s deletion of orphaned objects of type %s", deleteTypeStr, objectAPIPath)
+		nbi.OrphanManager.Logger.Debugf(nbi.Ctx, "IDs of objects to be %s deleted: %v", deleteTypeStr, id2orphanItem)
+
+		for id, orphanItem := range id2orphanItem {
+			if hard {
+				// Perform hard deletion
+				err := nbi.NetboxAPI.DeleteObject(nbi.Ctx, objectAPIPath, id)
+				if err != nil {
+					nbi.OrphanManager.Logger.Errorf(nbi.Ctx, "delete objects: %s", err)
+					continue
+				}
+			} else {
+				softDelete(nbi, orphanItem)
+			}
+		}
+	}
+
+	return nil
+}
+
+func softDelete(nbi *NetboxInventory, orphanItem objects.OrphanItem) {
+	// Perform soft deletion
+	// Add tag to the object to mark it as orphaned
+	if !orphanItem.GetNetboxObject().HasTag(nbi.OrphanManager.Tag) {
+		orphanItem.GetNetboxObject().AddTag(nbi.OrphanManager.Tag)
+		diffMap := utils.ExtractFieldFromDiffMap(utils.StructToNetboxJSONMap(orphanItem.GetNetboxObject()), "tags")
+		// Update object on the API
+		var err error
+		switch orphanItem.(type) {
+		case *objects.VlanGroup:
+			_, err = service.Patch[objects.VlanGroup](nbi.OrphanManager.Ctx, nbi.NetboxAPI, orphanItem.GetID(), diffMap)
+		case *objects.Prefix:
+			_, err = service.Patch[objects.Prefix](nbi.OrphanManager.Ctx, nbi.NetboxAPI, orphanItem.GetID(), diffMap)
+		case *objects.Vlan:
+			_, err = service.Patch[objects.Vlan](nbi.OrphanManager.Ctx, nbi.NetboxAPI, orphanItem.GetID(), diffMap)
+		case *objects.IPAddress:
+			_, err = service.Patch[objects.IPAddress](nbi.OrphanManager.Ctx, nbi.NetboxAPI, orphanItem.GetID(), diffMap)
+		case *objects.VirtualDeviceContext:
+			_, err = service.Patch[objects.VirtualDeviceContext](nbi.OrphanManager.Ctx, nbi.NetboxAPI, orphanItem.GetID(), diffMap)
+		case *objects.Interface:
+			_, err = service.Patch[objects.Interface](nbi.OrphanManager.Ctx, nbi.NetboxAPI, orphanItem.GetID(), diffMap)
+		case *objects.VMInterface:
+			_, err = service.Patch[objects.VMInterface](nbi.OrphanManager.Ctx, nbi.NetboxAPI, orphanItem.GetID(), diffMap)
+		case *objects.VM:
+			_, err = service.Patch[objects.VM](nbi.OrphanManager.Ctx, nbi.NetboxAPI, orphanItem.GetID(), diffMap)
+		case *objects.Device:
+			_, err = service.Patch[objects.Device](nbi.OrphanManager.Ctx, nbi.NetboxAPI, orphanItem.GetID(), diffMap)
+		case *objects.Platform:
+			_, err = service.Patch[objects.Platform](nbi.OrphanManager.Ctx, nbi.NetboxAPI, orphanItem.GetID(), diffMap)
+		case *objects.DeviceType:
+			_, err = service.Patch[objects.DeviceType](nbi.OrphanManager.Ctx, nbi.NetboxAPI, orphanItem.GetID(), diffMap)
+		case *objects.Manufacturer:
+			_, err = service.Patch[objects.Manufacturer](nbi.OrphanManager.Ctx, nbi.NetboxAPI, orphanItem.GetID(), diffMap)
+		case *objects.DeviceRole:
+			_, err = service.Patch[objects.DeviceRole](nbi.OrphanManager.Ctx, nbi.NetboxAPI, orphanItem.GetID(), diffMap)
+		case *objects.ClusterType:
+			_, err = service.Patch[objects.ClusterType](nbi.OrphanManager.Ctx, nbi.NetboxAPI, orphanItem.GetID(), diffMap)
+		case *objects.Cluster:
+			_, err = service.Patch[objects.Cluster](nbi.OrphanManager.Ctx, nbi.NetboxAPI, orphanItem.GetID(), diffMap)
+		case *objects.ClusterGroup:
+			_, err = service.Patch[objects.ClusterGroup](nbi.OrphanManager.Ctx, nbi.NetboxAPI, orphanItem.GetID(), diffMap)
+		case *objects.ContactAssignment:
+			_, err = service.Patch[objects.ContactAssignment](nbi.OrphanManager.Ctx, nbi.NetboxAPI, orphanItem.GetID(), diffMap)
+		case *objects.Contact:
+			_, err = service.Patch[objects.Contact](nbi.OrphanManager.Ctx, nbi.NetboxAPI, orphanItem.GetID(), diffMap)
+		case *objects.WirelessLAN:
+			_, err = service.Patch[objects.WirelessLAN](nbi.OrphanManager.Ctx, nbi.NetboxAPI, orphanItem.GetID(), diffMap)
+		case *objects.WirelessLANGroup:
+			_, err = service.Patch[objects.WirelessLANGroup](nbi.OrphanManager.Ctx, nbi.NetboxAPI, orphanItem.GetID(), diffMap)
+		default:
+			nbi.Logger.Errorf(nbi.Ctx, "unsupported type for orphan item%T", orphanItem)
+		}
+		if err != nil {
+			nbi.Logger.Errorf(nbi.OrphanManager.Ctx, "Failed updating %s object with orphan tag: %s", orphanItem, err)
+		}
+	} else {
+		nbi.Logger.Debugf(nbi.Ctx, "%s is already marked as orphan", orphanItem)
+	}
 }

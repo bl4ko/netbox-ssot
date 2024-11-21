@@ -8,8 +8,7 @@ import (
 	"net/http"
 	"reflect"
 
-	"github.com/bl4ko/netbox-ssot/internal/constants"
-	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/mapper"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
@@ -23,35 +22,6 @@ type Response[T any] struct {
 	Next     *string `json:"next"`
 	Previous *string `json:"previous"`
 	Results  []T     `json:"results"`
-}
-
-var type2path = map[reflect.Type]string{
-	reflect.TypeOf((*objects.VlanGroup)(nil)).Elem():            constants.VlanGroupsAPIPath,
-	reflect.TypeOf((*objects.Vlan)(nil)).Elem():                 constants.VlansAPIPath,
-	reflect.TypeOf((*objects.IPAddress)(nil)).Elem():            constants.IPAddressesAPIPath,
-	reflect.TypeOf((*objects.ClusterType)(nil)).Elem():          constants.ClusterTypesAPIPath,
-	reflect.TypeOf((*objects.ClusterGroup)(nil)).Elem():         constants.ClusterGroupsAPIPath,
-	reflect.TypeOf((*objects.Cluster)(nil)).Elem():              constants.ClustersAPIPath,
-	reflect.TypeOf((*objects.VM)(nil)).Elem():                   constants.VirtualMachinesAPIPath,
-	reflect.TypeOf((*objects.VMInterface)(nil)).Elem():          constants.VMInterfacesAPIPath,
-	reflect.TypeOf((*objects.Device)(nil)).Elem():               constants.DevicesAPIPath,
-	reflect.TypeOf((*objects.VirtualDeviceContext)(nil)).Elem(): constants.VirtualDeviceContextsAPIPath,
-	reflect.TypeOf((*objects.DeviceRole)(nil)).Elem():           constants.DeviceRolesAPIPath,
-	reflect.TypeOf((*objects.DeviceType)(nil)).Elem():           constants.DeviceTypesAPIPath,
-	reflect.TypeOf((*objects.Interface)(nil)).Elem():            constants.InterfacesAPIPath,
-	reflect.TypeOf((*objects.Site)(nil)).Elem():                 constants.SitesAPIPath,
-	reflect.TypeOf((*objects.Manufacturer)(nil)).Elem():         constants.ManufacturersAPIPath,
-	reflect.TypeOf((*objects.Platform)(nil)).Elem():             constants.PlatformsAPIPath,
-	reflect.TypeOf((*objects.Tenant)(nil)).Elem():               constants.TenantsAPIPath,
-	reflect.TypeOf((*objects.ContactGroup)(nil)).Elem():         constants.ContactGroupsAPIPath,
-	reflect.TypeOf((*objects.ContactRole)(nil)).Elem():          constants.ContactRolesAPIPath,
-	reflect.TypeOf((*objects.Contact)(nil)).Elem():              constants.ContactsAPIPath,
-	reflect.TypeOf((*objects.CustomField)(nil)).Elem():          constants.CustomFieldsAPIPath,
-	reflect.TypeOf((*objects.Tag)(nil)).Elem():                  constants.TagsAPIPath,
-	reflect.TypeOf((*objects.ContactAssignment)(nil)).Elem():    constants.ContactAssignmentsAPIPath,
-	reflect.TypeOf((*objects.Prefix)(nil)).Elem():               constants.PrefixesAPIPath,
-	reflect.TypeOf((*objects.WirelessLAN)(nil)).Elem():          constants.WirelessLANsAPIPath,
-	reflect.TypeOf((*objects.WirelessLANGroup)(nil)).Elem():     constants.WirelessLANGroupsAPIPath,
 }
 
 // Function that queries and returns netbox version on success.
@@ -80,7 +50,7 @@ func GetVersion(ctx context.Context, netboxClient *NetboxClient) (string, error)
 func GetAll[T any](ctx context.Context, netboxClient *NetboxClient, extraParams string) ([]T, error) {
 	var allResults []T
 	var dummy T // Dummy variable for extracting type of generic
-	path := type2path[reflect.TypeOf(dummy)]
+	path := mapper.Type2Path[reflect.TypeOf(dummy)]
 	if path == "" {
 		return nil, fmt.Errorf("path not found for type %T", dummy)
 	}
@@ -124,7 +94,7 @@ func GetAll[T any](ctx context.Context, netboxClient *NetboxClient, extraParams 
 // Path of the object (must contain the id), for example /api/dcim/devices/1/.
 func Patch[T any](ctx context.Context, netboxClient *NetboxClient, objectID int, body map[string]interface{}) (*T, error) {
 	var dummy T // dummy variable for printf
-	path := type2path[reflect.TypeOf(dummy)]
+	path := mapper.Type2Path[reflect.TypeOf(dummy)]
 	if path == "" {
 		return nil, fmt.Errorf("path not found for type %T", dummy)
 	}
@@ -159,7 +129,7 @@ func Patch[T any](ctx context.Context, netboxClient *NetboxClient, objectID int,
 // Create func creates the new NetboxObject of type T, with the given api path and body.
 func Create[T any](ctx context.Context, netboxClient *NetboxClient, object *T) (*T, error) {
 	var dummy T // dummy variable for printf
-	path := type2path[reflect.TypeOf(dummy)]
+	path := mapper.Type2Path[reflect.TypeOf(dummy)]
 	if path == "" {
 		return nil, fmt.Errorf("path not found for type %T", dummy)
 	}

@@ -15,6 +15,16 @@ type TenantGroup struct {
 	// Description is a description of the tenant group.
 }
 
+// TenantGroup implements IDItem interface.
+func (tg *TenantGroup) GetID() int {
+	return tg.ID
+}
+
+// TenantGroup implements OrphanItem interface.
+func (tg *TenantGroup) GetNetboxObject() *NetboxObject {
+	return &tg.NetboxObject
+}
+
 type Tenant struct {
 	NetboxObject
 	// Name is the name of the tenant. This field is required.
@@ -29,6 +39,16 @@ func (t Tenant) String() string {
 	return fmt.Sprintf("Tenant{Name: %s}", t.Name)
 }
 
+// Tenant implements IDItem interface.
+func (t *Tenant) GetID() int {
+	return t.ID
+}
+
+// Tenant implements OrphanItem interface.
+func (t *Tenant) GetNetboxObject() *NetboxObject {
+	return &t.NetboxObject
+}
+
 type ContactGroup struct {
 	NetboxObject
 	// Name is the name of the ContactGroup. This field is required.
@@ -37,6 +57,20 @@ type ContactGroup struct {
 	Slug string `json:"slug,omitempty"`
 	// Parent contact group.
 	Parent *ContactGroup `json:"parent,omitempty"`
+}
+
+func (cg ContactGroup) String() string {
+	return fmt.Sprintf("ContactGroup{Name: %s}", cg.Name)
+}
+
+// ContactGroup implements IDItem interface.
+func (cg *ContactGroup) GetID() int {
+	return cg.ID
+}
+
+// ContactGroup implements OrphanItem interface.
+func (cg *ContactGroup) GetNetboxObject() *NetboxObject {
+	return &cg.NetboxObject
 }
 
 // Default role name for admins of vms.
@@ -56,6 +90,16 @@ type ContactRole struct {
 
 func (cr ContactRole) String() string {
 	return fmt.Sprintf("ContactRole{Name: %s}", cr.Name)
+}
+
+// ContactRole implements IDItem interface.
+func (cr *ContactRole) GetID() int {
+	return cr.ID
+}
+
+// ContactRole implements OrphanItem interface.
+func (cr *ContactRole) GetNetboxObject() *NetboxObject {
+	return &cr.NetboxObject
 }
 
 type Contact struct {
@@ -78,6 +122,16 @@ type Contact struct {
 
 func (c Contact) String() string {
 	return fmt.Sprintf("Contact{Name: %s}", c.Name)
+}
+
+// Contact implements IDItem interface.
+func (c *Contact) GetID() int {
+	return c.ID
+}
+
+// Contact implements OrphanItem interface.
+func (c *Contact) GetNetboxObject() *NetboxObject {
+	return &c.NetboxObject
 }
 
 type ContactAssignmentPriority struct {
@@ -108,4 +162,14 @@ type ContactAssignment struct {
 
 func (ca ContactAssignment) String() string {
 	return fmt.Sprintf("ContactAssignment{ObjectType: %s, ObjectID: %d, %v, %v}", ca.ModelType, ca.ObjectID, ca.Contact, ca.Role)
+}
+
+// ContactAssignment implements IDItem interface.
+func (ca *ContactAssignment) GetID() int {
+	return ca.ID
+}
+
+// ContactAssignment implements OrphanItem interface.
+func (ca *ContactAssignment) GetNetboxObject() *NetboxObject {
+	return &ca.NetboxObject
 }
