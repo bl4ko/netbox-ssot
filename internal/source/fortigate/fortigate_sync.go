@@ -100,6 +100,11 @@ func (fs *FortigateSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 			continue
 		}
 
+		if utils.FilterInterfaceName(ifaceName, fs.SourceConfig.InterfaceFilter) {
+			fs.Logger.Debugf(fs.Ctx, "interface %s is filtered out with interfaceFilter %s", ifaceName, fs.SourceConfig.InterfaceFilter)
+			continue
+		}
+
 		var interfaceStatus bool
 		if iface.Status == "up" {
 			interfaceStatus = true

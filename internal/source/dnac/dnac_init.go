@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	dnac "github.com/cisco-en-programmability/dnacenter-go-sdk/v5/sdk"
+	dnac "github.com/cisco-en-programmability/dnacenter-go-sdk/v6/sdk"
 )
 
 // Collects all sites from DNAC API and stores them in the
@@ -37,8 +37,8 @@ func (ds *DnacSource) initSites(c *dnac.Client) error {
 // Collects all devices from DNAC API and stores them in the
 // local source inventory.
 func (ds *DnacSource) initDevices(c *dnac.Client) error {
-	offset := 0.
-	limit := 100.
+	offset := 0
+	limit := 100
 	allDevices := make([]dnac.ResponseDevicesGetDeviceListResponse, 0)
 	for {
 		devices, response, err := c.Devices.GetDeviceList(&dnac.GetDeviceListQueryParams{Offset: offset, Limit: limit})
@@ -49,7 +49,7 @@ func (ds *DnacSource) initDevices(c *dnac.Client) error {
 			return fmt.Errorf("init devices response code: %s", response.String())
 		}
 		allDevices = append(allDevices, *devices.Response...)
-		if len(*devices.Response) < int(limit) {
+		if len(*devices.Response) < limit {
 			break
 		}
 		offset += limit
@@ -85,7 +85,7 @@ func (ds *DnacSource) initInterfaces(c *dnac.Client) error {
 	limit := 100
 	allInterfaces := make([]dnac.ResponseDevicesGetAllInterfacesResponse, 0)
 	for {
-		interfacesResponse, response, err := c.Devices.GetAllInterfaces(&dnac.GetAllInterfacesQueryParams{Offset: float64(offset), Limit: float64(limit)})
+		interfacesResponse, response, err := c.Devices.GetAllInterfaces(&dnac.GetAllInterfacesQueryParams{Offset: offset, Limit: limit})
 		if err != nil {
 			return fmt.Errorf("init interfaces: %s", err)
 		}
@@ -122,7 +122,7 @@ func (ds *DnacSource) initMemberships(c *dnac.Client) error {
 	ds.Device2Site = make(map[string]string)
 	for _, site := range ds.Sites {
 		for {
-			membershipResp, _, _ := c.Sites.GetMembership(site.ID, &dnac.GetMembershipQueryParams{Offset: offset, Limit: limit})
+			membershipResp, _, _ := c.Sites.GetMembership(site.ID, &dnac.GetMembershipQueryParams{Offset: float64(offset), Limit: float64(limit)})
 			if len(*membershipResp.Device) > 0 {
 				deviceResponses := *membershipResp.Device
 				for _, deviceResponse := range deviceResponses {
