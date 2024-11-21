@@ -290,7 +290,7 @@ func (pas *PaloAltoSource) syncSecurityZones(nbi *inventory.NetboxInventory) err
 func (pas *PaloAltoSource) getVirtualDeviceContext(nbi *inventory.NetboxInventory, ifaceName string) *objects.VirtualDeviceContext {
 	var virtualDeviceContext *objects.VirtualDeviceContext
 	zoneName := pas.Iface2SecurityZone[ifaceName]
-	if vdc, ok := nbi.VirtualDeviceContextsIndexByNameAndDeviceID[zoneName][pas.NBFirewall.ID]; ok {
+	if vdc, ok := nbi.GetVirtualDeviceContext(zoneName, pas.NBFirewall.ID); ok {
 		virtualDeviceContext = vdc
 	}
 	return virtualDeviceContext

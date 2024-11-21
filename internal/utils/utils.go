@@ -19,6 +19,13 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
+// Deref will dereference a generic pointer.
+// It will fail at compile time if pt is not a pointer.
+// This is useful for functions that require pointers to structs and not structs directly.
+func Deref[T any](ptr *T) T {
+	return *ptr
+}
+
 // Validates array of regex relations
 // Regex relation is a string of format "regex = value".
 func ValidateRegexRelations(regexRelations []string) error {

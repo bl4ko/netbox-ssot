@@ -114,16 +114,16 @@ func main() {
 	wg.Wait()
 
 	// Orphan manager cleanup on successful run and if enabled
-	if config.Netbox.RemoveOrphans && successfullRun {
+	if successfullRun {
 		ssotLogger.Info(mainCtx, "Cleaning up orphaned objects...")
-		err = netboxInventory.DeleteOrphans(mainCtx)
+		err = netboxInventory.DeleteOrphans(config.Netbox.RemoveOrphans)
 		if err != nil {
 			ssotLogger.Error(mainCtx, err)
 			os.Exit(1)
 		}
 		ssotLogger.Infof(mainCtx, "%s Successfully removed orphans", constants.CheckMark)
 	} else {
-		ssotLogger.Info(mainCtx, "Skipping removing orphaned objects...")
+		ssotLogger.Info(mainCtx, "Skipping removing orphaned objects because run failed...")
 	}
 
 	duration := time.Since(startTime)

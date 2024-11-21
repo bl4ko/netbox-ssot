@@ -39,6 +39,10 @@ func (n NetboxObject) String() string {
 	return fmt.Sprintf("ID: %d, Tags: %s, Description: %s", n.ID, n.Tags, n.Description)
 }
 
+func (n *NetboxObject) GetID() int {
+	return n.ID
+}
+
 // AddTag adds a tag to the NetboxObject if
 // it doesn't have it already. If the tag is already present,
 // nothing happens.

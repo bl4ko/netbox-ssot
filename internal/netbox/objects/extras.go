@@ -18,6 +18,11 @@ func (t Tag) String() string {
 	return fmt.Sprintf("Tag{Name: %s, Description: %s}", t.Name, t.Description)
 }
 
+// Tag implements IDItem interface.
+func (t *Tag) GetID() int {
+	return t.ID
+}
+
 // CustomFieldTypes are predefined netbox's types for CustomFields.
 type CustomFieldType struct {
 	Choice
@@ -97,4 +102,9 @@ type CustomField struct {
 
 func (cf CustomField) String() string {
 	return fmt.Sprintf("CustomField{ID: %d, Name: %s}", cf.ID, cf.Name)
+}
+
+// CustomField implements IDItem interface.
+func (cf *CustomField) GetID() int {
+	return cf.ID
 }

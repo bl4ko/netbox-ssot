@@ -63,12 +63,12 @@ var MockExistingSites = map[string]*objects.Site{
 
 var MockInventory = &NetboxInventory{
 	Logger:             &logger.Logger{Logger: log.New(os.Stdout, "", log.LstdFlags)},
-	TagsIndexByName:    MockExistingTags,
-	TagsLock:           sync.Mutex{},
-	TenantsIndexByName: MockExistingTenants,
-	TenantsLock:        sync.Mutex{},
-	SitesIndexByName:   MockExistingSites,
-	SitesLock:          sync.Mutex{},
+	tagsIndexByName:    MockExistingTags,
+	tagsLock:           sync.Mutex{},
+	tenantsIndexByName: MockExistingTenants,
+	tenantsLock:        sync.Mutex{},
+	sitesIndexByName:   MockExistingSites,
+	sitesLock:          sync.Mutex{},
 	NetboxAPI:          service.MockNetboxClient,
 	SsotTag: &objects.Tag{
 		ID:          0,

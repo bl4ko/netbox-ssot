@@ -813,7 +813,7 @@ func (vc *VmwareSource) syncVM(nbi *inventory.NetboxInventory, vmKey string, vm 
 					}
 				} else {
 					fieldName = utils.Alphanumeric(fieldName)
-					if _, ok := nbi.CustomFieldsIndexByName[fieldName]; !ok {
+					if _, ok := nbi.GetCustomField(fieldName); !ok {
 						customFieldStruct := &objects.CustomField{
 							Name:                  fieldName,
 							Type:                  objects.CustomFieldTypeText,
@@ -1232,11 +1232,13 @@ func (vc *VmwareSource) addVMContact(nbi *inventory.NetboxInventory, nbVM *objec
 			if err != nil {
 				return fmt.Errorf("creating vm contact %+v: %s", contactStruct, err)
 			}
+			contactRole, _ := nbi.GetContactRole(objects.AdminContactRoleName)
+
 			contactAssignmentSturct := &objects.ContactAssignment{
 				ModelType: constants.ContentTypeVirtualizationVirtualMachine,
 				ObjectID:  nbVM.ID,
 				Contact:   contact,
-				Role:      nbi.ContactRolesIndexByName[objects.AdminContactRoleName],
+				Role:      contactRole,
 			}
 			_, err = nbi.AddContactAssignment(vc.Ctx, contactAssignmentSturct)
 			if err != nil {

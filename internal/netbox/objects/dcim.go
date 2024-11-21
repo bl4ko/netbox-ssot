@@ -46,6 +46,15 @@ func (s Site) String() string {
 	return fmt.Sprintf("Site{Name: %s}", s.Name)
 }
 
+// Implements OrphanItem interface.
+func (s *Site) GetNetboxObject() *NetboxObject {
+	return &s.NetboxObject
+}
+
+func (s *Site) GetID() int {
+	return s.ID
+}
+
 // Platform represents an operating system or other software platform which may be running on a device.
 type Platform struct {
 	NetboxObject
@@ -61,12 +70,34 @@ func (p Platform) String() string {
 	return fmt.Sprintf("Platform{Name: %s, Manufacturer: %s}", p.Name, p.Manufacturer)
 }
 
+// Implements OrphanItem interface.
+func (p *Platform) GetNetboxObject() *NetboxObject {
+	return &p.NetboxObject
+}
+
+func (p *Platform) GetID() int {
+	return p.ID
+}
+
 type Region struct {
 	NetboxObject
 	// Name is the name of the region. This field is required.
 	Name string `json:"name,omitempty"`
 	// Slug is a URL-friendly unique shorthand. This field is required.
 	Slug string `json:"slug,omitempty"`
+}
+
+func (r Region) String() string {
+	return fmt.Sprintf("Region{Name: %s}", r.Name)
+}
+
+// Implements OrphanItem interface.
+func (r *Region) GetNetboxObject() *NetboxObject {
+	return &r.NetboxObject
+}
+
+func (r *Region) GetID() int {
+	return r.ID
 }
 
 // Location represents a physical location, such as a floor or room in a building.
@@ -82,6 +113,20 @@ type Location struct {
 	Status *SiteStatus
 }
 
+func (l Location) String() string {
+	return fmt.Sprintf("Location{Name: %s, Site: %s}", l.Name, l.Site)
+}
+
+// Location implements IDItem interface.
+func (l *Location) GetID() int {
+	return l.ID
+}
+
+// Location implements OrphanItem interface.
+func (l *Location) GetNetboxObject() *NetboxObject {
+	return &l.NetboxObject
+}
+
 // Manufacturer represents a hardware manufacturer (e.g. Cisco, HP, ...).
 type Manufacturer struct {
 	NetboxObject
@@ -93,6 +138,16 @@ type Manufacturer struct {
 
 func (m Manufacturer) String() string {
 	return fmt.Sprintf("Manufacturer{Name: %s}", m.Name)
+}
+
+// Manufacturer implements IDItem interface.
+func (m *Manufacturer) GetID() int {
+	return m.ID
+}
+
+// Manufacturer implements OrphanItem interface.
+func (m *Manufacturer) GetNetboxObject() *NetboxObject {
+	return &m.NetboxObject
 }
 
 // DeviceType represents the physical and operational characteristics of a device.
@@ -111,6 +166,16 @@ func (dt DeviceType) String() string {
 	return fmt.Sprintf("DeviceType{Manufacturer: %s, Model: %s}", dt.Manufacturer.Name, dt.Model)
 }
 
+// DeviceType implements OrphanItem interface.
+func (dt *DeviceType) GetID() int {
+	return dt.ID
+}
+
+// DeviceType implements OrphanItem interface.
+func (dt *DeviceType) GetNetboxObject() *NetboxObject {
+	return &dt.NetboxObject
+}
+
 // DeviceRole represents the functional role of a device.
 // For example, a device may play the role of a router, a switch, a firewall, etc.
 type DeviceRole struct {
@@ -127,6 +192,16 @@ type DeviceRole struct {
 
 func (dr DeviceRole) String() string {
 	return fmt.Sprintf("DeviceRole{Name: %s}", dr.Name)
+}
+
+// DeviceRole implements IDItem interface.
+func (dr *DeviceRole) GetID() int {
+	return dr.ID
+}
+
+// DeviceRole implements OrphanItem interface.
+func (dr *DeviceRole) GetNetboxObject() *NetboxObject {
+	return &dr.NetboxObject
 }
 
 // https://github.com/netbox-community/netbox/blob/b93735861d3bde0354c855a8bbd2a2311e8eb920/netbox/dcim/choices.py#L182
@@ -217,6 +292,16 @@ type Device struct {
 
 func (d Device) String() string {
 	return fmt.Sprintf("Device{Name: %s, Type: %s, Role: %s, Site: %s}", d.Name, d.DeviceType, d.DeviceRole, d.Site)
+}
+
+// Device implements IDItem interface.
+func (d *Device) GetID() int {
+	return d.ID
+}
+
+// Device implements OrphanItem interface.
+func (d *Device) GetNetboxObject() *NetboxObject {
+	return &d.NetboxObject
 }
 
 type InterfaceType struct {
@@ -425,6 +510,16 @@ func (i Interface) String() string {
 	return fmt.Sprintf("Interface{Name: %s, Device: %s, Type: %s}", i.Name, i.Device.Name, i.Type.Label)
 }
 
+// Interface implements IDItem interface.
+func (i *Interface) GetID() int {
+	return i.ID
+}
+
+// Interface implements OrphanItem interface.
+func (i *Interface) GetNetboxObject() *NetboxObject {
+	return &i.NetboxObject
+}
+
 // Virtual Device Context status.
 type VDCStatus struct {
 	Choice
@@ -457,4 +552,14 @@ type VirtualDeviceContext struct {
 
 func (vdc VirtualDeviceContext) String() string {
 	return fmt.Sprintf("VirtualDeviceContext{Name: %s, Device: %s, Status: %s}", vdc.Name, vdc.Device, vdc.Status)
+}
+
+// VirtualDeviceContext implements IDItem interface.
+func (vdc *VirtualDeviceContext) GetID() int {
+	return vdc.ID
+}
+
+// VirtualDeviceContext implements OrphanItem interface.
+func (vdc *VirtualDeviceContext) GetNetboxObject() *NetboxObject {
+	return &vdc.NetboxObject
 }
