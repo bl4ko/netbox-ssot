@@ -4,7 +4,7 @@ go 1.23.1
 
 require (
 	github.com/PaloAltoNetworks/pango v0.10.2
-	github.com/bl4ko/go-devicetype-library v0.1.5
+	github.com/bl4ko/go-devicetype-library v0.1.6
 	github.com/cisco-en-programmability/dnacenter-go-sdk/v6 v6.0.0
 	github.com/luthermonson/go-proxmox v0.2.1
 	github.com/ovirt/go-ovirt v4.3.4+incompatible
