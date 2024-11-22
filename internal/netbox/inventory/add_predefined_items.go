@@ -8,10 +8,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
-func (nbi *NetboxInventory) GetContainerDeviceRole(ctx context.Context) (*objects.DeviceRole, error) {
-	if role, ok := nbi.GetDeviceRole(constants.DeviceRoleContainer); ok {
-		return role, nil
-	}
+func (nbi *NetboxInventory) AddContainerDeviceRole(ctx context.Context) (*objects.DeviceRole, error) {
 	newRole, err := nbi.AddDeviceRole(ctx, &objects.DeviceRole{
 		NetboxObject: objects.NetboxObject{
 			Description: constants.DeviceRoleContainerDescription,
@@ -28,10 +25,7 @@ func (nbi *NetboxInventory) GetContainerDeviceRole(ctx context.Context) (*object
 	return newRole, nil
 }
 
-func (nbi *NetboxInventory) GetFirewallDeviceRole(ctx context.Context) (*objects.DeviceRole, error) {
-	if role, ok := nbi.GetDeviceRole(constants.DeviceRoleFirewall); ok {
-		return role, nil
-	}
+func (nbi *NetboxInventory) AddFirewallDeviceRole(ctx context.Context) (*objects.DeviceRole, error) {
 	newRole, err := nbi.AddDeviceRole(ctx, &objects.DeviceRole{
 		NetboxObject: objects.NetboxObject{
 			Description: constants.DeviceRoleFirewallDescription,
@@ -48,10 +42,7 @@ func (nbi *NetboxInventory) GetFirewallDeviceRole(ctx context.Context) (*objects
 	return newRole, nil
 }
 
-func (nbi *NetboxInventory) GetSwitchDeviceRole(ctx context.Context) (*objects.DeviceRole, error) {
-	if role, ok := nbi.GetDeviceRole(constants.DeviceRoleSwitch); ok {
-		return role, nil
-	}
+func (nbi *NetboxInventory) AddSwitchDeviceRole(ctx context.Context) (*objects.DeviceRole, error) {
 	newRole, err := nbi.AddDeviceRole(ctx, &objects.DeviceRole{
 		NetboxObject: objects.NetboxObject{
 			Description: constants.DeviceRoleSwitchDescription,
@@ -68,7 +59,7 @@ func (nbi *NetboxInventory) GetSwitchDeviceRole(ctx context.Context) (*objects.D
 	return newRole, nil
 }
 
-func (nbi *NetboxInventory) GetServerDeviceRole(ctx context.Context) (*objects.DeviceRole, error) {
+func (nbi *NetboxInventory) AddServerDeviceRole(ctx context.Context) (*objects.DeviceRole, error) {
 	if role, ok := nbi.GetDeviceRole(constants.DeviceRoleServer); ok {
 		return role, nil
 	}
@@ -88,10 +79,7 @@ func (nbi *NetboxInventory) GetServerDeviceRole(ctx context.Context) (*objects.D
 	return newRole, nil
 }
 
-func (nbi *NetboxInventory) GetVMDeviceRole(ctx context.Context) (*objects.DeviceRole, error) {
-	if role, ok := nbi.GetDeviceRole(constants.DeviceRoleVM); ok {
-		return role, nil
-	}
+func (nbi *NetboxInventory) AddVMDeviceRole(ctx context.Context) (*objects.DeviceRole, error) {
 	newRole, err := nbi.AddDeviceRole(ctx, &objects.DeviceRole{
 		NetboxObject: objects.NetboxObject{
 			Description: constants.DeviceRoleVMDescription,
@@ -108,10 +96,7 @@ func (nbi *NetboxInventory) GetVMDeviceRole(ctx context.Context) (*objects.Devic
 	return newRole, nil
 }
 
-func (nbi *NetboxInventory) GetVMTemplateDeviceRole(ctx context.Context) (*objects.DeviceRole, error) {
-	if role, ok := nbi.GetDeviceRole(constants.DeviceRoleVMTemplate); ok {
-		return role, nil
-	}
+func (nbi *NetboxInventory) AddVMTemplateDeviceRole(ctx context.Context) (*objects.DeviceRole, error) {
 	newRole, err := nbi.AddDeviceRole(ctx, &objects.DeviceRole{
 		NetboxObject: objects.NetboxObject{
 			Description: constants.DeviceRoleVMTemplateDescription,

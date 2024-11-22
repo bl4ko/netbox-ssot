@@ -14,7 +14,7 @@ func TestTag_String(t *testing.T) {
 				Name:        "Test tag",
 				Description: "Test tag description",
 			},
-			want: "Tag{Name: Test tag, Description: Test tag description}",
+			want: "Tag{Name: Test tag}",
 		},
 	}
 	for _, tt := range tests {

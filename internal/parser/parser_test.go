@@ -17,16 +17,15 @@ func TestValidonfig(t *testing.T) {
 			Dest:  "test",
 		},
 		Netbox: &NetboxConfig{
-			APIToken:        "netbox-token",
-			Hostname:        "netbox.example.com",
-			HTTPScheme:      "https",
-			Port:            666,
-			ValidateCert:    false, // Default
-			Timeout:         constants.DefaultAPITimeout,
-			Tag:             constants.SsotTagName,            // Default
-			TagColor:        constants.SsotTagColor,           // Default
-			RemoveOrphans:   true,                             // Default
-			ArpDataLifeSpan: constants.DefaultArpDataLifeSpan, // Default
+			APIToken:      "netbox-token",
+			Hostname:      "netbox.example.com",
+			HTTPScheme:    "https",
+			Port:          666,
+			ValidateCert:  false, // Default
+			Timeout:       constants.DefaultAPITimeout,
+			Tag:           constants.SsotTagName,  // Default
+			TagColor:      constants.SsotTagColor, // Default
+			RemoveOrphans: true,                   // Default
 		},
 		Sources: []SourceConfig{
 			{
@@ -175,11 +174,11 @@ func TestParseConfigInvalidConfigs(t *testing.T) {
 		{filename: "invalid_config28.yaml", expectedErr: "source[wrong].vlanTenantRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
 		{filename: "invalid_config29.yaml", expectedErr: "yaml: unmarshal errors:\n  line 2: cannot unmarshal !!str `2dasf` into int"},
 		{filename: "invalid_config30.yaml", expectedErr: "source[fortigate].apiToken is required for fortigate"},
-		{filename: "invalid_config31.yaml", expectedErr: "netbox.arpDataLifeSpan: cannot be negative"},
-		{filename: "invalid_config1111.yaml", expectedErr: "open ../../testdata/parser/invalid_config1111.yaml: no such file or directory"},
+		{filename: "invalid_config31.yaml", expectedErr: "netbox.removeOrphansAfterDays has no effect when netbox.removeOrphans is set to true"},
 		{filename: "invalid_config32.yaml", expectedErr: "source[wrong].datacenterClusterGroupRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
 		{filename: "invalid_config33.yaml", expectedErr: "source[wrong].caFile: open \\//: no such file or directory"},
 		{filename: "invalid_config34.yaml", expectedErr: "netbox.caFile: open wrong path: no such file or directory"},
+		{filename: "invalid_config1111.yaml", expectedErr: "open ../../testdata/parser/invalid_config1111.yaml: no such file or directory"},
 	}
 
 	for _, tc := range testCases {

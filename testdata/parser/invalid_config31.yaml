@@ -7,17 +7,6 @@ netbox:
   port: 666
   hostname: netbox.example.com
   httpScheme: "http"
-  arpDataLifeSpan: -10 # Error arpDataLifeSpan Must be positive
-
-source:
-  - name: paloalto
-    type: paloalto
-    hostname: paloalto.example.com
-    username: user
-    password: pass
-    collectArpData: true
-
-  - name: fortigate
-    type: fortigate
-    hostname: forti.example.com
-    apiToken: "dsafdsfdsafasdffdsadf"
+  caFile: "wrong path" # error
+  removeOrphans: True
+  removeOrphansAfterDays: 5 # error because removeOrphans is set to True

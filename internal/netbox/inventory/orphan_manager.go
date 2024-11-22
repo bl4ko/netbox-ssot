@@ -84,7 +84,6 @@ func (orphanManager *OrphanManager) AddItem(itemAPIPath string, orphanItem objec
 	}
 }
 
-func (orphanManager *OrphanManager) RemoveItem(itemAPIPath string, netboxObject *objects.NetboxObject) {
-	delete(orphanManager.Items[itemAPIPath], netboxObject.ID)
-	netboxObject.RemoveTag(orphanManager.Tag)
+func (orphanManager *OrphanManager) RemoveItem(itemAPIPath string, obj objects.OrphanItem) {
+	delete(orphanManager.Items[itemAPIPath], obj.GetID())
 }

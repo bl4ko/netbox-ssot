@@ -42,7 +42,7 @@ func (fmcs *FMCSource) syncDevices(nbi *inventory.NetboxInventory) error {
 		if err != nil {
 			return fmt.Errorf("match host to tenant %s", err)
 		}
-		deviceRole, err := nbi.GetFirewallDeviceRole(fmcs.Ctx)
+		deviceRole, err := nbi.AddFirewallDeviceRole(fmcs.Ctx)
 		if err != nil {
 			return fmt.Errorf("add DeviceRole firewall: %s", err)
 		}

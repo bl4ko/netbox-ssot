@@ -15,7 +15,7 @@ type Tag struct {
 }
 
 func (t Tag) String() string {
-	return fmt.Sprintf("Tag{Name: %s, Description: %s}", t.Name, t.Description)
+	return fmt.Sprintf("Tag{Name: %s}", t.Name)
 }
 
 // Tag implements IDItem interface.

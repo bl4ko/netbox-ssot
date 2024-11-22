@@ -32,7 +32,7 @@ func (nbi *NetboxInventory) AddTag(ctx context.Context, newTag *objects.Tag) (*o
 		}
 	} else {
 		nbi.Logger.Debug(ctx, "Tag ", newTag.Name, " does not exist in Netbox. Creating it...")
-		createdTag, err := service.Create[objects.Tag](ctx, nbi.NetboxAPI, newTag)
+		createdTag, err := service.Create(ctx, nbi.NetboxAPI, newTag)
 		if err != nil {
 			return nil, err
 		}
@@ -43,7 +43,7 @@ func (nbi *NetboxInventory) AddTag(ctx context.Context, newTag *objects.Tag) (*o
 
 // AddTenants adds a new tenant to the local netbox inventory.
 func (nbi *NetboxInventory) AddTenant(ctx context.Context, newTenant *objects.Tenant) (*objects.Tenant, error) {
-	newTenant.NetboxObject.AddTag(nbi.SsotTag) // add ssot label tag to the tenant
+	newTenant.NetboxObject.AddTag(nbi.SsotTag)
 	nbi.tenantsLock.Lock()
 	defer nbi.tenantsLock.Unlock()
 	if _, ok := nbi.tenantsIndexByName[newTenant.Name]; ok {
@@ -64,7 +64,7 @@ func (nbi *NetboxInventory) AddTenant(ctx context.Context, newTenant *objects.Te
 		}
 	} else {
 		nbi.Logger.Debug(ctx, "Tenant ", newTenant.Name, " does not exist in Netbox. Creating it...")
-		createdTag, err := service.Create[objects.Tenant](ctx, nbi.NetboxAPI, newTenant)
+		createdTag, err := service.Create(ctx, nbi.NetboxAPI, newTenant)
 		if err != nil {
 			return nil, err
 		}
@@ -96,7 +96,7 @@ func (nbi *NetboxInventory) AddSite(ctx context.Context, newSite *objects.Site) 
 		}
 	} else {
 		nbi.Logger.Debug(ctx, "Site ", newSite.Name, " does not exist in Netbox. Creating it...")
-		createdContact, err := service.Create[objects.Site](ctx, nbi.NetboxAPI, newSite)
+		createdContact, err := service.Create(ctx, nbi.NetboxAPI, newSite)
 		if err != nil {
 			return nil, err
 		}
@@ -129,7 +129,7 @@ func (nbi *NetboxInventory) AddContactRole(ctx context.Context, newContactRole *
 		}
 	} else {
 		nbi.Logger.Debug(ctx, "Contact role ", newContactRole.Name, " does not exist in Netbox. Creating it...")
-		newContactRole, err := service.Create[objects.ContactRole](ctx, nbi.NetboxAPI, newContactRole)
+		newContactRole, err := service.Create(ctx, nbi.NetboxAPI, newContactRole)
 		if err != nil {
 			return nil, err
 		}
@@ -161,7 +161,7 @@ func (nbi *NetboxInventory) AddContactGroup(ctx context.Context, newContactGroup
 		}
 	} else {
 		nbi.Logger.Debug(ctx, "Contact group ", newContactGroup.Name, " does not exist in Netbox. Creating it...")
-		newContactGroup, err := service.Create[objects.ContactGroup](ctx, nbi.NetboxAPI, newContactGroup)
+		newContactGroup, err := service.Create(ctx, nbi.NetboxAPI, newContactGroup)
 		if err != nil {
 			return nil, err
 		}
@@ -173,11 +173,12 @@ func (nbi *NetboxInventory) AddContactGroup(ctx context.Context, newContactGroup
 // AddContact adds a contact to the local netbox inventory.
 func (nbi *NetboxInventory) AddContact(ctx context.Context, newContact *objects.Contact) (*objects.Contact, error) {
 	newContact.NetboxObject.AddTag(nbi.SsotTag)
+	newContact.SetCustomField(constants.CustomFieldOrphanLastSeenName, "")
 	nbi.contactsLock.Lock()
 	defer nbi.contactsLock.Unlock()
 	if _, ok := nbi.contactsIndexByName[newContact.Name]; ok {
 		oldContact := nbi.contactsIndexByName[newContact.Name]
-		nbi.OrphanManager.RemoveItem(constants.ContactsAPIPath, &oldContact.NetboxObject)
+		nbi.OrphanManager.RemoveItem(constants.ContactsAPIPath, oldContact)
 		diffMap, err := utils.JSONDiffMapExceptID(newContact, oldContact, false, nbi.SourcePriority)
 		if err != nil {
 			return nil, err
@@ -194,7 +195,7 @@ func (nbi *NetboxInventory) AddContact(ctx context.Context, newContact *objects.
 		}
 	} else {
 		nbi.Logger.Debug(ctx, "Contact ", newContact.Name, " does not exist in Netbox. Creating it...")
-		createdContact, err := service.Create[objects.Contact](ctx, nbi.NetboxAPI, newContact)
+		createdContact, err := service.Create(ctx, nbi.NetboxAPI, newContact)
 		if err != nil {
 			return nil, err
 		}
@@ -207,6 +208,7 @@ func (nbi *NetboxInventory) AddContact(ctx context.Context, newContact *objects.
 // TODO: Make index check less code and more universal, checking each level is ugly.
 func (nbi *NetboxInventory) AddContactAssignment(ctx context.Context, newCA *objects.ContactAssignment) (*objects.ContactAssignment, error) {
 	newCA.NetboxObject.AddTag(nbi.SsotTag)
+	newCA.SetCustomField(constants.CustomFieldOrphanLastSeenName, "")
 	nbi.contactAssignmentsLock.Lock()
 	defer nbi.contactAssignmentsLock.Unlock()
 	if nbi.contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ModelType] == nil {
@@ -221,7 +223,7 @@ func (nbi *NetboxInventory) AddContactAssignment(ctx context.Context, newCA *obj
 	newCA.Tags = append(newCA.Tags, nbi.SsotTag)
 	if _, ok := nbi.contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ModelType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID]; ok {
 		oldCA := nbi.contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ModelType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID]
-		nbi.OrphanManager.RemoveItem(constants.ContactAssignmentsAPIPath, &oldCA.NetboxObject)
+		nbi.OrphanManager.RemoveItem(constants.ContactAssignmentsAPIPath, oldCA)
 		diffMap, err := utils.JSONDiffMapExceptID(newCA, oldCA, false, nbi.SourcePriority)
 		if err != nil {
 			return nil, err
@@ -238,7 +240,7 @@ func (nbi *NetboxInventory) AddContactAssignment(ctx context.Context, newCA *obj
 		}
 	} else {
 		nbi.Logger.Debugf(ctx, "ContactAssignment %s does not exist in Netbox. Creating it...", newCA)
-		newCA, err := service.Create[objects.ContactAssignment](ctx, nbi.NetboxAPI, newCA)
+		newCA, err := service.Create(ctx, nbi.NetboxAPI, newCA)
 		if err != nil {
 			return nil, err
 		}
@@ -272,7 +274,7 @@ func (nbi *NetboxInventory) AddCustomField(ctx context.Context, newCf *objects.C
 		}
 	} else {
 		nbi.Logger.Debug(ctx, "Custom field ", newCf.Name, " does not exist in Netbox. Creating it...")
-		createdCf, err := service.Create[objects.CustomField](ctx, nbi.NetboxAPI, newCf)
+		createdCf, err := service.Create(ctx, nbi.NetboxAPI, newCf)
 		if err != nil {
 			return nil, err
 		}
@@ -289,12 +291,12 @@ func (nbi *NetboxInventory) AddCustomField(ctx context.Context, newCf *objects.C
 func (nbi *NetboxInventory) AddClusterGroup(ctx context.Context, newCg *objects.ClusterGroup) (*objects.ClusterGroup, error) {
 	newCg.NetboxObject.AddTag(nbi.SsotTag)
 	addSourceNameCustomField(ctx, &newCg.NetboxObject)
+	newCg.SetCustomField(constants.CustomFieldOrphanLastSeenName, "")
 	nbi.clusterGroupsLock.Lock()
 	defer nbi.clusterGroupsLock.Unlock()
 	if _, ok := nbi.clusterGroupsIndexByName[newCg.Name]; ok {
-		// Remove id from orphan manager, because it still exists in the sources
 		oldCg := nbi.clusterGroupsIndexByName[newCg.Name]
-		nbi.OrphanManager.RemoveItem(constants.ClusterGroupsAPIPath, &oldCg.NetboxObject)
+		nbi.OrphanManager.RemoveItem(constants.ClusterGroupsAPIPath, oldCg)
 		diffMap, err := utils.JSONDiffMapExceptID(newCg, oldCg, false, nbi.SourcePriority)
 		if err != nil {
 			return nil, err
@@ -311,7 +313,7 @@ func (nbi *NetboxInventory) AddClusterGroup(ctx context.Context, newCg *objects.
 		}
 	} else {
 		nbi.Logger.Debug(ctx, "Cluster group ", newCg.Name, " does not exist in Netbox. Creating it...")
-		newCg, err := service.Create[objects.ClusterGroup](ctx, nbi.NetboxAPI, newCg)
+		newCg, err := service.Create(ctx, nbi.NetboxAPI, newCg)
 		if err != nil {
 			return nil, err
 		}
@@ -327,12 +329,12 @@ func (nbi *NetboxInventory) AddClusterGroup(ctx context.Context, newCg *objects.
 // If the cluster type does not exist, it creates a new one.
 func (nbi *NetboxInventory) AddClusterType(ctx context.Context, newClusterType *objects.ClusterType) (*objects.ClusterType, error) {
 	newClusterType.NetboxObject.AddTag(nbi.SsotTag)
+	newClusterType.SetCustomField(constants.CustomFieldOrphanLastSeenName, "")
 	nbi.clusterTypesLock.Lock()
 	defer nbi.clusterTypesLock.Unlock()
 	if _, ok := nbi.clusterTypesIndexByName[newClusterType.Name]; ok {
-		// Remove id from orphan manager, because it still exists in the sources
 		oldClusterType := nbi.clusterTypesIndexByName[newClusterType.Name]
-		nbi.OrphanManager.RemoveItem(constants.ClusterTypesAPIPath, &oldClusterType.NetboxObject)
+		nbi.OrphanManager.RemoveItem(constants.ClusterTypesAPIPath, oldClusterType)
 		diffMap, err := utils.JSONDiffMapExceptID(newClusterType, oldClusterType, false, nbi.SourcePriority)
 		if err != nil {
 			return nil, err
@@ -351,7 +353,7 @@ func (nbi *NetboxInventory) AddClusterType(ctx context.Context, newClusterType *
 		return existingClusterType, nil
 	}
 	nbi.Logger.Debug(ctx, "Cluster type ", newClusterType.Name, " does not exist in Netbox. Creating it...")
-	newClusterType, err := service.Create[objects.ClusterType](ctx, nbi.NetboxAPI, newClusterType)
+	newClusterType, err := service.Create(ctx, nbi.NetboxAPI, newClusterType)
 	if err != nil {
 		return nil, err
 	}
@@ -368,12 +370,13 @@ func (nbi *NetboxInventory) AddClusterType(ctx context.Context, newClusterType *
 func (nbi *NetboxInventory) AddCluster(ctx context.Context, newCluster *objects.Cluster) (*objects.Cluster, error) {
 	newCluster.NetboxObject.AddTag(nbi.SsotTag)
 	addSourceNameCustomField(ctx, &newCluster.NetboxObject)
+	newCluster.SetCustomField(constants.CustomFieldOrphanLastSeenName, "")
 	nbi.clustersLock.Lock()
 	defer nbi.clustersLock.Unlock()
 	if _, ok := nbi.clustersIndexByName[newCluster.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
 		oldCluster := nbi.clustersIndexByName[newCluster.Name]
-		nbi.OrphanManager.RemoveItem(constants.ClustersAPIPath, &oldCluster.NetboxObject)
+		nbi.OrphanManager.RemoveItem(constants.ClustersAPIPath, oldCluster)
 		diffMap, err := utils.JSONDiffMapExceptID(newCluster, oldCluster, false, nbi.SourcePriority)
 		if err != nil {
 			return nil, err
@@ -390,7 +393,7 @@ func (nbi *NetboxInventory) AddCluster(ctx context.Context, newCluster *objects.
 		}
 	} else {
 		nbi.Logger.Debug(ctx, "Cluster ", newCluster.Name, " does not exist in Netbox. Creating it...")
-		createdCluster, err := service.Create[objects.Cluster](ctx, nbi.NetboxAPI, newCluster)
+		createdCluster, err := service.Create(ctx, nbi.NetboxAPI, newCluster)
 		if err != nil {
 			return nil, err
 		}
@@ -405,12 +408,13 @@ func (nbi *NetboxInventory) AddCluster(ctx context.Context, newCluster *objects.
 // If the device role does not exist, it creates a new one.
 func (nbi *NetboxInventory) AddDeviceRole(ctx context.Context, newDeviceRole *objects.DeviceRole) (*objects.DeviceRole, error) {
 	newDeviceRole.NetboxObject.AddTag(nbi.SsotTag)
+	newDeviceRole.SetCustomField(constants.CustomFieldOrphanLastSeenName, "")
 	nbi.deviceRolesLock.Lock()
 	defer nbi.deviceRolesLock.Unlock()
 	if _, ok := nbi.deviceRolesIndexByName[newDeviceRole.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
 		oldDeviceRole := nbi.deviceRolesIndexByName[newDeviceRole.Name]
-		nbi.OrphanManager.RemoveItem(constants.DeviceRolesAPIPath, &oldDeviceRole.NetboxObject)
+		nbi.OrphanManager.RemoveItem(constants.DeviceRolesAPIPath, oldDeviceRole)
 		diffMap, err := utils.JSONDiffMapExceptID(newDeviceRole, oldDeviceRole, false, nbi.SourcePriority)
 		if err != nil {
 			return nil, err
@@ -427,7 +431,7 @@ func (nbi *NetboxInventory) AddDeviceRole(ctx context.Context, newDeviceRole *ob
 		}
 	} else {
 		nbi.Logger.Debug(ctx, "Device role ", newDeviceRole.Name, " does not exist in Netbox. Creating it...")
-		newDeviceRole, err := service.Create[objects.DeviceRole](ctx, nbi.NetboxAPI, newDeviceRole)
+		newDeviceRole, err := service.Create(ctx, nbi.NetboxAPI, newDeviceRole)
 		if err != nil {
 			return nil, err
 		}
@@ -444,12 +448,13 @@ func (nbi *NetboxInventory) AddDeviceRole(ctx context.Context, newDeviceRole *ob
 // If the manufacturer does not exist in Netbox, the function creates a new one.
 func (nbi *NetboxInventory) AddManufacturer(ctx context.Context, newManufacturer *objects.Manufacturer) (*objects.Manufacturer, error) {
 	newManufacturer.NetboxObject.AddTag(nbi.SsotTag)
+	newManufacturer.SetCustomField(constants.CustomFieldOrphanLastSeenName, "")
 	nbi.manufacturersLock.Lock()
 	defer nbi.manufacturersLock.Unlock()
 	if _, ok := nbi.manufacturersIndexByName[newManufacturer.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
 		oldManufacturer := nbi.manufacturersIndexByName[newManufacturer.Name]
-		nbi.OrphanManager.RemoveItem(constants.ManufacturersAPIPath, &oldManufacturer.NetboxObject)
+		nbi.OrphanManager.RemoveItem(constants.ManufacturersAPIPath, oldManufacturer)
 		diffMap, err := utils.JSONDiffMapExceptID(newManufacturer, oldManufacturer, false, nbi.SourcePriority)
 		if err != nil {
 			return nil, err
@@ -466,7 +471,7 @@ func (nbi *NetboxInventory) AddManufacturer(ctx context.Context, newManufacturer
 		}
 	} else {
 		nbi.Logger.Debug(ctx, "Manufacturer ", newManufacturer.Name, " does not exist in Netbox. Creating it...")
-		newManufacturer, err := service.Create[objects.Manufacturer](ctx, nbi.NetboxAPI, newManufacturer)
+		newManufacturer, err := service.Create(ctx, nbi.NetboxAPI, newManufacturer)
 		if err != nil {
 			return nil, err
 		}
@@ -481,12 +486,12 @@ func (nbi *NetboxInventory) AddManufacturer(ctx context.Context, newManufacturer
 // If the device type does not exist, it creates a new one.
 func (nbi *NetboxInventory) AddDeviceType(ctx context.Context, newDeviceType *objects.DeviceType) (*objects.DeviceType, error) {
 	newDeviceType.NetboxObject.AddTag(nbi.SsotTag)
+	newDeviceType.SetCustomField(constants.CustomFieldOrphanLastSeenName, "")
 	nbi.deviceTypesLock.Lock()
 	defer nbi.deviceTypesLock.Unlock()
 	if _, ok := nbi.deviceTypesIndexByModel[newDeviceType.Model]; ok {
-		// Remove id from orphan manager, because it still exists in the sources
 		oldDeviceType := nbi.deviceTypesIndexByModel[newDeviceType.Model]
-		nbi.OrphanManager.RemoveItem(constants.DeviceTypesAPIPath, &oldDeviceType.NetboxObject)
+		nbi.OrphanManager.RemoveItem(constants.DeviceTypesAPIPath, oldDeviceType)
 		diffMap, err := utils.JSONDiffMapExceptID(newDeviceType, oldDeviceType, false, nbi.SourcePriority)
 		if err != nil {
 			return nil, err
@@ -503,7 +508,7 @@ func (nbi *NetboxInventory) AddDeviceType(ctx context.Context, newDeviceType *ob
 		}
 	} else {
 		nbi.Logger.Debug(ctx, "Device type ", newDeviceType.Model, " does not exist in Netbox. Creating it...")
-		newDeviceType, err := service.Create[objects.DeviceType](ctx, nbi.NetboxAPI, newDeviceType)
+		newDeviceType, err := service.Create(ctx, nbi.NetboxAPI, newDeviceType)
 		if err != nil {
 			return nil, err
 		}
@@ -518,12 +523,13 @@ func (nbi *NetboxInventory) AddDeviceType(ctx context.Context, newDeviceType *ob
 // If the platform does not exist, it creates a new one.
 func (nbi *NetboxInventory) AddPlatform(ctx context.Context, newPlatform *objects.Platform) (*objects.Platform, error) {
 	newPlatform.NetboxObject.AddTag(nbi.SsotTag)
+	newPlatform.SetCustomField(constants.CustomFieldOrphanLastSeenName, "")
 	nbi.platformsLock.Lock()
 	defer nbi.platformsLock.Unlock()
 	if _, ok := nbi.platformsIndexByName[newPlatform.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
 		oldPlatform := nbi.platformsIndexByName[newPlatform.Name]
-		nbi.OrphanManager.RemoveItem(constants.PlatformsAPIPath, &oldPlatform.NetboxObject)
+		nbi.OrphanManager.RemoveItem(constants.PlatformsAPIPath, oldPlatform)
 		diffMap, err := utils.JSONDiffMapExceptID(newPlatform, oldPlatform, false, nbi.SourcePriority)
 		if err != nil {
 			return nil, err
@@ -540,7 +546,7 @@ func (nbi *NetboxInventory) AddPlatform(ctx context.Context, newPlatform *object
 		}
 	} else {
 		nbi.Logger.Debug(ctx, "Platform ", newPlatform.Name, " does not exist in Netbox. Creating it...")
-		newPlatform, err := service.Create[objects.Platform](ctx, nbi.NetboxAPI, newPlatform)
+		newPlatform, err := service.Create(ctx, nbi.NetboxAPI, newPlatform)
 		if err != nil {
 			return nil, err
 		}
@@ -556,6 +562,7 @@ func (nbi *NetboxInventory) AddPlatform(ctx context.Context, newPlatform *object
 func (nbi *NetboxInventory) AddDevice(ctx context.Context, newDevice *objects.Device) (*objects.Device, error) {
 	newDevice.NetboxObject.AddTag(nbi.SsotTag)
 	addSourceNameCustomField(ctx, &newDevice.NetboxObject)
+	newDevice.SetCustomField(constants.CustomFieldOrphanLastSeenName, "")
 	nbi.devicesLock.Lock()
 	defer nbi.devicesLock.Unlock()
 	if newDevice.Site == nil {
@@ -563,7 +570,7 @@ func (nbi *NetboxInventory) AddDevice(ctx context.Context, newDevice *objects.De
 	}
 	if _, ok := nbi.devicesIndexByNameAndSiteID[newDevice.Name][newDevice.Site.ID]; ok {
 		oldDevice := nbi.devicesIndexByNameAndSiteID[newDevice.Name][newDevice.Site.ID]
-		nbi.OrphanManager.RemoveItem(constants.DevicesAPIPath, &oldDevice.NetboxObject)
+		nbi.OrphanManager.RemoveItem(constants.DevicesAPIPath, oldDevice)
 		diffMap, err := utils.JSONDiffMapExceptID(newDevice, oldDevice, false, nbi.SourcePriority)
 		if err != nil {
 			return nil, err
@@ -580,7 +587,7 @@ func (nbi *NetboxInventory) AddDevice(ctx context.Context, newDevice *objects.De
 		}
 	} else {
 		nbi.Logger.Debug(ctx, "Device ", newDevice.Name, " does not exist in Netbox. Creating it...")
-		newDevice, err := service.Create[objects.Device](ctx, nbi.NetboxAPI, newDevice)
+		newDevice, err := service.Create(ctx, nbi.NetboxAPI, newDevice)
 		if err != nil {
 			return nil, err
 		}
@@ -599,6 +606,7 @@ func (nbi *NetboxInventory) AddDevice(ctx context.Context, newDevice *objects.De
 func (nbi *NetboxInventory) AddVirtualDeviceContext(ctx context.Context, newVDC *objects.VirtualDeviceContext) (*objects.VirtualDeviceContext, error) {
 	newVDC.NetboxObject.AddTag(nbi.SsotTag)
 	addSourceNameCustomField(ctx, &newVDC.NetboxObject)
+	newVDC.SetCustomField(constants.CustomFieldOrphanLastSeenName, "")
 	nbi.devicesLock.Lock()
 	defer nbi.devicesLock.Unlock()
 	if newVDC.Device == nil {
@@ -606,7 +614,7 @@ func (nbi *NetboxInventory) AddVirtualDeviceContext(ctx context.Context, newVDC 
 	}
 	if _, ok := nbi.virtualDeviceContextsIndexByNameAndDeviceID[newVDC.Name][newVDC.Device.ID]; ok {
 		oldVDC := nbi.virtualDeviceContextsIndexByNameAndDeviceID[newVDC.Name][newVDC.Device.ID]
-		nbi.OrphanManager.RemoveItem(constants.VirtualDeviceContextsAPIPath, &oldVDC.NetboxObject)
+		nbi.OrphanManager.RemoveItem(constants.VirtualDeviceContextsAPIPath, oldVDC)
 		diffMap, err := utils.JSONDiffMapExceptID(newVDC, oldVDC, false, nbi.SourcePriority)
 		if err != nil {
 			return nil, err
@@ -623,7 +631,7 @@ func (nbi *NetboxInventory) AddVirtualDeviceContext(ctx context.Context, newVDC 
 		}
 	} else {
 		nbi.Logger.Debug(ctx, "VirtualDeviceContext ", newVDC.Name, " does not exist in Netbox. Creating it...")
-		newDevice, err := service.Create[objects.VirtualDeviceContext](ctx, nbi.NetboxAPI, newVDC)
+		newDevice, err := service.Create(ctx, nbi.NetboxAPI, newVDC)
 		if err != nil {
 			return nil, err
 		}
@@ -641,12 +649,13 @@ func (nbi *NetboxInventory) AddVirtualDeviceContext(ctx context.Context, newVDC 
 // If the vlan group does not exist, it creates a new one.
 func (nbi *NetboxInventory) AddVlanGroup(ctx context.Context, newVlanGroup *objects.VlanGroup) (*objects.VlanGroup, error) {
 	newVlanGroup.NetboxObject.AddTag(nbi.SsotTag)
+	newVlanGroup.SetCustomField(constants.CustomFieldOrphanLastSeenName, "")
 	nbi.vlanGroupsLock.Lock()
 	defer nbi.vlanGroupsLock.Unlock()
 	if _, ok := nbi.vlanGroupsIndexByName[newVlanGroup.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
 		oldVlanGroup := nbi.vlanGroupsIndexByName[newVlanGroup.Name]
-		nbi.OrphanManager.RemoveItem(constants.VlanGroupsAPIPath, &oldVlanGroup.NetboxObject)
+		nbi.OrphanManager.RemoveItem(constants.VlanGroupsAPIPath, oldVlanGroup)
 		diffMap, err := utils.JSONDiffMapExceptID(newVlanGroup, oldVlanGroup, false, nbi.SourcePriority)
 		if err != nil {
 			return nil, err
@@ -663,7 +672,7 @@ func (nbi *NetboxInventory) AddVlanGroup(ctx context.Context, newVlanGroup *obje
 		}
 	} else {
 		nbi.Logger.Debug(ctx, "Vlan ", newVlanGroup.Name, " does not exist in Netbox. Creating it...")
-		newVlan, err := service.Create[objects.VlanGroup](ctx, nbi.NetboxAPI, newVlanGroup)
+		newVlan, err := service.Create(ctx, nbi.NetboxAPI, newVlanGroup)
 		if err != nil {
 			return nil, err
 		}
@@ -679,12 +688,13 @@ func (nbi *NetboxInventory) AddVlanGroup(ctx context.Context, newVlanGroup *obje
 func (nbi *NetboxInventory) AddVlan(ctx context.Context, newVlan *objects.Vlan) (*objects.Vlan, error) {
 	newVlan.NetboxObject.AddTag(nbi.SsotTag)
 	addSourceNameCustomField(ctx, &newVlan.NetboxObject)
+	newVlan.SetCustomField(constants.CustomFieldOrphanLastSeenName, "")
 	nbi.vlansLock.Lock()
 	defer nbi.vlansLock.Unlock()
 	if _, ok := nbi.vlansIndexByVlanGroupIDAndVID[newVlan.Group.ID][newVlan.Vid]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
 		oldVlan := nbi.vlansIndexByVlanGroupIDAndVID[newVlan.Group.ID][newVlan.Vid]
-		nbi.OrphanManager.RemoveItem(constants.VlansAPIPath, &oldVlan.NetboxObject)
+		nbi.OrphanManager.RemoveItem(constants.VlansAPIPath, oldVlan)
 		diffMap, err := utils.JSONDiffMapExceptID(newVlan, oldVlan, false, nbi.SourcePriority)
 		if err != nil {
 			return nil, err
@@ -701,7 +711,7 @@ func (nbi *NetboxInventory) AddVlan(ctx context.Context, newVlan *objects.Vlan) 
 		}
 	} else {
 		nbi.Logger.Debug(ctx, "Vlan ", newVlan.Name, " does not exist in Netbox. Creating it...")
-		newVlan, err := service.Create[objects.Vlan](ctx, nbi.NetboxAPI, newVlan)
+		newVlan, err := service.Create(ctx, nbi.NetboxAPI, newVlan)
 		if err != nil {
 			return nil, err
 		}
@@ -720,6 +730,7 @@ func (nbi *NetboxInventory) AddVlan(ctx context.Context, newVlan *objects.Vlan) 
 func (nbi *NetboxInventory) AddInterface(ctx context.Context, newInterface *objects.Interface) (*objects.Interface, error) {
 	newInterface.NetboxObject.AddTag(nbi.SsotTag)
 	addSourceNameCustomField(ctx, &newInterface.NetboxObject)
+	newInterface.SetCustomField(constants.CustomFieldOrphanLastSeenName, "")
 	nbi.interfacesLock.Lock()
 	defer nbi.interfacesLock.Unlock()
 	if len(newInterface.Name) > constants.MaxInterfaceNameLength {
@@ -727,7 +738,7 @@ func (nbi *NetboxInventory) AddInterface(ctx context.Context, newInterface *obje
 	}
 	if _, ok := nbi.interfacesIndexByDeviceIDAndName[newInterface.Device.ID][newInterface.Name]; ok {
 		oldInterface := nbi.interfacesIndexByDeviceIDAndName[newInterface.Device.ID][newInterface.Name]
-		nbi.OrphanManager.RemoveItem(constants.InterfacesAPIPath, &oldInterface.NetboxObject)
+		nbi.OrphanManager.RemoveItem(constants.InterfacesAPIPath, oldInterface)
 		diffMap, err := utils.JSONDiffMapExceptID(newInterface, oldInterface, false, nbi.SourcePriority)
 		if err != nil {
 			return nil, err
@@ -744,7 +755,7 @@ func (nbi *NetboxInventory) AddInterface(ctx context.Context, newInterface *obje
 		}
 	} else {
 		nbi.Logger.Debug(ctx, "Interface ", newInterface.Name, " does not exist in Netbox. Creating it...")
-		newInterface, err := service.Create[objects.Interface](ctx, nbi.NetboxAPI, newInterface)
+		newInterface, err := service.Create(ctx, nbi.NetboxAPI, newInterface)
 		if err != nil {
 			return nil, err
 		}
@@ -763,6 +774,7 @@ func (nbi *NetboxInventory) AddInterface(ctx context.Context, newInterface *obje
 func (nbi *NetboxInventory) AddVM(ctx context.Context, newVM *objects.VM) (*objects.VM, error) {
 	newVM.NetboxObject.AddTag(nbi.SsotTag)
 	addSourceNameCustomField(ctx, &newVM.NetboxObject)
+	newVM.SetCustomField(constants.CustomFieldOrphanLastSeenName, "")
 	nbi.vmsLock.Lock()
 	defer nbi.vmsLock.Unlock()
 	newVMClusterID := -1
@@ -773,7 +785,7 @@ func (nbi *NetboxInventory) AddVM(ctx context.Context, newVM *objects.VM) (*obje
 		newVM.Name = newVM.Name[:constants.MaxVMNameLength]
 	}
 	if oldVM, ok := nbi.vmsIndexByNameAndClusterID[newVM.Name][newVMClusterID]; ok {
-		nbi.OrphanManager.RemoveItem(constants.VirtualMachinesAPIPath, &oldVM.NetboxObject)
+		nbi.OrphanManager.RemoveItem(constants.VirtualMachinesAPIPath, oldVM)
 		diffMap, err := utils.JSONDiffMapExceptID(newVM, oldVM, false, nbi.SourcePriority)
 		if err != nil {
 			return nil, err
@@ -790,7 +802,7 @@ func (nbi *NetboxInventory) AddVM(ctx context.Context, newVM *objects.VM) (*obje
 		}
 	} else {
 		nbi.Logger.Debugf(ctx, "%s does not exist in Netbox. Creating it...", newVM)
-		newVM, err := service.Create[objects.VM](ctx, nbi.NetboxAPI, newVM)
+		newVM, err := service.Create(ctx, nbi.NetboxAPI, newVM)
 		if err != nil {
 			return nil, err
 		}
@@ -810,6 +822,7 @@ func (nbi *NetboxInventory) AddVM(ctx context.Context, newVM *objects.VM) (*obje
 func (nbi *NetboxInventory) AddVMInterface(ctx context.Context, newVMInterface *objects.VMInterface) (*objects.VMInterface, error) {
 	newVMInterface.NetboxObject.AddTag(nbi.SsotTag)
 	addSourceNameCustomField(ctx, &newVMInterface.NetboxObject)
+	newVMInterface.SetCustomField(constants.CustomFieldOrphanLastSeenName, "")
 	nbi.vmInterfacesLock.Lock()
 	defer nbi.vmInterfacesLock.Unlock()
 	if len(newVMInterface.Name) > constants.MaxVMInterfaceNameLength {
@@ -817,7 +830,7 @@ func (nbi *NetboxInventory) AddVMInterface(ctx context.Context, newVMInterface *
 	}
 	if _, ok := nbi.vmInterfacesIndexByVMIdAndName[newVMInterface.VM.ID][newVMInterface.Name]; ok {
 		oldVMIface := nbi.vmInterfacesIndexByVMIdAndName[newVMInterface.VM.ID][newVMInterface.Name]
-		nbi.OrphanManager.RemoveItem(constants.VMInterfacesAPIPath, &oldVMIface.NetboxObject)
+		nbi.OrphanManager.RemoveItem(constants.VMInterfacesAPIPath, oldVMIface)
 		diffMap, err := utils.JSONDiffMapExceptID(newVMInterface, oldVMIface, false, nbi.SourcePriority)
 		if err != nil {
 			return nil, err
@@ -853,11 +866,12 @@ func (nbi *NetboxInventory) AddVMInterface(ctx context.Context, newVMInterface *
 func (nbi *NetboxInventory) AddIPAddress(ctx context.Context, newIPAddress *objects.IPAddress) (*objects.IPAddress, error) {
 	newIPAddress.NetboxObject.AddTag(nbi.SsotTag)
 	addSourceNameCustomField(ctx, &newIPAddress.NetboxObject)
+	newIPAddress.SetCustomField(constants.CustomFieldOrphanLastSeenName, "")
 	nbi.ipAddressesLock.Lock()
 	defer nbi.ipAddressesLock.Unlock()
 	if _, ok := nbi.ipAdressesIndexByAddress[newIPAddress.Address]; ok {
 		oldIPAddress := nbi.ipAdressesIndexByAddress[newIPAddress.Address]
-		nbi.OrphanManager.RemoveItem(constants.IPAddressesAPIPath, &oldIPAddress.NetboxObject)
+		nbi.OrphanManager.RemoveItem(constants.IPAddressesAPIPath, oldIPAddress)
 		diffMap, err := utils.JSONDiffMapExceptID(newIPAddress, oldIPAddress, false, nbi.SourcePriority)
 		if err != nil {
 			return nil, err
@@ -890,7 +904,9 @@ func (nbi *NetboxInventory) AddIPAddress(ctx context.Context, newIPAddress *obje
 // If the prefix does not exist, it creates a new one.
 func (nbi *NetboxInventory) AddPrefix(ctx context.Context, newPrefix *objects.Prefix) (*objects.Prefix, error) {
 	newPrefix.NetboxObject.AddTag(nbi.SsotTag)
+	newPrefix.SetCustomField(constants.CustomFieldOrphanLastSeenName, "")
 	nbi.prefixesLock.Lock()
+	newPrefix.SetCustomField(constants.CustomFieldOrphanLastSeenName, "")
 	if newPrefix.NetboxObject.CustomFields == nil {
 		newPrefix.NetboxObject.CustomFields = make(map[string]interface{})
 	}
@@ -898,7 +914,7 @@ func (nbi *NetboxInventory) AddPrefix(ctx context.Context, newPrefix *objects.Pr
 	defer nbi.prefixesLock.Unlock()
 	if _, ok := nbi.prefixesIndexByPrefix[newPrefix.Prefix]; ok {
 		oldPrefix := nbi.prefixesIndexByPrefix[newPrefix.Prefix]
-		nbi.OrphanManager.RemoveItem(constants.PrefixesAPIPath, &oldPrefix.NetboxObject)
+		nbi.OrphanManager.RemoveItem(constants.PrefixesAPIPath, oldPrefix)
 		diffMap, err := utils.JSONDiffMapExceptID(newPrefix, oldPrefix, false, nbi.SourcePriority)
 		if err != nil {
 			return nil, err
@@ -931,12 +947,13 @@ func (nbi *NetboxInventory) AddPrefix(ctx context.Context, newPrefix *objects.Pr
 // If the wireless LAN does not exist, it creates a new one.
 func (nbi *NetboxInventory) AddWirelessLAN(ctx context.Context, newWirelessLan *objects.WirelessLAN) (*objects.WirelessLAN, error) {
 	newWirelessLan.NetboxObject.AddTag(nbi.SsotTag)
+	newWirelessLan.SetCustomField(constants.CustomFieldOrphanLastSeenName, "")
 	nbi.wirelessLANsLock.Lock()
 	defer nbi.wirelessLANsLock.Unlock()
 	if _, ok := nbi.wirelessLANsIndexBySSID[newWirelessLan.SSID]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
 		oldWirelessLan := nbi.wirelessLANsIndexBySSID[newWirelessLan.SSID]
-		nbi.OrphanManager.RemoveItem(constants.WirelessLANsAPIPath, &oldWirelessLan.NetboxObject)
+		nbi.OrphanManager.RemoveItem(constants.WirelessLANsAPIPath, oldWirelessLan)
 		diffMap, err := utils.JSONDiffMapExceptID(newWirelessLan, oldWirelessLan, false, nbi.SourcePriority)
 		if err != nil {
 			return nil, err
@@ -953,7 +970,7 @@ func (nbi *NetboxInventory) AddWirelessLAN(ctx context.Context, newWirelessLan *
 		}
 	} else {
 		nbi.Logger.Debug(ctx, "WirelessLAN ", newWirelessLan.SSID, " does not exist in Netbox. Creating it...")
-		newWirelessLan, err := service.Create[objects.WirelessLAN](ctx, nbi.NetboxAPI, newWirelessLan)
+		newWirelessLan, err := service.Create(ctx, nbi.NetboxAPI, newWirelessLan)
 		if err != nil {
 			return nil, err
 		}
@@ -968,12 +985,13 @@ func (nbi *NetboxInventory) AddWirelessLAN(ctx context.Context, newWirelessLan *
 // If the wireless LAN group does not exist, it creates a new one.
 func (nbi *NetboxInventory) AddWirelessLANGroup(ctx context.Context, newWirelessLANGroup *objects.WirelessLANGroup) (*objects.WirelessLANGroup, error) {
 	newWirelessLANGroup.NetboxObject.AddTag(nbi.SsotTag)
+	newWirelessLANGroup.SetCustomField(constants.CustomFieldOrphanLastSeenName, "")
 	nbi.wirelessLANGroupsLock.Lock()
 	defer nbi.wirelessLANGroupsLock.Unlock()
 	if _, ok := nbi.wirelessLANGroupsIndexByName[newWirelessLANGroup.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
 		oldWirelessLANGroup := nbi.wirelessLANGroupsIndexByName[newWirelessLANGroup.Name]
-		nbi.OrphanManager.RemoveItem(constants.WirelessLANGroupsAPIPath, &oldWirelessLANGroup.NetboxObject)
+		nbi.OrphanManager.RemoveItem(constants.WirelessLANGroupsAPIPath, oldWirelessLANGroup)
 		diffMap, err := utils.JSONDiffMapExceptID(newWirelessLANGroup, oldWirelessLANGroup, false, nbi.SourcePriority)
 		if err != nil {
 			return nil, err

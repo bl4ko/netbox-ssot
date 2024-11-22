@@ -1123,37 +1123,37 @@ func Test_addMapDiff(t *testing.T) {
 			name: "map diff test",
 			args: args{
 				newMap: reflect.ValueOf(map[string]interface{}{
-					constants.CustomFieldArpIPLastSeenName: "2024-04-18 10:59:17",
-					constants.CustomFieldSourceIDName:      nil,
+					constants.CustomFieldOrphanLastSeenName: "2024-04-18 10:59:17",
+					constants.CustomFieldSourceIDName:       nil,
 				}),
 				existingMap: reflect.ValueOf(map[string]interface{}{
-					constants.CustomFieldArpIPLastSeenName: "2024-04-18 10:29:30",
-					constants.CustomFieldSourceIDName:      nil,
+					constants.CustomFieldOrphanLastSeenName: "2024-04-18 10:29:30",
+					constants.CustomFieldSourceIDName:       nil,
 				}),
 				hasPriority: true,
 				jsonTag:     "CustomFields",
 				diffMap:     map[string]interface{}{},
 			},
 			wantDiffMap: map[string]interface{}{
-				"CustomFields": map[string]interface{}{constants.CustomFieldArpIPLastSeenName: "2024-04-18 10:59:17"},
+				"CustomFields": map[string]interface{}{constants.CustomFieldOrphanLastSeenName: "2024-04-18 10:59:17"},
 			},
 		},
 		{
 			name: "map diff test",
 			args: args{
 				newMap: reflect.ValueOf(map[string]interface{}{
-					constants.CustomFieldArpIPLastSeenName: "2024-04-18 10:59:17",
+					constants.CustomFieldOrphanLastSeenName: "2024-04-18 10:59:17",
 				}),
 				existingMap: reflect.ValueOf(map[string]interface{}{
-					constants.CustomFieldArpIPLastSeenName: "2024-04-18 10:29:30",
-					constants.CustomFieldSourceIDName:      nil,
+					constants.CustomFieldOrphanLastSeenName: "2024-04-18 10:29:30",
+					constants.CustomFieldSourceIDName:       nil,
 				}),
 				hasPriority: true,
 				jsonTag:     "CustomFields",
 				diffMap:     map[string]interface{}{},
 			},
 			wantDiffMap: map[string]interface{}{
-				"CustomFields": map[string]interface{}{constants.CustomFieldArpIPLastSeenName: "2024-04-18 10:59:17"},
+				"CustomFields": map[string]interface{}{constants.CustomFieldOrphanLastSeenName: "2024-04-18 10:59:17"},
 			},
 		},
 	}

@@ -221,7 +221,7 @@ func (ps *ProxmoxSource) syncVM(nbi *inventory.NetboxInventory, vm *proxmox.Virt
 		return fmt.Errorf("match vm to tenant: %s", err)
 	}
 
-	vmRole, err := nbi.GetVMDeviceRole(ps.Ctx)
+	vmRole, err := nbi.AddVMDeviceRole(ps.Ctx)
 	if err != nil {
 		return fmt.Errorf("get vm device role: %s", err)
 	}
@@ -348,7 +348,7 @@ func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *ob
 func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 	if len(ps.Containers) > 0 {
 		// Create container role
-		containerRole, err := nbi.GetContainerDeviceRole(ps.Ctx)
+		containerRole, err := nbi.AddContainerDeviceRole(ps.Ctx)
 		if err != nil {
 			return fmt.Errorf("create container role: %s", err)
 		}
