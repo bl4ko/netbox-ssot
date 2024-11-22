@@ -388,7 +388,7 @@ func addPrimaryDiff(newField reflect.Value, existingField reflect.Value, jsonTag
 
 func ExtractFieldsFromDiffMap(diffMap map[string]interface{}, field []string) map[string]interface{} {
 	extractedFields := make(map[string]interface{})
-	if diffMap == nil {
+	if len(diffMap) == 0 {
 		return extractedFields
 	}
 	for _, f := range field {

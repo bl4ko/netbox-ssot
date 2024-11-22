@@ -6,6 +6,8 @@ netbox:
   apiToken: "netbox-token"
   port: 666
   hostname: netbox.example.com
+  removeOrphans: false
+  removeOrphansAfterDays: 5
 
 source:
   - name: testolvm

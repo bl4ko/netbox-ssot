@@ -17,15 +17,16 @@ func TestValidonfig(t *testing.T) {
 			Dest:  "test",
 		},
 		Netbox: &NetboxConfig{
-			APIToken:      "netbox-token",
-			Hostname:      "netbox.example.com",
-			HTTPScheme:    "https",
-			Port:          666,
-			ValidateCert:  false, // Default
-			Timeout:       constants.DefaultAPITimeout,
-			Tag:           constants.SsotTagName,  // Default
-			TagColor:      constants.SsotTagColor, // Default
-			RemoveOrphans: true,                   // Default
+			APIToken:               "netbox-token",
+			Hostname:               "netbox.example.com",
+			HTTPScheme:             "https",
+			Port:                   666,
+			ValidateCert:           false, // Default
+			Timeout:                constants.DefaultAPITimeout,
+			Tag:                    constants.SsotTagName,  // Default
+			TagColor:               constants.SsotTagColor, // Default
+			RemoveOrphans:          false,                  // Default
+			RemoveOrphansAfterDays: 5,
 		},
 		Sources: []SourceConfig{
 			{
@@ -121,6 +122,9 @@ func TestParseValidConfigs(t *testing.T) {
 		{
 			filename: "valid_config2.yaml",
 		},
+		{
+			filename: "valid_config3.yaml",
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.filename, func(t *testing.T) {
@@ -178,6 +182,8 @@ func TestParseConfigInvalidConfigs(t *testing.T) {
 		{filename: "invalid_config32.yaml", expectedErr: "source[wrong].datacenterClusterGroupRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
 		{filename: "invalid_config33.yaml", expectedErr: "source[wrong].caFile: open \\//: no such file or directory"},
 		{filename: "invalid_config34.yaml", expectedErr: "netbox.caFile: open wrong path: no such file or directory"},
+		{filename: "invalid_config35.yaml", expectedErr: "netbox.RemoveOrphansAfterDays: must be positive integer"},
+		{filename: "invalid_config36.yaml", expectedErr: "source[wrong].wlanTenantRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
 		{filename: "invalid_config1111.yaml", expectedErr: "open ../../testdata/parser/invalid_config1111.yaml: no such file or directory"},
 	}
 
@@ -189,6 +195,184 @@ func TestParseConfigInvalidConfigs(t *testing.T) {
 				t.Errorf("Expected error for %v, got nil", tc.filename)
 			} else if err.Error() != tc.expectedErr {
 				t.Errorf("Expected error: %v, got: %v", tc.expectedErr, err)
+			}
+		})
+	}
+}
+
+func TestLoggerConfig_String(t *testing.T) {
+	tests := []struct {
+		name string
+		l    LoggerConfig
+		want string
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.l.String(); got != tt.want {
+				t.Errorf("LoggerConfig.String() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNetboxConfig_String(t *testing.T) {
+	tests := []struct {
+		name string
+		n    NetboxConfig
+		want string
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.n.String(); got != tt.want {
+				t.Errorf("NetboxConfig.String() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSourceConfig_String(t *testing.T) {
+	tests := []struct {
+		name string
+		s    SourceConfig
+		want string
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.s.String(); got != tt.want {
+				t.Errorf("SourceConfig.String() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_validateConfig(t *testing.T) {
+	type args struct {
+		config *Config
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := validateConfig(tt.args.config); (err != nil) != tt.wantErr {
+				t.Errorf("validateConfig() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_validateLoggerConfig(t *testing.T) {
+	type args struct {
+		config *Config
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := validateLoggerConfig(tt.args.config); (err != nil) != tt.wantErr {
+				t.Errorf("validateLoggerConfig() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_validateNetboxConfig(t *testing.T) {
+	type args struct {
+		config *Config
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := validateNetboxConfig(tt.args.config); (err != nil) != tt.wantErr {
+				t.Errorf("validateNetboxConfig() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_validateSourceConfig(t *testing.T) {
+	type args struct {
+		config *Config
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := validateSourceConfig(tt.args.config); (err != nil) != tt.wantErr {
+				t.Errorf("validateSourceConfig() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_validateSourceConfigRelations(t *testing.T) {
+	type args struct {
+		externalSource    *SourceConfig
+		externalSourceStr string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := validateSourceConfigRelations(tt.args.externalSource, tt.args.externalSourceStr); (err != nil) != tt.wantErr {
+				t.Errorf("validateSourceConfigRelations() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestParseConfig(t *testing.T) {
+	type args struct {
+		configFilename string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *Config
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ParseConfig(tt.args.configFilename)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ParseConfig() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ParseConfig() = %v, want %v", got, tt.want)
 			}
 		})
 	}

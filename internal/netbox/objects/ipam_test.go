@@ -1,6 +1,9 @@
 package objects
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+)
 
 func TestIPAddress_String(t *testing.T) {
 	tests := []struct {
@@ -101,6 +104,142 @@ func TestPrefix_String(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.p.String(); got != tt.want {
 				t.Errorf("Prefix.String() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestIPAddress_GetID(t *testing.T) {
+	tests := []struct {
+		name string
+		ip   *IPAddress
+		want int
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.ip.GetID(); got != tt.want {
+				t.Errorf("IPAddress.GetID() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestIPAddress_GetNetboxObject(t *testing.T) {
+	tests := []struct {
+		name string
+		ip   *IPAddress
+		want *NetboxObject
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.ip.GetNetboxObject(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("IPAddress.GetNetboxObject() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestVlanGroup_GetID(t *testing.T) {
+	tests := []struct {
+		name string
+		vg   *VlanGroup
+		want int
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.vg.GetID(); got != tt.want {
+				t.Errorf("VlanGroup.GetID() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestVlanGroup_GetNetboxObject(t *testing.T) {
+	tests := []struct {
+		name string
+		vg   *VlanGroup
+		want *NetboxObject
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.vg.GetNetboxObject(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("VlanGroup.GetNetboxObject() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestVlan_GetID(t *testing.T) {
+	tests := []struct {
+		name string
+		v    *Vlan
+		want int
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.v.GetID(); got != tt.want {
+				t.Errorf("Vlan.GetID() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestVlan_GetNetboxObject(t *testing.T) {
+	tests := []struct {
+		name string
+		v    *Vlan
+		want *NetboxObject
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.v.GetNetboxObject(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Vlan.GetNetboxObject() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestPrefix_GetID(t *testing.T) {
+	tests := []struct {
+		name string
+		p    *Prefix
+		want int
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.p.GetID(); got != tt.want {
+				t.Errorf("Prefix.GetID() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestPrefix_GetNetboxObject(t *testing.T) {
+	tests := []struct {
+		name string
+		p    *Prefix
+		want *NetboxObject
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.p.GetNetboxObject(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Prefix.GetNetboxObject() = %v, want %v", got, tt.want)
 			}
 		})
 	}

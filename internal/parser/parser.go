@@ -146,7 +146,7 @@ func validateNetboxConfig(config *Config) error {
 	}
 	if !config.Netbox.RemoveOrphans {
 		if config.Netbox.RemoveOrphansAfterDays < 0 {
-			return fmt.Errorf("netbox.arpDataLifeSpan: cannot be negative")
+			return fmt.Errorf("netbox.RemoveOrphansAfterDays: must be positive integer")
 		}
 		if config.Netbox.RemoveOrphansAfterDays == 0 {
 			config.Netbox.RemoveOrphansAfterDays = constants.CustomFieldOrphanLastSeenDefaultValue

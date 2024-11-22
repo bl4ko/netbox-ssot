@@ -1,0 +1,11 @@
+logger:
+  level: 2
+  dest: "test"
+
+netbox:
+  apiToken: "netbox-token"
+  port: 666
+  hostname: netbox.example.com
+  httpScheme: "http"
+  removeOrphans: False
+  removeOrphansAfterDays: -1 # Error because removeOrphansAfterDays must be positive number

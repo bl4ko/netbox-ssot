@@ -2,6 +2,7 @@ package objects
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 )
 
@@ -226,6 +227,380 @@ func TestVirtualDeviceContext_String(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.vdc.String(); got != tt.want {
 				t.Errorf("VirtualDeviceContext.String() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSite_GetNetboxObject(t *testing.T) {
+	tests := []struct {
+		name string
+		s    *Site
+		want *NetboxObject
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.s.GetNetboxObject(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Site.GetNetboxObject() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSite_GetID(t *testing.T) {
+	tests := []struct {
+		name string
+		s    *Site
+		want int
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.s.GetID(); got != tt.want {
+				t.Errorf("Site.GetID() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestPlatform_GetNetboxObject(t *testing.T) {
+	tests := []struct {
+		name string
+		p    *Platform
+		want *NetboxObject
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.p.GetNetboxObject(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Platform.GetNetboxObject() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestPlatform_GetID(t *testing.T) {
+	tests := []struct {
+		name string
+		p    *Platform
+		want int
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.p.GetID(); got != tt.want {
+				t.Errorf("Platform.GetID() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRegion_String(t *testing.T) {
+	tests := []struct {
+		name string
+		r    Region
+		want string
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.r.String(); got != tt.want {
+				t.Errorf("Region.String() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRegion_GetNetboxObject(t *testing.T) {
+	tests := []struct {
+		name string
+		r    *Region
+		want *NetboxObject
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.r.GetNetboxObject(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Region.GetNetboxObject() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRegion_GetID(t *testing.T) {
+	tests := []struct {
+		name string
+		r    *Region
+		want int
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.r.GetID(); got != tt.want {
+				t.Errorf("Region.GetID() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestLocation_String(t *testing.T) {
+	tests := []struct {
+		name string
+		l    Location
+		want string
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.l.String(); got != tt.want {
+				t.Errorf("Location.String() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestLocation_GetID(t *testing.T) {
+	tests := []struct {
+		name string
+		l    *Location
+		want int
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.l.GetID(); got != tt.want {
+				t.Errorf("Location.GetID() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestLocation_GetNetboxObject(t *testing.T) {
+	tests := []struct {
+		name string
+		l    *Location
+		want *NetboxObject
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.l.GetNetboxObject(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Location.GetNetboxObject() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestManufacturer_GetID(t *testing.T) {
+	tests := []struct {
+		name string
+		m    *Manufacturer
+		want int
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.m.GetID(); got != tt.want {
+				t.Errorf("Manufacturer.GetID() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestManufacturer_GetNetboxObject(t *testing.T) {
+	tests := []struct {
+		name string
+		m    *Manufacturer
+		want *NetboxObject
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.m.GetNetboxObject(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Manufacturer.GetNetboxObject() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDeviceType_GetID(t *testing.T) {
+	tests := []struct {
+		name string
+		dt   *DeviceType
+		want int
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.dt.GetID(); got != tt.want {
+				t.Errorf("DeviceType.GetID() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDeviceType_GetNetboxObject(t *testing.T) {
+	tests := []struct {
+		name string
+		dt   *DeviceType
+		want *NetboxObject
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.dt.GetNetboxObject(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("DeviceType.GetNetboxObject() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDeviceRole_GetID(t *testing.T) {
+	tests := []struct {
+		name string
+		dr   *DeviceRole
+		want int
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.dr.GetID(); got != tt.want {
+				t.Errorf("DeviceRole.GetID() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDeviceRole_GetNetboxObject(t *testing.T) {
+	tests := []struct {
+		name string
+		dr   *DeviceRole
+		want *NetboxObject
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.dr.GetNetboxObject(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("DeviceRole.GetNetboxObject() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDevice_GetID(t *testing.T) {
+	tests := []struct {
+		name string
+		d    *Device
+		want int
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.d.GetID(); got != tt.want {
+				t.Errorf("Device.GetID() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDevice_GetNetboxObject(t *testing.T) {
+	tests := []struct {
+		name string
+		d    *Device
+		want *NetboxObject
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.d.GetNetboxObject(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Device.GetNetboxObject() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestInterface_GetID(t *testing.T) {
+	tests := []struct {
+		name string
+		i    *Interface
+		want int
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.i.GetID(); got != tt.want {
+				t.Errorf("Interface.GetID() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestInterface_GetNetboxObject(t *testing.T) {
+	tests := []struct {
+		name string
+		i    *Interface
+		want *NetboxObject
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.i.GetNetboxObject(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Interface.GetNetboxObject() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestVirtualDeviceContext_GetID(t *testing.T) {
+	tests := []struct {
+		name string
+		vdc  *VirtualDeviceContext
+		want int
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.vdc.GetID(); got != tt.want {
+				t.Errorf("VirtualDeviceContext.GetID() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestVirtualDeviceContext_GetNetboxObject(t *testing.T) {
+	tests := []struct {
+		name string
+		vdc  *VirtualDeviceContext
+		want *NetboxObject
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.vdc.GetNetboxObject(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("VirtualDeviceContext.GetNetboxObject() = %v, want %v", got, tt.want)
 			}
 		})
 	}
