@@ -1227,12 +1227,71 @@ func Test_sliceToSet(t *testing.T) {
 		args args
 		want map[interface{}]bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Converts a slice of pointers to a set",
+			args: args{
+				slice: reflect.ValueOf([]*objects.Tag{
+					{ID: 1, Name: "Tag1"},
+					{ID: 2, Name: "Tag2"},
+				}),
+			},
+			want: map[interface{}]bool{
+				objects.Tag{ID: 1, Name: "Tag1"}: true,
+				objects.Tag{ID: 2, Name: "Tag2"}: true,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := sliceToSet(tt.args.slice); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("sliceToSet() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestExtractFieldsFromDiffMap(t *testing.T) {
+	type args struct {
+		diffMap map[string]interface{}
+		field   []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want map[string]interface{}
+	}{
+		{
+			name: "Test extract fields from diff map",
+			args: args{
+				diffMap: map[string]interface{}{
+					"id": 1,
+					"custom_fields": map[string]interface{}{
+						"field1": "value1",
+						"field2": "value2",
+					},
+				},
+				field: []string{"custom_fields"},
+			},
+			want: map[string]interface{}{
+				"custom_fields": map[string]interface{}{
+					"field1": "value1",
+					"field2": "value2",
+				},
+			},
+		},
+		{
+			name: "Test extraction on empty diffMap",
+			args: args{
+				diffMap: map[string]interface{}{},
+				field:   []string{"custom_fields"},
+			},
+			want: map[string]interface{}{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ExtractFieldsFromDiffMap(tt.args.diffMap, tt.args.field); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ExtractFieldsFromDiffMap() = %v, want %v", got, tt.want)
 			}
 		})
 	}

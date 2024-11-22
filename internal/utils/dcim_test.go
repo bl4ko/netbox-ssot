@@ -100,6 +100,15 @@ func TestGeneratePlatformName(t *testing.T) {
 			},
 			want: "Linux 8",
 		},
+		{
+			name: "Test generation of platform name with ( in osDistribution",
+			args: args{
+				osDistribution: "Linux (x86_64)",
+				osMajorVersion: "8",
+				cpuArch:        "x86_64",
+			},
+			want: "Linux (x86_64) 8",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -276,7 +285,13 @@ func TestCPUArchToBits(t *testing.T) {
 		args args
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Unknown architecture test",
+			args: args{
+				arch: "unknown",
+			},
+			want: "unknown",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

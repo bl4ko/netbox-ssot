@@ -1,6 +1,8 @@
 package objects
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestTag_String(t *testing.T) {
 	tests := []struct {
@@ -45,6 +47,40 @@ func TestCustomField_String(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.cf.String(); got != tt.want {
 				t.Errorf("CustomField.String() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestTag_GetID(t *testing.T) {
+	tests := []struct {
+		name string
+		tr   *Tag
+		want int
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.tr.GetID(); got != tt.want {
+				t.Errorf("Tag.GetID() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCustomField_GetID(t *testing.T) {
+	tests := []struct {
+		name string
+		cf   *CustomField
+		want int
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.cf.GetID(); got != tt.want {
+				t.Errorf("CustomField.GetID() = %v, want %v", got, tt.want)
 			}
 		})
 	}

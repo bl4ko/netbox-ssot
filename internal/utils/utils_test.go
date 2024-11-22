@@ -525,6 +525,11 @@ func TestLoadExtraCert(t *testing.T) {
 			wantErr:  false,
 		},
 		{
+			name:     "Load invalid cert",
+			certPath: "../../testdata/certificate/invalid_cert.pem",
+			wantErr:  true,
+		},
+		{
 			name:     "Throw error on non-existent path",
 			certPath: "non existent path",
 			wantErr:  true,
@@ -631,7 +636,14 @@ func TestExtractFunctionNameWithTrimPrefix(t *testing.T) {
 		args args
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test extract function name with prefix",
+			args: args{
+				i:      TestExtractFunctionName,
+				prefix: "Test",
+			},
+			want: "ExtractFunctionName",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
