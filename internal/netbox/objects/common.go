@@ -43,6 +43,20 @@ func (n *NetboxObject) GetID() int {
 	return n.ID
 }
 
+func (n *NetboxObject) GetCustomField(label string) interface{} {
+	if n.CustomFields == nil {
+		return nil
+	}
+	return n.CustomFields[label]
+}
+
+func (n *NetboxObject) SetCustomField(label string, value interface{}) {
+	if n.CustomFields == nil {
+		n.CustomFields = make(map[string]interface{})
+	}
+	n.CustomFields[label] = value
+}
+
 // AddTag adds a tag to the NetboxObject if
 // it doesn't have it already. If the tag is already present,
 // nothing happens.

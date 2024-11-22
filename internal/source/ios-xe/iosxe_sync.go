@@ -39,7 +39,7 @@ func (is *IOSXESource) syncDevice(nbi *inventory.NetboxInventory) error {
 		return fmt.Errorf("match host to tenant: %s", err)
 	}
 
-	deviceRole, err := nbi.GetSwitchDeviceRole(is.Ctx)
+	deviceRole, err := nbi.AddSwitchDeviceRole(is.Ctx)
 	if err != nil {
 		return fmt.Errorf("add device role: %s", err)
 	}
@@ -162,14 +162,14 @@ func (is *IOSXESource) syncArpTable(nbi *inventory.NetboxInventory) error {
 
 	// We create custom field for tracking when was arp entry l2ast seen
 	_, err = nbi.AddCustomField(is.Ctx, &objects.CustomField{
-		Name:                  constants.CustomFieldArpIPLastSeenName,
-		Label:                 constants.CustomFieldArpIPLastSeenLabel,
+		Name:                  constants.CustomFieldOrphanLastSeenName,
+		Label:                 constants.CustomFieldOrphanLastSeenLabel,
 		Type:                  objects.CustomFieldTypeText,
 		FilterLogic:           objects.FilterLogicLoose,
 		CustomFieldUIVisible:  &objects.CustomFieldUIVisibleAlways,
 		CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
 		DisplayWeight:         objects.DisplayWeightDefault,
-		Description:           constants.CustomFieldArpIPLastSeenDescription,
+		Description:           constants.CustomFieldOrphanLastSeenDescription,
 		SearchWeight:          objects.SearchWeightDefault,
 		ObjectTypes:           []constants.ContentType{constants.ContentTypeIpamIPAddress},
 	})
@@ -190,8 +190,8 @@ func (is *IOSXESource) syncArpTable(nbi *inventory.NetboxInventory) error {
 					Tags:        newTags,
 					Description: fmt.Sprintf("IP collected from %s arp table", is.SourceConfig.Name),
 					CustomFields: map[string]interface{}{
-						constants.CustomFieldArpIPLastSeenName: currentTime.Format(constants.ArpLastSeenFormat),
-						constants.CustomFieldArpEntryName:      true,
+						constants.CustomFieldOrphanLastSeenName: currentTime.Format(constants.CustomFieldOrphanLastSeenFormat),
+						constants.CustomFieldArpEntryName:       true,
 					},
 				},
 				Address: addressWithMask,

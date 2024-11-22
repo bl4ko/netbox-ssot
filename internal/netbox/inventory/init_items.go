@@ -3,8 +3,6 @@ package inventory
 import (
 	"context"
 	"fmt"
-	"slices"
-	"time"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
@@ -323,7 +321,25 @@ func (nbi *NetboxInventory) initSsotCustomFields(ctx context.Context) error {
 		ObjectTypes:           []constants.ContentType{constants.ContentTypeDcimDevice, constants.ContentTypeDcimDeviceRole, constants.ContentTypeDcimDeviceType, constants.ContentTypeDcimInterface, constants.ContentTypeDcimLocation, constants.ContentTypeDcimManufacturer, constants.ContentTypeDcimPlatform, constants.ContentTypeDcimRegion, constants.ContentTypeDcimSite, constants.ContentTypeVirtualDeviceContext, constants.ContentTypeIpamIPAddress, constants.ContentTypeIpamVlanGroup, constants.ContentTypeIpamVlan, constants.ContentTypeIpamPrefix, constants.ContentTypeTenancyTenantGroup, constants.ContentTypeTenancyTenant, constants.ContentTypeTenancyContact, constants.ContentTypeTenancyContactAssignment, constants.ContentTypeTenancyContactGroup, constants.ContentTypeTenancyContactRole, constants.ContentTypeVirtualizationCluster, constants.ContentTypeVirtualizationClusterGroup, constants.ContentTypeVirtualizationClusterType, constants.ContentTypeVirtualizationVirtualMachine, constants.ContentTypeVirtualizationVMInterface, constants.ContentTypeWirelessLAN, constants.ContentTypeWirelessLANGroup},
 	})
 	if err != nil {
-		return fmt.Errorf("add custom field %s", err)
+		return fmt.Errorf("add source custom field %s", err)
+	}
+	// Custom field for marking when the object was last seen.
+	// This is useful for orphan manager so we can delete objects
+	// that haven't been seen for a while.
+	_, err = nbi.AddCustomField(ctx, &objects.CustomField{
+		Name:                  constants.CustomFieldOrphanLastSeenName,
+		Label:                 constants.CustomFieldOrphanLastSeenLabel,
+		Type:                  objects.CustomFieldTypeText,
+		FilterLogic:           objects.FilterLogicLoose,
+		CustomFieldUIVisible:  &objects.CustomFieldUIVisibleAlways,
+		CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
+		DisplayWeight:         objects.DisplayWeightDefault,
+		Description:           constants.CustomFieldOrphanLastSeenDescription,
+		SearchWeight:          objects.SearchWeightDefault,
+		ObjectTypes:           []constants.ContentType{constants.ContentTypeDcimDevice, constants.ContentTypeDcimDeviceRole, constants.ContentTypeDcimDeviceType, constants.ContentTypeDcimInterface, constants.ContentTypeDcimLocation, constants.ContentTypeDcimManufacturer, constants.ContentTypeDcimPlatform, constants.ContentTypeDcimRegion, constants.ContentTypeDcimSite, constants.ContentTypeVirtualDeviceContext, constants.ContentTypeIpamIPAddress, constants.ContentTypeIpamVlanGroup, constants.ContentTypeIpamVlan, constants.ContentTypeIpamPrefix, constants.ContentTypeTenancyTenantGroup, constants.ContentTypeTenancyTenant, constants.ContentTypeTenancyContact, constants.ContentTypeTenancyContactAssignment, constants.ContentTypeTenancyContactGroup, constants.ContentTypeTenancyContactRole, constants.ContentTypeVirtualizationCluster, constants.ContentTypeVirtualizationClusterGroup, constants.ContentTypeVirtualizationClusterType, constants.ContentTypeVirtualizationVirtualMachine, constants.ContentTypeVirtualizationVMInterface, constants.ContentTypeWirelessLAN, constants.ContentTypeWirelessLANGroup},
+	})
+	if err != nil {
+		return fmt.Errorf("add last seen custom field: %s", err)
 	}
 	// Custom field for storing object's source id.
 	_, err = nbi.AddCustomField(ctx, &objects.CustomField{
@@ -339,7 +355,7 @@ func (nbi *NetboxInventory) initSsotCustomFields(ctx context.Context) error {
 		ObjectTypes:           []constants.ContentType{constants.ContentTypeDcimDevice, constants.ContentTypeDcimDeviceRole, constants.ContentTypeDcimDeviceType, constants.ContentTypeDcimInterface, constants.ContentTypeDcimLocation, constants.ContentTypeDcimManufacturer, constants.ContentTypeDcimPlatform, constants.ContentTypeDcimRegion, constants.ContentTypeDcimSite, constants.ContentTypeVirtualDeviceContext, constants.ContentTypeIpamIPAddress, constants.ContentTypeIpamVlanGroup, constants.ContentTypeIpamVlan, constants.ContentTypeIpamPrefix, constants.ContentTypeTenancyTenantGroup, constants.ContentTypeTenancyTenant, constants.ContentTypeTenancyContact, constants.ContentTypeTenancyContactAssignment, constants.ContentTypeTenancyContactGroup, constants.ContentTypeTenancyContactRole, constants.ContentTypeVirtualizationCluster, constants.ContentTypeVirtualizationClusterGroup, constants.ContentTypeVirtualizationClusterType, constants.ContentTypeVirtualizationVirtualMachine, constants.ContentTypeVirtualizationVMInterface},
 	})
 	if err != nil {
-		return fmt.Errorf("add custom field %s", err)
+		return fmt.Errorf("add source_id custom field %s", err)
 	}
 	// Custom field for storing number of CPU cores for device (server).
 	_, err = nbi.AddCustomField(ctx, &objects.CustomField{
@@ -355,7 +371,7 @@ func (nbi *NetboxInventory) initSsotCustomFields(ctx context.Context) error {
 		ObjectTypes:           []constants.ContentType{constants.ContentTypeDcimDevice},
 	})
 	if err != nil {
-		return fmt.Errorf("add custom field: %s", err)
+		return fmt.Errorf("add host cpu cores custom field: %s", err)
 	}
 	// Custom field for storing the amount of the RAM on the device (server).
 	_, err = nbi.AddCustomField(ctx, &objects.CustomField{
@@ -371,7 +387,7 @@ func (nbi *NetboxInventory) initSsotCustomFields(ctx context.Context) error {
 		ObjectTypes:           []constants.ContentType{constants.ContentTypeDcimDevice},
 	})
 	if err != nil {
-		return fmt.Errorf("add custom field: %s", err)
+		return fmt.Errorf("add host memory custom field: %s", err)
 	}
 	// custom field for storing uuid of the device.
 	_, err = nbi.AddCustomField(ctx, &objects.CustomField{
@@ -387,7 +403,7 @@ func (nbi *NetboxInventory) initSsotCustomFields(ctx context.Context) error {
 		ObjectTypes:           []constants.ContentType{constants.ContentTypeDcimDevice},
 	})
 	if err != nil {
-		return fmt.Errorf("add custom field: %s", err)
+		return fmt.Errorf("add device uuid custom field: %s", err)
 	}
 	// Custom field for determining if an IP address was obtained from the arp table.
 	_, err = nbi.AddCustomField(ctx, &objects.CustomField{
@@ -404,7 +420,7 @@ func (nbi *NetboxInventory) initSsotCustomFields(ctx context.Context) error {
 		ObjectTypes:           []constants.ContentType{constants.ContentTypeIpamIPAddress},
 	})
 	if err != nil {
-		return fmt.Errorf("add custom field: %s", err)
+		return fmt.Errorf("add arp entry custom field: %s", err)
 	}
 	return nil
 }
@@ -642,23 +658,8 @@ func (nbi *NetboxInventory) initIPAddresses(ctx context.Context) error {
 
 	for i := range ipAddresses {
 		ipAddr := &ipAddresses[i]
-		nbi.ipAdressesIndexByAddress[ipAddr.Address] = ipAddr
-		if slices.IndexFunc(ipAddr.Tags, func(t *objects.Tag) bool { return t.Slug == nbi.SsotTag.Slug }) >= 0 {
-			// Also check if IP is of type arp entry, if entry is older
-			if isArpEntry, ok := ipAddr.CustomFields[constants.CustomFieldArpEntryName]; ok {
-				if isArpEntry.(bool) { //nolint:forcetypeassert
-					if arpLastSeen, ok := ipAddr.CustomFields[constants.CustomFieldArpIPLastSeenName]; ok {
-						nowTime := time.Now()
-						lastSeenTime, err := time.Parse(constants.ArpLastSeenFormat, arpLastSeen.(string))
-						if err != nil {
-							nbi.Logger.Errorf(nbi.Ctx, "failed parsing last seen time: %s", err)
-						}
-						if int(nowTime.Sub(lastSeenTime).Seconds()) < nbi.NetboxConfig.ArpDataLifeSpan {
-							continue
-						}
-					}
-				}
-			}
+		if ipAddr.HasTag(nbi.SsotTag) {
+			nbi.ipAdressesIndexByAddress[ipAddr.Address] = ipAddr
 			nbi.OrphanManager.AddItem(constants.IPAddressesAPIPath, ipAddr)
 		}
 	}

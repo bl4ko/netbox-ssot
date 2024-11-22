@@ -36,26 +36,30 @@ const (
 	HTTPS HTTPScheme = "https"
 )
 
+// Configuration that can be used for Netbox.
+// In netbox block.
 type NetboxConfig struct {
 	APIToken string `yaml:"apiToken"`
 	Hostname string `yaml:"hostname"`
 	Port     int    `yaml:"port"`
 	// Can be http or https (default)
-	HTTPScheme      HTTPScheme `yaml:"httpScheme"`
-	ValidateCert    bool       `yaml:"validateCert"`
-	Timeout         int        `yaml:"timeout"`
-	Tag             string     `yaml:"tag"`
-	TagColor        string     `yaml:"tagColor"`
-	RemoveOrphans   bool       `yaml:"removeOrphans"`
-	SourcePriority  []string   `yaml:"sourcePriority"`
-	ArpDataLifeSpan int        `yaml:"arpDataLifeSpan"`
-	CAFile          string     `yaml:"caFile"`
+	HTTPScheme             HTTPScheme `yaml:"httpScheme"`
+	ValidateCert           bool       `yaml:"validateCert"`
+	Timeout                int        `yaml:"timeout"`
+	Tag                    string     `yaml:"tag"`
+	TagColor               string     `yaml:"tagColor"`
+	RemoveOrphans          bool       `yaml:"removeOrphans"`
+	RemoveOrphansAfterDays int        `yaml:"removeOrphansAfterDays"`
+	SourcePriority         []string   `yaml:"sourcePriority"`
+	CAFile                 string     `yaml:"caFile"`
 }
 
 func (n NetboxConfig) String() string {
-	return fmt.Sprintf("NetboxConfig{ApiToken: %s, Hostname: %s, Port: %d, HTTPScheme: %s, ValidateCert: %t, Timeout: %d, Tag: %s, TagColor: %s, RemoveOrphans: %t}", n.APIToken, n.Hostname, n.Port, n.HTTPScheme, n.ValidateCert, n.Timeout, n.Tag, n.TagColor, n.RemoveOrphans)
+	return fmt.Sprintf("NetboxConfig{ApiToken: %s, Hostname: %s, Port: %d, HTTPScheme: %s, ValidateCert: %t, Timeout: %d, Tag: %s, TagColor: %s, RemoveOrphans: %t, RemoveOrphansAfterDays: %d}", n.APIToken, n.Hostname, n.Port, n.HTTPScheme, n.ValidateCert, n.Timeout, n.Tag, n.TagColor, n.RemoveOrphans, n.RemoveOrphansAfterDays)
 }
 
+// Configuration that can be used for each of the sources.
+// In sources block.
 type SourceConfig struct {
 	Name            string               `yaml:"name"`
 	Type            constants.SourceType `yaml:"type"`
@@ -71,7 +75,6 @@ type SourceConfig struct {
 	IgnoredSubnets  []string             `yaml:"ignoredSubnets"`
 	InterfaceFilter string               `yaml:"interfaceFilter"`
 	CollectArpData  bool                 `yaml:"collectArpData"`
-	ArpDataLifeSpan int                  `yaml:"arpDataLifeSpan"`
 	CAFile          string               `yaml:"caFile"`
 
 	// Relations
@@ -141,6 +144,16 @@ func validateNetboxConfig(config *Config) error {
 	if config.Netbox.Tag == "" {
 		config.Netbox.Tag = constants.SsotTagName
 	}
+	if !config.Netbox.RemoveOrphans {
+		if config.Netbox.RemoveOrphansAfterDays < 0 {
+			return fmt.Errorf("netbox.arpDataLifeSpan: cannot be negative")
+		}
+		if config.Netbox.RemoveOrphansAfterDays == 0 {
+			config.Netbox.RemoveOrphansAfterDays = constants.CustomFieldOrphanLastSeenDefaultValue
+		}
+	} else if config.Netbox.RemoveOrphansAfterDays != 0 {
+		return fmt.Errorf("netbox.removeOrphansAfterDays has no effect when netbox.removeOrphans is set to true")
+	}
 	if config.Netbox.TagColor == "" {
 		config.Netbox.TagColor = constants.SsotTagColor
 	} else {
@@ -170,12 +183,6 @@ func validateNetboxConfig(config *Config) error {
 				return fmt.Errorf("netbox.sourcePriority: source[%s] doesn't exist in the sources array", sourceName)
 			}
 		}
-	}
-	if config.Netbox.ArpDataLifeSpan < 0 {
-		return fmt.Errorf("netbox.arpDataLifeSpan: cannot be negative")
-	}
-	if config.Netbox.ArpDataLifeSpan == 0 {
-		config.Netbox.ArpDataLifeSpan = constants.DefaultArpDataLifeSpan
 	}
 	if config.Netbox.CAFile != "" {
 		_, err := os.ReadFile(config.Netbox.CAFile)

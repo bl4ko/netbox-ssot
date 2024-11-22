@@ -26,9 +26,6 @@ const DefaultVlanGroupDescription = "Default netbox-ssot VlanGroup for all vlans
 
 const DefaultArpTagName = "arp-entry"
 const DefaultArpTagColor = ColorRed
-const ArpLastSeenFormat = "2006-01-02 15:04:05"
-
-const DefaultArpDataLifeSpan = 60 * 60 * 24 * 2 // 2 days in seconds
 
 const (
 	DefaultOSName                  string = "Unknown"
@@ -140,6 +137,13 @@ const (
 	CustomFieldSourceIDLabel       = "Source ID"
 	CustomFieldSourceIDDescription = "ID of the object on the source API"
 
+	// Custom field for all object to track when we have last seen them.
+	CustomFieldOrphanLastSeenName         = "orphan_last_seen"
+	CustomFieldOrphanLastSeenLabel        = "Orphan last seen"
+	CustomFieldOrphanLastSeenDescription  = "Last time the orphan object was seen"
+	CustomFieldOrphanLastSeenFormat       = "2006-01-02 15:04:05"
+	CustomFieldOrphanLastSeenDefaultValue = int(^uint(0) >> 1)
+
 	// Custom field dcim.device, so we can add number of cpu cores for each server.
 	CustomFieldHostCPUCoresName        = "host_cpu_cores"
 	CustomFieldHostCPUCoresLabel       = "Host CPU cores"
@@ -159,11 +163,6 @@ const (
 	CustomFieldArpEntryName        = "arp_entry"
 	CustomFieldArpEntryLabel       = "Arp Entry"
 	CustomFieldArpEntryDescription = "Was this IP collected from ARP table"
-
-	// Custom field for ipam.ipaddress, so we can track when was arp entry last found.
-	CustomFieldArpIPLastSeenName        = "last_seen"
-	CustomFieldArpIPLastSeenLabel       = "Last seen"
-	CustomFieldArpIPLastSeenDescription = "Last time the IP was found in the arp table"
 )
 
 // Device Role constants.

@@ -314,14 +314,14 @@ func (pas *PaloAltoSource) syncArpTable(nbi *inventory.NetboxInventory) error {
 	}
 	// We create custom field for tracking when was arp entry last seen
 	customFieldStruct := &objects.CustomField{
-		Name:                  constants.CustomFieldArpIPLastSeenName,
-		Label:                 constants.CustomFieldArpIPLastSeenLabel,
+		Name:                  constants.CustomFieldOrphanLastSeenName,
+		Label:                 constants.CustomFieldOrphanLastSeenLabel,
 		Type:                  objects.CustomFieldTypeText,
 		FilterLogic:           objects.FilterLogicLoose,
 		CustomFieldUIVisible:  &objects.CustomFieldUIVisibleAlways,
 		CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
 		DisplayWeight:         objects.DisplayWeightDefault,
-		Description:           constants.CustomFieldArpIPLastSeenDescription,
+		Description:           constants.CustomFieldOrphanLastSeenDescription,
 		SearchWeight:          objects.SearchWeightDefault,
 		ObjectTypes:           []constants.ContentType{constants.ContentTypeIpamIPAddress},
 	}
@@ -379,8 +379,8 @@ func (pas *PaloAltoSource) syncArpEntry(nbi *inventory.NetboxInventory, entry Ar
 				Tags:        newTags,
 				Description: fmt.Sprintf("IP collected from %s arp table", pas.SourceConfig.Name),
 				CustomFields: map[string]interface{}{
-					constants.CustomFieldArpIPLastSeenName: currentTime.Format(constants.ArpLastSeenFormat),
-					constants.CustomFieldArpEntryName:      true,
+					constants.CustomFieldOrphanLastSeenName: currentTime.Format(constants.CustomFieldOrphanLastSeenFormat),
+					constants.CustomFieldArpEntryName:       true,
 				},
 			},
 			Address: addressWithMask,

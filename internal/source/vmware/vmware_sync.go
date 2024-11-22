@@ -246,7 +246,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		hostCPUCores := host.Summary.Hardware.NumCpuCores
 		hostMemGB := host.Summary.Hardware.MemorySize / constants.KiB / constants.KiB / constants.KiB
 
-		hostDeviceRole, err := nbi.GetServerDeviceRole(vc.Ctx)
+		hostDeviceRole, err := nbi.AddServerDeviceRole(vc.Ctx)
 		if err != nil {
 			return fmt.Errorf("add server device role %s", err)
 		}
@@ -724,12 +724,12 @@ func (vc *VmwareSource) syncVM(nbi *inventory.NetboxInventory, vmKey string, vm 
 	var vmRole *objects.DeviceRole
 	var err error
 	if isTemplate {
-		vmRole, err = nbi.GetVMTemplateDeviceRole(vc.Ctx)
+		vmRole, err = nbi.AddVMTemplateDeviceRole(vc.Ctx)
 		if err != nil {
 			return fmt.Errorf("add template device role: %s", err)
 		}
 	} else {
-		vmRole, err = nbi.GetVMDeviceRole(vc.Ctx)
+		vmRole, err = nbi.AddVMDeviceRole(vc.Ctx)
 		if err != nil {
 			return fmt.Errorf("get vm device role: %s", err)
 		}

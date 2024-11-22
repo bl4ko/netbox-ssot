@@ -862,7 +862,7 @@ func (o *OVirtSource) extractVMData(nbi *inventory.NetboxInventory, vmID string,
 			}
 		}
 	}
-	vmRole, err := nbi.GetVMDeviceRole(o.Ctx)
+	vmRole, err := nbi.AddVMDeviceRole(o.Ctx)
 	if err != nil {
 		return nil, fmt.Errorf("get vm device role: %s", err)
 	}
