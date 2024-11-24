@@ -58,7 +58,13 @@ func TestTag_GetID(t *testing.T) {
 		tr   *Tag
 		want int
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test tag get id",
+			tr: &Tag{
+				ID: 1,
+			},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -75,7 +81,13 @@ func TestCustomField_GetID(t *testing.T) {
 		cf   *CustomField
 		want int
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test Custom Field Get ID",
+			cf: &CustomField{
+				ID: 1,
+			},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

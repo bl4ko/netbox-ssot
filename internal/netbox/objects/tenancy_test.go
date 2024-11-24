@@ -60,7 +60,13 @@ func TestContact_String(t *testing.T) {
 		c    Contact
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test contact correct string",
+			c: Contact{
+				Name: "Test contact",
+			},
+			want: "Contact{Name: Test contact}",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -110,7 +116,15 @@ func TestTenantGroup_GetID(t *testing.T) {
 		tg   *TenantGroup
 		want int
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test tg get id",
+			tg: &TenantGroup{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+			},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -127,8 +141,23 @@ func TestTenantGroup_GetNetboxObject(t *testing.T) {
 		tg   *TenantGroup
 		want *NetboxObject
 	}{
-		// TODO: Add test cases.
-	}
+		{
+			name: "Test tg get netbox object",
+			tg: &TenantGroup{
+				NetboxObject: NetboxObject{
+					ID: 1,
+					CustomFields: map[string]interface{}{
+						"x": "y",
+					},
+				},
+			},
+			want: &NetboxObject{
+				ID: 1,
+				CustomFields: map[string]interface{}{
+					"x": "y",
+				},
+			},
+		}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.tg.GetNetboxObject(); !reflect.DeepEqual(got, tt.want) {
@@ -144,8 +173,15 @@ func TestTenant_GetID(t *testing.T) {
 		tr   *Tenant
 		want int
 	}{
-		// TODO: Add test cases.
-	}
+		{
+			name: "Test tenant get id",
+			tr: &Tenant{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+			},
+			want: 1,
+		}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.tr.GetID(); got != tt.want {
@@ -161,7 +197,23 @@ func TestTenant_GetNetboxObject(t *testing.T) {
 		tr   *Tenant
 		want *NetboxObject
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test tenant get netbox object",
+			tr: &Tenant{
+				NetboxObject: NetboxObject{
+					ID: 1,
+					CustomFields: map[string]interface{}{
+						"x": "y",
+					},
+				},
+			},
+			want: &NetboxObject{
+				ID: 1,
+				CustomFields: map[string]interface{}{
+					"x": "y",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -178,7 +230,13 @@ func TestContactGroup_String(t *testing.T) {
 		cg   ContactGroup
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test string representation of contact group",
+			cg: ContactGroup{
+				Name: "Test contact group",
+			},
+			want: "ContactGroup{Name: Test contact group}",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -195,7 +253,15 @@ func TestContactGroup_GetID(t *testing.T) {
 		cg   *ContactGroup
 		want int
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test contact group get id",
+			cg: &ContactGroup{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+			},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -212,7 +278,23 @@ func TestContactGroup_GetNetboxObject(t *testing.T) {
 		cg   *ContactGroup
 		want *NetboxObject
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test cg get netbox object",
+			cg: &ContactGroup{
+				NetboxObject: NetboxObject{
+					ID: 1,
+					CustomFields: map[string]interface{}{
+						"x": "y",
+					},
+				},
+			},
+			want: &NetboxObject{
+				ID: 1,
+				CustomFields: map[string]interface{}{
+					"x": "y",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -229,8 +311,15 @@ func TestContactRole_GetID(t *testing.T) {
 		cr   *ContactRole
 		want int
 	}{
-		// TODO: Add test cases.
-	}
+		{
+			name: "Test contact role get id",
+			cr: &ContactRole{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+			},
+			want: 1,
+		}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.cr.GetID(); got != tt.want {
@@ -246,7 +335,23 @@ func TestContactRole_GetNetboxObject(t *testing.T) {
 		cr   *ContactRole
 		want *NetboxObject
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test cr get netbox object",
+			cr: &ContactRole{
+				NetboxObject: NetboxObject{
+					ID: 1,
+					CustomFields: map[string]interface{}{
+						"x": "y",
+					},
+				},
+			},
+			want: &NetboxObject{
+				ID: 1,
+				CustomFields: map[string]interface{}{
+					"x": "y",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -263,7 +368,15 @@ func TestContact_GetID(t *testing.T) {
 		c    *Contact
 		want int
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test contact get id",
+			c: &Contact{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+			},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -280,7 +393,23 @@ func TestContact_GetNetboxObject(t *testing.T) {
 		c    *Contact
 		want *NetboxObject
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test contact get netbox object",
+			c: &Contact{
+				NetboxObject: NetboxObject{
+					ID: 1,
+					CustomFields: map[string]interface{}{
+						"x": "y",
+					},
+				},
+			},
+			want: &NetboxObject{
+				ID: 1,
+				CustomFields: map[string]interface{}{
+					"x": "y",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -297,7 +426,15 @@ func TestContactAssignment_GetID(t *testing.T) {
 		ca   *ContactAssignment
 		want int
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test ca get id",
+			ca: &ContactAssignment{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+			},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -314,7 +451,23 @@ func TestContactAssignment_GetNetboxObject(t *testing.T) {
 		ca   *ContactAssignment
 		want *NetboxObject
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test ca get netbox object",
+			ca: &ContactAssignment{
+				NetboxObject: NetboxObject{
+					ID: 1,
+					CustomFields: map[string]interface{}{
+						"x": "y",
+					},
+				},
+			},
+			want: &NetboxObject{
+				ID: 1,
+				CustomFields: map[string]interface{}{
+					"x": "y",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

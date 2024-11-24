@@ -238,7 +238,23 @@ func TestSite_GetNetboxObject(t *testing.T) {
 		s    *Site
 		want *NetboxObject
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test interface get netbox object",
+			s: &Site{
+				NetboxObject: NetboxObject{
+					ID: 1,
+					CustomFields: map[string]interface{}{
+						"x": "y",
+					},
+				},
+			},
+			want: &NetboxObject{
+				ID: 1,
+				CustomFields: map[string]interface{}{
+					"x": "y",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -255,7 +271,15 @@ func TestSite_GetID(t *testing.T) {
 		s    *Site
 		want int
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test site get id",
+			s: &Site{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+			},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -272,7 +296,23 @@ func TestPlatform_GetNetboxObject(t *testing.T) {
 		p    *Platform
 		want *NetboxObject
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test platform get netbox object",
+			p: &Platform{
+				NetboxObject: NetboxObject{
+					ID: 1,
+					CustomFields: map[string]interface{}{
+						"x": "y",
+					},
+				},
+			},
+			want: &NetboxObject{
+				ID: 1,
+				CustomFields: map[string]interface{}{
+					"x": "y",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -289,7 +329,15 @@ func TestPlatform_GetID(t *testing.T) {
 		p    *Platform
 		want int
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test platform get id",
+			p: &Platform{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+			},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -306,7 +354,14 @@ func TestRegion_String(t *testing.T) {
 		r    Region
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Correct string representation of region",
+			r: Region{
+				Name: "Test region",
+				Slug: "test_region",
+			},
+			want: "Region{Name: Test region}",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -323,7 +378,23 @@ func TestRegion_GetNetboxObject(t *testing.T) {
 		r    *Region
 		want *NetboxObject
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test region get netbox object",
+			r: &Region{
+				NetboxObject: NetboxObject{
+					ID: 1,
+					CustomFields: map[string]interface{}{
+						"x": "y",
+					},
+				},
+			},
+			want: &NetboxObject{
+				ID: 1,
+				CustomFields: map[string]interface{}{
+					"x": "y",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -340,7 +411,15 @@ func TestRegion_GetID(t *testing.T) {
 		r    *Region
 		want int
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Get region id",
+			r: &Region{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+			},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -357,7 +436,16 @@ func TestLocation_String(t *testing.T) {
 		l    Location
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test location string output",
+			l: Location{
+				Name: "Test location",
+				Site: &Site{
+					Name: "Test site",
+				},
+			},
+			want: "Location{Name: Test location, Site: Site{Name: Test site}}",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -374,7 +462,15 @@ func TestLocation_GetID(t *testing.T) {
 		l    *Location
 		want int
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test location get id",
+			l: &Location{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+			},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -391,7 +487,23 @@ func TestLocation_GetNetboxObject(t *testing.T) {
 		l    *Location
 		want *NetboxObject
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test location get netbox object",
+			l: &Location{
+				NetboxObject: NetboxObject{
+					ID: 1,
+					CustomFields: map[string]interface{}{
+						"x": "y",
+					},
+				},
+			},
+			want: &NetboxObject{
+				ID: 1,
+				CustomFields: map[string]interface{}{
+					"x": "y",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -408,7 +520,15 @@ func TestManufacturer_GetID(t *testing.T) {
 		m    *Manufacturer
 		want int
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Get manufacturer ID",
+			m: &Manufacturer{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+			},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -425,7 +545,23 @@ func TestManufacturer_GetNetboxObject(t *testing.T) {
 		m    *Manufacturer
 		want *NetboxObject
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test manufacturer get netbox object",
+			m: &Manufacturer{
+				NetboxObject: NetboxObject{
+					ID: 1,
+					CustomFields: map[string]interface{}{
+						"x": "y",
+					},
+				},
+			},
+			want: &NetboxObject{
+				ID: 1,
+				CustomFields: map[string]interface{}{
+					"x": "y",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -442,7 +578,15 @@ func TestDeviceType_GetID(t *testing.T) {
 		dt   *DeviceType
 		want int
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test device type get id",
+			dt: &DeviceType{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+			},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -459,7 +603,23 @@ func TestDeviceType_GetNetboxObject(t *testing.T) {
 		dt   *DeviceType
 		want *NetboxObject
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test device type get netbox object",
+			dt: &DeviceType{
+				NetboxObject: NetboxObject{
+					ID: 1,
+					CustomFields: map[string]interface{}{
+						"x": "y",
+					},
+				},
+			},
+			want: &NetboxObject{
+				ID: 1,
+				CustomFields: map[string]interface{}{
+					"x": "y",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -476,7 +636,15 @@ func TestDeviceRole_GetID(t *testing.T) {
 		dr   *DeviceRole
 		want int
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test device role get id",
+			dr: &DeviceRole{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+			},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -493,7 +661,23 @@ func TestDeviceRole_GetNetboxObject(t *testing.T) {
 		dr   *DeviceRole
 		want *NetboxObject
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test device role get netbox object",
+			dr: &DeviceRole{
+				NetboxObject: NetboxObject{
+					ID: 1,
+					CustomFields: map[string]interface{}{
+						"x": "y",
+					},
+				},
+			},
+			want: &NetboxObject{
+				ID: 1,
+				CustomFields: map[string]interface{}{
+					"x": "y",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -510,7 +694,15 @@ func TestDevice_GetID(t *testing.T) {
 		d    *Device
 		want int
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test device get id",
+			d: &Device{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+			},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -527,7 +719,23 @@ func TestDevice_GetNetboxObject(t *testing.T) {
 		d    *Device
 		want *NetboxObject
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test device get netbox object",
+			d: &Device{
+				NetboxObject: NetboxObject{
+					ID: 1,
+					CustomFields: map[string]interface{}{
+						"x": "y",
+					},
+				},
+			},
+			want: &NetboxObject{
+				ID: 1,
+				CustomFields: map[string]interface{}{
+					"x": "y",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -544,7 +752,15 @@ func TestInterface_GetID(t *testing.T) {
 		i    *Interface
 		want int
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test interface get id",
+			i: &Interface{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+			},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -561,7 +777,23 @@ func TestInterface_GetNetboxObject(t *testing.T) {
 		i    *Interface
 		want *NetboxObject
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test interface get netbox object",
+			i: &Interface{
+				NetboxObject: NetboxObject{
+					ID: 1,
+					CustomFields: map[string]interface{}{
+						"x": "y",
+					},
+				},
+			},
+			want: &NetboxObject{
+				ID: 1,
+				CustomFields: map[string]interface{}{
+					"x": "y",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -578,7 +810,15 @@ func TestVirtualDeviceContext_GetID(t *testing.T) {
 		vdc  *VirtualDeviceContext
 		want int
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test vdc get id",
+			vdc: &VirtualDeviceContext{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+			},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -595,7 +835,23 @@ func TestVirtualDeviceContext_GetNetboxObject(t *testing.T) {
 		vdc  *VirtualDeviceContext
 		want *NetboxObject
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test vdc get netbox object",
+			vdc: &VirtualDeviceContext{
+				NetboxObject: NetboxObject{
+					ID: 1,
+					CustomFields: map[string]interface{}{
+						"x": "y",
+					},
+				},
+			},
+			want: &NetboxObject{
+				ID: 1,
+				CustomFields: map[string]interface{}{
+					"x": "y",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -115,7 +115,15 @@ func TestIPAddress_GetID(t *testing.T) {
 		ip   *IPAddress
 		want int
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test ip address get id",
+			ip: &IPAddress{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+			},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -132,7 +140,23 @@ func TestIPAddress_GetNetboxObject(t *testing.T) {
 		ip   *IPAddress
 		want *NetboxObject
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test ip address get netbox object",
+			ip: &IPAddress{
+				NetboxObject: NetboxObject{
+					ID: 1,
+					CustomFields: map[string]interface{}{
+						"x": "y",
+					},
+				},
+			},
+			want: &NetboxObject{
+				ID: 1,
+				CustomFields: map[string]interface{}{
+					"x": "y",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -149,7 +173,15 @@ func TestVlanGroup_GetID(t *testing.T) {
 		vg   *VlanGroup
 		want int
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test vlan group get id",
+			vg: &VlanGroup{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+			},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -166,7 +198,23 @@ func TestVlanGroup_GetNetboxObject(t *testing.T) {
 		vg   *VlanGroup
 		want *NetboxObject
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test vlan group get netbox object",
+			vg: &VlanGroup{
+				NetboxObject: NetboxObject{
+					ID: 1,
+					CustomFields: map[string]interface{}{
+						"x": "y",
+					},
+				},
+			},
+			want: &NetboxObject{
+				ID: 1,
+				CustomFields: map[string]interface{}{
+					"x": "y",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -183,7 +231,15 @@ func TestVlan_GetID(t *testing.T) {
 		v    *Vlan
 		want int
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test vlan get id",
+			v: &Vlan{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+			},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -200,7 +256,23 @@ func TestVlan_GetNetboxObject(t *testing.T) {
 		v    *Vlan
 		want *NetboxObject
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test vlan get netbox object",
+			v: &Vlan{
+				NetboxObject: NetboxObject{
+					ID: 1,
+					CustomFields: map[string]interface{}{
+						"x": "y",
+					},
+				},
+			},
+			want: &NetboxObject{
+				ID: 1,
+				CustomFields: map[string]interface{}{
+					"x": "y",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -217,7 +289,15 @@ func TestPrefix_GetID(t *testing.T) {
 		p    *Prefix
 		want int
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test prefix get id",
+			p: &Prefix{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+			},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -234,7 +314,23 @@ func TestPrefix_GetNetboxObject(t *testing.T) {
 		p    *Prefix
 		want *NetboxObject
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test prefix get netbox object",
+			p: &Prefix{
+				NetboxObject: NetboxObject{
+					ID: 1,
+					CustomFields: map[string]interface{}{
+						"x": "y",
+					},
+				},
+			},
+			want: &NetboxObject{
+				ID: 1,
+				CustomFields: map[string]interface{}{
+					"x": "y",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

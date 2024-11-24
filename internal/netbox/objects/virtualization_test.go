@@ -109,7 +109,13 @@ func TestClusterGroup_String(t *testing.T) {
 		cg   ClusterGroup
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "String representation of cluster group",
+			cg: ClusterGroup{
+				Name: "Test cluster group",
+			},
+			want: "ClusterGroup{Name: Test cluster group}",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -126,7 +132,15 @@ func TestClusterGroup_GetID(t *testing.T) {
 		cg   *ClusterGroup
 		want int
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test cluster group get id",
+			cg: &ClusterGroup{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+			},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -143,7 +157,23 @@ func TestClusterGroup_GetNetboxObject(t *testing.T) {
 		cg   *ClusterGroup
 		want *NetboxObject
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test cluster group get netbox object",
+			cg: &ClusterGroup{
+				NetboxObject: NetboxObject{
+					ID: 1,
+					CustomFields: map[string]interface{}{
+						"x": "y",
+					},
+				},
+			},
+			want: &NetboxObject{
+				ID: 1,
+				CustomFields: map[string]interface{}{
+					"x": "y",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -160,7 +190,15 @@ func TestClusterType_GetID(t *testing.T) {
 		ct   *ClusterType
 		want int
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test cluster type get id",
+			ct: &ClusterType{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+			},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -177,7 +215,23 @@ func TestClusterType_GetNetboxObject(t *testing.T) {
 		ct   *ClusterType
 		want *NetboxObject
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test cluster type get netbox object",
+			ct: &ClusterType{
+				NetboxObject: NetboxObject{
+					ID: 1,
+					CustomFields: map[string]interface{}{
+						"x": "y",
+					},
+				},
+			},
+			want: &NetboxObject{
+				ID: 1,
+				CustomFields: map[string]interface{}{
+					"x": "y",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -194,7 +248,15 @@ func TestCluster_GetID(t *testing.T) {
 		c    *Cluster
 		want int
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test cluster get id",
+			c: &Cluster{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+			},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -211,7 +273,23 @@ func TestCluster_GetNetboxObject(t *testing.T) {
 		c    *Cluster
 		want *NetboxObject
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test cluster get netbox object",
+			c: &Cluster{
+				NetboxObject: NetboxObject{
+					ID: 1,
+					CustomFields: map[string]interface{}{
+						"x": "y",
+					},
+				},
+			},
+			want: &NetboxObject{
+				ID: 1,
+				CustomFields: map[string]interface{}{
+					"x": "y",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -228,7 +306,15 @@ func TestVM_GetID(t *testing.T) {
 		vm   *VM
 		want int
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test vm get id",
+			vm: &VM{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+			},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -245,7 +331,23 @@ func TestVM_GetNetboxObject(t *testing.T) {
 		vm   *VM
 		want *NetboxObject
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test vm get netbox object",
+			vm: &VM{
+				NetboxObject: NetboxObject{
+					ID: 1,
+					CustomFields: map[string]interface{}{
+						"x": "y",
+					},
+				},
+			},
+			want: &NetboxObject{
+				ID: 1,
+				CustomFields: map[string]interface{}{
+					"x": "y",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -262,7 +364,15 @@ func TestVMInterface_GetID(t *testing.T) {
 		vmi  *VMInterface
 		want int
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test vmi get id",
+			vmi: &VMInterface{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+			},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -279,7 +389,23 @@ func TestVMInterface_GetNetboxObject(t *testing.T) {
 		vmi  *VMInterface
 		want *NetboxObject
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test vmi get netbox object",
+			vmi: &VMInterface{
+				NetboxObject: NetboxObject{
+					ID: 1,
+					CustomFields: map[string]interface{}{
+						"x": "y",
+					},
+				},
+			},
+			want: &NetboxObject{
+				ID: 1,
+				CustomFields: map[string]interface{}{
+					"x": "y",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

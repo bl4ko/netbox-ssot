@@ -66,7 +66,15 @@ func TestWirelessLANGroup_GetID(t *testing.T) {
 		wlg  *WirelessLANGroup
 		want int
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test WirelessLANGroup get id",
+			wlg: &WirelessLANGroup{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+			},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -83,7 +91,23 @@ func TestWirelessLANGroup_GetNetboxObject(t *testing.T) {
 		wlg  *WirelessLANGroup
 		want *NetboxObject
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test wlg get netbox object",
+			wlg: &WirelessLANGroup{
+				NetboxObject: NetboxObject{
+					ID: 1,
+					CustomFields: map[string]interface{}{
+						"x": "y",
+					},
+				},
+			},
+			want: &NetboxObject{
+				ID: 1,
+				CustomFields: map[string]interface{}{
+					"x": "y",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -100,7 +124,15 @@ func TestWirelessLAN_GetID(t *testing.T) {
 		wl   *WirelessLAN
 		want int
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test Wireless LAN get id",
+			wl: &WirelessLAN{
+				NetboxObject: NetboxObject{
+					ID: 1,
+				},
+			},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -117,7 +149,23 @@ func TestWirelessLAN_GetNetboxObject(t *testing.T) {
 		wl   *WirelessLAN
 		want *NetboxObject
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Test wireless lan get netbox object",
+			wl: &WirelessLAN{
+				NetboxObject: NetboxObject{
+					ID: 1,
+					CustomFields: map[string]interface{}{
+						"x": "y",
+					},
+				},
+			},
+			want: &NetboxObject{
+				ID: 1,
+				CustomFields: map[string]interface{}{
+					"x": "y",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
