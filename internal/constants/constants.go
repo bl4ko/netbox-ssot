@@ -17,7 +17,7 @@ const SsotTagColor = "00add8"
 const SsotTagName = "netbox-ssot"
 const SsotTagDescription = "Tag used by netbox-ssot to mark devices that are managed by it"
 
-const OrphanTagName = "orphan"
+const OrphanTagName = "netbox-ssot-orphan"
 const OrphanTagColor = ColorGrey
 const OrphanTagDescription = "Tag used by netbox-ssot to mark orphaned objects"
 
