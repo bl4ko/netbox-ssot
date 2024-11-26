@@ -1,5 +1,5 @@
 name: Feature Request
-description: Suggest a new feature or enhancement for Netbox-ssot
+description: Suggest a new feature or enhancement for netbox-ssot
 title: "[Feature Request] <title>"
 labels: ["Feature Request"]
 body:

@@ -58,7 +58,7 @@ func (nbi *NetboxInventory) softDelete(apiPath string, orphanItem objects.Orphan
 	// Perform soft deletion
 	// Add tag to the object to mark it as orphaned
 	todayDate := time.Now().Format(constants.CustomFieldOrphanLastSeenFormat)
-	if !orphanItem.GetNetboxObject().HasTag(nbi.OrphanManager.Tag) {
+	if !orphanItem.GetNetboxObject().HasTag(nbi.OrphanManager.Tag) || orphanItem.GetNetboxObject().GetCustomField(constants.CustomFieldOrphanLastSeenName) == nil {
 		// This OrphanItem has been marked as orphan for the first time
 		orphanItem.GetNetboxObject().AddTag(nbi.OrphanManager.Tag)
 		orphanItem.GetNetboxObject().SetCustomField(constants.CustomFieldOrphanLastSeenName, todayDate)
@@ -114,20 +114,14 @@ func (nbi *NetboxInventory) softDelete(apiPath string, orphanItem objects.Orphan
 		}
 	} else {
 		nbi.Logger.Debugf(nbi.Ctx, "%s is already marked as orphan", orphanItem)
-		if orphanItem.GetNetboxObject().GetCustomField(constants.CustomFieldOrphanLastSeenName) == "" {
-			orphanItem.GetNetboxObject().SetCustomField(constants.CustomFieldOrphanLastSeenName, todayDate)
-		} else {
-			// We check if the object has been orphaned for more than nbi.Config.OrphanRemoveAfterDays
-			lastSeen, err := time.Parse(constants.CustomFieldOrphanLastSeenFormat, orphanItem.GetNetboxObject().GetCustomField(constants.CustomFieldOrphanLastSeenName).(string))
+		lastSeen, err := time.Parse(constants.CustomFieldOrphanLastSeenFormat, orphanItem.GetNetboxObject().GetCustomField(constants.CustomFieldOrphanLastSeenName).(string))
+		if err != nil {
+			return fmt.Errorf("failed parsing last seen date: %s", err)
+		}
+		if int((time.Since(lastSeen).Hours())/24) > nbi.NetboxConfig.RemoveOrphansAfterDays { //nolint:mnd
+			err := nbi.hardDelete(apiPath, orphanItem)
 			if err != nil {
-				return fmt.Errorf("failed parsing last seen date: %s", err)
-			}
-			if int((time.Since(lastSeen).Hours())/24) > nbi.NetboxConfig.RemoveOrphansAfterDays { //nolint:mnd
-				// Perform hard deletion
-				err := nbi.hardDelete(apiPath, orphanItem)
-				if err != nil {
-					return fmt.Errorf("failed deleting %s object: %s", orphanItem, err)
-				}
+				return fmt.Errorf("failed deleting %s object: %s", orphanItem, err)
 			}
 		}
 	}
