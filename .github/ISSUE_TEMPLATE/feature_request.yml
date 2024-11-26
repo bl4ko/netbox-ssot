@@ -1,0 +1,61 @@
+name: Feature Request
+description: Suggest a new feature or enhancement for Netbox-ssot
+title: "[Feature Request] <title>"
+labels: ["Feature Request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a feature! 🎉 Your input helps us improve Netbox-ssot.
+
+        Please provide as much detail as possible to help us understand your idea and its use case.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What is the feature?
+      description: |
+        Provide a clear and concise description of the feature you'd like to see. Include details about what it does and why it's needed.
+      placeholder: "I would like Netbox-ssot to have the ability to..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Why is this feature important?
+      description: |
+        Explain the problem this feature would solve or the benefits it would provide. Include specific scenarios where this feature would be useful.
+      placeholder: "This feature would help me by..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: implementation-ideas
+    attributes:
+      label: How could this feature be implemented?
+      description: |
+        Share your ideas for how this feature might work or be implemented. If you're unsure, feel free to leave this blank.
+      placeholder: |
+        - This feature could be added as a configuration option...
+        - A similar tool does it this way...
+      render: plaintext
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Have you considered alternatives?
+      description: |
+        List any alternative solutions or workarounds you've tried or thought about.
+      placeholder: "Instead of this feature, I tried..."
+      render: plaintext
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context or references
+      description: |
+        Provide links, screenshots, or other references that help illustrate your feature request.
+      placeholder: |
+        - Here’s an example of the desired behavior: [link](https://example.com)
+        - Screenshot of the issue: ![screenshot](url)

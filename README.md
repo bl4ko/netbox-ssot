@@ -197,6 +197,7 @@ source:
     hostname: 10.10.1.1
     username: user
     password: password
+    port: 830
     validateCert: False
     hostTenantRelations:
       - .* = MyTenant
