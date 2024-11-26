@@ -18,7 +18,17 @@ import (
 
 var configPath = flag.String("config", "config.yaml", "Path to the configuration file")
 
+// Build variables provided with ldflags.
+var (
+	version = "unknown"
+	commit  = "unknown"
+	date    = "unknown"
+)
+
 func main() {
+	// Print build information
+	fmt.Printf("Running version %s built on %s (commit %s)\n\n", version, date, commit)
+
 	startTime := time.Now()
 
 	// Parse configuration

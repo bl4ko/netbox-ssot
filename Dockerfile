@@ -2,6 +2,9 @@ FROM --platform=$BUILDPLATFORM golang:1.23.3@sha256:73f06be4578c9987ce560087e2e2
 
 ARG TARGETOS
 ARG TARGETARCH
+ARG VERSION
+ARG CREATED
+ARG COMMIT
 
 WORKDIR /app
 
@@ -13,7 +16,12 @@ COPY ./internal ./internal
 
 COPY ./cmd ./cmd
 
-RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build  -o ./cmd/netbox-ssot/main ./cmd/netbox-ssot/main.go
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
+  go build -trimpath -ldflags="-s -w \
+  -X 'main.version=$VERSION' \
+  -X 'main.commit=$COMMIT' \
+  -X 'main.date=$CREATED' \
+  " -o ./cmd/netbox-ssot/main ./cmd/netbox-ssot/main.go
 
 FROM alpine:3.20.3@sha256:1e42bbe2508154c9126d48c2b8a75420c3544343bf86fd041fb7527e017a4b4a
 
