@@ -32,7 +32,7 @@ repos:
       - id: cspell
 
   - repo: https://github.com/mxab/pre-commit-trivy.git
-    rev: v0.13.0
+    rev: v0.14.0
     hooks:
       - id: trivyfs-docker
         args:
