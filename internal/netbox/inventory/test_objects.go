@@ -1,10 +1,12 @@
 package inventory
 
 import (
+	"context"
 	"log"
 	"os"
 	"sync"
 
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/logger"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/service"
@@ -70,6 +72,7 @@ var MockInventory = &NetboxInventory{
 	sitesIndexByName:   MockExistingSites,
 	sitesLock:          sync.Mutex{},
 	NetboxAPI:          service.MockNetboxClient,
+	Ctx:                context.WithValue(context.Background(), constants.CustomFieldSourceName, "testInventory"), //nolint
 	SsotTag: &objects.Tag{
 		ID:          0,
 		Name:        "netbox-ssot",

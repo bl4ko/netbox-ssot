@@ -720,3 +720,157 @@ func TestNetboxInventory_AddPrefix(t *testing.T) {
 		})
 	}
 }
+
+func TestNetboxInventory_AddVirtualDeviceContext(t *testing.T) {
+	type args struct {
+		ctx    context.Context
+		newVDC *objects.VirtualDeviceContext
+	}
+	tests := []struct {
+		name    string
+		nbi     *NetboxInventory
+		args    args
+		want    *objects.VirtualDeviceContext
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.nbi.AddVirtualDeviceContext(tt.args.ctx, tt.args.newVDC)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NetboxInventory.AddVirtualDeviceContext() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NetboxInventory.AddVirtualDeviceContext() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNetboxInventory_AddWirelessLAN(t *testing.T) {
+	type args struct {
+		ctx            context.Context
+		newWirelessLan *objects.WirelessLAN
+	}
+	tests := []struct {
+		name    string
+		nbi     *NetboxInventory
+		args    args
+		want    *objects.WirelessLAN
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.nbi.AddWirelessLAN(tt.args.ctx, tt.args.newWirelessLan)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NetboxInventory.AddWirelessLAN() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NetboxInventory.AddWirelessLAN() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNetboxInventory_AddWirelessLANGroup(t *testing.T) {
+	type args struct {
+		ctx                 context.Context
+		newWirelessLANGroup *objects.WirelessLANGroup
+	}
+	tests := []struct {
+		name    string
+		nbi     *NetboxInventory
+		args    args
+		want    *objects.WirelessLANGroup
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.nbi.AddWirelessLANGroup(tt.args.ctx, tt.args.newWirelessLANGroup)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NetboxInventory.AddWirelessLANGroup() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NetboxInventory.AddWirelessLANGroup() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_addSourceNameCustomField(t *testing.T) {
+	type args struct {
+		ctx          context.Context
+		netboxObject *objects.NetboxObject
+	}
+	tests := []struct {
+		name string
+		args args
+		want *objects.NetboxObject
+	}{
+		{
+			name: "Add source custom field to netbox object",
+			args: args{
+				ctx:          context.WithValue(context.Background(), constants.CtxSourceKey, "testSource"),
+				netboxObject: &objects.NetboxObject{},
+			},
+			want: &objects.NetboxObject{
+				CustomFields: map[string]interface{}{
+					constants.CustomFieldSourceName: "testSource",
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			addSourceNameCustomField(tt.args.ctx, tt.args.netboxObject)
+			if !reflect.DeepEqual(tt.want, tt.args.netboxObject) {
+				t.Errorf("%+v != %+v", tt.want, tt.args.netboxObject)
+			}
+		})
+	}
+}
+
+func TestNetboxInventory_applyDeviceFieldLengthLimitations(t *testing.T) {
+	type args struct {
+		device *objects.Device
+	}
+	tests := []struct {
+		name string
+		nbi  *NetboxInventory
+		args args
+		want *objects.Device
+	}{
+		{
+			name: "Test applyDeviceFieldLengthLimitations",
+			nbi:  MockInventory,
+			args: args{
+				device: &objects.Device{
+					Name:         "too_long_name_too_long_name_too_long_name_too_long_name_too_long_name",
+					SerialNumber: "sjpqnnivlllbehccexqvlsxovizypvqdhyaaqptvaktnscbfjfownkdhwzckdhjzvpvkllaawxocwliaxhc",
+					AssetTag:     "sjpqnnivlllbehccexqvlsxovizypvqdhyaaqptvaktnscbfjfownkdhwzckdhjzvpvkllaawxocwliaxhc",
+				},
+			},
+			want: &objects.Device{
+				Name:         "too_long_name_too_long_name_too_long_name_too_long_name_too_long",
+				SerialNumber: "sjpqnnivlllbehccexqvlsxovizypvqdhyaaqptvaktnscbfjf",
+				AssetTag:     "sjpqnnivlllbehccexqvlsxovizypvqdhyaaqptvaktnscbfjf",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.nbi.applyDeviceFieldLengthLimitations(tt.args.device)
+			if !reflect.DeepEqual(tt.want, tt.args.device) {
+				t.Errorf("%+v != %+v", tt.want, tt.args)
+			}
+		})
+	}
+}
