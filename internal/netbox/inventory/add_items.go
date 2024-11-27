@@ -562,6 +562,7 @@ func (nbi *NetboxInventory) AddPlatform(ctx context.Context, newPlatform *object
 func (nbi *NetboxInventory) AddDevice(ctx context.Context, newDevice *objects.Device) (*objects.Device, error) {
 	newDevice.NetboxObject.AddTag(nbi.SsotTag)
 	addSourceNameCustomField(ctx, &newDevice.NetboxObject)
+	nbi.applyDeviceFieldLengthLimitations(newDevice)
 	newDevice.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
 	nbi.devicesLock.Lock()
 	defer nbi.devicesLock.Unlock()
@@ -1023,4 +1024,21 @@ func addSourceNameCustomField(ctx context.Context, netboxObject *objects.NetboxO
 		netboxObject.CustomFields = make(map[string]interface{})
 	}
 	netboxObject.CustomFields[constants.CustomFieldSourceName] = ctx.Value(constants.CtxSourceKey).(string) //nolint
+}
+
+// applyDeviceFieldLengthLimitations applies field length limitations
+// to the device object.
+func (nbi *NetboxInventory) applyDeviceFieldLengthLimitations(device *objects.Device) {
+	if len(device.Name) > constants.MaxDeviceNameLength {
+		nbi.Logger.Warningf(nbi.Ctx, "Device name %s is too long, truncating to %d characters", device.Name, constants.MaxDeviceNameLength)
+		device.Name = device.Name[:constants.MaxDeviceNameLength]
+	}
+	if len(device.SerialNumber) > constants.MaxSerialNumberLength {
+		nbi.Logger.Warningf(nbi.Ctx, "Device serial %s is too long, truncating to %d characters", device.SerialNumber, constants.MaxSerialNumberLength)
+		device.SerialNumber = device.SerialNumber[:constants.MaxSerialNumberLength]
+	}
+	if len(device.AssetTag) > constants.MaxAssetTagLength {
+		nbi.Logger.Warningf(nbi.Ctx, "Device asset tag %s is too long, truncating to %d characters", device.AssetTag, constants.MaxAssetTagLength)
+		device.AssetTag = device.AssetTag[:constants.MaxAssetTagLength]
+	}
 }

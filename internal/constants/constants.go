@@ -308,11 +308,14 @@ var Arch2Bit = map[string]string{
 	"unknown": "unknown",
 }
 
-// Limitations for max length of name fields (see link below)
-// https://github.com/netbox-community/netbox/commit/d03d302eef3819db64cad8ae74dc5255647045f6
+// Netbox's limitations for max length of some fields.
 const (
-	MaxDeviceNameLength      = 64
 	MaxInterfaceNameLength   = 64
 	MaxVMNameLength          = 64
 	MaxVMInterfaceNameLength = 64
+
+	// Limitations for devices: https://github.com/netbox-community/netbox/blob/d03d302eef3819db64cad8ae74dc5255647045f6/netbox/dcim/models/device_components.py.
+	MaxDeviceNameLength   = 64
+	MaxSerialNumberLength = 50
+	MaxAssetTagLength     = 50
 )
