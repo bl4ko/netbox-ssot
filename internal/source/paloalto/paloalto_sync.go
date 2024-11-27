@@ -312,23 +312,6 @@ func (pas *PaloAltoSource) syncArpTable(nbi *inventory.NetboxInventory) error {
 	if err != nil {
 		return fmt.Errorf("add tag: %s", err)
 	}
-	// We create custom field for tracking when was arp entry last seen
-	customFieldStruct := &objects.CustomField{
-		Name:                  constants.CustomFieldOrphanLastSeenName,
-		Label:                 constants.CustomFieldOrphanLastSeenLabel,
-		Type:                  objects.CustomFieldTypeText,
-		FilterLogic:           objects.FilterLogicLoose,
-		CustomFieldUIVisible:  &objects.CustomFieldUIVisibleAlways,
-		CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
-		DisplayWeight:         objects.DisplayWeightDefault,
-		Description:           constants.CustomFieldOrphanLastSeenDescription,
-		SearchWeight:          objects.SearchWeightDefault,
-		ObjectTypes:           []constants.ContentType{constants.ContentTypeIpamIPAddress},
-	}
-	_, err = nbi.AddCustomField(pas.Ctx, customFieldStruct)
-	if err != nil {
-		return fmt.Errorf("add custom field %+v: %s", customFieldStruct, err)
-	}
 
 	const maxGoroutines = 100 // Max number of goroutines running at the same time
 	guard := make(chan struct{}, maxGoroutines)

@@ -160,23 +160,6 @@ func (is *IOSXESource) syncArpTable(nbi *inventory.NetboxInventory) error {
 		return fmt.Errorf("add tag: %s", err)
 	}
 
-	// We create custom field for tracking when was arp entry l2ast seen
-	_, err = nbi.AddCustomField(is.Ctx, &objects.CustomField{
-		Name:                  constants.CustomFieldOrphanLastSeenName,
-		Label:                 constants.CustomFieldOrphanLastSeenLabel,
-		Type:                  objects.CustomFieldTypeText,
-		FilterLogic:           objects.FilterLogicLoose,
-		CustomFieldUIVisible:  &objects.CustomFieldUIVisibleAlways,
-		CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
-		DisplayWeight:         objects.DisplayWeightDefault,
-		Description:           constants.CustomFieldOrphanLastSeenDescription,
-		SearchWeight:          objects.SearchWeightDefault,
-		ObjectTypes:           []constants.ContentType{constants.ContentTypeIpamIPAddress},
-	})
-	if err != nil {
-		return fmt.Errorf("add custom field: %s", err)
-	}
-
 	for _, arpEntry := range is.ArpEntries {
 		if !utils.SubnetsContainIPAddress(arpEntry.Address, is.SourceConfig.IgnoredSubnets) {
 			newTags := is.SourceTags
