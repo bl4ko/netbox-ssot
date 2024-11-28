@@ -1,0 +1,57 @@
+---
+version: 2
+
+project_name: netbox-ssot
+
+env:
+  - GO111MODULE=on
+
+before:
+  hooks:
+    - go mod download
+
+builds:
+
+  - id: dynamic
+    binary: netbox-ssot
+    main: ./cmd/netbox-ssot/main.go
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - "-s -w"
+    flags:
+      - -tags=release
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+      - arm
+    goarm:
+      - "6"
+      - "7"
+
+archives:
+
+  - id: archive_multi
+    builds: [dynamic]
+    name_template: >-
+      {{ .ProjectName }}-{{ .Version }}.{{ .Os }}-{{ .Arch }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    wrap_in_directory: true
+    files:
+      - none*
+
+release:
+  github:
+    owner: n-rodriguez
+    name: netbox-ssot
+  draft: false
+  prerelease: auto
+  name_template: "{{.ProjectName}}-v{{.Version}}"

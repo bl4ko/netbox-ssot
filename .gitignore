@@ -1,6 +1,7 @@
 .env
 .vscode
 config.yaml
+config.yml
 __debug*
 sub.pem
 main
@@ -30,6 +31,9 @@ main
 
 # Go workspace file
 go.work
+
+# goreleaser directory
+dist/
 
 # End of https://www.toptal.com/developers/gitignore/api/go
 
