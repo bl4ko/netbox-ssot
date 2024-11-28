@@ -1,4 +1,4 @@
-name: Create semantic release from commit messages
+name: Create semantic tag
 on:
   push:
     branches: [main]
