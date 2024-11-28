@@ -48,7 +48,7 @@ Example configuration can be found [here](#example-config).
 
 | Parameter      | Description                                            | Type | Possible values | Default | Required |
 | -------------- | ------------------------------------------------------ | ---- | --------------- | ------- | -------- |
-| `logger.level` | Log level                                              | int  | 0-3             | 1       | Yes      |
+| `logger.level` | Log level                                              | int/string  | [0-3] or [debug,info,warn,error]             | 1,info       | No      |
 | `logger.dest`  | Log output filename. Default `""` representing stdout. | str  | Any valid path  | ""      | No       |
 
 ### Netbox

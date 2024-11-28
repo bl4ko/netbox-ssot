@@ -1,0 +1,7 @@
+logger: "this should be a map"
+
+netbox:
+  apiToken: "netbox-token"
+  port: 666
+  hostname: netbox.example.com
+  httpScheme: "http"

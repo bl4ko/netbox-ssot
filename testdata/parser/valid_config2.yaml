@@ -1,5 +1,5 @@
 logger:
-  level: 2
+  level: "warning"
   dest: ""
 
 netbox:

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
@@ -125,6 +126,18 @@ func TestParseValidConfigs(t *testing.T) {
 		{
 			filename: "valid_config3.yaml",
 		},
+		{
+			filename: "valid_config4.yaml",
+		},
+		{
+			filename: "valid_config5.yaml",
+		},
+		{
+			filename: "valid_config6.yaml",
+		},
+		{
+			filename: "valid_config7.yaml",
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.filename, func(t *testing.T) {
@@ -176,7 +189,7 @@ func TestParseConfigInvalidConfigs(t *testing.T) {
 		{filename: "invalid_config26.yaml", expectedErr: "source[wrong].vmTenantRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
 		{filename: "invalid_config27.yaml", expectedErr: "source[wrong].vlanGroupRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
 		{filename: "invalid_config28.yaml", expectedErr: "source[wrong].vlanTenantRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
-		{filename: "invalid_config29.yaml", expectedErr: "yaml: unmarshal errors:\n  line 2: cannot unmarshal !!str `2dasf` into int"},
+		{filename: "invalid_config29.yaml", expectedErr: "logger.level: 2dasf is not a valid level"},
 		{filename: "invalid_config30.yaml", expectedErr: "source[fortigate].apiToken is required for fortigate"},
 		{filename: "invalid_config31.yaml", expectedErr: "netbox.removeOrphansAfterDays has no effect when netbox.removeOrphans is set to true"},
 		{filename: "invalid_config32.yaml", expectedErr: "source[wrong].datacenterClusterGroupRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
@@ -184,6 +197,8 @@ func TestParseConfigInvalidConfigs(t *testing.T) {
 		{filename: "invalid_config34.yaml", expectedErr: "netbox.caFile: open wrong path: no such file or directory"},
 		{filename: "invalid_config35.yaml", expectedErr: "netbox.RemoveOrphansAfterDays: must be positive integer"},
 		{filename: "invalid_config36.yaml", expectedErr: "source[wrong].wlanTenantRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
+		{filename: "invalid_config37.yaml", expectedErr: "logger.dest: 7 is not a valid type"},
+		{filename: "invalid_config38.yaml", expectedErr: "yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `this sh...` into map[string]interface {}"},
 		{filename: "invalid_config1111.yaml", expectedErr: "open ../../testdata/parser/invalid_config1111.yaml: no such file or directory"},
 	}
 
@@ -193,7 +208,7 @@ func TestParseConfigInvalidConfigs(t *testing.T) {
 			_, err := ParseConfig(filename)
 			if err == nil {
 				t.Errorf("Expected error for %v, got nil", tc.filename)
-			} else if err.Error() != tc.expectedErr {
+			} else if strings.TrimSpace(err.Error()) != strings.TrimSpace(tc.expectedErr) {
 				t.Errorf("Expected error: %v, got: %v", tc.expectedErr, err)
 			}
 		})

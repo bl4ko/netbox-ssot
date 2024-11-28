@@ -22,6 +22,45 @@ type LoggerConfig struct {
 	Dest  string `yaml:"dest"`
 }
 
+func (l *LoggerConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	rawMarshal := make(map[string]interface{})
+	if err := unmarshal(&rawMarshal); err != nil {
+		return err
+	}
+
+	switch item := rawMarshal["dest"].(type) {
+	case string:
+		l.Dest = item
+	default:
+		return fmt.Errorf("logger.dest: %v is not a valid type", rawMarshal["dest"])
+	}
+
+	if rawMarshal["level"] == nil || rawMarshal["level"] == "" {
+		l.Level = 1
+		return nil
+	}
+
+	// Check the type of level
+	switch item := rawMarshal["level"].(type) {
+	case int:
+		l.Level = item
+	case string:
+		switch item {
+		case "debug", "DEBUG", "Debug":
+			l.Level = 0
+		case "info", "INFO", "Info":
+			l.Level = 1
+		case "warn", "WARN", "Warn", "warning", "WARNING", "Warning":
+			l.Level = 2
+		case "error", "ERROR", "Error":
+			l.Level = 3
+		default:
+			return fmt.Errorf("logger.level: %s is not a valid level", rawMarshal["level"])
+		}
+	}
+	return nil
+}
+
 func (l LoggerConfig) String() string {
 	if l.Dest == "" {
 		return fmt.Sprintf("LoggerConfig{Level: %d, Dest: stdout}", l.Level)

@@ -1,0 +1,16 @@
+logger:
+  level: "error"
+  dest: ""
+
+netbox:
+  apiToken: "netbox-token"
+  port: 666
+  hostname: netbox.example.com
+  removeOrphans: False
+
+source:
+  - name: coreswitch
+    type: ios-xe
+    hostname: core.example.com
+    username: admin@internal
+    password: adminpass

@@ -1,0 +1,9 @@
+logger:
+  level: 2
+  dest: 7 # Wrong dest should be string
+
+netbox:
+  apiToken: "netbox-token"
+  port: 666
+  hostname: netbox.example.com
+  httpScheme: "http"
