@@ -28,36 +28,10 @@ type ProxmoxSource struct {
 	// Netbox related data for easier access. Initialized in sync functions.
 	NetboxCluster *objects.Cluster
 	NetboxNodes   map[string]*objects.Device // NodeName -> netbox device
-
-	// Regex relations for matching objets
-	ClusterSiteRelations   map[string]string
-	ClusterTenantRelations map[string]string
-	HostTenantRelations    map[string]string
-	HostSiteRelations      map[string]string
-	VMTenantRelations      map[string]string
-	VlanGroupRelations     map[string]string
-	VlanTenantRelations    map[string]string
 }
 
 // Function that collects all data from Proxmox API and stores it in ProxmoxSource struct.
 func (ps *ProxmoxSource) Init() error {
-	// Initialize regex relations
-	ps.Logger.Debug(ps.Ctx, "Initializing regex relations for oVirt source ", ps.SourceConfig.Name)
-	ps.HostSiteRelations = utils.ConvertStringsToRegexPairs(ps.SourceConfig.HostSiteRelations)
-	ps.Logger.Debug(ps.Ctx, "HostSiteRelations: ", ps.HostSiteRelations)
-	ps.ClusterSiteRelations = utils.ConvertStringsToRegexPairs(ps.SourceConfig.ClusterSiteRelations)
-	ps.Logger.Debug(ps.Ctx, "ClusterSiteRelations: ", ps.ClusterSiteRelations)
-	ps.ClusterTenantRelations = utils.ConvertStringsToRegexPairs(ps.SourceConfig.ClusterTenantRelations)
-	ps.Logger.Debug(ps.Ctx, "ClusterTenantRelations: ", ps.ClusterTenantRelations)
-	ps.HostTenantRelations = utils.ConvertStringsToRegexPairs(ps.SourceConfig.HostTenantRelations)
-	ps.Logger.Debug(ps.Ctx, "HostTenantRelations: ", ps.HostTenantRelations)
-	ps.VMTenantRelations = utils.ConvertStringsToRegexPairs(ps.SourceConfig.VMTenantRelations)
-	ps.Logger.Debug(ps.Ctx, "VmTenantRelations: ", ps.VMTenantRelations)
-	ps.VlanGroupRelations = utils.ConvertStringsToRegexPairs(ps.SourceConfig.VlanGroupRelations)
-	ps.Logger.Debug(ps.Ctx, "VlanGroupRelations: ", ps.VlanGroupRelations)
-	ps.VlanTenantRelations = utils.ConvertStringsToRegexPairs(ps.SourceConfig.VlanTenantRelations)
-	ps.Logger.Debug(ps.Ctx, "VlanTenantRelations: ", ps.VlanTenantRelations)
-
 	// Setup credentials for proxmox
 	credentials := proxmox.Credentials{
 		Username: ps.SourceConfig.Username,

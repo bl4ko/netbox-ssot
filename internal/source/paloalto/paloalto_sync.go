@@ -42,25 +42,25 @@ func (pas *PaloAltoSource) syncDevice(nbi *inventory.NetboxInventory) error {
 		return fmt.Errorf("add device type %+v: %s", deviceTypeStruct, err)
 	}
 
-	deviceTenant, err := common.MatchHostToTenant(pas.Ctx, nbi, deviceName, pas.HostTenantRelations)
+	deviceTenant, err := common.MatchHostToTenant(pas.Ctx, nbi, deviceName, pas.SourceConfig.HostTenantRelations)
 	if err != nil {
 		return fmt.Errorf("match host %s to tenant: %s", deviceName, err)
 	}
 
-	deviceRoleStruct := &objects.DeviceRole{
-		NetboxObject: objects.NetboxObject{
-			Description: constants.DeviceRoleFirewallDescription,
-		},
-		Name:   constants.DeviceRoleFirewall,
-		Slug:   utils.Slugify(constants.DeviceRoleFirewall),
-		Color:  constants.DeviceRoleFirewallColor,
-		VMRole: false,
+	var deviceRole *objects.DeviceRole
+	if len(pas.SourceConfig.HostRoleRelations) > 0 {
+		deviceRole, err = common.MatchHostToRole(pas.Ctx, nbi, deviceName, pas.SourceConfig.HostRoleRelations)
+		if err != nil {
+			return fmt.Errorf("match host to role: %s", err)
+		}
 	}
-	deviceRole, err := nbi.AddDeviceRole(pas.Ctx, deviceRoleStruct)
-	if err != nil {
-		return fmt.Errorf("add DeviceRole %+v: %s", deviceRoleStruct, err)
+	if deviceRole == nil {
+		deviceRole, err = nbi.AddFirewallDeviceRole(pas.Ctx)
+		if err != nil {
+			return fmt.Errorf("add DeviceRole firewall: %s", err)
+		}
 	}
-	deviceSite, err := common.MatchHostToSite(pas.Ctx, nbi, deviceName, pas.HostSiteRelations)
+	deviceSite, err := common.MatchHostToSite(pas.Ctx, nbi, deviceName, pas.SourceConfig.HostSiteRelations)
 	if err != nil {
 		return fmt.Errorf("match host to site: %s", err)
 	}
@@ -166,11 +166,11 @@ func (pas *PaloAltoSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 			if subIface.Tag != 0 {
 				// Extract Vlan
 				vlanName := fmt.Sprintf("Vlan%d", subIface.Tag)
-				vlanGroup, err := common.MatchVlanToGroup(pas.Ctx, nbi, vlanName, pas.VlanGroupRelations)
+				vlanGroup, err := common.MatchVlanToGroup(pas.Ctx, nbi, vlanName, pas.SourceConfig.VlanGroupRelations)
 				if err != nil {
 					return fmt.Errorf("match vlan to group: %s", err)
 				}
-				vlanTenant, err := common.MatchVlanToTenant(pas.Ctx, nbi, vlanName, pas.VlanTenantRelations)
+				vlanTenant, err := common.MatchVlanToTenant(pas.Ctx, nbi, vlanName, pas.SourceConfig.VlanTenantRelations)
 				if err != nil {
 					return fmt.Errorf("match vlan to tenant: %s", err)
 				}

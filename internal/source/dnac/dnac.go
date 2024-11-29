@@ -37,12 +37,6 @@ type DnacSource struct {
 	SiteID2nbSite               sync.Map // SiteID -> nbSite
 	DeviceID2nbDevice           sync.Map // DeviceID -> nbDevice
 	InterfaceID2nbInterface     sync.Map // InterfaceID -> nbInterface
-
-	// User defined relations
-	HostTenantRelations map[string]string
-	VlanGroupRelations  map[string]string
-	VlanTenantRelations map[string]string
-	WlanTenantRelations map[string]string
 }
 
 func (ds *DnacSource) Init() error {
@@ -51,16 +45,6 @@ func (ds *DnacSource) Init() error {
 	if err != nil {
 		return fmt.Errorf("creating dnac client: %s", err)
 	}
-
-	// Initialize regex relations for this source
-	ds.VlanGroupRelations = utils.ConvertStringsToRegexPairs(ds.SourceConfig.VlanGroupRelations)
-	ds.Logger.Debugf(ds.Ctx, "VlanGroupRelations: %s", ds.VlanGroupRelations)
-	ds.VlanTenantRelations = utils.ConvertStringsToRegexPairs(ds.SourceConfig.VlanTenantRelations)
-	ds.Logger.Debugf(ds.Ctx, "VlanTenantRelations: %s", ds.VlanTenantRelations)
-	ds.HostTenantRelations = utils.ConvertStringsToRegexPairs(ds.SourceConfig.HostTenantRelations)
-	ds.Logger.Debugf(ds.Ctx, "HostTenantRelations: %s", ds.HostTenantRelations)
-	ds.WlanTenantRelations = utils.ConvertStringsToRegexPairs(ds.SourceConfig.WlanTenantRelations)
-
 	// Initialize items from vsphere API to local storage
 	initFunctions := []func(*dnac.Client) error{
 		ds.initSites,

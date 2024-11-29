@@ -35,6 +35,10 @@ source:
       - 192.168.0.0/16
       - fd00::/8
     collectArpData: true
+    vlanTenantRelations:
+      - .* = Default
+    vlanGroupRelations:
+      - .* = Default
 
   - name: prodolvm
     type: ovirt
@@ -44,6 +48,8 @@ source:
     password: adminpass
     ignoredSubnets:
       - 172.16.0.0/12
+    datacenterClusterGroupRelations:
+      - .* = Default
     clusterSiteRelations:
       - Cluster_NYC = New York
       - Cluster_FFM.* = Frankfurt

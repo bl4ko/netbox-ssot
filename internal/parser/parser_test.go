@@ -62,6 +62,12 @@ func TestValidonfig(t *testing.T) {
 				CollectArpData: true,
 				TagColor:       constants.SourceTagColorMap[constants.PaloAlto], // Default
 				Tag:            "Source: paloalto",                              // Default
+				VlanGroupRelations: map[string]string{
+					".*": "Default",
+				},
+				VlanTenantRelations: map[string]string{
+					".*": "Default",
+				},
 			},
 			{
 				Name:       "prodolvm",
@@ -77,25 +83,28 @@ func TestValidonfig(t *testing.T) {
 				ValidateCert: false,
 				Tag:          "Source: prodolvm", // Default
 				TagColor:     "aa1409",           // Default
-				ClusterSiteRelations: []string{
-					"Cluster_NYC = New York",
-					"Cluster_FFM.* = Frankfurt",
-					"Datacenter_BERLIN/* = Berlin",
+				ClusterSiteRelations: map[string]string{
+					"Cluster_NYC":         "New York",
+					"Cluster_FFM.*":       "Frankfurt",
+					"Datacenter_BERLIN/*": "Berlin",
 				},
-				HostSiteRelations: []string{
-					".* = Berlin",
+				HostSiteRelations: map[string]string{
+					".*": "Berlin",
 				},
-				ClusterTenantRelations: []string{
-					".*Stark = Stark Industries",
-					".* = Default",
+				ClusterTenantRelations: map[string]string{
+					".*Stark": "Stark Industries",
+					".*":      "Default",
 				},
-				HostTenantRelations: []string{
-					".*Health = Health Department",
-					".* = Default",
+				HostTenantRelations: map[string]string{
+					".*Health": "Health Department",
+					".*":       "Default",
 				},
-				VMTenantRelations: []string{
-					".*Health = Health Department",
-					".* = Default",
+				VMTenantRelations: map[string]string{
+					".*Health": "Health Department",
+					".*":       "Default",
+				},
+				DatacenterClusterGroupRelations: map[string]string{
+					".*": "Default",
 				},
 			},
 		},
@@ -106,7 +115,7 @@ func TestValidonfig(t *testing.T) {
 		return
 	}
 	if !reflect.DeepEqual(got, want) {
-		t.Errorf("got = %v\nwant %v\n", got, want)
+		t.Errorf("got = %+v\nwant %+v\n", got, want)
 	}
 
 	// test string method
@@ -163,42 +172,49 @@ func TestParseConfigInvalidConfigs(t *testing.T) {
 	testCases := []configTestCase{
 		{filename: "invalid_config1.yaml", expectedErr: "netbox.hostname: cannot be empty"},
 		{filename: "invalid_config2.yaml", expectedErr: "netbox.port: must be between 0 and 65535. Is 333333"},
-		{filename: "invalid_config3.yaml", expectedErr: "source[testolvm].type is not valid"},
+		{filename: "invalid_config3.yaml", expectedErr: "testolvm.type is not valid"},
 		{filename: "invalid_config4.yaml", expectedErr: "netbox.httpScheme: must be either http or https. Is httpd"},
-		{filename: "invalid_config5.yaml", expectedErr: "source[prodovirt].httpScheme: must be either http or https. Is httpd"},
-		{filename: "invalid_config6.yaml", expectedErr: "source[testolvm].hostTenantRelations: invalid regex relation: This should not work. Should be of format: regex = value"},
-		{filename: "invalid_config7.yaml", expectedErr: "source[prodolvm].hostTenantRelations: invalid regex: [a-z++, in relation: [a-z++ = Should not work"},
-		{filename: "invalid_config8.yaml", expectedErr: "source[testolvm].port: must be between 0 and 65535. Is 1111111"},
+		{filename: "invalid_config5.yaml", expectedErr: "prodovirt.httpScheme: must be either http or https. Is httpd"},
+		{filename: "invalid_config6.yaml", expectedErr: "testolvm.hostTenantRelations: invalid regex relation: This should not work. Should be of format: regex = value"},
+		{filename: "invalid_config7.yaml", expectedErr: "prodolvm.hostTenantRelations: invalid regex: [a-z++, in relation: [a-z++ = Should not work"},
+		{filename: "invalid_config8.yaml", expectedErr: "testolvm.port: must be between 0 and 65535. Is 1111111"},
 		{filename: "invalid_config9.yaml", expectedErr: "logger.level: must be between 0 and 3"},
 		{filename: "invalid_config10.yaml", expectedErr: "netbox.timeout: cannot be negative"},
 		{filename: "invalid_config11.yaml", expectedErr: "netbox.apiToken: cannot be empty"},
 		{filename: "invalid_config12.yaml", expectedErr: "netbox.tagColor: must be a string of 6 hexadecimal characters"},
 		{filename: "invalid_config13.yaml", expectedErr: "netbox.tagColor: must be a string of 6 lowercase hexadecimal characters"},
 		{filename: "invalid_config14.yaml", expectedErr: "netbox.sourcePriority: len(config.Netbox.SourcePriority) != len(config.Sources)"},
-		{filename: "invalid_config15.yaml", expectedErr: "netbox.sourcePriority: source[wrongone] doesn't exist in the sources array"},
-		{filename: "invalid_config16.yaml", expectedErr: "source[].name: cannot be empty"},
-		{filename: "invalid_config17.yaml", expectedErr: "source[wrong].hostname: cannot be empty"},
-		{filename: "invalid_config18.yaml", expectedErr: "source[wrong].username: cannot be empty"},
-		{filename: "invalid_config19.yaml", expectedErr: "source[wrong].password: cannot be empty"},
-		{filename: "invalid_config20.yaml", expectedErr: "source[wrong].ignoredSubnets: wrong format: 172.16.0.1"},
-		{filename: "invalid_config21.yaml", expectedErr: "source[wrong].interfaceFilter: wrong format: error parsing regexp: missing closing ): `($a[ba]`"},
-		{filename: "invalid_config22.yaml", expectedErr: "source[wrong].hostSiteRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
-		{filename: "invalid_config23.yaml", expectedErr: "source[wrong].clusterSiteRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
-		{filename: "invalid_config24.yaml", expectedErr: "source[wrong].clusterTenantRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
-		{filename: "invalid_config25.yaml", expectedErr: "source[wrong].hostTenantRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
-		{filename: "invalid_config26.yaml", expectedErr: "source[wrong].vmTenantRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
-		{filename: "invalid_config27.yaml", expectedErr: "source[wrong].vlanGroupRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
-		{filename: "invalid_config28.yaml", expectedErr: "source[wrong].vlanTenantRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
+		{filename: "invalid_config15.yaml", expectedErr: "netbox.sourcePriority: wrongone doesn't exist in the sources array"},
+		{filename: "invalid_config16.yaml", expectedErr: "source name: cannot be empty"},
+		{filename: "invalid_config17.yaml", expectedErr: "wrong.hostname: cannot be empty"},
+		{filename: "invalid_config18.yaml", expectedErr: "wrong.username: cannot be empty"},
+		{filename: "invalid_config19.yaml", expectedErr: "wrong.password: cannot be empty"},
+		{filename: "invalid_config20.yaml", expectedErr: "wrong.ignoredSubnets: wrong format: 172.16.0.1"},
+		{filename: "invalid_config21.yaml", expectedErr: "wrong.interfaceFilter: wrong format: error parsing regexp: missing closing ): `($a[ba]`"},
+		{filename: "invalid_config22.yaml", expectedErr: "wrong.hostSiteRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
+		{filename: "invalid_config23.yaml", expectedErr: "wrong.clusterSiteRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
+		{filename: "invalid_config24.yaml", expectedErr: "wrong.clusterTenantRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
+		{filename: "invalid_config25.yaml", expectedErr: "wrong.hostTenantRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
+		{filename: "invalid_config26.yaml", expectedErr: "wrong.vmTenantRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
+		{filename: "invalid_config27.yaml", expectedErr: "wrong.vlanGroupRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
+		{filename: "invalid_config28.yaml", expectedErr: "wrong.vlanTenantRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
 		{filename: "invalid_config29.yaml", expectedErr: "logger.level: 2dasf is not a valid level"},
-		{filename: "invalid_config30.yaml", expectedErr: "source[fortigate].apiToken is required for fortigate"},
+		{filename: "invalid_config30.yaml", expectedErr: "fortigate.apiToken is required for fortigate"},
 		{filename: "invalid_config31.yaml", expectedErr: "netbox.removeOrphansAfterDays has no effect when netbox.removeOrphans is set to true"},
-		{filename: "invalid_config32.yaml", expectedErr: "source[wrong].datacenterClusterGroupRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
-		{filename: "invalid_config33.yaml", expectedErr: "source[wrong].caFile: open \\//: no such file or directory"},
+		{filename: "invalid_config32.yaml", expectedErr: "wrong.datacenterClusterGroupRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
+		{filename: "invalid_config33.yaml", expectedErr: "wrong.caFile: open \\//: no such file or directory"},
 		{filename: "invalid_config34.yaml", expectedErr: "netbox.caFile: open wrong path: no such file or directory"},
 		{filename: "invalid_config35.yaml", expectedErr: "netbox.RemoveOrphansAfterDays: must be positive integer"},
-		{filename: "invalid_config36.yaml", expectedErr: "source[wrong].wlanTenantRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
+		{filename: "invalid_config36.yaml", expectedErr: "wrong.wlanTenantRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
 		{filename: "invalid_config37.yaml", expectedErr: "logger.dest: 7 is not a valid type"},
-		{filename: "invalid_config38.yaml", expectedErr: "yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `this sh...` into map[string]interface {}"},
+		{filename: "invalid_config38.yaml", expectedErr: "logger: yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `this sh...` into map[string]interface {}"},
+		{filename: "invalid_config39.yaml", expectedErr: "wrong.vmRoleRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
+		{filename: "invalid_config40.yaml", expectedErr: "wrong.hostRoleRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
+		{filename: "invalid_config41.yaml", expectedErr: "wrong.datacenterClusterGroupRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
+		{filename: "invalid_config42.yaml", expectedErr: "wrong.vlanTenantRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
+		{filename: "invalid_config43.yaml", expectedErr: "wrong.vlanGroupRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
+		{filename: "invalid_config44.yaml", expectedErr: "wrong.customFieldMappings: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
+		{filename: "invalid_config45.yaml", expectedErr: "yaml: unmarshal errors:\n  line 18: cannot unmarshal !!int `123421334` into parser.realSourceConfig"},
 		{filename: "invalid_config1111.yaml", expectedErr: "open ../../testdata/parser/invalid_config1111.yaml: no such file or directory"},
 	}
 
@@ -341,27 +357,6 @@ func Test_validateSourceConfig(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := validateSourceConfig(tt.args.config); (err != nil) != tt.wantErr {
 				t.Errorf("validateSourceConfig() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func Test_validateSourceConfigRelations(t *testing.T) {
-	type args struct {
-		externalSource    *SourceConfig
-		externalSourceStr string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := validateSourceConfigRelations(tt.args.externalSource, tt.args.externalSourceStr); (err != nil) != tt.wantErr {
-				t.Errorf("validateSourceConfigRelations() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

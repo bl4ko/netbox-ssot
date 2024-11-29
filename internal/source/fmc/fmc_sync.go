@@ -38,15 +38,28 @@ func (fmcs *FMCSource) syncDevices(nbi *inventory.NetboxInventory) error {
 		if err != nil {
 			return fmt.Errorf("add device type: %s", err)
 		}
-		deviceTenant, err := common.MatchHostToTenant(fmcs.Ctx, nbi, deviceName, fmcs.HostTenantRelations)
+		deviceTenant, err := common.MatchHostToTenant(fmcs.Ctx, nbi, deviceName, fmcs.SourceConfig.HostTenantRelations)
 		if err != nil {
 			return fmt.Errorf("match host to tenant %s", err)
 		}
-		deviceRole, err := nbi.AddFirewallDeviceRole(fmcs.Ctx)
-		if err != nil {
-			return fmt.Errorf("add DeviceRole firewall: %s", err)
+
+		// Match host to a role. First test if user provided relations, if not
+		// use default firewall role.
+		var deviceRole *objects.DeviceRole
+		if len(fmcs.SourceConfig.HostRoleRelations) > 0 {
+			deviceRole, err = common.MatchHostToRole(fmcs.Ctx, nbi, deviceName, fmcs.SourceConfig.HostRoleRelations)
+			if err != nil {
+				return fmt.Errorf("match host to role: %s", err)
+			}
 		}
-		deviceSite, err := common.MatchHostToSite(fmcs.Ctx, nbi, deviceName, fmcs.HostSiteRelations)
+		if deviceRole == nil {
+			deviceRole, err = nbi.AddFirewallDeviceRole(fmcs.Ctx)
+			if err != nil {
+				return fmt.Errorf("add DeviceRole firewall: %s", err)
+			}
+		}
+
+		deviceSite, err := common.MatchHostToSite(fmcs.Ctx, nbi, deviceName, fmcs.SourceConfig.HostSiteRelations)
 		if err != nil {
 			return fmt.Errorf("match host to site: %s", err)
 		}
@@ -100,11 +113,11 @@ func (fmcs *FMCSource) syncVlanInterfaces(nbi *inventory.NetboxInventory, nbDevi
 			// Add vlan
 			ifaceTaggedVlans := []*objects.Vlan{}
 			if vlanIface.VID != 0 {
-				vlanGroup, err := common.MatchVlanToGroup(fmcs.Ctx, nbi, vlanIface.Name, fmcs.VlanGroupRelations)
+				vlanGroup, err := common.MatchVlanToGroup(fmcs.Ctx, nbi, vlanIface.Name, fmcs.SourceConfig.VlanGroupRelations)
 				if err != nil {
 					return fmt.Errorf("match vlan to group: %s", err)
 				}
-				vlanTenent, err := common.MatchVlanToTenant(fmcs.Ctx, nbi, vlanIface.Name, fmcs.VlanTenantRelations)
+				vlanTenent, err := common.MatchVlanToTenant(fmcs.Ctx, nbi, vlanIface.Name, fmcs.SourceConfig.VlanTenantRelations)
 				if err != nil {
 					return fmt.Errorf("match vlan to tenant: %s", err)
 				}

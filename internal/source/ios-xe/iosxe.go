@@ -25,12 +25,6 @@ type IOSXESource struct {
 	// IOSXE synced data. Created in sync functions.
 	NBDevice     *objects.Device
 	NBInterfaces map[string]*objects.Interface // interfaceName -> netboxInterface
-
-	// User defined relations
-	HostTenantRelations map[string]string
-	HostSiteRelations   map[string]string
-	VlanGroupRelations  map[string]string
-	VlanTenantRelations map[string]string
 }
 
 const systemFilter = `<system xmlns="http://openconfig.net/yang/system">
@@ -133,16 +127,6 @@ func (is *IOSXESource) Init() error {
 		return fmt.Errorf("failed to open driver: %s", err)
 	}
 	defer d.Close()
-
-	// Initialize regex relations for this source
-	is.VlanGroupRelations = utils.ConvertStringsToRegexPairs(is.SourceConfig.VlanGroupRelations)
-	is.Logger.Debugf(is.Ctx, "VlanGroupRelations: %s", is.VlanGroupRelations)
-	is.VlanTenantRelations = utils.ConvertStringsToRegexPairs(is.SourceConfig.VlanTenantRelations)
-	is.Logger.Debugf(is.Ctx, "VlanTenantRelations: %s", is.VlanTenantRelations)
-	is.HostTenantRelations = utils.ConvertStringsToRegexPairs(is.SourceConfig.HostTenantRelations)
-	is.Logger.Debugf(is.Ctx, "HostTenantRelations: %s", is.HostTenantRelations)
-	is.HostSiteRelations = utils.ConvertStringsToRegexPairs(is.SourceConfig.HostSiteRelations)
-	is.Logger.Debugf(is.Ctx, "HostSiteRelations: %s", is.HostSiteRelations)
 
 	// Initialize items from vsphere API to local storage
 	initFunctions := []func(*netconf.Driver) error{

@@ -34,12 +34,6 @@ type PaloAltoSource struct {
 
 	// NBFirewall representing paloalto firewall created in syncDevice func.
 	NBFirewall *objects.Device
-
-	// User defined relation
-	HostTenantRelations map[string]string
-	HostSiteRelations   map[string]string
-	VlanGroupRelations  map[string]string
-	VlanTenantRelations map[string]string
 }
 
 func (pas *PaloAltoSource) Init() error {
@@ -66,16 +60,6 @@ func (pas *PaloAltoSource) Init() error {
 	if err := c.Initialize(); err != nil {
 		return fmt.Errorf("paloalto failed to initialize client: %s", err)
 	}
-
-	// Initialize regex relations for this source
-	pas.VlanGroupRelations = utils.ConvertStringsToRegexPairs(pas.SourceConfig.VlanGroupRelations)
-	pas.Logger.Debugf(pas.Ctx, "VlanGroupRelations: %s", pas.VlanGroupRelations)
-	pas.VlanTenantRelations = utils.ConvertStringsToRegexPairs(pas.SourceConfig.VlanTenantRelations)
-	pas.Logger.Debugf(pas.Ctx, "VlanTenantRelations: %s", pas.VlanTenantRelations)
-	pas.HostTenantRelations = utils.ConvertStringsToRegexPairs(pas.SourceConfig.HostTenantRelations)
-	pas.Logger.Debugf(pas.Ctx, "HostTenantRelations: %s", pas.HostTenantRelations)
-	pas.HostSiteRelations = utils.ConvertStringsToRegexPairs(pas.SourceConfig.HostSiteRelations)
-	pas.Logger.Debugf(pas.Ctx, "HostSiteRelations: %s", pas.HostSiteRelations)
 
 	initFunctions := []func(*pango.Firewall) error{
 		pas.initArpData,

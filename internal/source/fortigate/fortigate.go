@@ -22,12 +22,6 @@ type FortigateSource struct {
 
 	// NBFirewall representing fortinet firewall created in syncDevice func.
 	NBFirewall *objects.Device
-
-	// User defined relation
-	HostTenantRelations map[string]string
-	HostSiteRelations   map[string]string
-	VlanGroupRelations  map[string]string
-	VlanTenantRelations map[string]string
 }
 
 type FortiSystemInfo struct {
@@ -68,17 +62,6 @@ func (fs *FortigateSource) Init() error {
 	c := NewAPIClient(fs.SourceConfig.APIToken, fmt.Sprintf("%s://%s:%d/api/v2", fs.SourceConfig.HTTPScheme, fs.SourceConfig.Hostname, fs.SourceConfig.Port), httpClient)
 	ctx := context.Background()
 	defer ctx.Done()
-
-	// Initialize regex relations for the sourcce
-	// Initialize regex relations for this source
-	fs.VlanGroupRelations = utils.ConvertStringsToRegexPairs(fs.SourceConfig.VlanGroupRelations)
-	fs.Logger.Debugf(fs.Ctx, "VlanGroupRelations: %s", fs.VlanGroupRelations)
-	fs.VlanTenantRelations = utils.ConvertStringsToRegexPairs(fs.SourceConfig.VlanTenantRelations)
-	fs.Logger.Debugf(fs.Ctx, "VlanTenantRelations: %s", fs.VlanTenantRelations)
-	fs.HostTenantRelations = utils.ConvertStringsToRegexPairs(fs.SourceConfig.HostTenantRelations)
-	fs.Logger.Debugf(fs.Ctx, "HostTenantRelations: %s", fs.HostTenantRelations)
-	fs.HostSiteRelations = utils.ConvertStringsToRegexPairs(fs.SourceConfig.HostSiteRelations)
-	fs.Logger.Debugf(fs.Ctx, "HostSiteRelations: %s", fs.HostSiteRelations)
 
 	initFunctions := []func(context.Context, *FortiClient) error{
 		fs.initSystemInfo,

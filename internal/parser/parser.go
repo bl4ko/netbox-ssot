@@ -25,7 +25,7 @@ type LoggerConfig struct {
 func (l *LoggerConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	rawMarshal := make(map[string]interface{})
 	if err := unmarshal(&rawMarshal); err != nil {
-		return err
+		return fmt.Errorf("logger: %s", err)
 	}
 
 	switch item := rawMarshal["dest"].(type) {
@@ -117,22 +117,161 @@ type SourceConfig struct {
 	CAFile          string               `yaml:"caFile"`
 
 	// Relations
-	DatacenterClusterGroupRelations []string `yaml:"datacenterClusterGroupRelations"`
-	HostSiteRelations               []string `yaml:"hostSiteRelations"`
-	ClusterSiteRelations            []string `yaml:"clusterSiteRelations"`
-	ClusterTenantRelations          []string `yaml:"clusterTenantRelations"`
-	HostTenantRelations             []string `yaml:"hostTenantRelations"`
-	VMTenantRelations               []string `yaml:"vmTenantRelations"`
-	VlanGroupRelations              []string `yaml:"vlanGroupRelations"`
-	VlanTenantRelations             []string `yaml:"vlanTenantRelations"`
-	WlanTenantRelations             []string `yaml:"wlanTenantRelations"`
-
-	// Vmware specific relations
-	CustomFieldMappings []string `yaml:"customFieldMappings"`
+	DatacenterClusterGroupRelations map[string]string `yaml:"datacenterClusterGroupRelations"`
+	HostSiteRelations               map[string]string `yaml:"hostSiteRelations"`
+	HostRoleRelations               map[string]string `yaml:"hostRoleRelations"`
+	ClusterSiteRelations            map[string]string `yaml:"clusterSiteRelations"`
+	ClusterTenantRelations          map[string]string `yaml:"clusterTenantRelations"`
+	HostTenantRelations             map[string]string `yaml:"hostTenantRelations"`
+	VMTenantRelations               map[string]string `yaml:"vmTenantRelations"`
+	VMRoleRelations                 map[string]string `yaml:"vmRoleRelations"`
+	VlanGroupRelations              map[string]string `yaml:"vlanGroupRelations"`
+	VlanTenantRelations             map[string]string `yaml:"vlanTenantRelations"`
+	WlanTenantRelations             map[string]string `yaml:"wlanTenantRelations"`
+	CustomFieldMappings             map[string]string `yaml:"customFieldMappings"`
 }
 
-func (s SourceConfig) String() string {
-	return fmt.Sprintf("SourceConfig{Name: %s, Type: %s, HTTPScheme: %s, Hostname: %s, Port: %d, Username: %s, Password: %s, PermittedSubnets: %v, ValidateCert: %t, Tag: %s, TagColor: %s, DatacenterClusterGroupRelations: %s, HostSiteRelations: %v, ClusterSiteRelations: %v, clusterTenantRelations: %v, HostTenantRelations: %v, VmTenantRelations %v, VlanGroupRelations: %v, VlanTenantRelations: %v, WlanTenantRelations: %v}", s.Name, s.Type, s.HTTPScheme, s.Hostname, s.Port, s.Username, s.Password, s.IgnoredSubnets, s.ValidateCert, s.Tag, s.TagColor, s.DatacenterClusterGroupRelations, s.HostSiteRelations, s.ClusterSiteRelations, s.ClusterTenantRelations, s.HostTenantRelations, s.VMTenantRelations, s.VlanGroupRelations, s.VlanTenantRelations, s.WlanTenantRelations)
+// UnmarshalYAML is a custom unmarshal function for SourceConfig.
+// This is needed because we map relations to the map[string]string.
+func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	type realSourceConfig struct {
+		Name                            string               `yaml:"name"`
+		Type                            constants.SourceType `yaml:"type"`
+		HTTPScheme                      HTTPScheme           `yaml:"httpScheme"`
+		Hostname                        string               `yaml:"hostname"`
+		Port                            int                  `yaml:"port"`
+		Username                        string               `yaml:"username"`
+		Password                        string               `yaml:"password"`
+		APIToken                        string               `yaml:"apiToken"`
+		ValidateCert                    bool                 `yaml:"validateCert"`
+		Tag                             string               `yaml:"tag"`
+		TagColor                        string               `yaml:"tagColor"`
+		IgnoredSubnets                  []string             `yaml:"ignoredSubnets"`
+		InterfaceFilter                 string               `yaml:"interfaceFilter"`
+		CollectArpData                  bool                 `yaml:"collectArpData"`
+		CAFile                          string               `yaml:"caFile"`
+		DatacenterClusterGroupRelations []string             `yaml:"datacenterClusterGroupRelations"`
+		HostSiteRelations               []string             `yaml:"hostSiteRelations"`
+		HostRoleRelations               []string             `yaml:"hostRoleRelations"`
+		ClusterSiteRelations            []string             `yaml:"clusterSiteRelations"`
+		ClusterTenantRelations          []string             `yaml:"clusterTenantRelations"`
+		HostTenantRelations             []string             `yaml:"hostTenantRelations"`
+		VMTenantRelations               []string             `yaml:"vmTenantRelations"`
+		VMRoleRelations                 []string             `yaml:"vmRoleRelations"`
+		VlanGroupRelations              []string             `yaml:"vlanGroupRelations"`
+		VlanTenantRelations             []string             `yaml:"vlanTenantRelations"`
+		WlanTenantRelations             []string             `yaml:"wlanTenantRelations"`
+		CustomFieldMappings             []string             `yaml:"customFieldMappings"`
+	}
+	rawMarshal := realSourceConfig{}
+	if err := unmarshal(&rawMarshal); err != nil {
+		return err
+	}
+	sc.Name = rawMarshal.Name
+	sc.Type = rawMarshal.Type
+	sc.HTTPScheme = rawMarshal.HTTPScheme
+	sc.Hostname = rawMarshal.Hostname
+	sc.Port = rawMarshal.Port
+	sc.Username = rawMarshal.Username
+	sc.Password = rawMarshal.Password
+	sc.APIToken = rawMarshal.APIToken
+	sc.ValidateCert = rawMarshal.ValidateCert
+	sc.Tag = rawMarshal.Tag
+	sc.TagColor = rawMarshal.TagColor
+	sc.IgnoredSubnets = rawMarshal.IgnoredSubnets
+	sc.InterfaceFilter = rawMarshal.InterfaceFilter
+	sc.CollectArpData = rawMarshal.CollectArpData
+	sc.CAFile = rawMarshal.CAFile
+
+	if len(rawMarshal.DatacenterClusterGroupRelations) > 0 {
+		err := utils.ValidateRegexRelations(rawMarshal.DatacenterClusterGroupRelations)
+		if err != nil {
+			return fmt.Errorf("%s.datacenterClusterGroupRelations: %s", rawMarshal.Name, err)
+		}
+		sc.DatacenterClusterGroupRelations = utils.ConvertStringsToRegexPairs(rawMarshal.DatacenterClusterGroupRelations)
+	}
+	if len(rawMarshal.HostSiteRelations) > 0 {
+		err := utils.ValidateRegexRelations(rawMarshal.HostSiteRelations)
+		if err != nil {
+			return fmt.Errorf("%s.hostSiteRelations: %s", rawMarshal.Name, err)
+		}
+		sc.HostSiteRelations = utils.ConvertStringsToRegexPairs(rawMarshal.HostSiteRelations)
+	}
+	if len(rawMarshal.HostRoleRelations) > 0 {
+		err := utils.ValidateRegexRelations(rawMarshal.HostRoleRelations)
+		if err != nil {
+			return fmt.Errorf("%s.hostRoleRelations: %s", rawMarshal.Name, err)
+		}
+		sc.HostRoleRelations = utils.ConvertStringsToRegexPairs(rawMarshal.HostRoleRelations)
+	}
+	if len(rawMarshal.ClusterSiteRelations) > 0 {
+		err := utils.ValidateRegexRelations(rawMarshal.ClusterSiteRelations)
+		if err != nil {
+			return fmt.Errorf("%s.clusterSiteRelations: %s", rawMarshal.Name, err)
+		}
+		sc.ClusterSiteRelations = utils.ConvertStringsToRegexPairs(rawMarshal.ClusterSiteRelations)
+	}
+	if len(rawMarshal.ClusterTenantRelations) > 0 {
+		err := utils.ValidateRegexRelations(rawMarshal.ClusterTenantRelations)
+		if err != nil {
+			return fmt.Errorf("%s.clusterTenantRelations: %s", rawMarshal.Name, err)
+		}
+		sc.ClusterTenantRelations = utils.ConvertStringsToRegexPairs(rawMarshal.ClusterTenantRelations)
+	}
+	if len(rawMarshal.HostTenantRelations) > 0 {
+		err := utils.ValidateRegexRelations(rawMarshal.HostTenantRelations)
+		if err != nil {
+			return fmt.Errorf("%s.hostTenantRelations: %s", rawMarshal.Name, err)
+		}
+		sc.HostTenantRelations = utils.ConvertStringsToRegexPairs(rawMarshal.HostTenantRelations)
+	}
+	if len(rawMarshal.VMTenantRelations) > 0 {
+		err := utils.ValidateRegexRelations(rawMarshal.VMTenantRelations)
+		if err != nil {
+			return fmt.Errorf("%s.vmTenantRelations: %s", rawMarshal.Name, err)
+		}
+		sc.VMTenantRelations = utils.ConvertStringsToRegexPairs(rawMarshal.VMTenantRelations)
+	}
+	if len(rawMarshal.VMRoleRelations) > 0 {
+		err := utils.ValidateRegexRelations(rawMarshal.VMRoleRelations)
+		if err != nil {
+			return fmt.Errorf("%s.vmRoleRelations: %s", rawMarshal.Name, err)
+		}
+		sc.VMRoleRelations = utils.ConvertStringsToRegexPairs(rawMarshal.VMRoleRelations)
+	}
+	if len(rawMarshal.VlanGroupRelations) > 0 {
+		err := utils.ValidateRegexRelations(rawMarshal.VlanGroupRelations)
+		if err != nil {
+			return fmt.Errorf("%s.vlanGroupRelations: %v", rawMarshal.Name, err)
+		}
+		sc.VlanGroupRelations = utils.ConvertStringsToRegexPairs(rawMarshal.VlanGroupRelations)
+	}
+	if len(rawMarshal.VlanTenantRelations) > 0 {
+		err := utils.ValidateRegexRelations((rawMarshal.VlanTenantRelations))
+		if err != nil {
+			return fmt.Errorf("%s.vlanTenantRelations: %v", rawMarshal.Name, err)
+		}
+		sc.VlanTenantRelations = utils.ConvertStringsToRegexPairs(rawMarshal.VlanTenantRelations)
+	}
+	if len(rawMarshal.WlanTenantRelations) > 0 {
+		err := utils.ValidateRegexRelations((rawMarshal.WlanTenantRelations))
+		if err != nil {
+			return fmt.Errorf("%s.wlanTenantRelations: %v", rawMarshal.Name, err)
+		}
+		sc.WlanTenantRelations = utils.ConvertStringsToRegexPairs(rawMarshal.WlanTenantRelations)
+	}
+	if len(rawMarshal.CustomFieldMappings) > 0 {
+		err := utils.ValidateRegexRelations((rawMarshal.CustomFieldMappings))
+		if err != nil {
+			return fmt.Errorf("%s.customFieldMappings: %v", rawMarshal.Name, err)
+		}
+		sc.CustomFieldMappings = utils.ConvertStringsToRegexPairs(rawMarshal.CustomFieldMappings)
+	}
+	return nil
+}
+
+func (sc SourceConfig) String() string {
+	return fmt.Sprintf("SourceConfig{Name: %s, Type: %s, HTTPScheme: %s, Hostname: %s, Port: %d, Username: %s, Password: %s, PermittedSubnets: %v, ValidateCert: %t, Tag: %s, TagColor: %s, DatacenterClusterGroupRelations: %s, HostSiteRelations: %v, ClusterSiteRelations: %v, clusterTenantRelations: %v, HostTenantRelations: %v, VmTenantRelations %v, VlanGroupRelations: %v, VlanTenantRelations: %v, WlanTenantRelations: %v}", sc.Name, sc.Type, sc.HTTPScheme, sc.Hostname, sc.Port, sc.Username, sc.Password, sc.IgnoredSubnets, sc.ValidateCert, sc.Tag, sc.TagColor, sc.DatacenterClusterGroupRelations, sc.HostSiteRelations, sc.ClusterSiteRelations, sc.ClusterTenantRelations, sc.HostTenantRelations, sc.VMTenantRelations, sc.VlanGroupRelations, sc.VlanTenantRelations, sc.WlanTenantRelations)
 }
 
 // Validates the user's config for limits and required fields.
@@ -219,7 +358,7 @@ func validateNetboxConfig(config *Config) error {
 				}
 			}
 			if !contains {
-				return fmt.Errorf("netbox.sourcePriority: source[%s] doesn't exist in the sources array", sourceName)
+				return fmt.Errorf("netbox.sourcePriority: %s doesn't exist in the sources array", sourceName)
 			}
 		}
 	}
@@ -237,9 +376,9 @@ func validateSourceConfig(config *Config) error {
 	// Validate Sources
 	for i := range config.Sources {
 		externalSource := &config.Sources[i]
-		externalSourceStr := "source[" + externalSource.Name + "]"
+		externalSourceStr := externalSource.Name
 		if externalSource.Name == "" {
-			return fmt.Errorf("%s.name: cannot be empty", externalSourceStr)
+			return fmt.Errorf("source name: cannot be empty")
 		}
 		switch externalSource.Type {
 		case constants.Ovirt:
@@ -286,10 +425,6 @@ func validateSourceConfig(config *Config) error {
 				return fmt.Errorf("%s.caFile: %s", externalSourceStr, err)
 			}
 		}
-		err := validateSourceConfigRelations(externalSource, externalSourceStr)
-		if err != nil {
-			return err
-		}
 		if len(externalSource.IgnoredSubnets) > 0 {
 			for _, ignoredSubnet := range externalSource.IgnoredSubnets {
 				if !utils.VerifySubnet(ignoredSubnet) {
@@ -298,67 +433,9 @@ func validateSourceConfig(config *Config) error {
 			}
 		}
 		// Try to compile interfaceFilter
-		_, err = regexp.Compile(externalSource.InterfaceFilter)
+		_, err := regexp.Compile(externalSource.InterfaceFilter)
 		if err != nil {
 			return fmt.Errorf("%s.interfaceFilter: wrong format: %s", externalSourceStr, err)
-		}
-	}
-	return nil
-}
-
-func validateSourceConfigRelations(externalSource *SourceConfig, externalSourceStr string) error {
-	if len(externalSource.DatacenterClusterGroupRelations) > 0 {
-		err := utils.ValidateRegexRelations(externalSource.DatacenterClusterGroupRelations)
-		if err != nil {
-			return fmt.Errorf("%s.datacenterClusterGroupRelations: %s", externalSourceStr, err)
-		}
-	}
-	if len(externalSource.HostSiteRelations) > 0 {
-		err := utils.ValidateRegexRelations(externalSource.HostSiteRelations)
-		if err != nil {
-			return fmt.Errorf("%s.hostSiteRelations: %s", externalSourceStr, err)
-		}
-	}
-	if len(externalSource.ClusterSiteRelations) > 0 {
-		err := utils.ValidateRegexRelations(externalSource.ClusterSiteRelations)
-		if err != nil {
-			return fmt.Errorf("%s.clusterSiteRelations: %s", externalSourceStr, err)
-		}
-	}
-	if len(externalSource.ClusterTenantRelations) > 0 {
-		err := utils.ValidateRegexRelations(externalSource.ClusterTenantRelations)
-		if err != nil {
-			return fmt.Errorf("%s.clusterTenantRelations: %s", externalSourceStr, err)
-		}
-	}
-	if len(externalSource.HostTenantRelations) > 0 {
-		err := utils.ValidateRegexRelations(externalSource.HostTenantRelations)
-		if err != nil {
-			return fmt.Errorf("%s.hostTenantRelations: %s", externalSourceStr, err)
-		}
-	}
-	if len(externalSource.VMTenantRelations) > 0 {
-		err := utils.ValidateRegexRelations(externalSource.VMTenantRelations)
-		if err != nil {
-			return fmt.Errorf("%s.vmTenantRelations: %s", externalSourceStr, err)
-		}
-	}
-	if len(externalSource.VlanGroupRelations) > 0 {
-		err := utils.ValidateRegexRelations(externalSource.VlanGroupRelations)
-		if err != nil {
-			return fmt.Errorf("%s.vlanGroupRelations: %v", externalSourceStr, err)
-		}
-	}
-	if len(externalSource.VlanTenantRelations) > 0 {
-		err := utils.ValidateRegexRelations((externalSource.VlanTenantRelations))
-		if err != nil {
-			return fmt.Errorf("%s.vlanTenantRelations: %v", externalSourceStr, err)
-		}
-	}
-	if len(externalSource.WlanTenantRelations) > 0 {
-		err := utils.ValidateRegexRelations((externalSource.WlanTenantRelations))
-		if err != nil {
-			return fmt.Errorf("%s.wlanTenantRelations: %v", externalSourceStr, err)
 		}
 	}
 	return nil

@@ -25,12 +25,12 @@ func (o *OVirtSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 		// TODO: handle other networks
 		if networkVlan, exists := network.Vlan(); exists {
 			// Get vlanGroup from relation
-			vlanGroup, err := common.MatchVlanToGroup(o.Ctx, nbi, name, o.VlanGroupRelations)
+			vlanGroup, err := common.MatchVlanToGroup(o.Ctx, nbi, name, o.SourceConfig.VlanGroupRelations)
 			if err != nil {
 				return err
 			}
 			// Get tenant from relation
-			vlanTenant, err := common.MatchVlanToTenant(o.Ctx, nbi, name, o.VlanTenantRelations)
+			vlanTenant, err := common.MatchVlanToTenant(o.Ctx, nbi, name, o.SourceConfig.VlanTenantRelations)
 			if err != nil {
 				return err
 			}
@@ -65,7 +65,7 @@ func (o *OVirtSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
 		}
 		description, _ := datacenter.Description()
 		nbClusterGroupName := dcName
-		if mappedClusterGroupName, ok := o.DatacenterClusterGroupRelations[dcName]; ok {
+		if mappedClusterGroupName, ok := o.SourceConfig.DatacenterClusterGroupRelations[dcName]; ok {
 			nbClusterGroupName = mappedClusterGroupName
 			o.Logger.Debugf(o.Ctx, "mapping datacenter name %s to cluster group name %s", dcName, mappedClusterGroupName)
 		}
@@ -115,18 +115,18 @@ func (o *OVirtSource) syncClusters(nbi *inventory.NetboxInventory) error {
 			o.Logger.Warning(o.Ctx, "failed to get datacenter for oVirt cluster ", clusterName)
 		}
 		if clusterGroupName != "" {
-			if mappedName, ok := o.DatacenterClusterGroupRelations[clusterGroupName]; ok {
+			if mappedName, ok := o.SourceConfig.DatacenterClusterGroupRelations[clusterGroupName]; ok {
 				clusterGroupName = mappedName
 			}
 			clusterGroup, _ = nbi.GetClusterGroup(clusterGroupName)
 		}
 
-		clusterSite, err := common.MatchClusterToSite(o.Ctx, nbi, clusterName, o.ClusterSiteRelations)
+		clusterSite, err := common.MatchClusterToSite(o.Ctx, nbi, clusterName, o.SourceConfig.ClusterSiteRelations)
 		if err != nil {
 			return fmt.Errorf("match cluster to site: %s", err)
 		}
 
-		clusterTenant, err := common.MatchClusterToTenant(o.Ctx, nbi, clusterName, o.ClusterTenantRelations)
+		clusterTenant, err := common.MatchClusterToTenant(o.Ctx, nbi, clusterName, o.SourceConfig.ClusterTenantRelations)
 		if err != nil {
 			return fmt.Errorf("match cluster to tenant: %s", err)
 		}
@@ -161,11 +161,11 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		}
 		hostCluster, _ := nbi.GetCluster(o.Clusters[host.MustCluster().MustId()].MustName())
 
-		hostSite, err := common.MatchHostToSite(o.Ctx, nbi, hostName, o.HostSiteRelations)
+		hostSite, err := common.MatchHostToSite(o.Ctx, nbi, hostName, o.SourceConfig.HostSiteRelations)
 		if err != nil {
 			return fmt.Errorf("hostSite: %s", err)
 		}
-		hostTenant, err := common.MatchHostToTenant(o.Ctx, nbi, hostName, o.HostTenantRelations)
+		hostTenant, err := common.MatchHostToTenant(o.Ctx, nbi, hostName, o.SourceConfig.HostTenantRelations)
 		if err != nil {
 			return fmt.Errorf("hostTenant: %s", err)
 		}
@@ -278,18 +278,20 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		mem, _ := host.Memory()
 		mem /= (constants.KiB * constants.KiB * constants.KiB) // Value is in Bytes, we convert to GB
 
-		hostDeviceRoleStruct := &objects.DeviceRole{
-			NetboxObject: objects.NetboxObject{
-				Description: constants.DeviceRoleServerDescription,
-			},
-			Name:   constants.DeviceRoleServer,
-			Slug:   utils.Slugify(constants.DeviceRoleServer),
-			Color:  constants.DeviceRoleServerColor,
-			VMRole: false,
+		// Match host to a role. First test if user provided relations, if not
+		// use default server role.
+		var hostRole *objects.DeviceRole
+		if len(o.SourceConfig.HostRoleRelations) > 0 {
+			hostRole, err = common.MatchHostToRole(o.Ctx, nbi, hostName, o.SourceConfig.HostRoleRelations)
+			if err != nil {
+				return fmt.Errorf("match host to role: %s", err)
+			}
 		}
-		hostDeviceRole, err := nbi.AddDeviceRole(o.Ctx, hostDeviceRoleStruct)
-		if err != nil {
-			return fmt.Errorf("add device role %+v: %s", hostDeviceRoleStruct, err)
+		if hostRole == nil {
+			hostRole, err = nbi.AddServerDeviceRole(o.Ctx)
+			if err != nil {
+				return fmt.Errorf("add server device role %s", err)
+			}
 		}
 
 		nbHost := &objects.Device{
@@ -306,7 +308,7 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 			Name:         hostName,
 			Status:       hostStatus,
 			Platform:     hostPlatform,
-			DeviceRole:   hostDeviceRole,
+			DeviceRole:   hostRole,
 			Site:         hostSite,
 			Tenant:       hostTenant,
 			Cluster:      hostCluster,
@@ -611,7 +613,7 @@ func (o *OVirtSource) collectHostNicsData(nbHost *objects.Device, nbi *inventory
 			if exists {
 				vlanName := o.Networks.Vid2Name[int(vlanID)]
 				// Get vlanGroup from relation
-				vlanGroup, err := common.MatchVlanToGroup(o.Ctx, nbi, vlanName, o.VlanGroupRelations)
+				vlanGroup, err := common.MatchVlanToGroup(o.Ctx, nbi, vlanName, o.SourceConfig.VlanGroupRelations)
 				if err != nil {
 					return err
 				}
@@ -740,6 +742,7 @@ func (o *OVirtSource) syncVM(nbi *inventory.NetboxInventory, vmID string, ovirtV
 
 //nolint:gocyclo
 func (o *OVirtSource) extractVMData(nbi *inventory.NetboxInventory, vmID string, vm *ovirtsdk4.Vm) (*objects.VM, error) {
+	var err error
 	// VM name, which is used as unique identifier for VMs in Netbox
 	vmName, exists := vm.Name()
 	if !exists {
@@ -862,9 +865,18 @@ func (o *OVirtSource) extractVMData(nbi *inventory.NetboxInventory, vmID string,
 			}
 		}
 	}
-	vmRole, err := nbi.AddVMDeviceRole(o.Ctx)
-	if err != nil {
-		return nil, fmt.Errorf("get vm device role: %s", err)
+	var vmRole *objects.DeviceRole
+	if len(o.SourceConfig.VMRoleRelations) > 0 {
+		vmRole, err = common.MatchVMToRole(o.Ctx, nbi, vmName, o.SourceConfig.VMRoleRelations)
+		if err != nil {
+			return nil, fmt.Errorf("match vm to role: %s", err)
+		}
+	}
+	if vmRole == nil {
+		vmRole, err = nbi.AddVMDeviceRole(o.Ctx)
+		if err != nil {
+			return nil, fmt.Errorf("add vm device role: %s", err)
+		}
 	}
 
 	platformName := utils.GeneratePlatformName(vmOsType, vmOsVersion, vmCPUArch)
@@ -1065,7 +1077,7 @@ func (o *OVirtSource) syncVMNics(nbi *inventory.NetboxInventory, ovirtVM *ovirts
 					if vnicNetworkVlan, ok := vnicNetwork.Vlan(); ok {
 						if vlanID, ok := vnicNetworkVlan.Id(); ok {
 							vlanName := o.Networks.Vid2Name[int(vlanID)]
-							vlanGroup, err := common.MatchVlanToGroup(o.Ctx, nbi, vlanName, o.VlanGroupRelations)
+							vlanGroup, err := common.MatchVlanToGroup(o.Ctx, nbi, vlanName, o.SourceConfig.VlanGroupRelations)
 							if err != nil {
 								o.Logger.Warningf(o.Ctx, "match vlan to group: %s", err)
 								continue

@@ -52,11 +52,11 @@ func (ds *DnacSource) syncSites(nbi *inventory.NetboxInventory) error {
 // Syncs dnac vlans to netbox inventory.
 func (ds *DnacSource) syncVlans(nbi *inventory.NetboxInventory) error {
 	for vid, vlan := range ds.Vlans {
-		vlanGroup, err := common.MatchVlanToGroup(ds.Ctx, nbi, vlan.InterfaceName, ds.VlanGroupRelations)
+		vlanGroup, err := common.MatchVlanToGroup(ds.Ctx, nbi, vlan.InterfaceName, ds.SourceConfig.VlanGroupRelations)
 		if err != nil {
 			return fmt.Errorf("vlanGroup: %s", err)
 		}
-		vlanTenant, err := common.MatchVlanToTenant(ds.Ctx, nbi, vlan.InterfaceName, ds.VlanTenantRelations)
+		vlanTenant, err := common.MatchVlanToTenant(ds.Ctx, nbi, vlan.InterfaceName, ds.SourceConfig.VlanTenantRelations)
 		if err != nil {
 			return fmt.Errorf("vlanTenant: %s", err)
 		}
@@ -152,14 +152,24 @@ func (ds *DnacSource) syncDevice(nbi *inventory.NetboxInventory, deviceID string
 		return fmt.Errorf("failed creating device: %s", err)
 	}
 
-	deviceRole, err := nbi.AddDeviceRole(ds.Ctx, &objects.DeviceRole{
-		Name:   device.Family,
-		Slug:   utils.Slugify(device.Family),
-		Color:  constants.ColorAqua,
-		VMRole: false,
-	})
-	if err != nil {
-		return fmt.Errorf("adding dnac device role: %s", err)
+	// Match device to a role.
+	var deviceRole *objects.DeviceRole
+	if len(ds.SourceConfig.HostRoleRelations) > 0 {
+		deviceRole, err = common.MatchHostToRole(ds.Ctx, nbi, device.Hostname, ds.SourceConfig.HostRoleRelations)
+		if err != nil {
+			return fmt.Errorf("match host to role: %s", err)
+		}
+	}
+	if deviceRole == nil {
+		deviceRole, err = nbi.AddDeviceRole(ds.Ctx, &objects.DeviceRole{
+			Name:   device.Family,
+			Slug:   utils.Slugify(device.Family),
+			Color:  constants.ColorAqua,
+			VMRole: false,
+		})
+		if err != nil {
+			return fmt.Errorf("adding dnac device role: %s", err)
+		}
 	}
 
 	platformName := device.SoftwareType
@@ -203,7 +213,7 @@ func (ds *DnacSource) syncDevice(nbi *inventory.NetboxInventory, deviceID string
 		return fmt.Errorf("add device type: %s", err)
 	}
 
-	deviceTenant, err := common.MatchHostToTenant(ds.Ctx, nbi, device.Hostname, ds.HostTenantRelations)
+	deviceTenant, err := common.MatchHostToTenant(ds.Ctx, nbi, device.Hostname, ds.SourceConfig.HostTenantRelations)
 	if err != nil {
 		return fmt.Errorf("hostTenant: %s", err)
 	}
@@ -522,7 +532,7 @@ func (ds *DnacSource) syncWirelessLANs(nbi *inventory.NetboxInventory) error {
 		if err != nil {
 			return fmt.Errorf("add wirelessLANGroup %s: %s", wlanGroup, err)
 		}
-		vlanGroup, err := common.MatchVlanToGroup(ds.Ctx, nbi, wlanWirelessProfile.InterfaceName, ds.VlanGroupRelations)
+		vlanGroup, err := common.MatchVlanToGroup(ds.Ctx, nbi, wlanWirelessProfile.InterfaceName, ds.SourceConfig.VlanGroupRelations)
 		if err != nil {
 			return err
 		}

@@ -185,6 +185,30 @@ func MatchHostToTenant(ctx context.Context, nbi *inventory.NetboxInventory, host
 	return nil, nil
 }
 
+// MatchHostToRole matches Host from hostName to DeviceRole using hostRoleRelations.
+//
+// In case that there is not match or hostRoleRelations is nil, it will return nil.
+func MatchHostToRole(ctx context.Context, nbi *inventory.NetboxInventory, hostName string, hostRoleRelations map[string]string) (*objects.DeviceRole, error) {
+	if hostRoleRelations == nil {
+		return nil, nil
+	}
+	roleName, err := utils.MatchStringToValue(hostName, hostRoleRelations)
+	if err != nil {
+		return nil, fmt.Errorf("matching host to role: %s", err)
+	}
+	if roleName != "" {
+		role, err := nbi.AddDeviceRole(ctx, &objects.DeviceRole{
+			Name: roleName,
+			Slug: utils.Slugify(roleName),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("add new host role: %s", err)
+		}
+		return role, nil
+	}
+	return nil, nil
+}
+
 // Function that matches Vm from vmName to Tenant using vmTenantRelations.
 //
 // In case that there is not match or hostTenantRelations is nil, it will return nil.
@@ -209,6 +233,30 @@ func MatchVMToTenant(ctx context.Context, nbi *inventory.NetboxInventory, vmName
 			return tenant, nil
 		}
 		return site, nil
+	}
+	return nil, nil
+}
+
+// MatchVMToRole matches VM from vmName to DeviceRole using vmRoleRelations.
+//
+// In case that there is not match or hostRoleRelations is nil, it will return nil.
+func MatchVMToRole(ctx context.Context, nbi *inventory.NetboxInventory, vmName string, vmRoleRelations map[string]string) (*objects.DeviceRole, error) {
+	if vmRoleRelations == nil {
+		return nil, nil
+	}
+	roleName, err := utils.MatchStringToValue(vmName, vmRoleRelations)
+	if err != nil {
+		return nil, fmt.Errorf("matching vm to role: %s", err)
+	}
+	if roleName != "" {
+		role, err := nbi.AddDeviceRole(ctx, &objects.DeviceRole{
+			Name: roleName,
+			Slug: utils.Slugify(roleName),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("add new vm role: %s", err)
+		}
+		return role, nil
 	}
 	return nil, nil
 }

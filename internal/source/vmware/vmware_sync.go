@@ -21,12 +21,12 @@ func (vc *VmwareSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 	for dvpgID, dvpg := range vc.Networks.DistributedVirtualPortgroups {
 		// TODO: currently we are syncing only vlans
 		// Get vlanGroup from relations
-		vlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, dvpg.Name, vc.VlanGroupRelations)
+		vlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, dvpg.Name, vc.SourceConfig.VlanGroupRelations)
 		if err != nil {
 			return fmt.Errorf("vlanGroup: %s", err)
 		}
 		// Get tenant from relations
-		vlanTenant, err := common.MatchVlanToTenant(vc.Ctx, nbi, dvpg.Name, vc.VlanTenantRelations)
+		vlanTenant, err := common.MatchVlanToTenant(vc.Ctx, nbi, dvpg.Name, vc.SourceConfig.VlanTenantRelations)
 		if err != nil {
 			return fmt.Errorf("vlanTenant: %s", err)
 		}
@@ -56,7 +56,7 @@ func (vc *VmwareSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 func (vc *VmwareSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
 	for dcID, dc := range vc.DataCenters {
 		netboxClusterGroupName := dc.Name
-		if mappedClusterGroupName, ok := vc.DatacenterClusterGroupRelations[netboxClusterGroupName]; ok {
+		if mappedClusterGroupName, ok := vc.SourceConfig.DatacenterClusterGroupRelations[netboxClusterGroupName]; ok {
 			netboxClusterGroupName = mappedClusterGroupName
 			vc.Logger.Debugf(vc.Ctx, "mapping datacenter name %s to cluster group name %s", dc.Name, mappedClusterGroupName)
 		}
@@ -91,17 +91,17 @@ func (vc *VmwareSource) syncClusters(nbi *inventory.NetboxInventory) error {
 		var clusterGroup *objects.ClusterGroup
 		datacenterID := vc.Cluster2Datacenter[clusterID]
 		clusterGroupName := vc.DataCenters[datacenterID].Name
-		if mappedName, ok := vc.DatacenterClusterGroupRelations[clusterGroupName]; ok {
+		if mappedName, ok := vc.SourceConfig.DatacenterClusterGroupRelations[clusterGroupName]; ok {
 			clusterGroupName = mappedName
 		}
 		clusterGroup, _ = nbi.GetClusterGroup(clusterGroupName)
 
-		clusterSite, err := common.MatchClusterToSite(vc.Ctx, nbi, clusterName, vc.ClusterSiteRelations)
+		clusterSite, err := common.MatchClusterToSite(vc.Ctx, nbi, clusterName, vc.SourceConfig.ClusterSiteRelations)
 		if err != nil {
 			return fmt.Errorf("match cluster to site: %s", err)
 		}
 
-		clusterTenant, err := common.MatchClusterToTenant(vc.Ctx, nbi, clusterName, vc.ClusterTenantRelations)
+		clusterTenant, err := common.MatchClusterToTenant(vc.Ctx, nbi, clusterName, vc.SourceConfig.ClusterTenantRelations)
 		if err != nil {
 			return fmt.Errorf("match cluster to tenant: %s", err)
 		}
@@ -135,11 +135,12 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		var err error
 		hostName := host.Name
 
-		hostSite, err := common.MatchHostToSite(vc.Ctx, nbi, hostName, vc.HostSiteRelations)
+		hostSite, err := common.MatchHostToSite(vc.Ctx, nbi, hostName, vc.SourceConfig.HostSiteRelations)
 		if err != nil {
 			return fmt.Errorf("hostSite: %s", err)
 		}
-		hostTenant, err := common.MatchHostToTenant(vc.Ctx, nbi, hostName, vc.HostTenantRelations)
+
+		hostTenant, err := common.MatchHostToTenant(vc.Ctx, nbi, hostName, vc.SourceConfig.HostTenantRelations)
 		if err != nil {
 			return fmt.Errorf("hostTenant: %s", err)
 		}
@@ -243,13 +244,24 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 			return fmt.Errorf("failed adding vmware Platform %+v with error: %s", platformStruct, err)
 		}
 
+		// Match host to a role. First test if user provided relations, if not
+		// use default server role.
+		var hostRole *objects.DeviceRole
+		if len(vc.SourceConfig.HostRoleRelations) > 0 {
+			hostRole, err = common.MatchHostToRole(vc.Ctx, nbi, hostName, vc.SourceConfig.HostRoleRelations)
+			if err != nil {
+				return fmt.Errorf("match host to role: %s", err)
+			}
+		}
+		if hostRole == nil {
+			hostRole, err = nbi.AddServerDeviceRole(vc.Ctx)
+			if err != nil {
+				return fmt.Errorf("add server device role %s", err)
+			}
+		}
+
 		hostCPUCores := host.Summary.Hardware.NumCpuCores
 		hostMemGB := host.Summary.Hardware.MemorySize / constants.KiB / constants.KiB / constants.KiB
-
-		hostDeviceRole, err := nbi.AddServerDeviceRole(vc.Ctx)
-		if err != nil {
-			return fmt.Errorf("add server device role %s", err)
-		}
 
 		hostStruct := &objects.Device{
 			NetboxObject: objects.NetboxObject{Tags: vc.Config.SourceTags, CustomFields: map[string]interface{}{
@@ -261,7 +273,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 			Name:         hostName,
 			Status:       hostStatus,
 			Platform:     hostPlatform,
-			DeviceRole:   hostDeviceRole,
+			DeviceRole:   hostRole,
 			Site:         hostSite,
 			Tenant:       hostTenant,
 			Cluster:      hostCluster,
@@ -383,7 +395,7 @@ func (vc *VmwareSource) collectHostPhysicalNicData(nbi *inventory.NetboxInventor
 			}
 			// Check if vlan with this vid already exists, else create it
 			if vlanName, ok := vc.Networks.Vid2Name[portgroupData.vlanID]; ok {
-				vlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, vlanName, vc.VlanGroupRelations)
+				vlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, vlanName, vc.SourceConfig.VlanGroupRelations)
 				if err != nil {
 					return nil, fmt.Errorf("vlanGroup: %s", err)
 				}
@@ -392,7 +404,7 @@ func (vc *VmwareSource) collectHostPhysicalNicData(nbi *inventory.NetboxInventor
 					vlanIDMap[portgroupData.vlanID] = vlan
 				}
 			} else {
-				vlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, portgroupName, vc.VlanGroupRelations)
+				vlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, portgroupName, vc.SourceConfig.VlanGroupRelations)
 				if err != nil {
 					return nil, fmt.Errorf("vlanGroup: %s", err)
 				}
@@ -626,7 +638,7 @@ func (vc *VmwareSource) collectHostVirtualNicData(nbi *inventory.NetboxInventory
 	var vnicUntaggedVlan *objects.Vlan
 	var vnicTaggedVlans []*objects.Vlan
 	if vnicPortgroupData != nil && vnicPortgroupVlanID != 0 {
-		vnicUntaggedVlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, vc.Networks.Vid2Name[vnicPortgroupVlanID], vc.VlanGroupRelations)
+		vnicUntaggedVlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, vc.Networks.Vid2Name[vnicPortgroupVlanID], vc.SourceConfig.VlanGroupRelations)
 		if err != nil {
 			return nil, fmt.Errorf("vlan group: %s", err)
 		}
@@ -645,7 +657,7 @@ func (vc *VmwareSource) collectHostVirtualNicData(nbi *inventory.NetboxInventory
 			if vnicDvPortgroupDataVlanID == 0 {
 				continue
 			}
-			vnicTaggedVlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, vc.Networks.Vid2Name[vnicDvPortgroupDataVlanID], vc.VlanGroupRelations)
+			vnicTaggedVlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, vc.Networks.Vid2Name[vnicDvPortgroupDataVlanID], vc.SourceConfig.VlanGroupRelations)
 			if err != nil {
 				return nil, fmt.Errorf("vlan group: %s", err)
 			}
@@ -714,38 +726,48 @@ func (vc *VmwareSource) syncVMs(nbi *inventory.NetboxInventory) error {
 }
 
 // syncVM synces VM from the source to Netbox.
+//
+//nolint:gocyclo
 func (vc *VmwareSource) syncVM(nbi *inventory.NetboxInventory, vmKey string, vm mo.VirtualMachine) error {
-	// Check if the VM is a template
 	isTemplate := false
 	if vm.Config != nil && vm.Config.Template {
 		isTemplate = true
 	}
 
-	var vmRole *objects.DeviceRole
-	var err error
-	if isTemplate {
-		vmRole, err = nbi.AddVMTemplateDeviceRole(vc.Ctx)
-		if err != nil {
-			return fmt.Errorf("add template device role: %s", err)
-		}
-	} else {
-		vmRole, err = nbi.AddVMDeviceRole(vc.Ctx)
-		if err != nil {
-			return fmt.Errorf("get vm device role: %s", err)
-		}
-	}
-
 	vmName := vm.Name
 	vmHostName := vc.Hosts[vc.VM2Host[vmKey]].Name
 
+	// Map to a vm role
+	var vmRole *objects.DeviceRole
+	var err error
+	if len(vc.SourceConfig.VMRoleRelations) > 0 {
+		vmRole, err = common.MatchVMToRole(vc.Ctx, nbi, vmHostName, vc.SourceConfig.VMRoleRelations)
+		if err != nil {
+			return fmt.Errorf("match vm to role: %s", err)
+		}
+	}
+	if vmRole == nil {
+		if isTemplate {
+			vmRole, err = nbi.AddVMTemplateDeviceRole(vc.Ctx)
+			if err != nil {
+				return fmt.Errorf("add template device role: %s", err)
+			}
+		} else {
+			vmRole, err = nbi.AddVMDeviceRole(vc.Ctx)
+			if err != nil {
+				return fmt.Errorf("get vm device role: %s", err)
+			}
+		}
+	}
+
 	// Tenant is received from VmTenantRelations
-	vmTenant, err := common.MatchVMToTenant(vc.Ctx, nbi, vmName, vc.VMTenantRelations)
+	vmTenant, err := common.MatchVMToTenant(vc.Ctx, nbi, vmName, vc.SourceConfig.VMTenantRelations)
 	if err != nil {
 		return fmt.Errorf("vm's Tenant: %s", err)
 	}
 
 	// Site is the same as the Host
-	vmSite, err := common.MatchHostToSite(vc.Ctx, nbi, vmHostName, vc.HostSiteRelations)
+	vmSite, err := common.MatchHostToSite(vc.Ctx, nbi, vmHostName, vc.SourceConfig.HostSiteRelations)
 	if err != nil {
 		return fmt.Errorf("vm's Site: %s", err)
 	}
@@ -802,7 +824,7 @@ func (vc *VmwareSource) syncVM(nbi *inventory.NetboxInventory, vmKey string, vm 
 			if field, ok := field.(*types.CustomFieldStringValue); ok {
 				fieldName := vc.CustomFieldID2Name[field.Key]
 
-				if mappedField, ok := vc.CustomFieldMappings[fieldName]; ok {
+				if mappedField, ok := vc.SourceConfig.CustomFieldMappings[fieldName]; ok {
 					switch mappedField {
 					case "owner":
 						vmOwners = strings.Split(field.Value, ",")
@@ -1066,7 +1088,7 @@ func (vc *VmwareSource) collectVMInterfaceData(nbi *inventory.NetboxInventory, n
 	if len(intNetworkVlanIDs) > 0 && intMode != &objects.VMInterfaceModeTaggedAll {
 		if len(intNetworkVlanIDs) == 1 && intNetworkVlanIDs[0] != 0 {
 			vidID := intNetworkVlanIDs[0]
-			nicUntaggedVlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, vc.Networks.Vid2Name[vidID], vc.VlanGroupRelations)
+			nicUntaggedVlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, vc.Networks.Vid2Name[vidID], vc.SourceConfig.VlanGroupRelations)
 			if err != nil {
 				return nicIPv4Addresses, nicIPv6Addresses, nil, fmt.Errorf("vlan group: %s", err)
 			}

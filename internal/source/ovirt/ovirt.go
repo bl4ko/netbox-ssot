@@ -23,15 +23,6 @@ type OVirtSource struct {
 	Hosts       map[string]*ovirtsdk4.Host
 	Vms         map[string]*ovirtsdk4.Vm
 	Networks    *NetworkData
-
-	DatacenterClusterGroupRelations map[string]string
-	HostSiteRelations               map[string]string
-	ClusterSiteRelations            map[string]string
-	ClusterTenantRelations          map[string]string
-	HostTenantRelations             map[string]string
-	VMTenantRelations               map[string]string
-	VlanGroupRelations              map[string]string
-	VlanTenantRelations             map[string]string
 }
 
 type NetworkData struct {
@@ -42,25 +33,6 @@ type NetworkData struct {
 
 // Function that initializes state from ovirt api to local storage.
 func (o *OVirtSource) Init() error {
-	// Initialize regex relations
-	o.Logger.Debug(o.Ctx, o.Ctx, "Initializing regex relations for oVirt source ", o.SourceConfig.Name)
-	o.DatacenterClusterGroupRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.DatacenterClusterGroupRelations)
-	o.Logger.Debug(o.Ctx, "DatacenterClusterGroupRelations: ", o.DatacenterClusterGroupRelations)
-	o.HostSiteRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.HostSiteRelations)
-	o.Logger.Debug(o.Ctx, o.Ctx, "HostSiteRelations: ", o.HostSiteRelations)
-	o.ClusterSiteRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.ClusterSiteRelations)
-	o.Logger.Debug(o.Ctx, "ClusterSiteRelations: ", o.ClusterSiteRelations)
-	o.ClusterTenantRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.ClusterTenantRelations)
-	o.Logger.Debug(o.Ctx, "ClusterTenantRelations: ", o.ClusterTenantRelations)
-	o.HostTenantRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.HostTenantRelations)
-	o.Logger.Debug(o.Ctx, "HostTenantRelations: ", o.HostTenantRelations)
-	o.VMTenantRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.VMTenantRelations)
-	o.Logger.Debug(o.Ctx, "VmTenantRelations: ", o.VMTenantRelations)
-	o.VlanGroupRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.VlanGroupRelations)
-	o.Logger.Debug(o.Ctx, "VlanGroupRelations: ", o.VlanGroupRelations)
-	o.VlanTenantRelations = utils.ConvertStringsToRegexPairs(o.SourceConfig.VlanTenantRelations)
-	o.Logger.Debug(o.Ctx, "VlanTenantRelations: ", o.VlanTenantRelations)
-
 	// Build the connection
 	o.Logger.Debug(o.Ctx, "Initializing oVirt source ", o.SourceConfig.Name)
 	connBuilder := ovirtsdk4.NewConnectionBuilder().

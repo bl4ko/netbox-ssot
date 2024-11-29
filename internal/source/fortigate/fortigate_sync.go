@@ -39,16 +39,25 @@ func (fs *FortigateSource) syncDevice(nbi *inventory.NetboxInventory) error {
 		return fmt.Errorf("add device type: %s", err)
 	}
 
-	deviceTenant, err := common.MatchHostToTenant(fs.Ctx, nbi, deviceName, fs.HostTenantRelations)
+	deviceTenant, err := common.MatchHostToTenant(fs.Ctx, nbi, deviceName, fs.SourceConfig.HostTenantRelations)
 	if err != nil {
 		return fmt.Errorf("match host to tenant: %s", err)
 	}
 
-	deviceRole, err := nbi.AddFirewallDeviceRole(fs.Ctx)
-	if err != nil {
-		return fmt.Errorf("add DeviceRole firewall: %s", err)
+	var deviceRole *objects.DeviceRole
+	if len(fs.SourceConfig.HostRoleRelations) > 0 {
+		deviceRole, err = common.MatchHostToRole(fs.Ctx, nbi, deviceName, fs.SourceConfig.HostRoleRelations)
+		if err != nil {
+			return fmt.Errorf("match host to role: %s", err)
+		}
 	}
-	deviceSite, err := common.MatchHostToSite(fs.Ctx, nbi, deviceName, fs.HostSiteRelations)
+	if deviceRole == nil {
+		deviceRole, err = nbi.AddFirewallDeviceRole(fs.Ctx)
+		if err != nil {
+			return fmt.Errorf("add DeviceRole firewall: %s", err)
+		}
+	}
+	deviceSite, err := common.MatchHostToSite(fs.Ctx, nbi, deviceName, fs.SourceConfig.HostSiteRelations)
 	if err != nil {
 		return fmt.Errorf("match host to site: %s", err)
 	}
@@ -174,11 +183,11 @@ func (fs *FortigateSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 			// Add Vlan for interface
 			vlanID := iface.VlanID
 			vlanName := fmt.Sprintf("Vlan%d", vlanID)
-			vlanGroup, err := common.MatchVlanToGroup(fs.Ctx, nbi, vlanName, fs.VlanGroupRelations)
+			vlanGroup, err := common.MatchVlanToGroup(fs.Ctx, nbi, vlanName, fs.SourceConfig.VlanGroupRelations)
 			if err != nil {
 				return fmt.Errorf("match vlan to group: %s", err)
 			}
-			vlanTenant, err := common.MatchVlanToTenant(fs.Ctx, nbi, vlanName, fs.VlanTenantRelations)
+			vlanTenant, err := common.MatchVlanToTenant(fs.Ctx, nbi, vlanName, fs.SourceConfig.VlanTenantRelations)
 			if err != nil {
 				return fmt.Errorf("match vlan to tenant: %s", err)
 			}

@@ -14,3 +14,17 @@ source:
     hostname: core.example.com
     username: admin@internal
     password: adminpass
+
+  - name: vcenter
+    type: vmware
+    hostname: vcenter.example.com
+    username: admin
+    password: pass
+    customFieldMappings:
+    - Mail = email
+    - Creator = owner
+    - Description = description
+    hostRoleRelations:
+    - .* = Host ESX
+    vmRoleRelations:
+    - .* = Virtual Machine ESX

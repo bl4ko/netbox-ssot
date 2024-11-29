@@ -34,17 +34,28 @@ func (is *IOSXESource) syncDevice(nbi *inventory.NetboxInventory) error {
 	if err != nil {
 		return fmt.Errorf("add device type: %s", err)
 	}
-	deviceTenant, err := common.MatchHostToTenant(is.Ctx, nbi, deviceName, is.HostTenantRelations)
+	deviceTenant, err := common.MatchHostToTenant(is.Ctx, nbi, deviceName, is.SourceConfig.HostTenantRelations)
 	if err != nil {
 		return fmt.Errorf("match host to tenant: %s", err)
 	}
 
-	deviceRole, err := nbi.AddSwitchDeviceRole(is.Ctx)
-	if err != nil {
-		return fmt.Errorf("add device role: %s", err)
+	// Match host to a role. First test if user provided relations, if
+	// not use default switch role.
+	var deviceRole *objects.DeviceRole
+	if len(is.SourceConfig.HostRoleRelations) > 0 {
+		deviceRole, err = common.MatchHostToRole(is.Ctx, nbi, deviceName, is.SourceConfig.HostRoleRelations)
+		if err != nil {
+			return fmt.Errorf("match host to role: %s", err)
+		}
+	}
+	if deviceRole == nil {
+		deviceRole, err = nbi.AddSwitchDeviceRole(is.Ctx)
+		if err != nil {
+			return fmt.Errorf("add device role: %s", err)
+		}
 	}
 
-	deviceSite, err := common.MatchHostToSite(is.Ctx, nbi, deviceName, is.HostSiteRelations)
+	deviceSite, err := common.MatchHostToSite(is.Ctx, nbi, deviceName, is.SourceConfig.HostSiteRelations)
 	if err != nil {
 		return fmt.Errorf("match host to site: %s", err)
 	}

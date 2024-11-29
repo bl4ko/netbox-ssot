@@ -14,11 +14,11 @@ import (
 )
 
 func (ps *ProxmoxSource) syncCluster(nbi *inventory.NetboxInventory) error {
-	clusterSite, err := common.MatchClusterToSite(ps.Ctx, nbi, ps.Cluster.Name, ps.ClusterSiteRelations)
+	clusterSite, err := common.MatchClusterToSite(ps.Ctx, nbi, ps.Cluster.Name, ps.SourceConfig.ClusterSiteRelations)
 	if err != nil {
 		return err
 	}
-	clusterTenant, err := common.MatchClusterToTenant(ps.Ctx, nbi, ps.Cluster.Name, ps.ClusterTenantRelations)
+	clusterTenant, err := common.MatchClusterToTenant(ps.Ctx, nbi, ps.Cluster.Name, ps.SourceConfig.ClusterTenantRelations)
 	if err != nil {
 		return err
 	}
@@ -62,12 +62,12 @@ func (ps *ProxmoxSource) syncNodes(nbi *inventory.NetboxInventory) error {
 		hostSite := ps.NetboxCluster.Site
 		var err error
 		if hostSite == nil {
-			hostSite, err = common.MatchHostToSite(ps.Ctx, nbi, node.Name, ps.HostSiteRelations)
+			hostSite, err = common.MatchHostToSite(ps.Ctx, nbi, node.Name, ps.SourceConfig.HostSiteRelations)
 			if err != nil {
 				return fmt.Errorf("match host to site: %s", err)
 			}
 		}
-		hostTenant, err := common.MatchHostToTenant(ps.Ctx, nbi, node.Name, ps.HostTenantRelations)
+		hostTenant, err := common.MatchHostToTenant(ps.Ctx, nbi, node.Name, ps.SourceConfig.HostTenantRelations)
 		if err != nil {
 			return fmt.Errorf("match host to tenant: %s", err)
 		}
@@ -96,18 +96,20 @@ func (ps *ProxmoxSource) syncNodes(nbi *inventory.NetboxInventory) error {
 			return fmt.Errorf("adding host device type %+v: %s", deviceTypeStruct, err)
 		}
 
-		deviceRoleStruct := &objects.DeviceRole{
-			NetboxObject: objects.NetboxObject{
-				Description: constants.DeviceRoleServerDescription,
-			},
-			Name:   constants.DeviceRoleServer,
-			Slug:   utils.Slugify(constants.DeviceRoleServer),
-			Color:  constants.DeviceRoleServerColor,
-			VMRole: false,
+		// Match host to a role. First test if user provided relations, if not
+		// use default server role.
+		var hostRole *objects.DeviceRole
+		if len(ps.SourceConfig.HostRoleRelations) > 0 {
+			hostRole, err = common.MatchHostToRole(ps.Ctx, nbi, node.Name, ps.SourceConfig.HostRoleRelations)
+			if err != nil {
+				return fmt.Errorf("match host to role: %s", err)
+			}
 		}
-		hostDeviceRole, err := nbi.AddDeviceRole(ps.Ctx, deviceRoleStruct)
-		if err != nil {
-			return fmt.Errorf("add device role %+v, %s", deviceRoleStruct, err)
+		if hostRole == nil {
+			hostRole, err = nbi.AddServerDeviceRole(ps.Ctx)
+			if err != nil {
+				return fmt.Errorf("add server device role %s", err)
+			}
 		}
 
 		nbHost, err := nbi.AddDevice(ps.Ctx, &objects.Device{
@@ -119,7 +121,7 @@ func (ps *ProxmoxSource) syncNodes(nbi *inventory.NetboxInventory) error {
 				},
 			},
 			Name:       node.Name,
-			DeviceRole: hostDeviceRole,
+			DeviceRole: hostRole,
 			Site:       hostSite,
 			Tenant:     hostTenant,
 			Cluster:    ps.NetboxCluster,
@@ -216,14 +218,23 @@ func (ps *ProxmoxSource) syncVM(nbi *inventory.NetboxInventory, vm *proxmox.Virt
 	}
 
 	// Determine VM tenant
-	vmTenant, err := common.MatchVMToTenant(ps.Ctx, nbi, vm.Name, ps.VMTenantRelations)
+	vmTenant, err := common.MatchVMToTenant(ps.Ctx, nbi, vm.Name, ps.SourceConfig.VMTenantRelations)
 	if err != nil {
 		return fmt.Errorf("match vm to tenant: %s", err)
 	}
 
-	vmRole, err := nbi.AddVMDeviceRole(ps.Ctx)
-	if err != nil {
-		return fmt.Errorf("get vm device role: %s", err)
+	var vmRole *objects.DeviceRole
+	if len(ps.SourceConfig.VMRoleRelations) > 0 {
+		vmRole, err = common.MatchVMToRole(ps.Ctx, nbi, vm.Name, ps.SourceConfig.VMRoleRelations)
+		if err != nil {
+			return fmt.Errorf("match vm to role: %s", err)
+		}
+	}
+	if vmRole == nil {
+		vmRole, err = nbi.AddVMDeviceRole(ps.Ctx)
+		if err != nil {
+			return fmt.Errorf("add vm device role: %s", err)
+		}
 	}
 
 	// Add VM to Netbox
@@ -361,7 +372,7 @@ func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 					containerStatus = &objects.VMStatusOffline
 				}
 				// Determine Container tenant
-				vmTenant, err := common.MatchVMToTenant(ps.Ctx, nbi, container.Name, ps.VMTenantRelations)
+				vmTenant, err := common.MatchVMToTenant(ps.Ctx, nbi, container.Name, ps.SourceConfig.VMTenantRelations)
 				if err != nil {
 					return fmt.Errorf("match vm to tenant: %s", err)
 				}

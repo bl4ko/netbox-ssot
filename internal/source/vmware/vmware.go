@@ -39,19 +39,6 @@ type VmwareSource struct {
 
 	// CustomField2Name is a map of custom field ids to their names
 	CustomFieldID2Name map[int32]string
-
-	// Netbox relations
-	DatacenterClusterGroupRelations map[string]string
-	ClusterSiteRelations            map[string]string
-	ClusterTenantRelations          map[string]string
-	HostTenantRelations             map[string]string
-	HostSiteRelations               map[string]string
-	VMTenantRelations               map[string]string
-	VlanGroupRelations              map[string]string
-	VlanTenantRelations             map[string]string
-
-	// Mappings of custom fields to contacts
-	CustomFieldMappings map[string]string
 }
 
 type NetworkData struct {
@@ -88,27 +75,6 @@ type HostPortgroupData struct {
 }
 
 func (vc *VmwareSource) Init() error {
-	// Initialize regex relations
-	vc.Logger.Debug(vc.Ctx, "Initializing regex relations for vmware source ", vc.SourceConfig.Name)
-	vc.DatacenterClusterGroupRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.DatacenterClusterGroupRelations)
-	vc.Logger.Debug(vc.Ctx, "DatacenterClusterGroupRelations: ", vc.DatacenterClusterGroupRelations)
-	vc.HostSiteRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.HostSiteRelations)
-	vc.Logger.Debug(vc.Ctx, "HostSiteRelations: ", vc.HostSiteRelations)
-	vc.ClusterSiteRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.ClusterSiteRelations)
-	vc.Logger.Debug(vc.Ctx, "ClusterSiteRelations: ", vc.ClusterSiteRelations)
-	vc.ClusterTenantRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.ClusterTenantRelations)
-	vc.Logger.Debug(vc.Ctx, "ClusterTenantRelations: ", vc.ClusterTenantRelations)
-	vc.HostTenantRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.HostTenantRelations)
-	vc.Logger.Debug(vc.Ctx, "HostTenantRelations: ", vc.HostTenantRelations)
-	vc.VMTenantRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.VMTenantRelations)
-	vc.Logger.Debug(vc.Ctx, "VmTenantRelations: ", vc.VMTenantRelations)
-	vc.VlanGroupRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.VlanGroupRelations)
-	vc.Logger.Debug(vc.Ctx, "VlanGroupRelations: ", vc.VlanGroupRelations)
-	vc.VlanTenantRelations = utils.ConvertStringsToRegexPairs(vc.SourceConfig.VlanTenantRelations)
-	vc.Logger.Debug(vc.Ctx, "VlanTenantRelations: ", vc.VlanTenantRelations)
-	vc.CustomFieldMappings = utils.ConvertStringsToPairs(vc.SourceConfig.CustomFieldMappings)
-	vc.Logger.Debug(vc.Ctx, "CustomFieldMappings: ", vc.CustomFieldMappings)
-
 	// Initialize the connection
 	vc.Logger.Debug(vc.Ctx, "vmware source ", vc.SourceConfig.Name)
 	ctx, cancel := context.WithCancel(context.Background())

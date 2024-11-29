@@ -25,12 +25,6 @@ type FMCSource struct {
 
 	// Netbox devices representing firewalls.
 	NBDevices map[string]*objects.Device
-
-	// User defined relation
-	HostTenantRelations map[string]string
-	HostSiteRelations   map[string]string
-	VlanGroupRelations  map[string]string
-	VlanTenantRelations map[string]string
 }
 
 func (fmcs *FMCSource) Init() error {
@@ -43,16 +37,6 @@ func (fmcs *FMCSource) Init() error {
 	if err != nil {
 		return fmt.Errorf("create FMC client: %s", err)
 	}
-
-	// Initialize regex relations for this source
-	fmcs.VlanGroupRelations = utils.ConvertStringsToRegexPairs(fmcs.SourceConfig.VlanGroupRelations)
-	fmcs.Logger.Debugf(fmcs.Ctx, "VlanGroupRelations: %s", fmcs.VlanGroupRelations)
-	fmcs.VlanTenantRelations = utils.ConvertStringsToRegexPairs(fmcs.SourceConfig.VlanTenantRelations)
-	fmcs.Logger.Debugf(fmcs.Ctx, "VlanTenantRelations: %s", fmcs.VlanTenantRelations)
-	fmcs.HostTenantRelations = utils.ConvertStringsToRegexPairs(fmcs.SourceConfig.HostTenantRelations)
-	fmcs.Logger.Debugf(fmcs.Ctx, "HostTenantRelations: %s", fmcs.HostTenantRelations)
-	fmcs.HostSiteRelations = utils.ConvertStringsToRegexPairs(fmcs.SourceConfig.HostSiteRelations)
-	fmcs.Logger.Debugf(fmcs.Ctx, "HostSiteRelations: %s", fmcs.HostSiteRelations)
 
 	// Init FMC objects
 	fmcs.Domains = make(map[string]client.Domain)
