@@ -100,21 +100,22 @@ func (n NetboxConfig) String() string {
 // Configuration that can be used for each of the sources.
 // In sources block.
 type SourceConfig struct {
-	Name            string               `yaml:"name"`
-	Type            constants.SourceType `yaml:"type"`
-	HTTPScheme      HTTPScheme           `yaml:"httpScheme"`
-	Hostname        string               `yaml:"hostname"`
-	Port            int                  `yaml:"port"`
-	Username        string               `yaml:"username"`
-	Password        string               `yaml:"password"`
-	APIToken        string               `yaml:"apiToken"`
-	ValidateCert    bool                 `yaml:"validateCert"`
-	Tag             string               `yaml:"tag"`
-	TagColor        string               `yaml:"tagColor"`
-	IgnoredSubnets  []string             `yaml:"ignoredSubnets"`
-	InterfaceFilter string               `yaml:"interfaceFilter"`
-	CollectArpData  bool                 `yaml:"collectArpData"`
-	CAFile          string               `yaml:"caFile"`
+	Name             string               `yaml:"name"`
+	Type             constants.SourceType `yaml:"type"`
+	HTTPScheme       HTTPScheme           `yaml:"httpScheme"`
+	Hostname         string               `yaml:"hostname"`
+	Port             int                  `yaml:"port"`
+	Username         string               `yaml:"username"`
+	Password         string               `yaml:"password"`
+	APIToken         string               `yaml:"apiToken"`
+	ValidateCert     bool                 `yaml:"validateCert"`
+	Tag              string               `yaml:"tag"`
+	TagColor         string               `yaml:"tagColor"`
+	IgnoredSubnets   []string             `yaml:"ignoredSubnets"`
+	PermittedSubnets []string             `yaml:"permittedSubnets"`
+	InterfaceFilter  string               `yaml:"interfaceFilter"`
+	CollectArpData   bool                 `yaml:"collectArpData"`
+	CAFile           string               `yaml:"caFile"`
 
 	// Relations
 	DatacenterClusterGroupRelations map[string]string `yaml:"datacenterClusterGroupRelations"`
@@ -147,6 +148,7 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		Tag                             string               `yaml:"tag"`
 		TagColor                        string               `yaml:"tagColor"`
 		IgnoredSubnets                  []string             `yaml:"ignoredSubnets"`
+		PermittedSubnets                []string             `yaml:"permittedSubnets"`
 		InterfaceFilter                 string               `yaml:"interfaceFilter"`
 		CollectArpData                  bool                 `yaml:"collectArpData"`
 		CAFile                          string               `yaml:"caFile"`
@@ -179,6 +181,7 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	sc.Tag = rawMarshal.Tag
 	sc.TagColor = rawMarshal.TagColor
 	sc.IgnoredSubnets = rawMarshal.IgnoredSubnets
+	sc.PermittedSubnets = rawMarshal.PermittedSubnets
 	sc.InterfaceFilter = rawMarshal.InterfaceFilter
 	sc.CollectArpData = rawMarshal.CollectArpData
 	sc.CAFile = rawMarshal.CAFile
@@ -432,6 +435,14 @@ func validateSourceConfig(config *Config) error {
 				}
 			}
 		}
+		if len(externalSource.PermittedSubnets) > 0 {
+			for _, permittedSubnet := range externalSource.PermittedSubnets {
+				if !utils.VerifySubnet(permittedSubnet) {
+					return fmt.Errorf("%s.permittedSubnets: wrong format: %s", externalSourceStr, permittedSubnet)
+				}
+			}
+		}
+
 		// Try to compile interfaceFilter
 		_, err := regexp.Compile(externalSource.InterfaceFilter)
 		if err != nil {

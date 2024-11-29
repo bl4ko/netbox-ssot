@@ -104,15 +104,22 @@ func VerifySubnet(subnet string) bool {
 	return err == nil
 }
 
-// SubnetsContainIPAddress checks if array of subnets contain,
+// subnetsContainIPAddress checks if array of subnets contain,
 // the ip address.
-func SubnetsContainIPAddress(ipAddress string, subnets []string) bool {
+func subnetsContainIPAddress(ipAddress string, subnets []string) bool {
 	for _, subnet := range subnets {
 		if SubnetContainsIPAddress(ipAddress, subnet) {
 			return true
 		}
 	}
 	return false
+}
+
+func IsPermittedIPAddress(ipAddress string, permittedSubnets []string, ignoredSubnets []string) bool {
+	if subnetsContainIPAddress(ipAddress, ignoredSubnets) {
+		return false
+	}
+	return subnetsContainIPAddress(ipAddress, permittedSubnets)
 }
 
 // GetmaskAndPrefixFromIPAddress extracts mask and prefix

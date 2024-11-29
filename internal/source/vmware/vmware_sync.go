@@ -496,7 +496,7 @@ func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetboxInventory, vcHo
 
 			// Get IPv4 address for this vnic
 			ipv4Address := vnic.Spec.Ip.IpAddress
-			if !utils.SubnetsContainIPAddress(ipv4Address, vc.SourceConfig.IgnoredSubnets) { // Filter out ignored
+			if utils.IsPermittedIPAddress(ipv4Address, vc.SourceConfig.PermittedSubnets, vc.SourceConfig.IgnoredSubnets) {
 				ipv4MaskBits, err := utils.MaskToBits(vnic.Spec.Ip.SubnetMask)
 				if err != nil {
 					return fmt.Errorf("mask to bits: %s", err)
@@ -539,7 +539,7 @@ func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetboxInventory, vcHo
 				for _, ipv6Entry := range vnic.Spec.Ip.IpV6Config.IpV6Address {
 					ipv6Address := ipv6Entry.IpAddress
 					ipv6Mask := ipv6Entry.PrefixLength
-					if !utils.SubnetsContainIPAddress(ipv6Address, vc.SourceConfig.IgnoredSubnets) {
+					if utils.IsPermittedIPAddress(ipv6Address, vc.SourceConfig.PermittedSubnets, vc.SourceConfig.IgnoredSubnets) {
 						nbIPv6Address, err := nbi.AddIPAddress(vc.Ctx, &objects.IPAddress{
 							NetboxObject: objects.NetboxObject{
 								Tags: vc.Config.SourceTags,
@@ -1123,7 +1123,7 @@ func (vc *VmwareSource) collectVMInterfaceData(nbi *inventory.NetboxInventory, n
 func (vc *VmwareSource) addVMInterfaceIPs(nbi *inventory.NetboxInventory, netboxVM *objects.VM, nbVMInterface *objects.VMInterface, nicIPv4Addresses []string, nicIPv6Addresses []string, vmIPv4Addresses []*objects.IPAddress, vmIPv6Addresses []*objects.IPAddress) ([]*objects.IPAddress, []*objects.IPAddress) {
 	// Add all collected ipv4 addresses for the interface to netbox
 	for _, ipv4Address := range nicIPv4Addresses {
-		if !utils.SubnetsContainIPAddress(ipv4Address, vc.SourceConfig.IgnoredSubnets) {
+		if utils.IsPermittedIPAddress(ipv4Address, vc.SourceConfig.PermittedSubnets, vc.SourceConfig.IgnoredSubnets) {
 			ipAddressStruct := &objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
 					Tags: vc.Config.SourceTags,
@@ -1160,7 +1160,7 @@ func (vc *VmwareSource) addVMInterfaceIPs(nbi *inventory.NetboxInventory, netbox
 
 	// Add all collected ipv6 addresses for the interface to netbox
 	for _, ipv6Address := range nicIPv6Addresses {
-		if !utils.SubnetsContainIPAddress(ipv6Address, vc.SourceConfig.IgnoredSubnets) {
+		if utils.IsPermittedIPAddress(ipv6Address, vc.SourceConfig.PermittedSubnets, vc.SourceConfig.IgnoredSubnets) {
 			nbIPv6Address, err := nbi.AddIPAddress(vc.Ctx, &objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
 					Tags: vc.Config.SourceTags,

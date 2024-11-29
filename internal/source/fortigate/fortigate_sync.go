@@ -157,7 +157,7 @@ func (fs *FortigateSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 		var NBIPAddress *objects.IPAddress
 		ipAndMask := strings.Split(iface.IP, " ")
 		if len(ipAndMask) == 2 && ipAndMask[0] != "0.0.0.0" {
-			if !utils.SubnetsContainIPAddress(ipAndMask[0], fs.SourceConfig.IgnoredSubnets) {
+			if utils.IsPermittedIPAddress(ipAndMask[0], fs.SourceConfig.PermittedSubnets, fs.SourceConfig.IgnoredSubnets) {
 				maskBits, err := utils.MaskToBits(ipAndMask[1])
 				if err != nil {
 					return fmt.Errorf("mask to bits: %s", err)

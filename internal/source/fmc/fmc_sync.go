@@ -158,7 +158,7 @@ func (fmcs *FMCSource) syncVlanInterfaces(nbi *inventory.NetboxInventory, nbDevi
 			}
 
 			if vlanIface.IPv4 != nil && vlanIface.IPv4.Static != nil {
-				if !utils.SubnetsContainIPAddress(vlanIface.IPv4.Static.Address, fmcs.SourceConfig.IgnoredSubnets) {
+				if utils.IsPermittedIPAddress(vlanIface.IPv4.Static.Address, fmcs.SourceConfig.PermittedSubnets, fmcs.SourceConfig.IgnoredSubnets) {
 					address := fmt.Sprintf("%s/%s", vlanIface.IPv4.Static.Address, vlanIface.IPv4.Static.Netmask)
 					dnsName := utils.ReverseLookup(vlanIface.IPv4.Static.Address)
 					_, err := nbi.AddIPAddress(fmcs.Ctx, &objects.IPAddress{
@@ -225,7 +225,7 @@ func (fmcs *FMCSource) syncPhysicalInterfaces(nbi *inventory.NetboxInventory, nb
 			}
 
 			if pIface.IPv4 != nil && pIface.IPv4.Static != nil {
-				if !utils.SubnetsContainIPAddress(pIface.IPv4.Static.Address, fmcs.SourceConfig.IgnoredSubnets) {
+				if utils.IsPermittedIPAddress(pIface.IPv4.Static.Address, fmcs.SourceConfig.PermittedSubnets, fmcs.SourceConfig.IgnoredSubnets) {
 					address := fmt.Sprintf("%s/%s", pIface.IPv4.Static.Address, pIface.IPv4.Static.Netmask)
 					dnsName := utils.ReverseLookup(pIface.IPv4.Static.Address)
 					_, err := nbi.AddIPAddress(fmcs.Ctx, &objects.IPAddress{

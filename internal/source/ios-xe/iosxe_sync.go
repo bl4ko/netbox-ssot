@@ -172,7 +172,7 @@ func (is *IOSXESource) syncArpTable(nbi *inventory.NetboxInventory) error {
 	}
 
 	for _, arpEntry := range is.ArpEntries {
-		if !utils.SubnetsContainIPAddress(arpEntry.Address, is.SourceConfig.IgnoredSubnets) {
+		if utils.IsPermittedIPAddress(arpEntry.Address, is.SourceConfig.PermittedSubnets, is.SourceConfig.IgnoredSubnets) {
 			newTags := is.SourceTags
 			newTags = append(newTags, arpTag)
 			currentTime := time.Now()

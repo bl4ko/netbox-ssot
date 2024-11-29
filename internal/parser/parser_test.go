@@ -215,6 +215,7 @@ func TestParseConfigInvalidConfigs(t *testing.T) {
 		{filename: "invalid_config43.yaml", expectedErr: "wrong.vlanGroupRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
 		{filename: "invalid_config44.yaml", expectedErr: "wrong.customFieldMappings: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
 		{filename: "invalid_config45.yaml", expectedErr: "yaml: unmarshal errors:\n  line 18: cannot unmarshal !!int `123421334` into parser.realSourceConfig"},
+		{filename: "invalid_config46.yaml", expectedErr: "wrong.permittedSubnets: wrong format: 172.16.0.1"},
 		{filename: "invalid_config1111.yaml", expectedErr: "open ../../testdata/parser/invalid_config1111.yaml: no such file or directory"},
 	}
 

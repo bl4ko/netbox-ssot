@@ -449,7 +449,7 @@ func (ds *DnacSource) getVlanModeAndAccessVlan(portMode, vlanID string) (*object
 }
 
 func (ds *DnacSource) addIPAddressToInterface(nbi *inventory.NetboxInventory, iface *objects.Interface, ifaceDetails dnac.ResponseDevicesGetAllInterfacesResponse, ifaceDevice *objects.Device) error {
-	if ifaceDetails.IPv4Address == "" || utils.SubnetsContainIPAddress(ifaceDetails.IPv4Address, ds.Config.SourceConfig.IgnoredSubnets) {
+	if ifaceDetails.IPv4Address == "" || utils.IsPermittedIPAddress(ifaceDetails.IPv4Address, ds.SourceConfig.PermittedSubnets, ds.SourceConfig.IgnoredSubnets) {
 		return nil
 	}
 

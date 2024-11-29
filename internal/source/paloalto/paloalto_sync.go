@@ -226,7 +226,7 @@ func (pas *PaloAltoSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 // Extracts prefixes from ips and connect them with prefix vlan.
 func (pas *PaloAltoSource) syncIPs(nbi *inventory.NetboxInventory, nbIface *objects.Interface, ips []string, prefixVlan *objects.Vlan) {
 	for _, ipAddress := range ips {
-		if !utils.SubnetsContainIPAddress(ipAddress, pas.SourceConfig.IgnoredSubnets) {
+		if utils.IsPermittedIPAddress(ipAddress, pas.SourceConfig.PermittedSubnets, pas.SourceConfig.IgnoredSubnets) {
 			dnsName := utils.ReverseLookup(ipAddress)
 			_, err := nbi.AddIPAddress(pas.Ctx, &objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
@@ -349,7 +349,7 @@ func (pas *PaloAltoSource) syncArpTable(nbi *inventory.NetboxInventory) error {
 }
 
 func (pas *PaloAltoSource) syncArpEntry(nbi *inventory.NetboxInventory, entry ArpEntry, arpTag *objects.Tag) error {
-	if !utils.SubnetsContainIPAddress(entry.IP, pas.SourceConfig.IgnoredSubnets) {
+	if utils.IsPermittedIPAddress(entry.IP, pas.SourceConfig.PermittedSubnets, pas.SourceConfig.IgnoredSubnets) {
 		newTags := pas.SourceTags
 		newTags = append(newTags, arpTag)
 		currentTime := time.Now()

@@ -388,7 +388,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 		for nicID, ipv4 := range nicID2IPv4 {
 			nbNic := nicID2nbNic[nicID]
 			address := strings.Split(ipv4, "/")[0]
-			if !utils.SubnetsContainIPAddress(address, o.SourceConfig.IgnoredSubnets) {
+			if utils.IsPermittedIPAddress(address, o.SourceConfig.PermittedSubnets, o.SourceConfig.IgnoredSubnets) {
 				ipAddressStruct := &objects.IPAddress{
 					NetboxObject: objects.NetboxObject{
 						Tags: o.Config.SourceTags,
@@ -433,7 +433,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 		for nicID, ipv6 := range nicID2IPv6 {
 			nbNic := nicID2nbNic[nicID]
 			address := strings.Split(ipv6, "/")[0]
-			if !utils.SubnetsContainIPAddress(address, o.SourceConfig.IgnoredSubnets) {
+			if utils.IsPermittedIPAddress(address, o.SourceConfig.PermittedSubnets, o.SourceConfig.IgnoredSubnets) {
 				ipAddressStruct := &objects.IPAddress{
 					NetboxObject: objects.NetboxObject{
 						Tags: o.Config.SourceTags,
@@ -975,7 +975,7 @@ func (o *OVirtSource) syncVMInterfaces(nbi *inventory.NetboxInventory, ovirtVM *
 										}
 									}
 
-									if !utils.SubnetsContainIPAddress(ipAddress, o.SourceConfig.IgnoredSubnets) {
+									if utils.IsPermittedIPAddress(ipAddress, o.SourceConfig.PermittedSubnets, o.SourceConfig.IgnoredSubnets) {
 										ipAddressStruct := &objects.IPAddress{
 											NetboxObject: objects.NetboxObject{
 												Tags: o.Config.SourceTags,
