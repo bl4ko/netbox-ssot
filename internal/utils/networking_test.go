@@ -420,3 +420,63 @@ func TestRemoveZoneIndexFromIPAddress(t *testing.T) {
 		})
 	}
 }
+
+func Test_subnetsContainIPAddress(t *testing.T) {
+	type args struct {
+		ipAddress string
+		subnets   []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := subnetsContainIPAddress(tt.args.ipAddress, tt.args.subnets); got != tt.want {
+				t.Errorf("subnetsContainIPAddress() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestIsPermittedIPAddress(t *testing.T) {
+	type args struct {
+		ipAddress        string
+		permittedSubnets []string
+		ignoredSubnets   []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "Test permitted ip address",
+			args: args{
+				ipAddress:        "172.25.17.2",
+				permittedSubnets: []string{"172.0.0.0/8"},
+				ignoredSubnets:   []string{},
+			},
+			want: true,
+		},
+		{
+			name: "Test unpermitted ip address",
+			args: args{
+				ipAddress:        "172.25.17.2",
+				permittedSubnets: []string{},
+				ignoredSubnets:   []string{"172.0.0.0/8"},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsPermittedIPAddress(tt.args.ipAddress, tt.args.permittedSubnets, tt.args.ignoredSubnets); got != tt.want {
+				t.Errorf("IsPermittedIPAddress() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
