@@ -166,7 +166,7 @@ func (pas *PaloAltoSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 			if subIface.Tag != 0 {
 				// Extract Vlan
 				vlanName := fmt.Sprintf("Vlan%d", subIface.Tag)
-				vlanGroup, err := common.MatchVlanToGroup(pas.Ctx, nbi, vlanName, pas.SourceConfig.VlanGroupRelations)
+				vlanGroup, err := common.MatchVlanToGroup(pas.Ctx, nbi, vlanName, pas.SourceConfig.VlanGroupRelations, pas.SourceConfig.VlanGroupSiteRelations)
 				if err != nil {
 					return fmt.Errorf("match vlan to group: %s", err)
 				}

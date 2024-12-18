@@ -52,7 +52,7 @@ func (ds *DnacSource) syncSites(nbi *inventory.NetboxInventory) error {
 // Syncs dnac vlans to netbox inventory.
 func (ds *DnacSource) syncVlans(nbi *inventory.NetboxInventory) error {
 	for vid, vlan := range ds.Vlans {
-		vlanGroup, err := common.MatchVlanToGroup(ds.Ctx, nbi, vlan.InterfaceName, ds.SourceConfig.VlanGroupRelations)
+		vlanGroup, err := common.MatchVlanToGroup(ds.Ctx, nbi, vlan.InterfaceName, ds.SourceConfig.VlanGroupRelations, ds.SourceConfig.VlanGroupSiteRelations)
 		if err != nil {
 			return fmt.Errorf("vlanGroup: %s", err)
 		}
@@ -532,7 +532,7 @@ func (ds *DnacSource) syncWirelessLANs(nbi *inventory.NetboxInventory) error {
 		if err != nil {
 			return fmt.Errorf("add wirelessLANGroup %s: %s", wlanGroup, err)
 		}
-		vlanGroup, err := common.MatchVlanToGroup(ds.Ctx, nbi, wlanWirelessProfile.InterfaceName, ds.SourceConfig.VlanGroupRelations)
+		vlanGroup, err := common.MatchVlanToGroup(ds.Ctx, nbi, wlanWirelessProfile.InterfaceName, ds.SourceConfig.VlanGroupRelations, ds.SourceConfig.VlanGroupSiteRelations)
 		if err != nil {
 			return err
 		}

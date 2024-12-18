@@ -25,7 +25,7 @@ func (o *OVirtSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 		// TODO: handle other networks
 		if networkVlan, exists := network.Vlan(); exists {
 			// Get vlanGroup from relation
-			vlanGroup, err := common.MatchVlanToGroup(o.Ctx, nbi, name, o.SourceConfig.VlanGroupRelations)
+			vlanGroup, err := common.MatchVlanToGroup(o.Ctx, nbi, name, o.SourceConfig.VlanGroupRelations, o.SourceConfig.VlanGroupSiteRelations)
 			if err != nil {
 				return err
 			}
@@ -613,7 +613,7 @@ func (o *OVirtSource) collectHostNicsData(nbHost *objects.Device, nbi *inventory
 			if exists {
 				vlanName := o.Networks.Vid2Name[int(vlanID)]
 				// Get vlanGroup from relation
-				vlanGroup, err := common.MatchVlanToGroup(o.Ctx, nbi, vlanName, o.SourceConfig.VlanGroupRelations)
+				vlanGroup, err := common.MatchVlanToGroup(o.Ctx, nbi, vlanName, o.SourceConfig.VlanGroupRelations, o.SourceConfig.VlanGroupSiteRelations)
 				if err != nil {
 					return err
 				}
@@ -1077,7 +1077,7 @@ func (o *OVirtSource) syncVMNics(nbi *inventory.NetboxInventory, ovirtVM *ovirts
 					if vnicNetworkVlan, ok := vnicNetwork.Vlan(); ok {
 						if vlanID, ok := vnicNetworkVlan.Id(); ok {
 							vlanName := o.Networks.Vid2Name[int(vlanID)]
-							vlanGroup, err := common.MatchVlanToGroup(o.Ctx, nbi, vlanName, o.SourceConfig.VlanGroupRelations)
+							vlanGroup, err := common.MatchVlanToGroup(o.Ctx, nbi, vlanName, o.SourceConfig.VlanGroupRelations, o.SourceConfig.VlanGroupSiteRelations)
 							if err != nil {
 								o.Logger.Warningf(o.Ctx, "match vlan to group: %s", err)
 								continue

@@ -2,6 +2,8 @@ package objects
 
 import (
 	"fmt"
+
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 )
 
 type IPAddressStatus struct {
@@ -80,6 +82,10 @@ type VlanGroup struct {
 	MinVid int `json:"min_vid,omitempty"`
 	// MaxVid is the maximal VID that can be assigned in this group. This field is required (default 4094).
 	MaxVid int `json:"max_vid,omitempty"`
+	// Scope_type is the scope of the VlanGroup.
+	ScopeType constants.ContentType `json:"scope_type,omitempty"`
+	// ScopeID is the ID of the scope object.
+	ScopeID int `json:"scope_id,omitempty"`
 }
 
 func (vg VlanGroup) String() string {
