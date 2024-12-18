@@ -113,7 +113,7 @@ func (fmcs *FMCSource) syncVlanInterfaces(nbi *inventory.NetboxInventory, nbDevi
 			// Add vlan
 			ifaceTaggedVlans := []*objects.Vlan{}
 			if vlanIface.VID != 0 {
-				vlanGroup, err := common.MatchVlanToGroup(fmcs.Ctx, nbi, vlanIface.Name, fmcs.SourceConfig.VlanGroupRelations)
+				vlanGroup, err := common.MatchVlanToGroup(fmcs.Ctx, nbi, vlanIface.Name, fmcs.SourceConfig.VlanGroupRelations, fmcs.SourceConfig.VlanGroupSiteRelations)
 				if err != nil {
 					return fmt.Errorf("match vlan to group: %s", err)
 				}

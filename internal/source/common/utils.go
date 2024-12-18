@@ -69,33 +69,49 @@ func MatchClusterToSite(ctx context.Context, nbi *inventory.NetboxInventory, clu
 // Function that matches vlanName to vlanGroupName using regexRelationsMap.
 //
 // In case there is no match or regexRelations is nil, it will return default VlanGroup.
-func MatchVlanToGroup(ctx context.Context, nbi *inventory.NetboxInventory, vlanName string, regexRelations map[string]string) (*objects.VlanGroup, error) {
-	if regexRelations == nil {
+func MatchVlanToGroup(ctx context.Context, nbi *inventory.NetboxInventory, vlanName string, vlanGroupRelations map[string]string, vlanGroupSiteRelations map[string]string) (*objects.VlanGroup, error) {
+	if vlanGroupRelations == nil {
 		vlanGroup, _ := nbi.GetVlanGroup(constants.DefaultVlanGroupName)
 		return vlanGroup, nil
 	}
-	vlanGroupName, err := utils.MatchStringToValue(vlanName, regexRelations)
+	vlanGroupName, err := utils.MatchStringToValue(vlanName, vlanGroupRelations)
 	if err != nil {
 		return nil, fmt.Errorf("matching vlan to group: %s", err)
 	}
-	if vlanGroupName != "" {
-		vlanGroup, ok := nbi.GetVlanGroup(vlanGroupName)
-		if !ok {
-			// Create vlanGroup
-			vlanGroup, err = nbi.AddVlanGroup(ctx, &objects.VlanGroup{
-				Name:   vlanGroupName,
-				Slug:   utils.Slugify(vlanGroupName),
-				MinVid: constants.DefaultVID,
-				MaxVid: constants.MaxVID,
+	var vlanGroupSite *objects.Site
+	if vlanGroupSiteRelations != nil {
+		siteName, err := utils.MatchStringToValue(vlanName, vlanGroupSiteRelations)
+		if err != nil {
+			return nil, fmt.Errorf("matching vlan to site: %s", err)
+		}
+		if siteName != "" {
+			vlanGroupSite, err = nbi.AddSite(ctx, &objects.Site{
+				Name: siteName,
+				Slug: utils.Slugify(siteName),
 			})
 			if err != nil {
-				return nil, fmt.Errorf("creating vlanGroup: %s", err)
+				return nil, fmt.Errorf("add site: %s", err)
 			}
+		}
+	}
+	var vlanGroup *objects.VlanGroup
+	if vlanGroupName != "" {
+		vlanGroup := &objects.VlanGroup{
+			Name:   vlanGroupName,
+			Slug:   utils.Slugify(vlanGroupName),
+			MinVid: constants.DefaultVID,
+			MaxVid: constants.MaxVID,
+		}
+		if vlanGroupSite != nil {
+			vlanGroup.ScopeType = constants.ContentTypeDcimSite
+			vlanGroup.ScopeID = vlanGroupSite.ID
+		}
+		vlanGroup, err := nbi.AddVlanGroup(ctx, vlanGroup)
+		if err != nil {
+			return nil, fmt.Errorf("add vlan group %+v: %s", vlanGroup, err)
 		}
 		return vlanGroup, nil
 	}
-
-	vlanGroup, _ := nbi.GetVlanGroup(constants.DefaultVlanGroupName)
 	return vlanGroup, nil
 }
 
