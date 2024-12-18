@@ -27,12 +27,12 @@ repos:
       - id: gitleaks
 
   - repo: https://github.com/streetsidesoftware/cspell-cli
-    rev: v8.16.0
+    rev: v8.17.0
     hooks:
       - id: cspell
 
   - repo: https://github.com/mxab/pre-commit-trivy.git
-    rev: v0.13.0
+    rev: v0.14.0
     hooks:
       - id: trivyfs-docker
         args:
