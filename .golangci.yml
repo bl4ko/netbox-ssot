@@ -2,7 +2,16 @@ linters-settings:
   misspell:
     locale: US
   errcheck:
-    ignore: github.com/bl4ko/netbox-ssot/internal/logger:.*
+    exclude-functions:
+      - (*github.com/bl4ko/netbox-ssot/internal/logger.Logger).Debug
+      - (*github.com/bl4ko/netbox-ssot/internal/logger.Logger).Debugf
+      - (*github.com/bl4ko/netbox-ssot/internal/logger.Logger).Info
+      - (*github.com/bl4ko/netbox-ssot/internal/logger.Logger).Infof
+      - (*github.com/bl4ko/netbox-ssot/internal/logger.Logger).Warning
+      - (*github.com/bl4ko/netbox-ssot/internal/logger.Logger).Warningf
+      - (*github.com/bl4ko/netbox-ssot/internal/logger.Logger).Error
+      - (*github.com/bl4ko/netbox-ssot/internal/logger.Logger).Errorf
+      - (*github.com/bl4ko/netbox-ssot/internal/logger.Logger).Output
 
 issues:
   max-issues-per-linter: 50

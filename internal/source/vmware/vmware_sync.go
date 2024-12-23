@@ -214,9 +214,9 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 			infoType := info.IdentifierType.GetElementDescription().Key
 			infoValue := strings.Trim(info.IdentifierValue, " ") // remove blank spaces from value
 			if infoType == "AssetTag" {
-        if infoValue == "No Asset Tag" {
-          infoValue = ""
-        }
+				if infoValue == "No Asset Tag" {
+					infoValue = ""
+				}
 				assetTag = infoValue
 			} else if serialInfoTypes[infoType] {
 				if info.IdentifierValue != "" {
