@@ -34,9 +34,10 @@ func (ps *ProxmoxSource) syncCluster(nbi *inventory.NetboxInventory) error {
 		return fmt.Errorf("add cluster type %+v: %s", clusterTypeStruct, err)
 	}
 
-	// Check if proxmox is running standalon node (in that case cluster name is empty)
+	// Check if proxmox is running standalon node.
+  // in that case cluster name is empty and should set SourceConfig.Name for Cluster.Name
 	if ps.Cluster.Name == "" {
-		ps.Cluster.Name = "ProxmoxStandalone"
+		ps.Cluster.Name = ps.SourceConfig.Name
 	}
 
 	clusterStruct := &objects.Cluster{
