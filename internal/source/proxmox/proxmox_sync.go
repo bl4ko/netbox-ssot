@@ -35,7 +35,7 @@ func (ps *ProxmoxSource) syncCluster(nbi *inventory.NetboxInventory) error {
 	}
 
 	// Check if proxmox is running standalon node.
-  // in that case cluster name is empty and should set SourceConfig.Name for Cluster.Name
+	// in that case cluster name is empty and should set SourceConfig.Name for Cluster.Name
 	if ps.Cluster.Name == "" {
 		ps.Cluster.Name = ps.SourceConfig.Name
 	}
