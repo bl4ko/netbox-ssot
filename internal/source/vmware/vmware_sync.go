@@ -880,7 +880,7 @@ func (vc *VmwareSource) syncVM(nbi *inventory.NetboxInventory, vmKey string, vm 
 		Host:     vmHost,
 		Platform: vmPlatform,
 		VCPUs:    float32(vmVCPUs),
-		Memory:   int(vmMemoryMB) / constants.MB,  // MBs default unit for ram in netbox
+		Memory:   int(vmMemoryMB),
 		Disk:     int(vmDiskSizeB) / constants.MB, // MBs default unit for disk in netbox
 		Comments: vmComments,
 		Role:     vmRole,
