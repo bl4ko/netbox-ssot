@@ -119,6 +119,9 @@ func IsPermittedIPAddress(ipAddress string, permittedSubnets []string, ignoredSu
 	if subnetsContainIPAddress(ipAddress, ignoredSubnets) {
 		return false
 	}
+	if len(permittedSubnets) == 0 {
+		return true
+	}
 	return subnetsContainIPAddress(ipAddress, permittedSubnets)
 }
 
