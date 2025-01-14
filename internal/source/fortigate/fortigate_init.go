@@ -20,16 +20,21 @@ type DeviceResponse struct {
 }
 
 type InterfaceResponse struct {
-	Name        string `json:"name"`
-	Vdom        string `json:"vdom"`
-	IP          string `json:"Ip"`
-	Type        string `json:"type"`
-	Status      string `json:"status"`
-	Speed       string `json:"speed"`
-	Description string `json:"description"`
-	MTU         int    `json:"mtu"`
-	MAC         string `json:"macaddr"`
-	VlanID      int    `json:"vlanid"`
+	Name        string        `json:"name"`
+	Vdom        string        `json:"vdom"`
+	IP          string        `json:"Ip"`
+	Type        string        `json:"type"`
+	Status      string        `json:"status"`
+	Speed       string        `json:"speed"`
+	Description string        `json:"description"`
+	MTU         int           `json:"mtu"`
+	MAC         string        `json:"macaddr"`
+	VlanID      int           `json:"vlanid"`
+	SecondaryIP []SecondaryIP `json:"secondaryip"`
+}
+
+type SecondaryIP struct {
+	IP string `json:"ip"`
 }
 
 // Init system info collects system info from paloalto.
