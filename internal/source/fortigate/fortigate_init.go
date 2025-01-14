@@ -31,10 +31,14 @@ type InterfaceResponse struct {
 	MAC         string        `json:"macaddr"`
 	VlanID      int           `json:"vlanid"`
 	SecondaryIP []SecondaryIP `json:"secondaryip"`
+	VRRPIP []VRRPIP           `json:"vrrp"`
 }
 
 type SecondaryIP struct {
 	IP string `json:"ip"`
+}
+type VRRPIP struct {
+	VRIP string `json:"vrip"`
 }
 
 // Init system info collects system info from paloalto.

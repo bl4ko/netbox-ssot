@@ -198,9 +198,40 @@ func (fs *FortigateSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 							Address:            fmt.Sprintf("%s/%d", ipAndMask[0], maskBits),
 							AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
 							AssignedObjectID:   NBIface.ID,
+							Role:               &objects.IPAddressRoleSecondary,
 						})
 						if err != nil {
 							fs.Logger.Warningf(fs.Ctx, "add secondary ip address: %s", err)
+						}
+					}
+				}
+			}
+		}
+
+
+		if len(iface.VRRPIP) > 0 {
+			for _, vrrp := range iface.VRRPIP {
+				ipAndMask := []string{vrrp.VRIP, "255.255.255.255"}
+				if len(ipAndMask) == 2 && ipAndMask[0] != "0.0.0.0" {
+					if utils.IsPermittedIPAddress(ipAndMask[0], fs.SourceConfig.PermittedSubnets, fs.SourceConfig.IgnoredSubnets) {
+						maskBits, err := utils.MaskToBits(ipAndMask[1])
+						if err != nil {
+							return fmt.Errorf("mask to bits: %s", err)
+						}
+						_, err = nbi.AddIPAddress(fs.Ctx, &objects.IPAddress{
+							NetboxObject: objects.NetboxObject{
+								Tags: fs.SourceTags,
+								CustomFields: map[string]interface{}{
+									constants.CustomFieldArpEntryName: false,
+								},
+							},
+							Address:            fmt.Sprintf("%s/%d", ipAndMask[0], maskBits),
+							AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
+							AssignedObjectID:   NBIface.ID,
+							Role:               &objects.IPAddressRoleVRRP,
+						})
+						if err != nil {
+							fs.Logger.Warningf(fs.Ctx, "add VRRP ip address: %s", err)
 						}
 					}
 				}
