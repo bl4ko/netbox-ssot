@@ -37,7 +37,11 @@ source:
     collectArpData: true
     vlanTenantRelations:
       - .* = Default
+    vlanSiteRelations:
+      - .* = Default
     vlanGroupRelations:
+      - .* = Default
+    vlanGroupSiteRelations:
       - .* = Default
 
   - name: prodolvm

@@ -538,10 +538,9 @@ func (nbi *NetboxInventory) initDefaultVlanGroup(ctx context.Context) error {
 				constants.CustomFieldSourceName: nbi.SsotTag.Name,
 			},
 		},
-		Name:   constants.DefaultVlanGroupName,
-		Slug:   utils.Slugify(constants.DefaultVlanGroupName),
-		MinVid: 1,
-		MaxVid: constants.MaxVID,
+		Name:      constants.DefaultVlanGroupName,
+		Slug:      utils.Slugify(constants.DefaultVlanGroupName),
+		VidRanges: []objects.VidRange{{constants.DefaultVID, constants.MaxVID}},
 	})
 	if err != nil {
 		return fmt.Errorf("init default vlan group: %s", err)

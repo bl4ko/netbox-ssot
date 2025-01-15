@@ -130,6 +130,7 @@ type SourceConfig struct {
 	VlanGroupRelations              map[string]string `yaml:"vlanGroupRelations"`
 	VlanGroupSiteRelations          map[string]string `yaml:"vlanGroupSiteRelations"`
 	VlanTenantRelations             map[string]string `yaml:"vlanTenantRelations"`
+	VlanSiteRelations               map[string]string `yaml:"vlanSiteRelations"`
 	WlanTenantRelations             map[string]string `yaml:"wlanTenantRelations"`
 	CustomFieldMappings             map[string]string `yaml:"customFieldMappings"`
 }
@@ -167,6 +168,7 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		VlanGroupRelations              []string             `yaml:"vlanGroupRelations"`
 		VlanGroupSiteRelations          []string             `yaml:"vlanGroupSiteRelations"`
 		VlanTenantRelations             []string             `yaml:"vlanTenantRelations"`
+		VlanSiteRelations               []string             `yaml:"vlanSiteRelations"`
 		WlanTenantRelations             []string             `yaml:"wlanTenantRelations"`
 		CustomFieldMappings             []string             `yaml:"customFieldMappings"`
 	}
@@ -262,6 +264,13 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 			return fmt.Errorf("%s.vlanTenantRelations: %v", rawMarshal.Name, err)
 		}
 		sc.VlanTenantRelations = utils.ConvertStringsToRegexPairs(rawMarshal.VlanTenantRelations)
+	}
+	if len(rawMarshal.VlanSiteRelations) > 0 {
+		err := utils.ValidateRegexRelations((rawMarshal.VlanSiteRelations))
+		if err != nil {
+			return fmt.Errorf("%s.vlanSiteRelations: %v", rawMarshal.Name, err)
+		}
+		sc.VlanSiteRelations = utils.ConvertStringsToRegexPairs(rawMarshal.VlanSiteRelations)
 	}
 	if len(rawMarshal.VlanGroupSiteRelations) > 0 {
 		err := utils.ValidateRegexRelations((rawMarshal.VlanGroupSiteRelations))

@@ -97,10 +97,9 @@ func MatchVlanToGroup(ctx context.Context, nbi *inventory.NetboxInventory, vlanN
 	var vlanGroup *objects.VlanGroup
 	if vlanGroupName != "" {
 		vlanGroup := &objects.VlanGroup{
-			Name:   vlanGroupName,
-			Slug:   utils.Slugify(vlanGroupName),
-			MinVid: constants.DefaultVID,
-			MaxVid: constants.MaxVID,
+			Name:      vlanGroupName,
+			Slug:      utils.Slugify(vlanGroupName),
+			VidRanges: []objects.VidRange{{constants.DefaultVID, constants.MaxVID}},
 		}
 		if vlanGroupSite != nil {
 			vlanGroup.ScopeType = constants.ContentTypeDcimSite
@@ -141,6 +140,34 @@ func MatchVlanToTenant(ctx context.Context, nbi *inventory.NetboxInventory, vlan
 		return tenant, nil
 	}
 
+	return nil, nil
+}
+
+// MathcVlanToSite matches vlanName to Site using vlanSiteRelations.
+//
+// In case there is no match or vlanSiteRelations is nil, it returns nil.
+func MatchVlanToSite(ctx context.Context, nbi *inventory.NetboxInventory, vlanName string, vlanSiteRelations map[string]string) (*objects.Site, error) {
+	if vlanSiteRelations == nil {
+		return nil, nil
+	}
+	siteName, err := utils.MatchStringToValue(vlanName, vlanSiteRelations)
+	if err != nil {
+		return nil, fmt.Errorf("matching vlan to site: %s", err)
+	}
+	if siteName != "" {
+		site, ok := nbi.GetSite(siteName)
+		if !ok {
+			newSite, err := nbi.AddSite(ctx, &objects.Site{
+				Name: siteName,
+				Slug: utils.Slugify(siteName),
+			})
+			if err != nil {
+				return nil, fmt.Errorf("add new site: %s", err)
+			}
+			return newSite, nil
+		}
+		return site, nil
+	}
 	return nil, nil
 }
 

@@ -42,11 +42,10 @@ func TestVlanGroup_String(t *testing.T) {
 		{
 			name: "Test vlan group correct string",
 			vg: VlanGroup{
-				Name:   "Test vlan group",
-				MinVid: 1,
-				MaxVid: 4094,
+				Name:      "Test vlan group",
+				VidRanges: []VidRange{{1, 4094}},
 			},
-			want: "VlanGroup{Name: Test vlan group, MinVid: 1, MaxVid: 4094}",
+			want: "VlanGroup{Name: Test vlan group, VidRanges: [[1 4094]]}",
 		},
 	}
 	for _, tt := range tests {

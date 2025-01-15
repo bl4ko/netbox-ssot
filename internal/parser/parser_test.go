@@ -62,7 +62,13 @@ func TestValidonfig(t *testing.T) {
 				CollectArpData: true,
 				TagColor:       constants.SourceTagColorMap[constants.PaloAlto], // Default
 				Tag:            "Source: paloalto",                              // Default
+				VlanSiteRelations: map[string]string{
+					".*": "Default",
+				},
 				VlanGroupRelations: map[string]string{
+					".*": "Default",
+				},
+				VlanGroupSiteRelations: map[string]string{
 					".*": "Default",
 				},
 				VlanTenantRelations: map[string]string{
@@ -216,6 +222,8 @@ func TestParseConfigInvalidConfigs(t *testing.T) {
 		{filename: "invalid_config44.yaml", expectedErr: "wrong.customFieldMappings: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
 		{filename: "invalid_config45.yaml", expectedErr: "yaml: unmarshal errors:\n  line 18: cannot unmarshal !!int `123421334` into parser.realSourceConfig"},
 		{filename: "invalid_config46.yaml", expectedErr: "wrong.permittedSubnets: wrong format: 172.16.0.1"},
+		{filename: "invalid_config47.yaml", expectedErr: "wrong.vlanSiteRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
+		{filename: "invalid_config48.yaml", expectedErr: "wrong.vlanGroupSiteRelations: invalid regex: (wrong(), in relation: (wrong() = wwrong"},
 		{filename: "invalid_config1111.yaml", expectedErr: "open ../../testdata/parser/invalid_config1111.yaml: no such file or directory"},
 	}
 
@@ -227,163 +235,6 @@ func TestParseConfigInvalidConfigs(t *testing.T) {
 				t.Errorf("Expected error for %v, got nil", tc.filename)
 			} else if strings.TrimSpace(err.Error()) != strings.TrimSpace(tc.expectedErr) {
 				t.Errorf("Expected error: %v, got: %v", tc.expectedErr, err)
-			}
-		})
-	}
-}
-
-func TestLoggerConfig_String(t *testing.T) {
-	tests := []struct {
-		name string
-		l    LoggerConfig
-		want string
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.l.String(); got != tt.want {
-				t.Errorf("LoggerConfig.String() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestNetboxConfig_String(t *testing.T) {
-	tests := []struct {
-		name string
-		n    NetboxConfig
-		want string
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.n.String(); got != tt.want {
-				t.Errorf("NetboxConfig.String() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestSourceConfig_String(t *testing.T) {
-	tests := []struct {
-		name string
-		s    SourceConfig
-		want string
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.s.String(); got != tt.want {
-				t.Errorf("SourceConfig.String() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_validateConfig(t *testing.T) {
-	type args struct {
-		config *Config
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := validateConfig(tt.args.config); (err != nil) != tt.wantErr {
-				t.Errorf("validateConfig() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func Test_validateLoggerConfig(t *testing.T) {
-	type args struct {
-		config *Config
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := validateLoggerConfig(tt.args.config); (err != nil) != tt.wantErr {
-				t.Errorf("validateLoggerConfig() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func Test_validateNetboxConfig(t *testing.T) {
-	type args struct {
-		config *Config
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := validateNetboxConfig(tt.args.config); (err != nil) != tt.wantErr {
-				t.Errorf("validateNetboxConfig() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func Test_validateSourceConfig(t *testing.T) {
-	type args struct {
-		config *Config
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := validateSourceConfig(tt.args.config); (err != nil) != tt.wantErr {
-				t.Errorf("validateSourceConfig() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func TestParseConfig(t *testing.T) {
-	type args struct {
-		configFilename string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    *Config
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := ParseConfig(tt.args.configFilename)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ParseConfig() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ParseConfig() = %v, want %v", got, tt.want)
 			}
 		})
 	}

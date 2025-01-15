@@ -72,16 +72,16 @@ func (ip *IPAddress) GetNetboxObject() *NetboxObject {
 	return &ip.NetboxObject
 }
 
+type VidRange [2]int
+
 type VlanGroup struct {
 	NetboxObject
 	// Name of the VlanGroup. This field is required.
 	Name string `json:"name,omitempty"`
 	// Slug of the VlanGroup. This field is required.
 	Slug string `json:"slug,omitempty"`
-	// MinVid is the minimal VID that can be assigned in this group. This field is required (default 1).
-	MinVid int `json:"min_vid,omitempty"`
-	// MaxVid is the maximal VID that can be assigned in this group. This field is required (default 4094).
-	MaxVid int `json:"max_vid,omitempty"`
+	// VidRanges is a list of VID ranges that this VlanGroup can use.
+	VidRanges []VidRange `json:"vid_ranges,omitempty"`
 	// Scope_type is the scope of the VlanGroup.
 	ScopeType constants.ContentType `json:"scope_type,omitempty"`
 	// ScopeID is the ID of the scope object.
@@ -89,7 +89,7 @@ type VlanGroup struct {
 }
 
 func (vg VlanGroup) String() string {
-	return fmt.Sprintf("VlanGroup{Name: %s, MinVid: %d, MaxVid: %d}", vg.Name, vg.MinVid, vg.MaxVid)
+	return fmt.Sprintf("VlanGroup{Name: %s, VidRanges: %v}", vg.Name, vg.VidRanges)
 }
 
 // VlanGroup implements IDItem interface.
