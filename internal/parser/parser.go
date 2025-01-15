@@ -98,24 +98,25 @@ func (n NetboxConfig) String() string {
 }
 
 // Configuration that can be used for each of the sources.
-// In sources block.
 type SourceConfig struct {
-	Name             string               `yaml:"name"`
-	Type             constants.SourceType `yaml:"type"`
-	HTTPScheme       HTTPScheme           `yaml:"httpScheme"`
-	Hostname         string               `yaml:"hostname"`
-	Port             int                  `yaml:"port"`
-	Username         string               `yaml:"username"`
-	Password         string               `yaml:"password"`
-	APIToken         string               `yaml:"apiToken"`
-	ValidateCert     bool                 `yaml:"validateCert"`
-	Tag              string               `yaml:"tag"`
-	TagColor         string               `yaml:"tagColor"`
-	IgnoredSubnets   []string             `yaml:"ignoredSubnets"`
-	PermittedSubnets []string             `yaml:"permittedSubnets"`
-	InterfaceFilter  string               `yaml:"interfaceFilter"`
-	CollectArpData   bool                 `yaml:"collectArpData"`
-	CAFile           string               `yaml:"caFile"`
+	Name                string               `yaml:"name"`
+	Type                constants.SourceType `yaml:"type"`
+	HTTPScheme          HTTPScheme           `yaml:"httpScheme"`
+	Hostname            string               `yaml:"hostname"`
+	Port                int                  `yaml:"port"`
+	Username            string               `yaml:"username"`
+	Password            string               `yaml:"password"`
+	APIToken            string               `yaml:"apiToken"`
+	ValidateCert        bool                 `yaml:"validateCert"`
+	Tag                 string               `yaml:"tag"`
+	TagColor            string               `yaml:"tagColor"`
+	IgnoredSubnets      []string             `yaml:"ignoredSubnets"`
+	PermittedSubnets    []string             `yaml:"permittedSubnets"`
+	InterfaceFilter     string               `yaml:"interfaceFilter"`
+	CollectArpData      bool                 `yaml:"collectArpData"`
+	CAFile              string               `yaml:"caFile"`
+	IgnoreAssetTags     bool                 `yaml:"ignoreAssetTags"`
+	IgnoreSerialNumbers bool                 `yaml:"ignoreSerialNumbers"`
 
 	// Relations
 	DatacenterClusterGroupRelations map[string]string `yaml:"datacenterClusterGroupRelations"`
@@ -153,6 +154,8 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		InterfaceFilter                 string               `yaml:"interfaceFilter"`
 		CollectArpData                  bool                 `yaml:"collectArpData"`
 		CAFile                          string               `yaml:"caFile"`
+		IgnoreSerialNumbers             bool                 `yaml:"ignoreSerialNumbers"`
+		IgnoreAssetTags                 bool                 `yaml:"ignoreAssetTags"`
 		DatacenterClusterGroupRelations []string             `yaml:"datacenterClusterGroupRelations"`
 		HostSiteRelations               []string             `yaml:"hostSiteRelations"`
 		HostRoleRelations               []string             `yaml:"hostRoleRelations"`
@@ -187,6 +190,8 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	sc.InterfaceFilter = rawMarshal.InterfaceFilter
 	sc.CollectArpData = rawMarshal.CollectArpData
 	sc.CAFile = rawMarshal.CAFile
+	sc.IgnoreSerialNumbers = rawMarshal.IgnoreSerialNumbers
+	sc.IgnoreAssetTags = rawMarshal.IgnoreAssetTags
 
 	if len(rawMarshal.DatacenterClusterGroupRelations) > 0 {
 		err := utils.ValidateRegexRelations(rawMarshal.DatacenterClusterGroupRelations)

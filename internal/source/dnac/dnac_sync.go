@@ -223,6 +223,11 @@ func (ds *DnacSource) syncDevice(nbi *inventory.NetboxInventory, deviceID string
 		deviceStatus = &objects.DeviceStatusOffline
 	}
 
+	var deviceSerialNumber string
+	if !ds.SourceConfig.IgnoreSerialNumbers {
+		deviceSerialNumber = device.SerialNumber
+	}
+
 	nbDevice, err := nbi.AddDevice(ds.Ctx, &objects.Device{
 		NetboxObject: objects.NetboxObject{
 			Tags:        ds.Config.SourceTags,
@@ -237,7 +242,7 @@ func (ds *DnacSource) syncDevice(nbi *inventory.NetboxInventory, deviceID string
 		Status:       deviceStatus,
 		Tenant:       deviceTenant,
 		DeviceRole:   deviceRole,
-		SerialNumber: device.SerialNumber,
+		SerialNumber: deviceSerialNumber,
 		Platform:     platform,
 		Comments:     comments,
 		Site:         deviceSite,

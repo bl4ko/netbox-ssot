@@ -217,10 +217,14 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 				if infoValue == "No Asset Tag" {
 					infoValue = ""
 				}
-				assetTag = infoValue
+				if !vc.SourceConfig.IgnoreAssetTags {
+					assetTag = infoValue
+				}
 			} else if serialInfoTypes[infoType] {
 				if info.IdentifierValue != "" {
-					hostSerialNumber = infoValue
+					if !vc.SourceConfig.IgnoreSerialNumbers {
+						hostSerialNumber = infoValue
+					}
 					break
 				}
 			}

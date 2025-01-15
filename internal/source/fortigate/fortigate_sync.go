@@ -17,7 +17,11 @@ func (fs *FortigateSource) syncDevice(nbi *inventory.NetboxInventory) error {
 	if deviceName == "" {
 		return fmt.Errorf("can't extract hostname from system info")
 	}
-	deviceSerialNumber := fs.SystemInfo.Serial
+	var deviceSerialNumber string
+	if !fs.SourceConfig.IgnoreSerialNumbers {
+		deviceSerialNumber = fs.SystemInfo.Serial
+	}
+
 	deviceModel := fs.SystemInfo.Hostname
 	if deviceModel == "" {
 		fs.Logger.Warningf(fs.Ctx, "model field in system info is empty. Using fallback mechanism.")
@@ -154,88 +158,9 @@ func (fs *FortigateSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 			return fmt.Errorf("add interface: %s", err)
 		}
 
-		var NBIPAddress *objects.IPAddress
-		ipAndMask := strings.Split(iface.IP, " ")
-		if len(ipAndMask) == 2 && ipAndMask[0] != "0.0.0.0" {
-			if utils.IsPermittedIPAddress(ipAndMask[0], fs.SourceConfig.PermittedSubnets, fs.SourceConfig.IgnoredSubnets) {
-				maskBits, err := utils.MaskToBits(ipAndMask[1])
-				if err != nil {
-					return fmt.Errorf("mask to bits: %s", err)
-				}
-				NBIPAddress, err = nbi.AddIPAddress(fs.Ctx, &objects.IPAddress{
-					NetboxObject: objects.NetboxObject{
-						Tags: fs.SourceTags,
-						CustomFields: map[string]interface{}{
-							constants.CustomFieldArpEntryName: false,
-						},
-					},
-					Address:            fmt.Sprintf("%s/%d", ipAndMask[0], maskBits),
-					AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
-					AssignedObjectID:   NBIface.ID,
-				})
-				if err != nil {
-					return fmt.Errorf("add ip address: %s", err)
-				}
-			}
-		}
-
-		if len(iface.SecondaryIP) > 0 {
-			for _, secondaryIP := range iface.SecondaryIP {
-				ipAndMask := strings.Split(secondaryIP.IP, " ")
-				if len(ipAndMask) == 2 && ipAndMask[0] != "0.0.0.0" {
-					if utils.IsPermittedIPAddress(ipAndMask[0], fs.SourceConfig.PermittedSubnets, fs.SourceConfig.IgnoredSubnets) {
-						maskBits, err := utils.MaskToBits(ipAndMask[1])
-						if err != nil {
-							return fmt.Errorf("mask to bits: %s", err)
-						}
-						_, err = nbi.AddIPAddress(fs.Ctx, &objects.IPAddress{
-							NetboxObject: objects.NetboxObject{
-								Tags: fs.SourceTags,
-								CustomFields: map[string]interface{}{
-									constants.CustomFieldArpEntryName: false,
-								},
-							},
-							Address:            fmt.Sprintf("%s/%d", ipAndMask[0], maskBits),
-							AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
-							AssignedObjectID:   NBIface.ID,
-							Role:               &objects.IPAddressRoleSecondary,
-						})
-						if err != nil {
-							fs.Logger.Warningf(fs.Ctx, "add secondary ip address: %s", err)
-						}
-					}
-				}
-			}
-		}
-
-
-		if len(iface.VRRPIP) > 0 {
-			for _, vrrp := range iface.VRRPIP {
-				ipAndMask := []string{vrrp.VRIP, "255.255.255.255"}
-				if len(ipAndMask) == 2 && ipAndMask[0] != "0.0.0.0" {
-					if utils.IsPermittedIPAddress(ipAndMask[0], fs.SourceConfig.PermittedSubnets, fs.SourceConfig.IgnoredSubnets) {
-						maskBits, err := utils.MaskToBits(ipAndMask[1])
-						if err != nil {
-							return fmt.Errorf("mask to bits: %s", err)
-						}
-						_, err = nbi.AddIPAddress(fs.Ctx, &objects.IPAddress{
-							NetboxObject: objects.NetboxObject{
-								Tags: fs.SourceTags,
-								CustomFields: map[string]interface{}{
-									constants.CustomFieldArpEntryName: false,
-								},
-							},
-							Address:            fmt.Sprintf("%s/%d", ipAndMask[0], maskBits),
-							AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
-							AssignedObjectID:   NBIface.ID,
-							Role:               &objects.IPAddressRoleVRRP,
-						})
-						if err != nil {
-							fs.Logger.Warningf(fs.Ctx, "add VRRP ip address: %s", err)
-						}
-					}
-				}
-			}
+		NBIPAddress, err := syncInterfaceIPs(fs, nbi, iface, NBIface)
+		if err != nil {
+			return fmt.Errorf("sync interface ips: %s", err)
 		}
 
 		if iface.Type == "vlan" {
@@ -283,4 +208,90 @@ func (fs *FortigateSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 		}
 	}
 	return nil
+}
+
+// syncInterfaceIPs is a helper function for syncInterfaces.
+// it synces IPs for an interface.
+func syncInterfaceIPs(fs *FortigateSource, nbi *inventory.NetboxInventory, iface InterfaceResponse, nbIface *objects.Interface) (*objects.IPAddress, error) {
+	var NBIPAddress *objects.IPAddress
+	ipAndMask := strings.Split(iface.IP, " ")
+	if len(ipAndMask) == 2 && ipAndMask[0] != "0.0.0.0" {
+		if utils.IsPermittedIPAddress(ipAndMask[0], fs.SourceConfig.PermittedSubnets, fs.SourceConfig.IgnoredSubnets) {
+			maskBits, err := utils.MaskToBits(ipAndMask[1])
+			if err != nil {
+				return nil, fmt.Errorf("mask to bits: %s", err)
+			}
+			NBIPAddress, err = nbi.AddIPAddress(fs.Ctx, &objects.IPAddress{
+				NetboxObject: objects.NetboxObject{
+					Tags: fs.SourceTags,
+					CustomFields: map[string]interface{}{
+						constants.CustomFieldArpEntryName: false,
+					},
+				},
+				Address:            fmt.Sprintf("%s/%d", ipAndMask[0], maskBits),
+				AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
+				AssignedObjectID:   nbIface.ID,
+			})
+			if err != nil {
+				return nil, fmt.Errorf("add ip address: %s", err)
+			}
+		}
+	}
+	if len(iface.SecondaryIP) > 0 {
+		for _, secondaryIP := range iface.SecondaryIP {
+			ipAndMask := strings.Split(secondaryIP.IP, " ")
+			if len(ipAndMask) == 2 && ipAndMask[0] != "0.0.0.0" {
+				if utils.IsPermittedIPAddress(ipAndMask[0], fs.SourceConfig.PermittedSubnets, fs.SourceConfig.IgnoredSubnets) {
+					maskBits, err := utils.MaskToBits(ipAndMask[1])
+					if err != nil {
+						return nil, fmt.Errorf("mask to bits: %s", err)
+					}
+					_, err = nbi.AddIPAddress(fs.Ctx, &objects.IPAddress{
+						NetboxObject: objects.NetboxObject{
+							Tags: fs.SourceTags,
+							CustomFields: map[string]interface{}{
+								constants.CustomFieldArpEntryName: false,
+							},
+						},
+						Address:            fmt.Sprintf("%s/%d", ipAndMask[0], maskBits),
+						AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
+						AssignedObjectID:   nbIface.ID,
+					})
+					if err != nil {
+						fs.Logger.Warningf(fs.Ctx, "add secondary ip address: %s", err)
+					}
+				}
+			}
+		}
+	}
+
+	if len(iface.VRRPIP) > 0 {
+		for _, vrrp := range iface.VRRPIP {
+			ipAndMask := []string{vrrp.VRIP, "255.255.255.255"}
+			if len(ipAndMask) == 2 && ipAndMask[0] != "0.0.0.0" {
+				if utils.IsPermittedIPAddress(ipAndMask[0], fs.SourceConfig.PermittedSubnets, fs.SourceConfig.IgnoredSubnets) {
+					maskBits, err := utils.MaskToBits(ipAndMask[1])
+					if err != nil {
+						return nil, fmt.Errorf("mask to bits: %s", err)
+					}
+					_, err = nbi.AddIPAddress(fs.Ctx, &objects.IPAddress{
+						NetboxObject: objects.NetboxObject{
+							Tags: fs.SourceTags,
+							CustomFields: map[string]interface{}{
+								constants.CustomFieldArpEntryName: false,
+							},
+						},
+						Address:            fmt.Sprintf("%s/%d", ipAndMask[0], maskBits),
+						AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
+						AssignedObjectID:   nbIface.ID,
+						Role:               &objects.IPAddressRoleVRRP,
+					})
+					if err != nil {
+						fs.Logger.Warningf(fs.Ctx, "add VRRP ip address: %s", err)
+					}
+				}
+			}
+		}
+	}
+	return NBIPAddress, nil
 }

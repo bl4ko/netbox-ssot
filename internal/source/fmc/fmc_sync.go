@@ -17,7 +17,10 @@ func (fmcs *FMCSource) syncDevices(nbi *inventory.NetboxInventory) error {
 			fmcs.Logger.Warningf(fmcs.Ctx, "device with empty name. Skipping...")
 			continue
 		}
-		deviceSerialNumber := device.Metadata.SerialNumber
+		var deviceSerialNumber string
+		if !fmcs.SourceConfig.IgnoreSerialNumbers {
+			deviceSerialNumber = device.Metadata.SerialNumber
+		}
 		deviceModel := device.Model
 		if deviceModel == "" {
 			fmcs.Logger.Warning(fmcs.Ctx, "model field for device is emptpy. Using fallback model.")

@@ -19,7 +19,10 @@ func (pas *PaloAltoSource) syncDevice(nbi *inventory.NetboxInventory) error {
 	if deviceName == "" {
 		return fmt.Errorf("can't extract device name from system info")
 	}
-	deviceSerialNumber := pas.SystemInfo["serial"]
+	var deviceSerialNumber string
+	if !pas.SourceConfig.IgnoreSerialNumbers {
+		deviceSerialNumber = pas.SystemInfo["serial"]
+	}
 	deviceModel := pas.SystemInfo["model"]
 	if deviceModel == "" {
 		pas.Logger.Warningf(pas.Ctx, "model field in system info is empty. Using fallback mechanism.")

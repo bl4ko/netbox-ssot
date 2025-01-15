@@ -176,7 +176,9 @@ func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		hostModel := constants.DefaultModel
 		if hwInfo, exists := host.HardwareInformation(); exists {
 			hostUUID, _ = hwInfo.Uuid()
-			hostSerialNumber, _ = hwInfo.SerialNumber()
+			if !o.SourceConfig.IgnoreSerialNumbers {
+				hostSerialNumber, _ = hwInfo.SerialNumber()
+			}
 			if manufacturerName, exists := hwInfo.Manufacturer(); exists {
 				hostManufacturerName = manufacturerName
 				hostManufacturerName = utils.SerializeManufacturerName(hostManufacturerName)
