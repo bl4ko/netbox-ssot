@@ -11,7 +11,7 @@ repos:
       - id: check-case-conflict
 
   - repo: https://github.com/golangci/golangci-lint
-    rev: v1.62.2
+    rev: v1.63.4
     hooks:
       - id: golangci-lint
 
@@ -22,7 +22,7 @@ repos:
       - id: go-mod-tidy
 
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.22.0
+    rev: v8.23.0
     hooks:
       - id: gitleaks
 
