@@ -116,7 +116,13 @@ func (fmcs *FMCSource) syncVlanInterfaces(nbi *inventory.NetboxInventory, nbDevi
 			// Add vlan
 			ifaceTaggedVlans := []*objects.Vlan{}
 			if vlanIface.VID != 0 {
-				vlanGroup, err := common.MatchVlanToGroup(fmcs.Ctx, nbi, vlanIface.Name, fmcs.SourceConfig.VlanGroupRelations, fmcs.SourceConfig.VlanGroupSiteRelations)
+				// Match vlan to site
+				vlanSite, err := common.MatchVlanToSite(fmcs.Ctx, nbi, vlanIface.Name, fmcs.SourceConfig.VlanSiteRelations)
+				if err != nil {
+					return fmt.Errorf("match vlan to site: %s", err)
+				}
+				// Match vlan to group
+				vlanGroup, err := common.MatchVlanToGroup(fmcs.Ctx, nbi, vlanIface.Name, vlanSite, fmcs.SourceConfig.VlanGroupRelations, fmcs.SourceConfig.VlanGroupSiteRelations)
 				if err != nil {
 					return fmt.Errorf("match vlan to group: %s", err)
 				}
@@ -131,6 +137,7 @@ func (fmcs *FMCSource) syncVlanInterfaces(nbi *inventory.NetboxInventory, nbDevi
 					},
 					Status: &objects.VlanStatusActive,
 					Name:   vlanIface.Name,
+					Site:   vlanSite,
 					Vid:    vlanIface.VID,
 					Tenant: vlanTenent,
 					Group:  vlanGroup,

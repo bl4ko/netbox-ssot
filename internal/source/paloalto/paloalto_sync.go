@@ -169,7 +169,11 @@ func (pas *PaloAltoSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 			if subIface.Tag != 0 {
 				// Extract Vlan
 				vlanName := fmt.Sprintf("Vlan%d", subIface.Tag)
-				vlanGroup, err := common.MatchVlanToGroup(pas.Ctx, nbi, vlanName, pas.SourceConfig.VlanGroupRelations, pas.SourceConfig.VlanGroupSiteRelations)
+				vlanSite, err := common.MatchVlanToSite(pas.Ctx, nbi, vlanName, pas.SourceConfig.VlanSiteRelations)
+				if err != nil {
+					return fmt.Errorf("match vlan to site: %s", err)
+				}
+				vlanGroup, err := common.MatchVlanToGroup(pas.Ctx, nbi, vlanName, vlanSite, pas.SourceConfig.VlanGroupRelations, pas.SourceConfig.VlanGroupSiteRelations)
 				if err != nil {
 					return fmt.Errorf("match vlan to group: %s", err)
 				}
@@ -185,6 +189,7 @@ func (pas *PaloAltoSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 					Status: &objects.VlanStatusActive,
 					Name:   fmt.Sprintf("Vlan%d", subIface.Tag),
 					Vid:    subIface.Tag,
+					Site:   vlanSite,
 					Tenant: vlanTenant,
 					Group:  vlanGroup,
 				}

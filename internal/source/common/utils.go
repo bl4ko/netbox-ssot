@@ -69,9 +69,9 @@ func MatchClusterToSite(ctx context.Context, nbi *inventory.NetboxInventory, clu
 // Function that matches vlanName to vlanGroupName using regexRelationsMap.
 //
 // In case there is no match or regexRelations is nil, it will return default VlanGroup.
-func MatchVlanToGroup(ctx context.Context, nbi *inventory.NetboxInventory, vlanName string, vlanGroupRelations map[string]string, vlanGroupSiteRelations map[string]string) (*objects.VlanGroup, error) {
+func MatchVlanToGroup(ctx context.Context, nbi *inventory.NetboxInventory, vlanName string, vlanSite *objects.Site, vlanGroupRelations map[string]string, vlanGroupSiteRelations map[string]string) (*objects.VlanGroup, error) {
 	if vlanGroupRelations == nil {
-		vlanGroup, _ := nbi.GetVlanGroup(constants.DefaultVlanGroupName)
+		vlanGroup, _ := nbi.CreateDefaultVlanGroupForVlan(ctx, vlanSite)
 		return vlanGroup, nil
 	}
 	vlanGroupName, err := utils.MatchStringToValue(vlanName, vlanGroupRelations)

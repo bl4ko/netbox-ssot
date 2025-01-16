@@ -527,27 +527,6 @@ func (nbi *NetboxInventory) initInterfaces(ctx context.Context) error {
 	return nil
 }
 
-// Inits default VlanGroup, which is required to group all Vlans that are not part of other
-// vlangroups into it. Each vlan is indexed by their (vlanGroup, vid).
-func (nbi *NetboxInventory) initDefaultVlanGroup(ctx context.Context) error {
-	_, err := nbi.AddVlanGroup(ctx, &objects.VlanGroup{
-		NetboxObject: objects.NetboxObject{
-			Tags:        []*objects.Tag{nbi.SsotTag},
-			Description: constants.DefaultVlanGroupDescription,
-			CustomFields: map[string]interface{}{
-				constants.CustomFieldSourceName: nbi.SsotTag.Name,
-			},
-		},
-		Name:      constants.DefaultVlanGroupName,
-		Slug:      utils.Slugify(constants.DefaultVlanGroupName),
-		VidRanges: []objects.VidRange{{constants.DefaultVID, constants.MaxVID}},
-	})
-	if err != nil {
-		return fmt.Errorf("init default vlan group: %s", err)
-	}
-	return nil
-}
-
 // Collects all vlans from Netbox API and stores them to local inventory.
 func (nbi *NetboxInventory) initVlanGroups(ctx context.Context) error {
 	nbVlanGroups, err := service.GetAll[objects.VlanGroup](ctx, nbi.NetboxAPI, "")
@@ -582,8 +561,12 @@ func (nbi *NetboxInventory) initVlans(ctx context.Context) error {
 		vlan := &nbVlans[i]
 		if vlan.Group == nil {
 			// Update all existing vlans with default vlanGroup. This only happens
-			// when there are predefined vlans in netbox.
-			vlan.Group = nbi.vlanGroupsIndexByName[constants.DefaultVlanGroupName] // This should not fail, because InitDefaultVlanGroup executes before InitVlans
+			// when there are predefined vlans in netbox. This is required because
+			// vlans are indexed by vlan group.
+			vlan.Group, err = nbi.CreateDefaultVlanGroupForVlan(nbi.Ctx, vlan.Site)
+			if err != nil {
+				return fmt.Errorf("create default vlan group for vlan: %s", err)
+			}
 			vlan, err = nbi.AddVlan(ctx, vlan)
 			if err != nil {
 				return err

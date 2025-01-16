@@ -24,8 +24,13 @@ func (o *OVirtSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 		description, _ := network.Description()
 		// TODO: handle other networks
 		if networkVlan, exists := network.Vlan(); exists {
+			// Get vlanSite from relation
+			vlanSite, err := common.MatchVlanToSite(o.Ctx, nbi, name, o.SourceConfig.VlanSiteRelations)
+			if err != nil {
+				return fmt.Errorf("match vlan to site: %s", err)
+			}
 			// Get vlanGroup from relation
-			vlanGroup, err := common.MatchVlanToGroup(o.Ctx, nbi, name, o.SourceConfig.VlanGroupRelations, o.SourceConfig.VlanGroupSiteRelations)
+			vlanGroup, err := common.MatchVlanToGroup(o.Ctx, nbi, name, vlanSite, o.SourceConfig.VlanGroupRelations, o.SourceConfig.VlanGroupSiteRelations)
 			if err != nil {
 				return err
 			}
@@ -43,6 +48,7 @@ func (o *OVirtSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 					Name:     name,
 					Group:    vlanGroup,
 					Vid:      int(networkVlanID),
+					Site:     vlanSite,
 					Status:   &objects.VlanStatusActive,
 					Tenant:   vlanTenant,
 					Comments: network.MustComment(),
@@ -624,8 +630,13 @@ func (o *OVirtSource) collectHostNicsData(nbHost *objects.Device, nbi *inventory
 			vlanID, exists := vlan.Id()
 			if exists {
 				vlanName := o.Networks.Vid2Name[int(vlanID)]
+				// Get vlanSite from relation
+				vlanSite, err := common.MatchVlanToSite(o.Ctx, nbi, vlanName, o.SourceConfig.VlanSiteRelations)
+				if err != nil {
+					return fmt.Errorf("match vlan to site: %s", err)
+				}
 				// Get vlanGroup from relation
-				vlanGroup, err := common.MatchVlanToGroup(o.Ctx, nbi, vlanName, o.SourceConfig.VlanGroupRelations, o.SourceConfig.VlanGroupSiteRelations)
+				vlanGroup, err := common.MatchVlanToGroup(o.Ctx, nbi, vlanName, vlanSite, o.SourceConfig.VlanGroupRelations, o.SourceConfig.VlanGroupSiteRelations)
 				if err != nil {
 					return err
 				}
@@ -1089,7 +1100,11 @@ func (o *OVirtSource) syncVMNics(nbi *inventory.NetboxInventory, ovirtVM *ovirts
 					if vnicNetworkVlan, ok := vnicNetwork.Vlan(); ok {
 						if vlanID, ok := vnicNetworkVlan.Id(); ok {
 							vlanName := o.Networks.Vid2Name[int(vlanID)]
-							vlanGroup, err := common.MatchVlanToGroup(o.Ctx, nbi, vlanName, o.SourceConfig.VlanGroupRelations, o.SourceConfig.VlanGroupSiteRelations)
+							vlanSite, err := common.MatchVlanToSite(o.Ctx, nbi, vlanName, o.SourceConfig.VlanSiteRelations)
+							if err != nil {
+								return fmt.Errorf("match vlan to site: %s", err)
+							}
+							vlanGroup, err := common.MatchVlanToGroup(o.Ctx, nbi, vlanName, vlanSite, o.SourceConfig.VlanGroupRelations, o.SourceConfig.VlanGroupSiteRelations)
 							if err != nil {
 								o.Logger.Warningf(o.Ctx, "match vlan to group: %s", err)
 								continue

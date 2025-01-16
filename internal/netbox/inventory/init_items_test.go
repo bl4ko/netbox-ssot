@@ -404,27 +404,6 @@ func TestNetboxInventory_InitInterfaces(t *testing.T) {
 	}
 }
 
-func TestNetboxInventory_InitDefaultVlanGroup(t *testing.T) {
-	type args struct {
-		ctx context.Context
-	}
-	tests := []struct {
-		name    string
-		nbi     *NetboxInventory
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.nbi.initDefaultVlanGroup(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.InitDefaultVlanGroup() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
 func TestNetboxInventory_InitVlanGroups(t *testing.T) {
 	type args struct {
 		ctx context.Context
@@ -987,27 +966,6 @@ func TestNetboxInventory_initInterfaces(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initInterfaces(tt.args.ctx); (err != nil) != tt.wantErr {
 				t.Errorf("NetboxInventory.initInterfaces() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func TestNetboxInventory_initDefaultVlanGroup(t *testing.T) {
-	type args struct {
-		ctx context.Context
-	}
-	tests := []struct {
-		name    string
-		nbi     *NetboxInventory
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.nbi.initDefaultVlanGroup(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.initDefaultVlanGroup() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

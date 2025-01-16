@@ -52,7 +52,11 @@ func (ds *DnacSource) syncSites(nbi *inventory.NetboxInventory) error {
 // Syncs dnac vlans to netbox inventory.
 func (ds *DnacSource) syncVlans(nbi *inventory.NetboxInventory) error {
 	for vid, vlan := range ds.Vlans {
-		vlanGroup, err := common.MatchVlanToGroup(ds.Ctx, nbi, vlan.InterfaceName, ds.SourceConfig.VlanGroupRelations, ds.SourceConfig.VlanGroupSiteRelations)
+		vlanSite, err := common.MatchVlanToSite(ds.Ctx, nbi, vlan.InterfaceName, ds.SourceConfig.VlanSiteRelations)
+		if err != nil {
+			return fmt.Errorf("match vlan to site: %s", err)
+		}
+		vlanGroup, err := common.MatchVlanToGroup(ds.Ctx, nbi, vlan.InterfaceName, vlanSite, ds.SourceConfig.VlanGroupRelations, ds.SourceConfig.VlanGroupSiteRelations)
 		if err != nil {
 			return fmt.Errorf("vlanGroup: %s", err)
 		}
@@ -71,6 +75,7 @@ func (ds *DnacSource) syncVlans(nbi *inventory.NetboxInventory) error {
 			Name:   vlan.InterfaceName,
 			Group:  vlanGroup,
 			Vid:    vid,
+			Site:   vlanSite,
 			Tenant: vlanTenant,
 		})
 		if err != nil {
@@ -537,7 +542,11 @@ func (ds *DnacSource) syncWirelessLANs(nbi *inventory.NetboxInventory) error {
 		if err != nil {
 			return fmt.Errorf("add wirelessLANGroup %s: %s", wlanGroup, err)
 		}
-		vlanGroup, err := common.MatchVlanToGroup(ds.Ctx, nbi, wlanWirelessProfile.InterfaceName, ds.SourceConfig.VlanGroupRelations, ds.SourceConfig.VlanGroupSiteRelations)
+		vlanSite, err := common.MatchVlanToSite(ds.Ctx, nbi, wlanWirelessProfile.InterfaceName, ds.SourceConfig.VlanSiteRelations)
+		if err != nil {
+			return fmt.Errorf("match vlan to site: %s", err)
+		}
+		vlanGroup, err := common.MatchVlanToGroup(ds.Ctx, nbi, wlanWirelessProfile.InterfaceName, vlanSite, ds.SourceConfig.VlanGroupRelations, ds.SourceConfig.VlanGroupSiteRelations)
 		if err != nil {
 			return err
 		}

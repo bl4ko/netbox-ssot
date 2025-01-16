@@ -223,7 +223,6 @@ func (nbi *NetboxInventory) Init() error {
 		nbi.initInterfaces,
 		nbi.initIPAddresses,
 		nbi.initVlanGroups,
-		nbi.initDefaultVlanGroup,
 		nbi.initPrefixes,
 		nbi.initVlans,
 		nbi.initDeviceRoles,

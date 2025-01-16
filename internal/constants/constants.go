@@ -23,7 +23,7 @@ const OrphanTagName = "netbox-ssot-orphan"
 const OrphanTagColor = ColorGrey
 const OrphanTagDescription = "Tag used by netbox-ssot to mark orphaned objects"
 
-const DefaultVlanGroupName = "Default netbox-ssot vlan group"
+const DefaultVlanGroupName = "DefaultVlanGroup"
 const DefaultVlanGroupDescription = "Default netbox-ssot VlanGroup for all vlans that are not part of any other vlanGroup. This group is required for netbox-ssot vlan index to work."
 
 const DefaultArpTagName = "arp-entry"

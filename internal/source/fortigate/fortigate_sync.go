@@ -167,17 +167,17 @@ func (fs *FortigateSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 			// Add Vlan for interface
 			vlanID := iface.VlanID
 			vlanName := fmt.Sprintf("Vlan%d", vlanID)
-			vlanGroup, err := common.MatchVlanToGroup(fs.Ctx, nbi, vlanName, fs.SourceConfig.VlanGroupRelations, fs.SourceConfig.VlanGroupSiteRelations)
+			vlanSite, err := common.MatchVlanToSite(fs.Ctx, nbi, vlanName, fs.SourceConfig.VlanSiteRelations)
+			if err != nil {
+				return fmt.Errorf("match vlan to site: %s", err)
+			}
+			vlanGroup, err := common.MatchVlanToGroup(fs.Ctx, nbi, vlanName, vlanSite, fs.SourceConfig.VlanGroupRelations, fs.SourceConfig.VlanGroupSiteRelations)
 			if err != nil {
 				return fmt.Errorf("match vlan to group: %s", err)
 			}
 			vlanTenant, err := common.MatchVlanToTenant(fs.Ctx, nbi, vlanName, fs.SourceConfig.VlanTenantRelations)
 			if err != nil {
 				return fmt.Errorf("match vlan to tenant: %s", err)
-			}
-			vlanSite, err := common.MatchVlanToSite(fs.Ctx, nbi, vlanName, fs.SourceConfig.VlanSiteRelations)
-			if err != nil {
-				return fmt.Errorf("match vlan to site: %s", err)
 			}
 			NBVlan, err := nbi.AddVlan(fs.Ctx, &objects.Vlan{
 				NetboxObject: objects.NetboxObject{

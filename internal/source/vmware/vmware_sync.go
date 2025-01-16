@@ -21,9 +21,13 @@ func (vc *VmwareSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 	for dvpgID, dvpg := range vc.Networks.DistributedVirtualPortgroups {
 		// TODO: currently we are syncing only vlans
 		// Get vlanGroup from relations
-		vlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, dvpg.Name, vc.SourceConfig.VlanGroupRelations, vc.SourceConfig.VlanGroupSiteRelations)
+		vlanSite, err := common.MatchVlanToSite(vc.Ctx, nbi, dvpg.Name, vc.SourceConfig.VlanSiteRelations)
 		if err != nil {
-			return fmt.Errorf("vlanGroup: %s", err)
+			return fmt.Errorf("match vlan to site: %s", err)
+		}
+		vlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, dvpg.Name, vlanSite, vc.SourceConfig.VlanGroupRelations, vc.SourceConfig.VlanGroupSiteRelations)
+		if err != nil {
+			return fmt.Errorf("match vlan to group: %s", err)
 		}
 		// Get tenant from relations
 		vlanTenant, err := common.MatchVlanToTenant(vc.Ctx, nbi, dvpg.Name, vc.SourceConfig.VlanTenantRelations)
@@ -40,6 +44,7 @@ func (vc *VmwareSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 				},
 				Name:   dvpg.Name,
 				Group:  vlanGroup,
+				Site:   vlanSite,
 				Vid:    dvpg.VlanIDs[0],
 				Status: &objects.VlanStatusActive,
 				Tenant: vlanTenant,
@@ -350,6 +355,7 @@ func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetboxInventory, vcH
 	return nil
 }
 
+//nolint:gocyclo
 func (vc *VmwareSource) collectHostPhysicalNicData(nbi *inventory.NetboxInventory, nbHost *objects.Device, pnic types.PhysicalNic, _ *devices.DeviceData) (*objects.Interface, error) {
 	pnicName := pnic.Device
 	var pnicLinkSpeedMb int32
@@ -402,16 +408,24 @@ func (vc *VmwareSource) collectHostPhysicalNicData(nbi *inventory.NetboxInventor
 			}
 			// Check if vlan with this vid already exists, else create it
 			if vlanName, ok := vc.Networks.Vid2Name[portgroupData.vlanID]; ok {
-				vlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, vlanName, vc.SourceConfig.VlanGroupRelations, vc.SourceConfig.VlanGroupSiteRelations)
+				vlanSite, err := common.MatchVlanToSite(vc.Ctx, nbi, vlanName, vc.SourceConfig.VlanSiteRelations)
 				if err != nil {
-					return nil, fmt.Errorf("vlanGroup: %s", err)
+					return nil, fmt.Errorf("match vlan to site: %s", err)
+				}
+				vlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, vlanName, vlanSite, vc.SourceConfig.VlanGroupRelations, vc.SourceConfig.VlanGroupSiteRelations)
+				if err != nil {
+					return nil, fmt.Errorf("match vlan to group: %s", err)
 				}
 				vlan, vlanExists := nbi.GetVlan(vlanGroup.ID, portgroupData.vlanID)
 				if vlanExists {
 					vlanIDMap[portgroupData.vlanID] = vlan
 				}
 			} else {
-				vlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, portgroupName, vc.SourceConfig.VlanGroupRelations, vc.SourceConfig.VlanGroupSiteRelations)
+				vlanSite, err := common.MatchVlanToSite(vc.Ctx, nbi, vlanName, vc.SourceConfig.VlanSiteRelations)
+				if err != nil {
+					return nil, fmt.Errorf("match vlan to site: %s", err)
+				}
+				vlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, portgroupName, vlanSite, vc.SourceConfig.VlanGroupRelations, vc.SourceConfig.VlanGroupSiteRelations)
 				if err != nil {
 					return nil, fmt.Errorf("vlanGroup: %s", err)
 				}
@@ -423,6 +437,7 @@ func (vc *VmwareSource) collectHostPhysicalNicData(nbi *inventory.NetboxInventor
 						},
 						Status: &objects.VlanStatusActive,
 						Name:   fmt.Sprintf("VLAN%d_%s", portgroupData.vlanID, portgroupName),
+						Site:   vlanSite,
 						Vid:    portgroupData.vlanID,
 						Group:  vlanGroup,
 					}
@@ -645,7 +660,11 @@ func (vc *VmwareSource) collectHostVirtualNicData(nbi *inventory.NetboxInventory
 	var vnicUntaggedVlan *objects.Vlan
 	var vnicTaggedVlans []*objects.Vlan
 	if vnicPortgroupData != nil && vnicPortgroupVlanID != 0 {
-		vnicUntaggedVlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, vc.Networks.Vid2Name[vnicPortgroupVlanID], vc.SourceConfig.VlanGroupRelations, vc.SourceConfig.VlanGroupSiteRelations)
+		vnicUntaggedVlanSite, err := common.MatchVlanToSite(vc.Ctx, nbi, vc.Networks.Vid2Name[vnicPortgroupVlanID], vc.SourceConfig.VlanSiteRelations)
+		if err != nil {
+			return nil, fmt.Errorf("vlan site: %s", err)
+		}
+		vnicUntaggedVlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, vc.Networks.Vid2Name[vnicPortgroupVlanID], vnicUntaggedVlanSite, vc.SourceConfig.VlanGroupRelations, vc.SourceConfig.VlanGroupSiteRelations)
 		if err != nil {
 			return nil, fmt.Errorf("vlan group: %s", err)
 		}
@@ -664,9 +683,13 @@ func (vc *VmwareSource) collectHostVirtualNicData(nbi *inventory.NetboxInventory
 			if vnicDvPortgroupDataVlanID == 0 {
 				continue
 			}
-			vnicTaggedVlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, vc.Networks.Vid2Name[vnicDvPortgroupDataVlanID], vc.SourceConfig.VlanGroupRelations, vc.SourceConfig.VlanGroupSiteRelations)
+			vnicTaggedVlanSite, err := common.MatchVlanToSite(vc.Ctx, nbi, vc.Networks.Vid2Name[vnicDvPortgroupDataVlanID], vc.SourceConfig.VlanSiteRelations)
 			if err != nil {
-				return nil, fmt.Errorf("vlan group: %s", err)
+				return nil, fmt.Errorf("match vlan to site: %s", err)
+			}
+			vnicTaggedVlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, vc.Networks.Vid2Name[vnicDvPortgroupDataVlanID], vnicTaggedVlanSite, vc.SourceConfig.VlanGroupRelations, vc.SourceConfig.VlanGroupSiteRelations)
+			if err != nil {
+				return nil, fmt.Errorf("match vlan to vlan group: %s", err)
 			}
 			taggedVlan, taggedVlanExists := nbi.GetVlan(vnicTaggedVlanGroup.ID, vnicDvPortgroupDataVlanID)
 			if taggedVlanExists {
@@ -1095,9 +1118,13 @@ func (vc *VmwareSource) collectVMInterfaceData(nbi *inventory.NetboxInventory, n
 	if len(intNetworkVlanIDs) > 0 && intMode != &objects.VMInterfaceModeTaggedAll {
 		if len(intNetworkVlanIDs) == 1 && intNetworkVlanIDs[0] != 0 {
 			vidID := intNetworkVlanIDs[0]
-			nicUntaggedVlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, vc.Networks.Vid2Name[vidID], vc.SourceConfig.VlanGroupRelations, vc.SourceConfig.VlanGroupSiteRelations)
+			nicUntaggedVlanSite, err := common.MatchVlanToSite(vc.Ctx, nbi, vc.Networks.Vid2Name[vidID], vc.SourceConfig.VlanSiteRelations)
 			if err != nil {
-				return nicIPv4Addresses, nicIPv6Addresses, nil, fmt.Errorf("vlan group: %s", err)
+				return nicIPv4Addresses, nicIPv6Addresses, nil, fmt.Errorf("match vlan to site: %s", err)
+			}
+			nicUntaggedVlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, vc.Networks.Vid2Name[vidID], nicUntaggedVlanSite, vc.SourceConfig.VlanGroupRelations, vc.SourceConfig.VlanGroupSiteRelations)
+			if err != nil {
+				return nicIPv4Addresses, nicIPv6Addresses, nil, fmt.Errorf("mathc vlan to vlan group: %s", err)
 			}
 			intUntaggedVlan, _ = nbi.GetVlan(nicUntaggedVlanGroup.ID, vidID)
 		} else {
