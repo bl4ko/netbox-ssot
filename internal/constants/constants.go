@@ -13,6 +13,8 @@ const (
 	IOSXE     SourceType = "ios-xe"
 )
 
+const WildcardIP = "0.0.0.0"
+
 const SsotTagColor = "00add8"
 const SsotTagName = "netbox-ssot"
 const SsotTagDescription = "Tag used by netbox-ssot to mark devices that are managed by it"

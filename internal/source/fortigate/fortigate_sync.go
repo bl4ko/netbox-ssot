@@ -220,7 +220,7 @@ func (fs *FortigateSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 func syncInterfaceIPs(fs *FortigateSource, nbi *inventory.NetboxInventory, iface InterfaceResponse, nbIface *objects.Interface) (*objects.IPAddress, error) {
 	var NBIPAddress *objects.IPAddress
 	ipAndMask := strings.Split(iface.IP, " ")
-	if len(ipAndMask) == 2 && ipAndMask[0] != "0.0.0.0" {
+	if len(ipAndMask) == 2 && ipAndMask[0] != constants.WildcardIP {
 		if utils.IsPermittedIPAddress(ipAndMask[0], fs.SourceConfig.PermittedSubnets, fs.SourceConfig.IgnoredSubnets) {
 			maskBits, err := utils.MaskToBits(ipAndMask[1])
 			if err != nil {
@@ -245,7 +245,7 @@ func syncInterfaceIPs(fs *FortigateSource, nbi *inventory.NetboxInventory, iface
 	if len(iface.SecondaryIP) > 0 {
 		for _, secondaryIP := range iface.SecondaryIP {
 			ipAndMask := strings.Split(secondaryIP.IP, " ")
-			if len(ipAndMask) == 2 && ipAndMask[0] != "0.0.0.0" {
+			if len(ipAndMask) == 2 && ipAndMask[0] != constants.WildcardIP {
 				if utils.IsPermittedIPAddress(ipAndMask[0], fs.SourceConfig.PermittedSubnets, fs.SourceConfig.IgnoredSubnets) {
 					maskBits, err := utils.MaskToBits(ipAndMask[1])
 					if err != nil {
@@ -273,7 +273,7 @@ func syncInterfaceIPs(fs *FortigateSource, nbi *inventory.NetboxInventory, iface
 	if len(iface.VRRPIP) > 0 {
 		for _, vrrp := range iface.VRRPIP {
 			ipAndMask := []string{vrrp.VRIP, "255.255.255.255"}
-			if len(ipAndMask) == 2 && ipAndMask[0] != "0.0.0.0" {
+			if len(ipAndMask) == 2 && ipAndMask[0] != constants.WildcardIP {
 				if utils.IsPermittedIPAddress(ipAndMask[0], fs.SourceConfig.PermittedSubnets, fs.SourceConfig.IgnoredSubnets) {
 					maskBits, err := utils.MaskToBits(ipAndMask[1])
 					if err != nil {

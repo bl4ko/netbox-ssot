@@ -31,7 +31,7 @@ type InterfaceResponse struct {
 	MAC         string        `json:"macaddr"`
 	VlanID      int           `json:"vlanid"`
 	SecondaryIP []SecondaryIP `json:"secondaryip"`
-	VRRPIP []VRRPIP           `json:"vrrp"`
+	VRRPIP      []VRRPIP      `json:"vrrp"`
 }
 
 type SecondaryIP struct {

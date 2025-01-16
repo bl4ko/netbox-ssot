@@ -155,181 +155,191 @@ func (o *OVirtSource) syncClusters(nbi *inventory.NetboxInventory) error {
 // as devices.
 func (o *OVirtSource) syncHosts(nbi *inventory.NetboxInventory) error {
 	for hostID, host := range o.Hosts {
-		hostName, exists := host.Name()
-		if !exists {
-			o.Logger.Warningf(o.Ctx, "name of host with id=%s is empty", hostID)
-		}
-		hostCluster, _ := nbi.GetCluster(o.Clusters[host.MustCluster().MustId()].MustName())
-
-		hostSite, err := common.MatchHostToSite(o.Ctx, nbi, hostName, o.SourceConfig.HostSiteRelations)
+		hostStruct, err := extractHostData(o, nbi, host, hostID)
 		if err != nil {
-			return fmt.Errorf("hostSite: %s", err)
+			return fmt.Errorf("extract host data: %s", err)
 		}
-		hostTenant, err := common.MatchHostToTenant(o.Ctx, nbi, hostName, o.SourceConfig.HostTenantRelations)
+
+		nbHost, err := nbi.AddDevice(o.Ctx, hostStruct)
 		if err != nil {
-			return fmt.Errorf("hostTenant: %s", err)
-		}
-
-		// Extract host hardware information if possible, if not use generic values
-		var hostSerialNumber, hostUUID string
-		hostManufacturerName := constants.DefaultManufacturer
-		hostModel := constants.DefaultModel
-		if hwInfo, exists := host.HardwareInformation(); exists {
-			hostUUID, _ = hwInfo.Uuid()
-			if !o.SourceConfig.IgnoreSerialNumbers {
-				hostSerialNumber, _ = hwInfo.SerialNumber()
-			}
-			if manufacturerName, exists := hwInfo.Manufacturer(); exists {
-				hostManufacturerName = manufacturerName
-				hostManufacturerName = utils.SerializeManufacturerName(hostManufacturerName)
-			}
-			if modelName, exists := hwInfo.ProductName(); exists {
-				hostModel = modelName
-			}
-		}
-
-		var deviceSlug string
-		deviceData, hasDeviceData := devices.DeviceTypesMap[hostManufacturerName][hostModel]
-		if hasDeviceData {
-			deviceSlug = deviceData.Slug
-		} else {
-			deviceSlug = utils.GenerateDeviceTypeSlug(hostManufacturerName, hostModel)
-		}
-
-		hostManufacturerStruct := &objects.Manufacturer{
-			Name: hostManufacturerName,
-			Slug: utils.Slugify(hostManufacturerName),
-		}
-		hostManufacturer, err := nbi.AddManufacturer(o.Ctx, hostManufacturerStruct)
-		if err != nil {
-			return fmt.Errorf("failed adding oVirt Manufacturer %v with error: %s", hostManufacturerStruct, err)
-		}
-
-		var hostDeviceType *objects.DeviceType
-		hostDeviceTypeStruct := &objects.DeviceType{
-			Manufacturer: hostManufacturer,
-			Model:        hostModel,
-			Slug:         deviceSlug,
-		}
-		hostDeviceType, err = nbi.AddDeviceType(o.Ctx, hostDeviceTypeStruct)
-		if err != nil {
-			return fmt.Errorf("failed adding oVirt DeviceType %v with error: %s", hostDeviceTypeStruct, err)
-		}
-
-		var hostStatus *objects.DeviceStatus
-		ovirtStatus, exists := host.Status()
-		if exists {
-			switch ovirtStatus {
-			case ovirtsdk4.HOSTSTATUS_UP:
-				hostStatus = &objects.DeviceStatusActive
-			default:
-				hostStatus = &objects.DeviceStatusOffline
-			}
-		}
-
-		var hostPlatform *objects.Platform
-		osDistribution := constants.DefaultOSName
-		osVersion := constants.DefaultOSVersion
-		cpuArch := constants.DefaultCPUArch
-		if os, exists := host.Os(); exists {
-			if ovirtOsType, exists := os.Type(); exists {
-				osDistribution = ovirtOsType
-			}
-			if ovirtOsVersion, exists := os.Version(); exists {
-				if osMajorVersion, exists := ovirtOsVersion.Major(); exists {
-					osVersion = fmt.Sprintf("%d", osMajorVersion)
-				}
-			}
-			// We extract architecture from reported_kernel_cmdline
-			if reportedKernelCmdline, exists := os.ReportedKernelCmdline(); exists {
-				cpuArch = utils.ExtractCPUArch(reportedKernelCmdline)
-				if bitArch, ok := constants.Arch2Bit[cpuArch]; ok {
-					cpuArch = bitArch
-				}
-			}
-		}
-		platformName := utils.GeneratePlatformName(osDistribution, osVersion, cpuArch)
-		hostPlatformStruct := &objects.Platform{
-			Name:         platformName,
-			Slug:         utils.Slugify(platformName),
-			Manufacturer: hostManufacturer,
-		}
-		hostPlatform, err = nbi.AddPlatform(o.Ctx, hostPlatformStruct)
-		if err != nil {
-			return fmt.Errorf("failed adding oVirt Platform %v with error: %s", hostPlatform, err)
-		}
-
-		var hostDescription string
-		if description, exists := host.Description(); exists {
-			hostDescription = description
-		}
-
-		var hostComment string
-		if comment, exists := host.Comment(); exists {
-			hostComment = comment
-		}
-
-		var hostCPUCores string
-		if cpu, exists := host.Cpu(); exists {
-			hostCPUCores, exists = cpu.Name()
-			if !exists {
-				o.Logger.Warning(o.Ctx, "oVirt hostCpuCores of ", hostName, " is empty.")
-			}
-		}
-
-		mem, _ := host.Memory()
-		mem /= (constants.KiB * constants.KiB * constants.KiB) // Value is in Bytes, we convert to GB
-
-		// Match host to a role. First test if user provided relations, if not
-		// use default server role.
-		var hostRole *objects.DeviceRole
-		if len(o.SourceConfig.HostRoleRelations) > 0 {
-			hostRole, err = common.MatchHostToRole(o.Ctx, nbi, hostName, o.SourceConfig.HostRoleRelations)
-			if err != nil {
-				return fmt.Errorf("match host to role: %s", err)
-			}
-		}
-		if hostRole == nil {
-			hostRole, err = nbi.AddServerDeviceRole(o.Ctx)
-			if err != nil {
-				return fmt.Errorf("add server device role %s", err)
-			}
-		}
-
-		nbHost := &objects.Device{
-			NetboxObject: objects.NetboxObject{
-				Description: hostDescription,
-				Tags:        o.Config.SourceTags,
-				CustomFields: map[string]interface{}{
-					constants.CustomFieldSourceIDName:     hostID,
-					constants.CustomFieldHostCPUCoresName: hostCPUCores,
-					constants.CustomFieldHostMemoryName:   fmt.Sprintf("%d GB", mem),
-					constants.CustomFieldDeviceUUIDName:   hostUUID,
-				},
-			},
-			Name:         hostName,
-			Status:       hostStatus,
-			Platform:     hostPlatform,
-			DeviceRole:   hostRole,
-			Site:         hostSite,
-			Tenant:       hostTenant,
-			Cluster:      hostCluster,
-			Comments:     hostComment,
-			SerialNumber: hostSerialNumber,
-			DeviceType:   hostDeviceType,
-		}
-		nbHost, err = nbi.AddDevice(o.Ctx, nbHost)
-		if err != nil {
-			return fmt.Errorf("failed to add oVirt host %+v with error: %v", nbHost, err)
+			return fmt.Errorf("failed to add oVirt host %+v with error: %v", hostStruct, err)
 		}
 
 		// We also need to sync nics separately, because nic is a separate object in netbox
 		err = o.syncHostNics(nbi, host, nbHost)
 		if err != nil {
-			return fmt.Errorf("failed to sync oVirt host %s nics with error: %v", hostName, err)
+			return fmt.Errorf("failed to sync oVirt host %s nics with error: %v", nbHost.Name, err)
 		}
 	}
 	return nil
+}
+
+// extractHostData is a helper function for syncHosts that extracts host
+// data and returns it as an *objects.Device.
+func extractHostData(o *OVirtSource, nbi *inventory.NetboxInventory, host *ovirtsdk4.Host, hostID string) (*objects.Device, error) {
+	hostName, exists := host.Name()
+	if !exists {
+		o.Logger.Warningf(o.Ctx, "name of host with id=%s is empty", hostID)
+	}
+	hostCluster, _ := nbi.GetCluster(o.Clusters[host.MustCluster().MustId()].MustName())
+
+	hostSite, err := common.MatchHostToSite(o.Ctx, nbi, hostName, o.SourceConfig.HostSiteRelations)
+	if err != nil {
+		return nil, fmt.Errorf("hostSite: %s", err)
+	}
+	hostTenant, err := common.MatchHostToTenant(o.Ctx, nbi, hostName, o.SourceConfig.HostTenantRelations)
+	if err != nil {
+		return nil, fmt.Errorf("hostTenant: %s", err)
+	}
+
+	// Extract host hardware information if possible, if not use generic values
+	var hostSerialNumber, hostUUID string
+	hostManufacturerName := constants.DefaultManufacturer
+	hostModel := constants.DefaultModel
+	if hwInfo, exists := host.HardwareInformation(); exists {
+		hostUUID, _ = hwInfo.Uuid()
+		if !o.SourceConfig.IgnoreSerialNumbers {
+			hostSerialNumber, _ = hwInfo.SerialNumber()
+		}
+		if manufacturerName, exists := hwInfo.Manufacturer(); exists {
+			hostManufacturerName = manufacturerName
+			hostManufacturerName = utils.SerializeManufacturerName(hostManufacturerName)
+		}
+		if modelName, exists := hwInfo.ProductName(); exists {
+			hostModel = modelName
+		}
+	}
+
+	var deviceSlug string
+	deviceData, hasDeviceData := devices.DeviceTypesMap[hostManufacturerName][hostModel]
+	if hasDeviceData {
+		deviceSlug = deviceData.Slug
+	} else {
+		deviceSlug = utils.GenerateDeviceTypeSlug(hostManufacturerName, hostModel)
+	}
+
+	hostManufacturerStruct := &objects.Manufacturer{
+		Name: hostManufacturerName,
+		Slug: utils.Slugify(hostManufacturerName),
+	}
+	hostManufacturer, err := nbi.AddManufacturer(o.Ctx, hostManufacturerStruct)
+	if err != nil {
+		return nil, fmt.Errorf("failed adding oVirt Manufacturer %v with error: %s", hostManufacturerStruct, err)
+	}
+
+	var hostDeviceType *objects.DeviceType
+	hostDeviceTypeStruct := &objects.DeviceType{
+		Manufacturer: hostManufacturer,
+		Model:        hostModel,
+		Slug:         deviceSlug,
+	}
+	hostDeviceType, err = nbi.AddDeviceType(o.Ctx, hostDeviceTypeStruct)
+	if err != nil {
+		return nil, fmt.Errorf("failed adding oVirt DeviceType %v with error: %s", hostDeviceTypeStruct, err)
+	}
+
+	var hostStatus *objects.DeviceStatus
+	ovirtStatus, exists := host.Status()
+	if exists {
+		switch ovirtStatus {
+		case ovirtsdk4.HOSTSTATUS_UP:
+			hostStatus = &objects.DeviceStatusActive
+		default:
+			hostStatus = &objects.DeviceStatusOffline
+		}
+	}
+
+	var hostPlatform *objects.Platform
+	osDistribution := constants.DefaultOSName
+	osVersion := constants.DefaultOSVersion
+	cpuArch := constants.DefaultCPUArch
+	if os, exists := host.Os(); exists {
+		if ovirtOsType, exists := os.Type(); exists {
+			osDistribution = ovirtOsType
+		}
+		if ovirtOsVersion, exists := os.Version(); exists {
+			if osMajorVersion, exists := ovirtOsVersion.Major(); exists {
+				osVersion = fmt.Sprintf("%d", osMajorVersion)
+			}
+		}
+		// We extract architecture from reported_kernel_cmdline
+		if reportedKernelCmdline, exists := os.ReportedKernelCmdline(); exists {
+			cpuArch = utils.ExtractCPUArch(reportedKernelCmdline)
+			if bitArch, ok := constants.Arch2Bit[cpuArch]; ok {
+				cpuArch = bitArch
+			}
+		}
+	}
+	platformName := utils.GeneratePlatformName(osDistribution, osVersion, cpuArch)
+	hostPlatformStruct := &objects.Platform{
+		Name:         platformName,
+		Slug:         utils.Slugify(platformName),
+		Manufacturer: hostManufacturer,
+	}
+	hostPlatform, err = nbi.AddPlatform(o.Ctx, hostPlatformStruct)
+	if err != nil {
+		return nil, fmt.Errorf("failed adding oVirt Platform %v with error: %s", hostPlatform, err)
+	}
+
+	var hostDescription string
+	if description, exists := host.Description(); exists {
+		hostDescription = description
+	}
+
+	var hostComment string
+	if comment, exists := host.Comment(); exists {
+		hostComment = comment
+	}
+
+	var hostCPUCores string
+	if cpu, exists := host.Cpu(); exists {
+		hostCPUCores, exists = cpu.Name()
+		if !exists {
+			o.Logger.Warning(o.Ctx, "oVirt hostCpuCores of ", hostName, " is empty.")
+		}
+	}
+
+	mem, _ := host.Memory()
+	mem /= (constants.KiB * constants.KiB * constants.KiB) // Value is in Bytes, we convert to GB
+
+	// Match host to a role. First test if user provided relations, if not
+	// use default server role.
+	var hostRole *objects.DeviceRole
+	if len(o.SourceConfig.HostRoleRelations) > 0 {
+		hostRole, err = common.MatchHostToRole(o.Ctx, nbi, hostName, o.SourceConfig.HostRoleRelations)
+		if err != nil {
+			return nil, fmt.Errorf("match host to role: %s", err)
+		}
+	}
+	if hostRole == nil {
+		hostRole, err = nbi.AddServerDeviceRole(o.Ctx)
+		if err != nil {
+			return nil, fmt.Errorf("add server device role %s", err)
+		}
+	}
+
+	return &objects.Device{
+		NetboxObject: objects.NetboxObject{
+			Description: hostDescription,
+			Tags:        o.Config.SourceTags,
+			CustomFields: map[string]interface{}{
+				constants.CustomFieldSourceIDName:     hostID,
+				constants.CustomFieldHostCPUCoresName: hostCPUCores,
+				constants.CustomFieldHostMemoryName:   fmt.Sprintf("%d GB", mem),
+				constants.CustomFieldDeviceUUIDName:   hostUUID,
+			},
+		},
+		Name:         hostName,
+		Status:       hostStatus,
+		Platform:     hostPlatform,
+		DeviceRole:   hostRole,
+		Site:         hostSite,
+		Tenant:       hostTenant,
+		Cluster:      hostCluster,
+		Comments:     hostComment,
+		SerialNumber: hostSerialNumber,
+		DeviceType:   hostDeviceType,
+	}, nil
 }
 
 // syncHostNics syncs collected host nics from ovirt api to netbox inventory.
