@@ -563,14 +563,11 @@ func (nbi *NetboxInventory) initVlans(ctx context.Context) error {
 			// Update all existing vlans with default vlanGroup. This only happens
 			// when there are predefined vlans in netbox. This is required because
 			// vlans are indexed by vlan group.
-			vlan.Group, err = nbi.CreateDefaultVlanGroupForVlan(nbi.Ctx, vlan.Site)
+			defaultVlanGroup, err := nbi.CreateDefaultVlanGroupForVlan(nbi.Ctx, vlan.Site)
 			if err != nil {
 				return fmt.Errorf("create default vlan group for vlan: %s", err)
 			}
-			vlan, err = nbi.AddVlan(ctx, vlan)
-			if err != nil {
-				return err
-			}
+			vlan.Group = defaultVlanGroup
 		}
 		if nbi.vlansIndexByVlanGroupIDAndVID[vlan.Group.ID] == nil {
 			nbi.vlansIndexByVlanGroupIDAndVID[vlan.Group.ID] = make(map[int]*objects.Vlan)

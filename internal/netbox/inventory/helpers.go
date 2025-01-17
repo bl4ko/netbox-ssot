@@ -12,13 +12,7 @@ import (
 // Inits default VlanGroup, which is required to group all Vlans that are not part of other
 // vlangroups into it. Each vlan is indexed by their (vlanGroup, vid).
 func (nbi *NetboxInventory) CreateDefaultVlanGroupForVlan(ctx context.Context, vlanSite *objects.Site) (*objects.VlanGroup, error) {
-	var vlanGroupName string
-	if vlanSite != nil {
-		vlanGroupName = fmt.Sprintf("%sDefaultVlanGroup", vlanSite.Name)
-	} else {
-		vlanGroupName = constants.DefaultVlanGroupName
-	}
-	vlanGroup, err := nbi.AddVlanGroup(ctx, &objects.VlanGroup{
+	defaultVlanGroup := &objects.VlanGroup{
 		NetboxObject: objects.NetboxObject{
 			Tags:        []*objects.Tag{nbi.SsotTag},
 			Description: constants.DefaultVlanGroupDescription,
@@ -26,12 +20,21 @@ func (nbi *NetboxInventory) CreateDefaultVlanGroupForVlan(ctx context.Context, v
 				constants.CustomFieldSourceName: nbi.SsotTag.Name,
 			},
 		},
-		Name:      vlanGroupName,
-		Slug:      utils.Slugify(constants.DefaultVlanGroupName),
-		VidRanges: []objects.VidRange{{constants.DefaultVID, constants.MaxVID}},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("add vlan group: %s", err)
+		VidRanges: []objects.VidRange{{constants.DefaultVID, constants.MaxVID}}}
+
+	if vlanSite != nil {
+		defaultVlanGroup.Name = fmt.Sprintf("%sDefaultVlanGroup", vlanSite.Name)
+		defaultVlanGroup.ScopeType = constants.ContentTypeDcimSite
+		defaultVlanGroup.ScopeID = vlanSite.ID
+	} else {
+		defaultVlanGroup.Name = constants.DefaultVlanGroupName
 	}
-	return vlanGroup, nil
+	defaultVlanGroup.Slug = utils.Slugify(defaultVlanGroup.Name)
+
+	nbVlanGroup, err := nbi.AddVlanGroup(ctx, defaultVlanGroup)
+
+	if err != nil {
+		return nil, fmt.Errorf("add vlan group %+v: %s", defaultVlanGroup, err)
+	}
+	return nbVlanGroup, nil
 }
