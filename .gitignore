@@ -34,6 +34,9 @@ go.work
 # Ignore MacOS files
 .DS_Store
 
+# Ignore goreleaser dir
+dist/
+
 # End of https://www.toptal.com/developers/gitignore/api/go
 
 .pre-commit-trivy-cache
