@@ -1324,8 +1324,8 @@ func (vc *VmwareSource) createVmwareClusterType(nbi *inventory.NetboxInventory) 
 		NetboxObject: objects.NetboxObject{
 			Tags: vc.Config.SourceTags,
 		},
-		Name: "Vmware ESXi",
-		Slug: utils.Slugify("Vmware ESXi"),
+		Name: "VMware ESXi",
+		Slug: utils.Slugify("VMware ESXi"),
 	}
 	clusterType, err := nbi.AddClusterType(vc.Ctx, clusterType)
 	if err != nil {
