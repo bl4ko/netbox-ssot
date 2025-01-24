@@ -829,6 +829,7 @@ func (vc *VmwareSource) syncVM(nbi *inventory.NetboxInventory, vmKey string, vm 
 			vmDiskSizeB += disk.CapacityInBytes
 		}
 	}
+	vmDiskSizeMiB := vmDiskSizeB / constants.MiB
 
 	// Determine guest OS using fallback mechanisms
 	var platformName string
@@ -914,7 +915,7 @@ func (vc *VmwareSource) syncVM(nbi *inventory.NetboxInventory, vmKey string, vm 
 		Platform: vmPlatform,
 		VCPUs:    float32(vmVCPUs),
 		Memory:   int(vmMemoryMB),
-		Disk:     int(vmDiskSizeB) / constants.MB, // MBs default unit for disk in netbox
+		Disk:     int(vmDiskSizeMiB),
 		Comments: vmComments,
 		Role:     vmRole,
 	}
