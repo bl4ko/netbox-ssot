@@ -117,6 +117,7 @@ type SourceConfig struct {
 	CAFile              string               `yaml:"caFile"`
 	IgnoreAssetTags     bool                 `yaml:"ignoreAssetTags"`
 	IgnoreSerialNumbers bool                 `yaml:"ignoreSerialNumbers"`
+	IgnoreVMTemplates   bool                 `yaml:"ignoreVMTemplates"`
 
 	// Relations
 	DatacenterClusterGroupRelations map[string]string `yaml:"datacenterClusterGroupRelations"`
@@ -157,6 +158,7 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		CAFile                          string               `yaml:"caFile"`
 		IgnoreSerialNumbers             bool                 `yaml:"ignoreSerialNumbers"`
 		IgnoreAssetTags                 bool                 `yaml:"ignoreAssetTags"`
+		IgnoreVMTemplates               bool                 `yaml:"ignoreVMTemplates"`
 		DatacenterClusterGroupRelations []string             `yaml:"datacenterClusterGroupRelations"`
 		HostSiteRelations               []string             `yaml:"hostSiteRelations"`
 		HostRoleRelations               []string             `yaml:"hostRoleRelations"`
@@ -194,6 +196,7 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	sc.CAFile = rawMarshal.CAFile
 	sc.IgnoreSerialNumbers = rawMarshal.IgnoreSerialNumbers
 	sc.IgnoreAssetTags = rawMarshal.IgnoreAssetTags
+	sc.IgnoreVMTemplates = rawMarshal.IgnoreVMTemplates
 
 	if len(rawMarshal.DatacenterClusterGroupRelations) > 0 {
 		err := utils.ValidateRegexRelations(rawMarshal.DatacenterClusterGroupRelations)

@@ -60,9 +60,6 @@ func (nbi *NetboxInventory) AddSwitchDeviceRole(ctx context.Context) (*objects.D
 }
 
 func (nbi *NetboxInventory) AddServerDeviceRole(ctx context.Context) (*objects.DeviceRole, error) {
-	if role, ok := nbi.GetDeviceRole(constants.DeviceRoleServer); ok {
-		return role, nil
-	}
 	newRole, err := nbi.AddDeviceRole(ctx, &objects.DeviceRole{
 		NetboxObject: objects.NetboxObject{
 			Description: constants.DeviceRoleServerDescription,

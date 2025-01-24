@@ -770,6 +770,10 @@ func (vc *VmwareSource) syncVM(nbi *inventory.NetboxInventory, vmKey string, vm 
 		isTemplate = true
 	}
 
+	if vc.SourceConfig.IgnoreVMTemplates && isTemplate {
+		return nil
+	}
+
 	vmName := vm.Name
 	vmHostName := vc.Hosts[vc.VM2Host[vmKey]].Name
 

@@ -19,6 +19,7 @@ source:
       - 192.168.0.0/16
       - fd00::/8
     validateCert: true
+    ignoreVMTemplates: true
 
   - name: testvcenter
     type: vmware
