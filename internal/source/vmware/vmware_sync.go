@@ -421,13 +421,18 @@ func (vc *VmwareSource) collectHostPhysicalNicData(nbi *inventory.NetboxInventor
 					vlanIDMap[portgroupData.vlanID] = vlan
 				}
 			} else {
+				vlanName := fmt.Sprintf("VLAN%04d_%s", portgroupData.vlanID, portgroupName)
 				vlanSite, err := common.MatchVlanToSite(vc.Ctx, nbi, vlanName, vc.SourceConfig.VlanSiteRelations)
 				if err != nil {
 					return nil, fmt.Errorf("match vlan to site: %s", err)
 				}
-				vlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, portgroupName, vlanSite, vc.SourceConfig.VlanGroupRelations, vc.SourceConfig.VlanGroupSiteRelations)
+				vlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, vlanName, vlanSite, vc.SourceConfig.VlanGroupRelations, vc.SourceConfig.VlanGroupSiteRelations)
 				if err != nil {
-					return nil, fmt.Errorf("vlanGroup: %s", err)
+					return nil, fmt.Errorf("match vlan to group: %s", err)
+				}
+				vlanTenant, err := common.MatchVlanToTenant(vc.Ctx, nbi, vlanName, vc.SourceConfig.VlanTenantRelations)
+				if err != nil {
+					return nil, fmt.Errorf("match vlan to tenant: %s", err)
 				}
 				newVlan, newVlanExists := nbi.GetVlan(vlanGroup.ID, portgroupData.vlanID)
 				if !newVlanExists {
@@ -436,9 +441,10 @@ func (vc *VmwareSource) collectHostPhysicalNicData(nbi *inventory.NetboxInventor
 							Tags: vc.Config.SourceTags,
 						},
 						Status: &objects.VlanStatusActive,
-						Name:   fmt.Sprintf("VLAN%d_%s", portgroupData.vlanID, portgroupName),
+						Name:   vlanName,
 						Site:   vlanSite,
 						Vid:    portgroupData.vlanID,
+						Tenant: vlanTenant,
 						Group:  vlanGroup,
 					}
 					newVlan, err = nbi.AddVlan(vc.Ctx, vlanStruct)
