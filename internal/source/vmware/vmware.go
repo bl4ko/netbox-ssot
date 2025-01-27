@@ -13,6 +13,8 @@ import (
 	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/session"
+	"github.com/vmware/govmomi/vapi/rest"
+	"github.com/vmware/govmomi/vapi/tags"
 	"github.com/vmware/govmomi/view"
 	"github.com/vmware/govmomi/vim25"
 	"github.com/vmware/govmomi/vim25/mo"
@@ -39,6 +41,9 @@ type VmwareSource struct {
 
 	// CustomField2Name is a map of custom field ids to their names
 	CustomFieldID2Name map[int32]string
+	// Object2Tags is a map of object ids to their tags
+	Object2Tags   map[string][]*tags.Tag
+	Object2NBTags map[string][]*objects.Tag // Created in sync function
 }
 
 type NetworkData struct {
@@ -146,6 +151,11 @@ func (vc *VmwareSource) Init() error {
 		return fmt.Errorf("create cluster datacenter relation failed: %s", err)
 	}
 
+	err = vc.CreateObjectTagsRelation(ctx, vim25Client, url.User)
+	if err != nil {
+		return fmt.Errorf("create object tags relation failed: %s", err)
+	}
+
 	// Initialize items from vsphere API to local storage
 	initFunctions := []func(context.Context, *view.ContainerView) error{
 		vc.initNetworks,
@@ -184,6 +194,7 @@ func (vc *VmwareSource) Init() error {
 // Function that syncs all data from oVirt to Netbox.
 func (vc *VmwareSource) Sync(nbi *inventory.NetboxInventory) error {
 	syncFunctions := []func(*inventory.NetboxInventory) error{
+		vc.syncTags,
 		vc.syncNetworks,
 		vc.syncDatacenters,
 		vc.syncClusters,
@@ -240,5 +251,52 @@ func (vc *VmwareSource) CreateCustomFieldRelation(ctx context.Context, client *v
 		vc.CustomFieldID2Name[field.Key] = field.Name
 	}
 
+	return nil
+}
+
+// Creates a map of object ids to their tags. This uses the rest api since tags
+// are not available in the containerView (see https://github.com/vmware/govmomi/issues/1825).
+func (vc *VmwareSource) CreateObjectTagsRelation(ctx context.Context, vim25client *vim25.Client, userInfo *url.Userinfo) error {
+	restClient := rest.NewClient(vim25client)
+
+	_, err := restClient.Session(ctx)
+	if err != nil {
+		return fmt.Errorf("failed creating rest client session: %s", err)
+	}
+
+	if err = restClient.Login(ctx, userInfo); err != nil {
+		return fmt.Errorf("rest client login failed: %s", err)
+	}
+	defer func() {
+		err := restClient.Logout(ctx)
+		if err != nil {
+			vc.Logger.Errorf(vc.Ctx, "failed logging out from rest client: %s", err)
+		}
+	}()
+
+	tagManager := tags.NewManager(restClient)
+	tagList, err := tagManager.ListTags(ctx)
+	if err != nil {
+		return fmt.Errorf("failed listing tags: %s", err)
+	}
+
+	objectNames2tags := make(map[string][]*tags.Tag)
+	for _, tag := range tagList {
+		objs, err := tagManager.GetAttachedObjectsOnTags(ctx, []string{tag})
+		if err != nil {
+			return fmt.Errorf("failed getting attached objects on tag %+v: %s", tag, err)
+		}
+		if len(objs) > 0 {
+			tagInfo, err := tagManager.GetTag(ctx, tag)
+			if err != nil {
+				return fmt.Errorf("failed getting tag %+v info: %s", tag, err)
+			}
+			for _, elem := range objs[0].ObjectIDs {
+				objectNames2tags[elem.Reference().Value] = append(objectNames2tags[elem.Reference().Value], tagInfo)
+			}
+		}
+	}
+
+	vc.Object2Tags = objectNames2tags
 	return nil
 }

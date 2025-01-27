@@ -17,6 +17,26 @@ import (
 	"github.com/vmware/govmomi/vim25/types"
 )
 
+func (vc *VmwareSource) syncTags(nbi *inventory.NetboxInventory) error {
+	objectNames2NBTags := make(map[string][]*objects.Tag)
+	for objectName, tags := range vc.Object2Tags {
+		for _, tag := range tags {
+			nbTag, err := nbi.AddTag(vc.Ctx, &objects.Tag{
+				Name:        tag.Name,
+				Slug:        utils.Slugify(tag.Name),
+				Color:       constants.ColorGreen,
+				Description: fmt.Sprintf("Tag synced from vmware. %s", tag.Description),
+			})
+			if err != nil {
+				return fmt.Errorf("add tag %+v: %s", tag, err)
+			}
+			objectNames2NBTags[objectName] = append(objectNames2NBTags[objectName], nbTag)
+		}
+	}
+	vc.Object2NBTags = objectNames2NBTags
+	return nil
+}
+
 func (vc *VmwareSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 	for dvpgID, dvpg := range vc.Networks.DistributedVirtualPortgroups {
 		// TODO: currently we are syncing only vlans
@@ -35,9 +55,10 @@ func (vc *VmwareSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 			return fmt.Errorf("vlanTenant: %s", err)
 		}
 		if len(dvpg.VlanIDs) == 1 && len(dvpg.VlanIDRanges) == 0 && dvpg.VlanIDs[0] != 0 {
+			networkTags := vc.Object2NBTags[dvpgID]
 			vlanStruct := &objects.Vlan{
 				NetboxObject: objects.NetboxObject{
-					Tags: vc.Config.SourceTags,
+					Tags: append(vc.Config.SourceTags, networkTags...),
 					CustomFields: map[string]interface{}{
 						constants.CustomFieldSourceIDName: dvpgID,
 					},
@@ -92,6 +113,7 @@ func (vc *VmwareSource) syncClusters(nbi *inventory.NetboxInventory) error {
 	// Then sync vmware Clusters as NetBoxClusters
 	for clusterID, cluster := range vc.Clusters {
 		clusterName := cluster.Name
+		clusterTags := vc.Object2NBTags[clusterID]
 
 		var clusterGroup *objects.ClusterGroup
 		datacenterID := vc.Cluster2Datacenter[clusterID]
@@ -113,7 +135,7 @@ func (vc *VmwareSource) syncClusters(nbi *inventory.NetboxInventory) error {
 
 		clusterStruct := &objects.Cluster{
 			NetboxObject: objects.NetboxObject{
-				Tags: vc.Config.SourceTags,
+				Tags: append(vc.Config.SourceTags, clusterTags...),
 				CustomFields: map[string]interface{}{
 					constants.CustomFieldSourceIDName: clusterID,
 				},
@@ -158,6 +180,8 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 				return fmt.Errorf("add hypothetical cluster: %s", err)
 			}
 		}
+
+		hostTags := vc.Object2NBTags[hostID]
 
 		// Extract host hardware info
 		var hostUUID, hostModel, hostManufacturerName string
@@ -276,12 +300,14 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		hostMemGB := host.Summary.Hardware.MemorySize / constants.KiB / constants.KiB / constants.KiB
 
 		hostStruct := &objects.Device{
-			NetboxObject: objects.NetboxObject{Tags: vc.Config.SourceTags, CustomFields: map[string]interface{}{
-				constants.CustomFieldSourceIDName:     hostID,
-				constants.CustomFieldDeviceUUIDName:   hostUUID,
-				constants.CustomFieldHostCPUCoresName: fmt.Sprintf("%d", hostCPUCores),
-				constants.CustomFieldHostMemoryName:   fmt.Sprintf("%d GB", hostMemGB),
-			}},
+			NetboxObject: objects.NetboxObject{
+				Tags: append(vc.Config.SourceTags, hostTags...),
+				CustomFields: map[string]interface{}{
+					constants.CustomFieldSourceIDName:     hostID,
+					constants.CustomFieldDeviceUUIDName:   hostUUID,
+					constants.CustomFieldHostCPUCoresName: fmt.Sprintf("%d", hostCPUCores),
+					constants.CustomFieldHostMemoryName:   fmt.Sprintf("%d GB", hostMemGB),
+				}},
 			Name:         hostName,
 			Status:       hostStatus,
 			Platform:     hostPlatform,
@@ -906,7 +932,7 @@ func (vc *VmwareSource) syncVM(nbi *inventory.NetboxInventory, vmKey string, vm 
 
 	vmStruct := &objects.VM{
 		NetboxObject: objects.NetboxObject{
-			Tags:         vc.Config.SourceTags,
+			Tags:         append(vc.Config.SourceTags, vc.Object2NBTags[vmKey]...),
 			Description:  vmDescription,
 			CustomFields: vmCustomFields,
 		},
