@@ -634,7 +634,7 @@ func (ds *DnacSource) syncMissingDevicePrimaryIPs(nbi *inventory.NetboxInventory
 				Name:   "mgmt",
 				Type:   &objects.OtherInterfaceType,
 				Status: true,
-				MAC:    device.MacAddress,
+				MAC:    strings.ToUpper(device.MacAddress),
 			}
 			nbiIface, err := nbi.AddInterface(ds.Ctx, managementInterfaceStruct)
 			if err != nil {

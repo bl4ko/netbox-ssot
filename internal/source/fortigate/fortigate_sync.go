@@ -149,7 +149,7 @@ func (fs *FortigateSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 			Type:   &objects.OtherInterfaceType,
 			Name:   ifaceName,
 			MTU:    interfaceMTU,
-			MAC:    interfaceMAC,
+			MAC:    strings.ToUpper(interfaceMAC),
 			Status: interfaceStatus,
 
 			Vdcs: vdcs,

@@ -25,7 +25,7 @@ func (vc *VmwareSource) syncTags(nbi *inventory.NetboxInventory) error {
 				Name:        tag.Name,
 				Slug:        utils.Slugify(tag.Name),
 				Color:       constants.ColorGreen,
-				Description: fmt.Sprintf("Tag synced from vmware. %s", tag.Description),
+				Description: fmt.Sprintf("Tag synced from vmware:%s", tag.Description),
 			})
 			if err != nil {
 				return fmt.Errorf("add tag %+v: %s", tag, err)
