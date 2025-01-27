@@ -127,14 +127,15 @@ func (fmcc *FMCClient) MakeRequest(ctx context.Context, method, path string, bod
 		reqCtx, cancel := context.WithTimeout(ctx, fmcc.DefaultTimeout)
 		defer cancel()
 
+		fmcc.Logger.Debugf(fmcc.Ctx, "Making %s request to %s with body=%v (attempt=%d)", method, path, body, attempt)
 		resp, bodyBytes, err = fmcc.makeRequestOnce(reqCtx, method, path, body)
 		if err != nil {
 			if reqCtx.Err() == context.Canceled || reqCtx.Err() == context.DeadlineExceeded {
-				fmcc.Logger.Debugf(ctx, "request attempt %d failed due to context timeout/cancellation: %s", attempt, err)
+				fmcc.Logger.Debugf(fmcc.Ctx, "request attempt %d failed due to context timeout/cancellation: %s", attempt, err)
 				time.Sleep(exponentialBackoff(attempt))
 				continue
 			}
-			fmcc.Logger.Debugf(ctx, "request attempt %d failed: %s", attempt, err)
+			fmcc.Logger.Debugf(fmcc.Ctx, "request attempt %d failed: %s", attempt, err)
 			time.Sleep(exponentialBackoff(attempt))
 			continue
 		}
@@ -142,7 +143,7 @@ func (fmcc *FMCClient) MakeRequest(ctx context.Context, method, path string, bod
 		// Check if the status code is 401 Unauthorized
 		if resp.StatusCode == http.StatusUnauthorized {
 			if !tokenRefreshed {
-				fmcc.Logger.Debugf(ctx, "received 401 Unauthorized, attempting to refresh token")
+				fmcc.Logger.Debugf(fmcc.Ctx, "received 401 Unauthorized, attempting to refresh token")
 
 				accessToken, refreshToken, authErr := fmcc.Authenticate()
 				if authErr != nil {
@@ -163,7 +164,12 @@ func (fmcc *FMCClient) MakeRequest(ctx context.Context, method, path string, bod
 
 		// Process the response if it's not a 401
 		if resp.StatusCode != http.StatusOK {
-			return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+			// Extract and include the response body in the error message
+			respBody := "<empty>"
+			if len(bodyBytes) > 0 {
+				respBody = string(bodyBytes)
+			}
+			return fmt.Errorf("unexpected status code: %d, response body: %s", resp.StatusCode, respBody)
 		}
 
 		err = json.Unmarshal(bodyBytes, result)
@@ -187,9 +193,10 @@ func (fmcc *FMCClient) GetDomains() ([]Domain, error) {
 
 	for {
 		var marshaledResponse APIResponse[Domain]
-		err := fmcc.MakeRequest(ctx, http.MethodGet, fmt.Sprintf("fmc_platform/v1/info/domain?offset=%d&limit=%d", offset, limit), nil, &marshaledResponse)
+		domainsURL := fmt.Sprintf("fmc_platform/v1/info/domain?offset=%d&limit=%d", offset, limit)
+		err := fmcc.MakeRequest(ctx, http.MethodGet, domainsURL, nil, &marshaledResponse)
 		if err != nil {
-			return nil, fmt.Errorf("make request for domains: %w", err)
+			return nil, fmt.Errorf("make request for domains (%s): %w", domainsURL, err)
 		}
 
 		if len(marshaledResponse.Items) > 0 {
@@ -217,7 +224,7 @@ func (fmcc *FMCClient) GetDevices(domainUUID string) ([]Device, error) {
 		var marshaledResponse APIResponse[Device]
 		err := fmcc.MakeRequest(ctx, http.MethodGet, devicesURL, nil, &marshaledResponse)
 		if err != nil {
-			return nil, fmt.Errorf("make request for devices: %w", err)
+			return nil, fmt.Errorf("make request for devices (%s): %w", devicesURL, err)
 		}
 
 		if len(marshaledResponse.Items) > 0 {
@@ -245,7 +252,7 @@ func (fmcc *FMCClient) GetDevicePhysicalInterfaces(domainUUID string, deviceID s
 		var marshaledResponse APIResponse[PhysicalInterface]
 		err := fmcc.MakeRequest(ctx, http.MethodGet, pInterfacesURL, nil, &marshaledResponse)
 		if err != nil {
-			return nil, fmt.Errorf("make request for physical interfaces: %w", err)
+			return nil, fmt.Errorf("make request for physical interfaces (%s): %w", pInterfacesURL, err)
 		}
 
 		if len(marshaledResponse.Items) > 0 {
@@ -268,11 +275,11 @@ func (fmcc *FMCClient) GetDeviceVLANInterfaces(domainUUID string, deviceID strin
 	ctx := context.Background()
 
 	for {
-		pInterfacesURL := fmt.Sprintf("fmc_config/v1/domain/%s/devices/devicerecords/%s/vlaninterfaces?offset=%d&limit=%d", domainUUID, deviceID, offset, limit)
+		vInterfacesURL := fmt.Sprintf("fmc_config/v1/domain/%s/devices/devicerecords/%s/vlaninterfaces?offset=%d&limit=%d", domainUUID, deviceID, offset, limit)
 		var marshaledResponse APIResponse[VlanInterface]
-		err := fmcc.MakeRequest(ctx, http.MethodGet, pInterfacesURL, nil, &marshaledResponse)
+		err := fmcc.MakeRequest(ctx, http.MethodGet, vInterfacesURL, nil, &marshaledResponse)
 		if err != nil {
-			return nil, fmt.Errorf("make request for VLAN interfaces: %w", err)
+			return nil, fmt.Errorf("make request for VLAN interfaces with (%s): %w", vInterfacesURL, err)
 		}
 
 		if len(marshaledResponse.Items) > 0 {
@@ -295,7 +302,7 @@ func (fmcc *FMCClient) GetPhysicalInterfaceInfo(domainUUID string, deviceID stri
 	devicesURL := fmt.Sprintf("fmc_config/v1/domain/%s/devices/devicerecords/%s/physicalinterfaces/%s", domainUUID, deviceID, interfaceID)
 	err := fmcc.MakeRequest(ctx, http.MethodGet, devicesURL, nil, &pInterfaceInfo)
 	if err != nil {
-		return nil, fmt.Errorf("make request for physical interface info: %w", err)
+		return nil, fmt.Errorf("make request for physical interface info (%s): %w", devicesURL, err)
 	}
 
 	return &pInterfaceInfo, nil
@@ -308,7 +315,7 @@ func (fmcc *FMCClient) GetVLANInterfaceInfo(domainUUID string, deviceID string, 
 	devicesURL := fmt.Sprintf("fmc_config/v1/domain/%s/devices/devicerecords/%s/vlaninterfaces/%s", domainUUID, deviceID, interfaceID)
 	err := fmcc.MakeRequest(ctx, http.MethodGet, devicesURL, nil, &vlanInterfaceInfo)
 	if err != nil {
-		return nil, fmt.Errorf("make request for VLAN interface info: %w", err)
+		return nil, fmt.Errorf("make request for VLAN interface info with (%s): %w", devicesURL, err)
 	}
 
 	return &vlanInterfaceInfo, nil
@@ -321,7 +328,7 @@ func (fmcc *FMCClient) GetDeviceInfo(domainUUID string, deviceID string) (*Devic
 	devicesURL := fmt.Sprintf("fmc_config/v1/domain/%s/devices/devicerecords/%s", domainUUID, deviceID)
 	err := fmcc.MakeRequest(ctx, http.MethodGet, devicesURL, nil, &deviceInfo)
 	if err != nil {
-		return nil, fmt.Errorf("make request for device info: %w", err)
+		return nil, fmt.Errorf("make request for device info with (%s): %w", devicesURL, err)
 	}
 
 	return &deviceInfo, nil
