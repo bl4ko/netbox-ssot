@@ -303,3 +303,59 @@ func MatchVMToRole(ctx context.Context, nbi *inventory.NetboxInventory, vmName s
 	}
 	return nil, nil
 }
+
+// CreateMACAddressForObjectType creates MAC address for object type.
+func CreateMACAddressForObjectType(ctx context.Context, nbi *inventory.NetboxInventory, mac string, targetInterface objects.MACAddressOwner) (*objects.MACAddress, error) {
+	macAddress := &objects.MACAddress{
+		MAC:                mac,
+		AssignedObjectType: targetInterface.GetObjectType(),
+		AssignedObjectID:   targetInterface.GetID(),
+	}
+	nbMACAddress, err := nbi.AddMACAddress(ctx, macAddress)
+	if err != nil {
+		return nil, fmt.Errorf("add mac address %+v: %s", macAddress, err)
+	}
+	return nbMACAddress, nil
+}
+
+func SetPrimaryIPAddressForObject(ctx context.Context, nbi *inventory.NetboxInventory, targetObject objects.IPAddressOwner, ipv4 *objects.IPAddress, ipv6 *objects.IPAddress) error {
+	switch targetObject := targetObject.(type) {
+	case *objects.Device:
+		deviceCopy := *targetObject
+		deviceCopy.PrimaryIPv4 = ipv4
+		deviceCopy.PrimaryIPv6 = ipv6
+		_, err := nbi.AddDevice(ctx, &deviceCopy)
+		if err != nil {
+			return fmt.Errorf("set primary ip for device %+v: %s", deviceCopy, err)
+		}
+	case *objects.VM:
+		vmCopy := *targetObject
+		vmCopy.PrimaryIPv4 = ipv4
+		vmCopy.PrimaryIPv6 = ipv6
+		_, err := nbi.AddVM(ctx, &vmCopy)
+		if err != nil {
+			return fmt.Errorf("set primary ip for vm %+v: %s", vmCopy, err)
+		}
+	}
+	return nil
+}
+
+func SetPrimaryMACForInterface(ctx context.Context, nbi *inventory.NetboxInventory, targetInterface objects.MACAddressOwner, mac *objects.MACAddress) error {
+	switch targetInterface := targetInterface.(type) {
+	case *objects.Interface:
+		interfaceCopy := *targetInterface
+		interfaceCopy.PrimaryMACAddress = mac
+		_, err := nbi.AddInterface(ctx, &interfaceCopy)
+		if err != nil {
+			return fmt.Errorf("set primary mac for interface %+v: %s", interfaceCopy, err)
+		}
+	case *objects.VMInterface:
+		vmInterfaceCopy := *targetInterface
+		vmInterfaceCopy.PrimaryMACAddress = mac
+		_, err := nbi.AddVMInterface(ctx, &vmInterfaceCopy)
+		if err != nil {
+			return fmt.Errorf("set primary mac for interface %+v: %s", vmInterfaceCopy, err)
+		}
+	}
+	return nil
+}

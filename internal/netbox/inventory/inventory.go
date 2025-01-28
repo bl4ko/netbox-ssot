@@ -166,6 +166,10 @@ type NetboxInventory struct {
 	// indexed by their ssid
 	wirelessLANsIndexBySSID map[string]*objects.WirelessLAN
 	wirelessLANsLock        sync.Mutex
+
+	// macAddressesIndexByAddress is a map of all MAC addresses in the inventory, indexed by their MAC address
+	macAddressesIndexByAddress map[string]*objects.MACAddress
+	macAddressesLock           sync.Mutex
 }
 
 // Func string representation.
@@ -208,6 +212,7 @@ func (nbi *NetboxInventory) Init() error {
 		nbi.initCustomFields,
 		nbi.initSsotCustomFields,
 		nbi.initTags,
+		nbi.initMACAddresses,
 		nbi.initContactGroups,
 		nbi.initContactRoles,
 		nbi.initAdminContactRole,
@@ -253,13 +258,19 @@ func (nbi *NetboxInventory) checkVersion() error {
 		return fmt.Errorf("get version: %s", err)
 	}
 	supportedVersion := 4
+	supportedMinorVersion := 2
 	versionComponents := strings.Split(version, ".")
 	majorVersion, err := strconv.Atoi(versionComponents[0])
 	if err != nil {
 		return fmt.Errorf("parse major version: %s", err)
 	}
-	if majorVersion < supportedVersion {
-		return fmt.Errorf("this version of netbox-ssot works only with netbox version > 4.x.x, but received version: %s", version)
+	minorVersion, err := strconv.Atoi(versionComponents[1])
+	if err != nil {
+		return fmt.Errorf("parse minor version: %s", err)
 	}
+	if majorVersion != supportedVersion || minorVersion < supportedMinorVersion {
+		return fmt.Errorf("this version of netbox-ssot works only with netbox version >= 4.2.0, but received version: %s", version)
+	}
+
 	return nil
 }

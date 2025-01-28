@@ -20,7 +20,7 @@ type OrphanManager struct {
 	//
 	// It stores which objects have been created by netbox-ssot and can be deleted
 	// because they are not available in the sources anymore
-	Items map[string]map[int]objects.OrphanItem
+	Items map[constants.APIPath]map[int]objects.OrphanItem
 	// OrphanObjectPriority is a map that stores priorities for each object. This is necessary
 	// because map order is non deterministic and if we delete dependent object first we will
 	// get the dependency error.
@@ -30,7 +30,7 @@ type OrphanManager struct {
 	//   1: service.CustomFieldApiPath,
 	//   ...
 	// }
-	OrphanObjectPriority map[int]string
+	OrphanObjectPriority map[int]constants.APIPath
 	// Tag for orphaned objects. Initialized in initTags.
 	Tag *objects.Tag
 	// Logger for orphan manager
@@ -41,7 +41,7 @@ type OrphanManager struct {
 
 func NewOrphanManager(logger *logger.Logger) *OrphanManager {
 	// Starts with 0 for easier integration with for loops
-	orphanObjectPriority := map[int]string{
+	orphanObjectPriority := map[int]constants.APIPath{
 		0:  constants.VlanGroupsAPIPath,
 		1:  constants.PrefixesAPIPath,
 		2:  constants.VlansAPIPath,
@@ -62,28 +62,29 @@ func NewOrphanManager(logger *logger.Logger) *OrphanManager {
 		17: constants.ContactsAPIPath,
 		18: constants.WirelessLANsAPIPath,
 		19: constants.WirelessLANGroupsAPIPath,
+		20: constants.MACAddressesAPIPath,
 	}
 	orphanCtx := context.WithValue(context.Background(), constants.CtxSourceKey, "orphanManager")
 
 	return &OrphanManager{
-		Items:                map[string]map[int]objects.OrphanItem{},
+		Items:                map[constants.APIPath]map[int]objects.OrphanItem{},
 		OrphanObjectPriority: orphanObjectPriority,
 		Logger:               logger,
 		Ctx:                  orphanCtx,
 	}
 }
 
-func (orphanManager *OrphanManager) AddItem(itemAPIPath string, orphanItem objects.OrphanItem) {
+func (orphanManager *OrphanManager) AddItem(orphanItem objects.OrphanItem) {
 	// Manage only objects created with netbox-ssot tag
 	netboxObject := orphanItem.GetNetboxObject()
 	if netboxObject.HasTagByName(constants.SsotTagName) {
-		if orphanManager.Items[itemAPIPath] == nil {
-			orphanManager.Items[itemAPIPath] = map[int]objects.OrphanItem{}
+		if orphanManager.Items[orphanItem.GetAPIPath()] == nil {
+			orphanManager.Items[orphanItem.GetAPIPath()] = map[int]objects.OrphanItem{}
 		}
-		orphanManager.Items[itemAPIPath][netboxObject.ID] = orphanItem
+		orphanManager.Items[orphanItem.GetAPIPath()][netboxObject.ID] = orphanItem
 	}
 }
 
-func (orphanManager *OrphanManager) RemoveItem(itemAPIPath string, obj objects.OrphanItem) {
-	delete(orphanManager.Items[itemAPIPath], obj.GetID())
+func (orphanManager *OrphanManager) RemoveItem(obj objects.OrphanItem) {
+	delete(orphanManager.Items[obj.GetAPIPath()], obj.GetID())
 }

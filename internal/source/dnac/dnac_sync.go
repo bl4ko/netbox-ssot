@@ -347,7 +347,6 @@ func (ds *DnacSource) syncDeviceInterface(nbi *inventory.NetboxInventory, ifaceI
 			},
 		},
 		Name:         ifaceName,
-		MAC:          strings.ToUpper(iface.MacAddress),
 		Speed:        ifaceSpeed,
 		Status:       ifaceStatus,
 		Duplex:       ifaceDuplex,
@@ -359,6 +358,14 @@ func (ds *DnacSource) syncDeviceInterface(nbi *inventory.NetboxInventory, ifaceI
 	})
 	if err != nil {
 		return fmt.Errorf("add device interface: %s", err)
+	}
+
+	nbMACAddress, err := common.CreateMACAddressForObjectType(ds.Ctx, nbi, iface.MacAddress, nbIface)
+	if err != nil {
+		return fmt.Errorf("creating MAC address: %s", err)
+	}
+	if err = common.SetPrimaryMACForInterface(ds.Ctx, nbi, nbIface, nbMACAddress); err != nil {
+		return fmt.Errorf("setting primary MAC for interface: %s", err)
 	}
 
 	err = ds.addIPAddressToInterface(nbi, nbIface, iface, ifaceDevice)
@@ -512,12 +519,8 @@ func (ds *DnacSource) addIPAddressToInterface(nbi *inventory.NetboxInventory, if
 	dnacDevice := ds.Devices[ifaceDetails.DeviceID]
 	deviceManagementIP := dnacDevice.ManagementIPAddress
 	if deviceManagementIP == ifaceDetails.IPv4Address {
-		deviceCopy := *ifaceDevice
-		deviceCopy.PrimaryIPv4 = nbIPAddress
-		ds.DeviceID2isMissingPrimaryIP.Store(dnacDevice.ID, false)
-		_, err := nbi.AddDevice(ds.Ctx, &deviceCopy)
-		if err != nil {
-			ds.Logger.Errorf(ds.Ctx, "adding primary IPv4 address: %s", err)
+		if err := common.SetPrimaryIPAddressForObject(ds.Ctx, nbi, ifaceDevice, nbIPAddress, nil); err != nil {
+			return fmt.Errorf("setting primary IPv4 for device: %s", err)
 		}
 	}
 
@@ -634,11 +637,20 @@ func (ds *DnacSource) syncMissingDevicePrimaryIPs(nbi *inventory.NetboxInventory
 				Name:   "mgmt",
 				Type:   &objects.OtherInterfaceType,
 				Status: true,
-				MAC:    strings.ToUpper(device.MacAddress),
 			}
-			nbiIface, err := nbi.AddInterface(ds.Ctx, managementInterfaceStruct)
+			nbIface, err := nbi.AddInterface(ds.Ctx, managementInterfaceStruct)
 			if err != nil {
 				syncErr = fmt.Errorf("add interface %+v: %s", managementInterfaceStruct, err)
+				return false
+			}
+
+			nbMACAddress, err := common.CreateMACAddressForObjectType(ds.Ctx, nbi, device.MacAddress, nbIface)
+			if err != nil {
+				syncErr = fmt.Errorf("creating MAC address: %s", err)
+				return false
+			}
+			if err = common.SetPrimaryMACForInterface(ds.Ctx, nbi, nbIface, nbMACAddress); err != nil {
+				syncErr = fmt.Errorf("setting primary MAC for interface: %s", err)
 				return false
 			}
 
@@ -655,7 +667,7 @@ func (ds *DnacSource) syncMissingDevicePrimaryIPs(nbi *inventory.NetboxInventory
 				DNSName:            utils.ReverseLookup(device.ManagementIPAddress),
 				Tenant:             nbDevice.Tenant,
 				AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
-				AssignedObjectID:   nbiIface.ID,
+				AssignedObjectID:   nbIface.ID,
 			}
 			nbIPAddress, err := nbi.AddIPAddress(ds.Ctx, nbIPAddressStruct)
 			if err != nil {

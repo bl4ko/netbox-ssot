@@ -67,7 +67,7 @@ func (nbi *NetboxInventory) initContacts(ctx context.Context) error {
 	for i := range nbContacts {
 		contact := &nbContacts[i]
 		nbi.contactsIndexByName[contact.Name] = contact
-		nbi.OrphanManager.AddItem(constants.ContactsAPIPath, contact)
+		nbi.OrphanManager.AddItem(contact)
 	}
 	nbi.Logger.Debug(ctx, "Successfully collected contacts from Netbox: ", nbi.contactsIndexByName)
 	return nil
@@ -113,9 +113,25 @@ func (nbi *NetboxInventory) initContactAssignments(ctx context.Context) error {
 			nbi.contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[cA.ModelType][cA.ObjectID][cA.Contact.ID] = make(map[int]*objects.ContactAssignment)
 		}
 		nbi.contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[cA.ModelType][cA.ObjectID][cA.Contact.ID][cA.Role.ID] = cA
-		nbi.OrphanManager.AddItem(constants.ContactAssignmentsAPIPath, cA)
+		nbi.OrphanManager.AddItem(cA)
 	}
 	nbi.Logger.Debug(ctx, "Successfully collected contacts from Netbox: ", nbi.contactsIndexByName)
+	return nil
+}
+
+func (nbi *NetboxInventory) initMACAddresses(ctx context.Context) error {
+	nbMACAddresses, err := service.GetAll[objects.MACAddress](ctx, nbi.NetboxAPI, "")
+	if err != nil {
+		return err
+	}
+	// We also create an index of MAC addresses by address for easier access
+	nbi.macAddressesIndexByAddress = make(map[string]*objects.MACAddress)
+	for i := range nbMACAddresses {
+		macAddress := &nbMACAddresses[i]
+		nbi.macAddressesIndexByAddress[macAddress.MAC] = macAddress
+		nbi.OrphanManager.AddItem(macAddress)
+	}
+	nbi.Logger.Debug(ctx, "Successfully collected MAC addresses from Netbox: ", nbi.macAddressesIndexByAddress)
 	return nil
 }
 
@@ -197,7 +213,7 @@ func (nbi *NetboxInventory) initManufacturers(ctx context.Context) error {
 	for i := range nbManufacturers {
 		manufacturer := &nbManufacturers[i]
 		nbi.manufacturersIndexByName[manufacturer.Name] = manufacturer
-		nbi.OrphanManager.AddItem(constants.ManufacturersAPIPath, manufacturer)
+		nbi.OrphanManager.AddItem(manufacturer)
 	}
 
 	nbi.Logger.Debug(ctx, "Successfully collected manufacturers from Netbox: ", nbi.manufacturersIndexByName)
@@ -216,7 +232,7 @@ func (nbi *NetboxInventory) initPlatforms(ctx context.Context) error {
 	for i, platform := range nbPlatforms {
 		nbPlatform := &nbPlatforms[i]
 		nbi.platformsIndexByName[platform.Name] = nbPlatform
-		nbi.OrphanManager.AddItem(constants.PlatformsAPIPath, nbPlatform)
+		nbi.OrphanManager.AddItem(nbPlatform)
 	}
 
 	nbi.Logger.Debug(ctx, "Successfully collected platforms from Netbox: ", nbi.platformsIndexByName)
@@ -238,7 +254,7 @@ func (nbi *NetboxInventory) initDevices(ctx context.Context) error {
 			nbi.devicesIndexByNameAndSiteID[device.Name] = make(map[int]*objects.Device)
 		}
 		nbi.devicesIndexByNameAndSiteID[device.Name][device.Site.ID] = nbDevice
-		nbi.OrphanManager.AddItem(constants.DevicesAPIPath, nbDevice)
+		nbi.OrphanManager.AddItem(nbDevice)
 	}
 
 	nbi.Logger.Debug(ctx, "Successfully collected devices from Netbox: ", nbi.devicesIndexByNameAndSiteID)
@@ -259,7 +275,7 @@ func (nbi *NetboxInventory) initVirtualDeviceContexts(ctx context.Context) error
 			nbi.virtualDeviceContextsIndexByNameAndDeviceID[virtualDeviceContext.Name] = make(map[int]*objects.VirtualDeviceContext)
 		}
 		nbi.virtualDeviceContextsIndexByNameAndDeviceID[virtualDeviceContext.Name][virtualDeviceContext.Device.ID] = nbVirtualDeviceContext
-		nbi.OrphanManager.AddItem(constants.VirtualDeviceContextsAPIPath, nbVirtualDeviceContext)
+		nbi.OrphanManager.AddItem(nbVirtualDeviceContext)
 	}
 
 	nbi.Logger.Debug(ctx, "Successfully collected VirtualDeviceContexts from Netbox: ", nbi.virtualDeviceContextsIndexByNameAndDeviceID)
@@ -279,7 +295,7 @@ func (nbi *NetboxInventory) initDeviceRoles(ctx context.Context) error {
 	for i := range nbDeviceRoles {
 		deviceRole := &nbDeviceRoles[i]
 		nbi.deviceRolesIndexByName[deviceRole.Name] = deviceRole
-		nbi.OrphanManager.AddItem(constants.DeviceRolesAPIPath, deviceRole)
+		nbi.OrphanManager.AddItem(deviceRole)
 	}
 
 	nbi.Logger.Debug(ctx, "Successfully collected device roles from Netbox: ", nbi.deviceRolesIndexByName)
@@ -318,7 +334,7 @@ func (nbi *NetboxInventory) initSsotCustomFields(ctx context.Context) error {
 		DisplayWeight:         objects.DisplayWeightDefault,
 		Description:           constants.CustomFieldSourceDescription,
 		SearchWeight:          objects.SearchWeightDefault,
-		ObjectTypes:           []constants.ContentType{constants.ContentTypeDcimDevice, constants.ContentTypeDcimDeviceRole, constants.ContentTypeDcimDeviceType, constants.ContentTypeDcimInterface, constants.ContentTypeDcimLocation, constants.ContentTypeDcimManufacturer, constants.ContentTypeDcimPlatform, constants.ContentTypeDcimRegion, constants.ContentTypeDcimSite, constants.ContentTypeVirtualDeviceContext, constants.ContentTypeIpamIPAddress, constants.ContentTypeIpamVlanGroup, constants.ContentTypeIpamVlan, constants.ContentTypeIpamPrefix, constants.ContentTypeTenancyTenantGroup, constants.ContentTypeTenancyTenant, constants.ContentTypeTenancyContact, constants.ContentTypeTenancyContactAssignment, constants.ContentTypeTenancyContactGroup, constants.ContentTypeTenancyContactRole, constants.ContentTypeVirtualizationCluster, constants.ContentTypeVirtualizationClusterGroup, constants.ContentTypeVirtualizationClusterType, constants.ContentTypeVirtualizationVirtualMachine, constants.ContentTypeVirtualizationVMInterface, constants.ContentTypeWirelessLAN, constants.ContentTypeWirelessLANGroup},
+		ObjectTypes:           []constants.ContentType{constants.ContentTypeDcimDevice, constants.ContentTypeDcimDeviceRole, constants.ContentTypeDcimDeviceType, constants.ContentTypeDcimInterface, constants.ContentTypeDcimLocation, constants.ContentTypeDcimManufacturer, constants.ContentTypeDcimPlatform, constants.ContentTypeDcimRegion, constants.ContentTypeDcimSite, constants.ContentTypeDcimVirtualDeviceContext, constants.ContentTypeIpamIPAddress, constants.ContentTypeIpamVlanGroup, constants.ContentTypeIpamVlan, constants.ContentTypeIpamPrefix, constants.ContentTypeTenancyTenantGroup, constants.ContentTypeTenancyTenant, constants.ContentTypeTenancyContact, constants.ContentTypeTenancyContactAssignment, constants.ContentTypeTenancyContactGroup, constants.ContentTypeTenancyContactRole, constants.ContentTypeVirtualizationCluster, constants.ContentTypeVirtualizationClusterGroup, constants.ContentTypeVirtualizationClusterType, constants.ContentTypeVirtualizationVirtualMachine, constants.ContentTypeVirtualizationVMInterface, constants.ContentTypeWirelessLAN, constants.ContentTypeWirelessLANGroup},
 	})
 	if err != nil {
 		return fmt.Errorf("add source custom field %s", err)
@@ -336,7 +352,7 @@ func (nbi *NetboxInventory) initSsotCustomFields(ctx context.Context) error {
 		DisplayWeight:         objects.DisplayWeightDefault,
 		Description:           constants.CustomFieldOrphanLastSeenDescription,
 		SearchWeight:          objects.SearchWeightDefault,
-		ObjectTypes:           []constants.ContentType{constants.ContentTypeDcimDevice, constants.ContentTypeDcimDeviceRole, constants.ContentTypeDcimDeviceType, constants.ContentTypeDcimInterface, constants.ContentTypeDcimLocation, constants.ContentTypeDcimManufacturer, constants.ContentTypeDcimPlatform, constants.ContentTypeDcimRegion, constants.ContentTypeDcimSite, constants.ContentTypeVirtualDeviceContext, constants.ContentTypeIpamIPAddress, constants.ContentTypeIpamVlanGroup, constants.ContentTypeIpamVlan, constants.ContentTypeIpamPrefix, constants.ContentTypeTenancyTenantGroup, constants.ContentTypeTenancyTenant, constants.ContentTypeTenancyContact, constants.ContentTypeTenancyContactAssignment, constants.ContentTypeTenancyContactGroup, constants.ContentTypeTenancyContactRole, constants.ContentTypeVirtualizationCluster, constants.ContentTypeVirtualizationClusterGroup, constants.ContentTypeVirtualizationClusterType, constants.ContentTypeVirtualizationVirtualMachine, constants.ContentTypeVirtualizationVMInterface, constants.ContentTypeWirelessLAN, constants.ContentTypeWirelessLANGroup},
+		ObjectTypes:           []constants.ContentType{constants.ContentTypeDcimDevice, constants.ContentTypeDcimDeviceRole, constants.ContentTypeDcimDeviceType, constants.ContentTypeDcimInterface, constants.ContentTypeDcimLocation, constants.ContentTypeDcimManufacturer, constants.ContentTypeDcimPlatform, constants.ContentTypeDcimRegion, constants.ContentTypeDcimSite, constants.ContentTypeDcimVirtualDeviceContext, constants.ContentTypeIpamIPAddress, constants.ContentTypeIpamVlanGroup, constants.ContentTypeIpamVlan, constants.ContentTypeIpamPrefix, constants.ContentTypeTenancyTenantGroup, constants.ContentTypeTenancyTenant, constants.ContentTypeTenancyContact, constants.ContentTypeTenancyContactAssignment, constants.ContentTypeTenancyContactGroup, constants.ContentTypeTenancyContactRole, constants.ContentTypeVirtualizationCluster, constants.ContentTypeVirtualizationClusterGroup, constants.ContentTypeVirtualizationClusterType, constants.ContentTypeVirtualizationVirtualMachine, constants.ContentTypeVirtualizationVMInterface, constants.ContentTypeWirelessLAN, constants.ContentTypeWirelessLANGroup, constants.ContentTypeDcimMACAddress},
 	})
 	if err != nil {
 		return fmt.Errorf("add last seen custom field: %s", err)
@@ -353,7 +369,7 @@ func (nbi *NetboxInventory) initSsotCustomFields(ctx context.Context) error {
 		DisplayWeight:         objects.DisplayWeightDefault,
 		Description:           constants.CustomFieldSourceIDDescription,
 		SearchWeight:          objects.SearchWeightDefault,
-		ObjectTypes:           []constants.ContentType{constants.ContentTypeDcimDevice, constants.ContentTypeDcimDeviceRole, constants.ContentTypeDcimDeviceType, constants.ContentTypeDcimInterface, constants.ContentTypeDcimLocation, constants.ContentTypeDcimManufacturer, constants.ContentTypeDcimPlatform, constants.ContentTypeDcimRegion, constants.ContentTypeDcimSite, constants.ContentTypeVirtualDeviceContext, constants.ContentTypeIpamIPAddress, constants.ContentTypeIpamVlanGroup, constants.ContentTypeIpamVlan, constants.ContentTypeIpamPrefix, constants.ContentTypeTenancyTenantGroup, constants.ContentTypeTenancyTenant, constants.ContentTypeTenancyContact, constants.ContentTypeTenancyContactAssignment, constants.ContentTypeTenancyContactGroup, constants.ContentTypeTenancyContactRole, constants.ContentTypeVirtualizationCluster, constants.ContentTypeVirtualizationClusterGroup, constants.ContentTypeVirtualizationClusterType, constants.ContentTypeVirtualizationVirtualMachine, constants.ContentTypeVirtualizationVMInterface},
+		ObjectTypes:           []constants.ContentType{constants.ContentTypeDcimDevice, constants.ContentTypeDcimDeviceRole, constants.ContentTypeDcimDeviceType, constants.ContentTypeDcimInterface, constants.ContentTypeDcimLocation, constants.ContentTypeDcimManufacturer, constants.ContentTypeDcimPlatform, constants.ContentTypeDcimRegion, constants.ContentTypeDcimSite, constants.ContentTypeDcimVirtualDeviceContext, constants.ContentTypeIpamIPAddress, constants.ContentTypeIpamVlanGroup, constants.ContentTypeIpamVlan, constants.ContentTypeIpamPrefix, constants.ContentTypeTenancyTenantGroup, constants.ContentTypeTenancyTenant, constants.ContentTypeTenancyContact, constants.ContentTypeTenancyContactAssignment, constants.ContentTypeTenancyContactGroup, constants.ContentTypeTenancyContactRole, constants.ContentTypeVirtualizationCluster, constants.ContentTypeVirtualizationClusterGroup, constants.ContentTypeVirtualizationClusterType, constants.ContentTypeVirtualizationVirtualMachine, constants.ContentTypeVirtualizationVMInterface},
 	})
 	if err != nil {
 		return fmt.Errorf("add source_id custom field %s", err)
@@ -441,7 +457,7 @@ func (nbi *NetboxInventory) initClusterGroups(ctx context.Context) error {
 	for i := range nbClusterGroups {
 		clusterGroup := &nbClusterGroups[i]
 		nbi.clusterGroupsIndexByName[clusterGroup.Name] = clusterGroup
-		nbi.OrphanManager.AddItem(constants.ClusterGroupsAPIPath, clusterGroup)
+		nbi.OrphanManager.AddItem(clusterGroup)
 	}
 	nbi.Logger.Debug(ctx, "Successfully collected cluster groups from Netbox: ", nbi.clusterGroupsIndexByName)
 	return nil
@@ -459,7 +475,7 @@ func (nbi *NetboxInventory) initClusterTypes(ctx context.Context) error {
 	for i := range nbClusterTypes {
 		clusterType := &nbClusterTypes[i]
 		nbi.clusterTypesIndexByName[clusterType.Name] = clusterType
-		nbi.OrphanManager.AddItem(constants.ClusterTypesAPIPath, clusterType)
+		nbi.OrphanManager.AddItem(clusterType)
 	}
 
 	nbi.Logger.Debug(ctx, "Successfully collected cluster types from Netbox: ", nbi.clusterTypesIndexByName)
@@ -479,7 +495,7 @@ func (nbi *NetboxInventory) initClusters(ctx context.Context) error {
 	for i := range nbClusters {
 		cluster := &nbClusters[i]
 		nbi.clustersIndexByName[cluster.Name] = cluster
-		nbi.OrphanManager.AddItem(constants.ClustersAPIPath, cluster)
+		nbi.OrphanManager.AddItem(cluster)
 	}
 
 	nbi.Logger.Debug(ctx, "Successfully collected clusters from Netbox: ", nbi.clustersIndexByName)
@@ -497,7 +513,7 @@ func (nbi *NetboxInventory) initDeviceTypes(ctx context.Context) error {
 	for i := range nbDeviceTypes {
 		deviceType := &nbDeviceTypes[i]
 		nbi.deviceTypesIndexByModel[deviceType.Model] = deviceType
-		nbi.OrphanManager.AddItem(constants.DeviceTypesAPIPath, deviceType)
+		nbi.OrphanManager.AddItem(deviceType)
 	}
 
 	nbi.Logger.Debug(ctx, "Successfully collected device types from Netbox: ", nbi.deviceTypesIndexByModel)
@@ -520,7 +536,7 @@ func (nbi *NetboxInventory) initInterfaces(ctx context.Context) error {
 			nbi.interfacesIndexByDeviceIDAndName[intf.Device.ID] = make(map[string]*objects.Interface)
 		}
 		nbi.interfacesIndexByDeviceIDAndName[intf.Device.ID][intf.Name] = intf
-		nbi.OrphanManager.AddItem(constants.InterfacesAPIPath, intf)
+		nbi.OrphanManager.AddItem(intf)
 	}
 
 	nbi.Logger.Debug(ctx, "Successfully collected interfaces from Netbox: ", nbi.interfacesIndexByDeviceIDAndName)
@@ -540,7 +556,7 @@ func (nbi *NetboxInventory) initVlanGroups(ctx context.Context) error {
 	for i := range nbVlanGroups {
 		vlanGroup := &nbVlanGroups[i]
 		nbi.vlanGroupsIndexByName[vlanGroup.Name] = vlanGroup
-		nbi.OrphanManager.AddItem(constants.VlanGroupsAPIPath, vlanGroup)
+		nbi.OrphanManager.AddItem(vlanGroup)
 	}
 
 	nbi.Logger.Debug(ctx, "Successfully collected vlans from Netbox: ", nbi.vlanGroupsIndexByName)
@@ -573,7 +589,7 @@ func (nbi *NetboxInventory) initVlans(ctx context.Context) error {
 			nbi.vlansIndexByVlanGroupIDAndVID[vlan.Group.ID] = make(map[int]*objects.Vlan)
 		}
 		nbi.vlansIndexByVlanGroupIDAndVID[vlan.Group.ID][vlan.Vid] = vlan
-		nbi.OrphanManager.AddItem(constants.VlansAPIPath, vlan)
+		nbi.OrphanManager.AddItem(vlan)
 	}
 
 	nbi.Logger.Debug(ctx, "Successfully collected vlans from Netbox: ", nbi.vlansIndexByVlanGroupIDAndVID)
@@ -600,7 +616,7 @@ func (nbi *NetboxInventory) initVMs(ctx context.Context) error {
 		} else {
 			nbi.vmsIndexByNameAndClusterID[vm.Name][vm.Cluster.ID] = vm
 		}
-		nbi.OrphanManager.AddItem(constants.VirtualMachinesAPIPath, vm)
+		nbi.OrphanManager.AddItem(vm)
 	}
 
 	nbi.Logger.Debug(ctx, "Successfully collected VMs from Netbox: ", nbi.vmsIndexByNameAndClusterID)
@@ -622,7 +638,7 @@ func (nbi *NetboxInventory) initVMInterfaces(ctx context.Context) error {
 			nbi.vmInterfacesIndexByVMIdAndName[vmIntf.VM.ID] = make(map[string]*objects.VMInterface)
 		}
 		nbi.vmInterfacesIndexByVMIdAndName[vmIntf.VM.ID][vmIntf.Name] = vmIntf
-		nbi.OrphanManager.AddItem(constants.VMInterfacesAPIPath, vmIntf)
+		nbi.OrphanManager.AddItem(vmIntf)
 	}
 
 	nbi.Logger.Debug(ctx, "Successfully collected VM interfaces from Netbox: ", nbi.vmInterfacesIndexByVMIdAndName)
@@ -643,7 +659,7 @@ func (nbi *NetboxInventory) initIPAddresses(ctx context.Context) error {
 		ipAddr := &ipAddresses[i]
 		if ipAddr.HasTag(nbi.SsotTag) {
 			nbi.ipAdressesIndexByAddress[ipAddr.Address] = ipAddr
-			nbi.OrphanManager.AddItem(constants.IPAddressesAPIPath, ipAddr)
+			nbi.OrphanManager.AddItem(ipAddr)
 		}
 	}
 
@@ -664,7 +680,7 @@ func (nbi *NetboxInventory) initPrefixes(ctx context.Context) error {
 	for i := range prefixes {
 		prefix := &prefixes[i]
 		nbi.prefixesIndexByPrefix[prefix.Prefix] = prefix
-		nbi.OrphanManager.AddItem(constants.PrefixesAPIPath, prefix)
+		nbi.OrphanManager.AddItem(prefix)
 	}
 
 	nbi.Logger.Debug(ctx, "Successfully collected prefixes from Netbox: ", nbi.prefixesIndexByPrefix)
@@ -684,7 +700,7 @@ func (nbi *NetboxInventory) initWirelessLANs(ctx context.Context) error {
 	for i := range nbWirelessLans {
 		wirelessLan := &nbWirelessLans[i]
 		nbi.wirelessLANsIndexBySSID[wirelessLan.SSID] = wirelessLan
-		nbi.OrphanManager.AddItem(constants.WirelessLANsAPIPath, wirelessLan)
+		nbi.OrphanManager.AddItem(wirelessLan)
 	}
 	nbi.Logger.Debug(ctx, "Successfully collected wireless-lans from Netbox: ", nbi.wirelessLANsIndexBySSID)
 	return nil
@@ -703,7 +719,7 @@ func (nbi *NetboxInventory) initWirelessLANGroups(ctx context.Context) error {
 	for i := range nbWirelessLanGroups {
 		wirelessLanGroup := &nbWirelessLanGroups[i]
 		nbi.wirelessLANGroupsIndexByName[wirelessLanGroup.Name] = wirelessLanGroup
-		nbi.OrphanManager.AddItem(constants.WirelessLANGroupsAPIPath, wirelessLanGroup)
+		nbi.OrphanManager.AddItem(wirelessLanGroup)
 	}
 	nbi.Logger.Debug(ctx, "Successfully collected wireless-lan-groups from Netbox: ", nbi.wirelessLANGroupsIndexByName)
 	return nil

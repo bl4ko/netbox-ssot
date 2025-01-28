@@ -8,7 +8,9 @@ import (
 	"net/http"
 	"reflect"
 
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/mapper"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
@@ -94,12 +96,12 @@ func GetAll[T any](ctx context.Context, netboxClient *NetboxClient, extraParams 
 // Path of the object (must contain the id), for example /api/dcim/devices/1/.
 func Patch[T any](ctx context.Context, netboxClient *NetboxClient, objectID int, body map[string]interface{}) (*T, error) {
 	var dummy T // dummy variable for printf
-	path := mapper.Type2Path[reflect.TypeOf(dummy)]
-	if path == "" {
+	objectPath := mapper.Type2Path[reflect.TypeOf(dummy)]
+	if objectPath == "" {
 		return nil, fmt.Errorf("path not found for type %T", dummy)
 	}
-	path = fmt.Sprintf("%s%d/", path, objectID)
-	netboxClient.Logger.Debugf(ctx, "Patching %T with path %s with data: %v", dummy, path, body)
+	path := fmt.Sprintf("%s%d/", objectPath, objectID)
+	netboxClient.Logger.Debugf(ctx, "Patching %T with path %s with data: %v", dummy, objectPath, body)
 
 	requestBody, err := json.Marshal(body)
 	if err != nil {
@@ -129,19 +131,19 @@ func Patch[T any](ctx context.Context, netboxClient *NetboxClient, objectID int,
 // Create func creates the new NetboxObject of type T, with the given api path and body.
 func Create[T any](ctx context.Context, netboxClient *NetboxClient, object *T) (*T, error) {
 	var dummy T // dummy variable for printf
-	path := mapper.Type2Path[reflect.TypeOf(dummy)]
-	if path == "" {
+	objectPath := mapper.Type2Path[reflect.TypeOf(dummy)]
+	if objectPath == "" {
 		return nil, fmt.Errorf("path not found for type %T", dummy)
 	}
 
-	netboxClient.Logger.Debugf(ctx, "Creating %T with path %s with data: %v", dummy, path, object)
+	netboxClient.Logger.Debugf(ctx, "Creating %T with path %s with data: %v", dummy, objectPath, object)
 	requestBody, err := utils.NetboxJSONMarshal(object)
 	if err != nil {
 		return nil, err
 	}
 
 	requestBodyBuffer := bytes.NewBuffer(requestBody)
-	response, err := netboxClient.doRequest(http.MethodPost, path, requestBodyBuffer)
+	response, err := netboxClient.doRequest(http.MethodPost, string(objectPath), requestBodyBuffer)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +165,7 @@ func Create[T any](ctx context.Context, netboxClient *NetboxClient, object *T) (
 // Function that deletes object on path objectPath.
 // It deletes objects in pages of 50 so we don't stress
 // the API too much.
-func (api *NetboxClient) BulkDeleteObjects(ctx context.Context, objectPath string, idSet map[int]bool) error {
+func (api *NetboxClient) BulkDeleteObjects(ctx context.Context, objectPath constants.APIPath, idSet map[int]bool) error {
 	const pageSize = 50
 
 	// Convert the map to a slice for easier slicing.
@@ -192,7 +194,7 @@ func (api *NetboxClient) BulkDeleteObjects(ctx context.Context, objectPath strin
 		}
 
 		requestBodyBuffer := bytes.NewBuffer(requestBody)
-		response, err := api.doRequest(http.MethodDelete, objectPath, requestBodyBuffer)
+		response, err := api.doRequest(http.MethodDelete, string(objectPath), requestBodyBuffer)
 		if err != nil {
 			return err
 		}
@@ -209,7 +211,9 @@ func (api *NetboxClient) BulkDeleteObjects(ctx context.Context, objectPath strin
 // Function that deletes objectas on path objectPath.
 // It deletes a single object at a time. It is alternative to bulk delete
 // because if one delete fails other still go.
-func (api *NetboxClient) DeleteObject(ctx context.Context, objectPath string, id int) error {
+func (api *NetboxClient) DeleteObject(ctx context.Context, idItem objects.IDItem) error {
+	id := idItem.GetID()
+	objectPath := idItem.GetAPIPath()
 	api.Logger.Debugf(ctx, "Deleting object with id %d on route %s", id, objectPath)
 
 	response, err := api.doRequest(http.MethodDelete, fmt.Sprintf("%s%d/", objectPath, id), nil)

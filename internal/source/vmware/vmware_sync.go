@@ -123,9 +123,15 @@ func (vc *VmwareSource) syncClusters(nbi *inventory.NetboxInventory) error {
 		}
 		clusterGroup, _ = nbi.GetClusterGroup(clusterGroupName)
 
+		var clusterScopeType constants.ContentType
+		var clusterScopeID int
 		clusterSite, err := common.MatchClusterToSite(vc.Ctx, nbi, clusterName, vc.SourceConfig.ClusterSiteRelations)
 		if err != nil {
 			return fmt.Errorf("match cluster to site: %s", err)
+		}
+		if clusterSite != nil {
+			clusterScopeType = constants.ContentTypeDcimSite
+			clusterScopeID = clusterSite.ID
 		}
 
 		clusterTenant, err := common.MatchClusterToTenant(vc.Ctx, nbi, clusterName, vc.SourceConfig.ClusterTenantRelations)
@@ -140,12 +146,13 @@ func (vc *VmwareSource) syncClusters(nbi *inventory.NetboxInventory) error {
 					constants.CustomFieldSourceIDName: clusterID,
 				},
 			},
-			Name:   clusterName,
-			Type:   clusterType,
-			Status: objects.ClusterStatusActive,
-			Group:  clusterGroup,
-			Site:   clusterSite,
-			Tenant: clusterTenant,
+			Name:      clusterName,
+			Type:      clusterType,
+			Status:    objects.ClusterStatusActive,
+			Group:     clusterGroup,
+			ScopeType: clusterScopeType,
+			ScopeID:   clusterScopeID,
+			Tenant:    clusterTenant,
 		}
 		_, err = nbi.AddCluster(vc.Ctx, clusterStruct)
 		if err != nil {
@@ -363,7 +370,7 @@ func (vc *VmwareSource) syncHostNics(nbi *inventory.NetboxInventory, vcHost mo.H
 func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetboxInventory, vcHost mo.HostSystem, nbHost *objects.Device, deviceData *devices.DeviceData) error {
 	if vcHost.Config != nil && vcHost.Config.Network != nil && vcHost.Config.Network.Pnic != nil {
 		for _, pnic := range vcHost.Config.Network.Pnic {
-			hostPnic, err := vc.collectHostPhysicalNicData(nbi, nbHost, pnic, deviceData)
+			hostPnic, macAddress, err := vc.collectHostPhysicalNicData(nbi, nbHost, pnic, deviceData)
 			if err != nil {
 				return err
 			}
@@ -372,9 +379,18 @@ func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetboxInventory, vcH
 				continue
 			}
 			// After collecting all of the data add interface to nbi
-			_, err = nbi.AddInterface(vc.Ctx, hostPnic)
+			nbHostPnic, err := nbi.AddInterface(vc.Ctx, hostPnic)
 			if err != nil {
 				return fmt.Errorf("failed adding physical interface %+v: %s", hostPnic, err)
+			}
+			if macAddress != "" {
+				nbMACAddress, err := common.CreateMACAddressForObjectType(vc.Ctx, nbi, macAddress, nbHostPnic)
+				if err != nil {
+					return fmt.Errorf("create mac address for object type: %s", err)
+				}
+				if err = common.SetPrimaryMACForInterface(vc.Ctx, nbi, nbHostPnic, nbMACAddress); err != nil {
+					return fmt.Errorf("set primary mac for interface %+v: %s", nbHostPnic, err)
+				}
 			}
 		}
 	}
@@ -382,7 +398,7 @@ func (vc *VmwareSource) syncHostPhysicalNics(nbi *inventory.NetboxInventory, vcH
 }
 
 //nolint:gocyclo
-func (vc *VmwareSource) collectHostPhysicalNicData(nbi *inventory.NetboxInventory, nbHost *objects.Device, pnic types.PhysicalNic, _ *devices.DeviceData) (*objects.Interface, error) {
+func (vc *VmwareSource) collectHostPhysicalNicData(nbi *inventory.NetboxInventory, nbHost *objects.Device, pnic types.PhysicalNic, _ *devices.DeviceData) (*objects.Interface, string, error) {
 	pnicName := pnic.Device
 	var pnicLinkSpeedMb int32
 	if pnic.LinkSpeed != nil {
@@ -436,11 +452,11 @@ func (vc *VmwareSource) collectHostPhysicalNicData(nbi *inventory.NetboxInventor
 			if vlanName, ok := vc.Networks.Vid2Name[portgroupData.vlanID]; ok {
 				vlanSite, err := common.MatchVlanToSite(vc.Ctx, nbi, vlanName, vc.SourceConfig.VlanSiteRelations)
 				if err != nil {
-					return nil, fmt.Errorf("match vlan to site: %s", err)
+					return nil, "", fmt.Errorf("match vlan to site: %s", err)
 				}
 				vlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, vlanName, vlanSite, vc.SourceConfig.VlanGroupRelations, vc.SourceConfig.VlanGroupSiteRelations)
 				if err != nil {
-					return nil, fmt.Errorf("match vlan to group: %s", err)
+					return nil, "", fmt.Errorf("match vlan to group: %s", err)
 				}
 				vlan, vlanExists := nbi.GetVlan(vlanGroup.ID, portgroupData.vlanID)
 				if vlanExists {
@@ -450,15 +466,15 @@ func (vc *VmwareSource) collectHostPhysicalNicData(nbi *inventory.NetboxInventor
 				vlanName := fmt.Sprintf("VLAN%04d_%s", portgroupData.vlanID, portgroupName)
 				vlanSite, err := common.MatchVlanToSite(vc.Ctx, nbi, vlanName, vc.SourceConfig.VlanSiteRelations)
 				if err != nil {
-					return nil, fmt.Errorf("match vlan to site: %s", err)
+					return nil, "", fmt.Errorf("match vlan to site: %s", err)
 				}
 				vlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, vlanName, vlanSite, vc.SourceConfig.VlanGroupRelations, vc.SourceConfig.VlanGroupSiteRelations)
 				if err != nil {
-					return nil, fmt.Errorf("match vlan to group: %s", err)
+					return nil, "", fmt.Errorf("match vlan to group: %s", err)
 				}
 				vlanTenant, err := common.MatchVlanToTenant(vc.Ctx, nbi, vlanName, vc.SourceConfig.VlanTenantRelations)
 				if err != nil {
-					return nil, fmt.Errorf("match vlan to tenant: %s", err)
+					return nil, "", fmt.Errorf("match vlan to tenant: %s", err)
 				}
 				newVlan, newVlanExists := nbi.GetVlan(vlanGroup.ID, portgroupData.vlanID)
 				if !newVlanExists {
@@ -475,7 +491,7 @@ func (vc *VmwareSource) collectHostPhysicalNicData(nbi *inventory.NetboxInventor
 					}
 					newVlan, err = nbi.AddVlan(vc.Ctx, vlanStruct)
 					if err != nil {
-						return nil, fmt.Errorf("add vlan %+v: %s", newVlan, err)
+						return nil, "", fmt.Errorf("add vlan %+v: %s", newVlan, err)
 					}
 				}
 				vlanIDMap[portgroupData.vlanID] = newVlan
@@ -523,10 +539,9 @@ func (vc *VmwareSource) collectHostPhysicalNicData(nbi *inventory.NetboxInventor
 		Type:        pnicType,
 		Speed:       objects.InterfaceSpeed(pnicLinkSpeedMb / constants.KB),
 		MTU:         pnicMtu,
-		MAC:         strings.ToUpper(pnic.Mac),
 		Mode:        pnicMode,
 		TaggedVlans: taggedVlanList,
-	}, nil
+	}, strings.ToUpper(pnic.Mac), nil
 }
 
 func (vc *VmwareSource) syncHostVirtualNics(nbi *inventory.NetboxInventory, vcHost mo.HostSystem, nbHost *objects.Device, hostIPv4Addresses []*objects.IPAddress, hostIPv6Addresses []*objects.IPAddress) error {
@@ -1028,7 +1043,7 @@ func (vc *VmwareSource) syncVMInterfaces(nbi *inventory.NetboxInventory, vmwareV
 		}
 
 		if vmEthernetCard != nil {
-			nicIPv4Addresses, nicIPv6Addresses, collectedVMIface, err := vc.collectVMInterfaceData(nbi, netboxVM, vmwareVM, vmEthernetCard)
+			nicIPv4Addresses, nicIPv6Addresses, collectedVMIface, macAddress, err := vc.collectVMInterfaceData(nbi, netboxVM, vmwareVM, vmEthernetCard)
 			if err != nil {
 				return err
 			}
@@ -1043,6 +1058,15 @@ func (vc *VmwareSource) syncVMInterfaces(nbi *inventory.NetboxInventory, vmwareV
 			if err != nil {
 				return fmt.Errorf("adding VmInterface %+v: %s", collectedVMIface, err)
 			}
+			if macAddress != "" {
+				nbMACAddress, err := common.CreateMACAddressForObjectType(vc.Ctx, nbi, macAddress, nbVMInterface)
+				if err != nil {
+					return fmt.Errorf("creating MAC address for %+v: %s", collectedVMIface, err)
+				}
+				if err = common.SetPrimaryMACForInterface(vc.Ctx, nbi, nbVMInterface, nbMACAddress); err != nil {
+					return fmt.Errorf("setting primary MAC for %+v: %s", collectedVMIface, err)
+				}
+			}
 
 			vmIPv4Addresses, vmIPv6Addresses = vc.addVMInterfaceIPs(nbi, netboxVM, nbVMInterface, nicIPv4Addresses, nicIPv6Addresses, vmIPv4Addresses, vmIPv6Addresses)
 		}
@@ -1051,7 +1075,7 @@ func (vc *VmwareSource) syncVMInterfaces(nbi *inventory.NetboxInventory, vmwareV
 	return nil
 }
 
-func (vc *VmwareSource) collectVMInterfaceData(nbi *inventory.NetboxInventory, netboxVM *objects.VM, vmwareVM mo.VirtualMachine, vmEthernetCard *types.VirtualEthernetCard) ([]string, []string, *objects.VMInterface, error) {
+func (vc *VmwareSource) collectVMInterfaceData(nbi *inventory.NetboxInventory, netboxVM *objects.VM, vmwareVM mo.VirtualMachine, vmEthernetCard *types.VirtualEthernetCard) ([]string, []string, *objects.VMInterface, string, error) {
 	intMac := vmEthernetCard.MacAddress
 	intConnected := vmEthernetCard.Connectable.Connected
 	intDeviceBackingInfo := vmEthernetCard.Backing
@@ -1145,7 +1169,7 @@ func (vc *VmwareSource) collectVMInterfaceData(nbi *inventory.NetboxInventory, n
 				case constants.IPv6:
 					nicIPv6Addresses = append(nicIPv6Addresses, intIPAddress)
 				default:
-					return nicIPv4Addresses, nicIPv6Addresses, nil, fmt.Errorf("unknown ip version: %s", intIPAddress)
+					return nicIPv4Addresses, nicIPv6Addresses, nil, "", fmt.Errorf("unknown ip version: %s", intIPAddress)
 				}
 			}
 		}
@@ -1157,11 +1181,11 @@ func (vc *VmwareSource) collectVMInterfaceData(nbi *inventory.NetboxInventory, n
 			vidID := intNetworkVlanIDs[0]
 			nicUntaggedVlanSite, err := common.MatchVlanToSite(vc.Ctx, nbi, vc.Networks.Vid2Name[vidID], vc.SourceConfig.VlanSiteRelations)
 			if err != nil {
-				return nicIPv4Addresses, nicIPv6Addresses, nil, fmt.Errorf("match vlan to site: %s", err)
+				return nicIPv4Addresses, nicIPv6Addresses, nil, "", fmt.Errorf("match vlan to site: %s", err)
 			}
 			nicUntaggedVlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, vc.Networks.Vid2Name[vidID], nicUntaggedVlanSite, vc.SourceConfig.VlanGroupRelations, vc.SourceConfig.VlanGroupSiteRelations)
 			if err != nil {
-				return nicIPv4Addresses, nicIPv6Addresses, nil, fmt.Errorf("mathc vlan to vlan group: %s", err)
+				return nicIPv4Addresses, nicIPv6Addresses, nil, "", fmt.Errorf("mathc vlan to vlan group: %s", err)
 			}
 			intUntaggedVlan, _ = nbi.GetVlan(nicUntaggedVlanGroup.ID, vidID)
 		} else {
@@ -1181,13 +1205,12 @@ func (vc *VmwareSource) collectVMInterfaceData(nbi *inventory.NetboxInventory, n
 		},
 		VM:           netboxVM,
 		Name:         intFullName,
-		MACAddress:   strings.ToUpper(intMac),
 		MTU:          intMtu,
 		Mode:         intMode,
 		Enabled:      intConnected,
 		TaggedVlans:  intTaggedVlanList,
 		UntaggedVlan: intUntaggedVlan,
-	}, nil
+	}, strings.ToUpper(intMac), nil
 }
 
 // Function that adds all collected IPs for the vm's interface to netbox.
@@ -1368,15 +1391,22 @@ func (vc *VmwareSource) createHypotheticalCluster(nbi *inventory.NetboxInventory
 	if err != nil {
 		return nil, fmt.Errorf("failed to add vmware ClusterType: %v", err)
 	}
+	var clusterScopeType constants.ContentType
+	var clusterScopeID int
+	if hostSite != nil {
+		clusterScopeType = constants.ContentTypeDcimSite
+		clusterScopeID = hostSite.ID
+	}
 	clusterStruct := &objects.Cluster{
 		NetboxObject: objects.NetboxObject{
 			Tags: vc.Config.SourceTags,
 		},
-		Name:   hostName,
-		Type:   clusterType,
-		Status: objects.ClusterStatusActive,
-		Site:   hostSite,
-		Tenant: hostTenant,
+		Name:      hostName,
+		Type:      clusterType,
+		Status:    objects.ClusterStatusActive,
+		ScopeType: clusterScopeType,
+		ScopeID:   clusterScopeID,
+		Tenant:    hostTenant,
 	}
 	nbCluster, err := nbi.AddCluster(vc.Ctx, clusterStruct)
 	if err != nil {

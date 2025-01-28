@@ -7,15 +7,15 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 )
 
-func reverseMap(m map[reflect.Type]string) map[string]reflect.Type {
-	reversed := make(map[string]reflect.Type, len(m))
+func reverseMap(m map[reflect.Type]constants.APIPath) map[constants.APIPath]reflect.Type {
+	reversed := make(map[constants.APIPath]reflect.Type, len(m))
 	for k, v := range m {
 		reversed[v] = k
 	}
 	return reversed
 }
 
-var Type2Path = map[reflect.Type]string{
+var Type2Path = map[reflect.Type]constants.APIPath{
 	reflect.TypeOf((*objects.VlanGroup)(nil)).Elem():            constants.VlanGroupsAPIPath,
 	reflect.TypeOf((*objects.Vlan)(nil)).Elem():                 constants.VlansAPIPath,
 	reflect.TypeOf((*objects.IPAddress)(nil)).Elem():            constants.IPAddressesAPIPath,
@@ -25,6 +25,7 @@ var Type2Path = map[reflect.Type]string{
 	reflect.TypeOf((*objects.VM)(nil)).Elem():                   constants.VirtualMachinesAPIPath,
 	reflect.TypeOf((*objects.VMInterface)(nil)).Elem():          constants.VMInterfacesAPIPath,
 	reflect.TypeOf((*objects.Device)(nil)).Elem():               constants.DevicesAPIPath,
+	reflect.TypeOf((*objects.MACAddress)(nil)).Elem():           constants.MACAddressesAPIPath,
 	reflect.TypeOf((*objects.VirtualDeviceContext)(nil)).Elem(): constants.VirtualDeviceContextsAPIPath,
 	reflect.TypeOf((*objects.DeviceRole)(nil)).Elem():           constants.DeviceRolesAPIPath,
 	reflect.TypeOf((*objects.DeviceType)(nil)).Elem():           constants.DeviceTypesAPIPath,

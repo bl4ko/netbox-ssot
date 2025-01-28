@@ -26,12 +26,17 @@ Currently, the supported external data sources types are:
 - [`ios-xe`](https://www.cisco.com/c/en/us/products/ios-nx-os-software/ios-xe/index.html)
   - All devices with ios-xe supporting netconf
 
+## Compatability Matrix
+
 > [!WARNING]
-> **This project is still under heavy development, use with caution.**
->
-> - <u>v1.x.x</u> works with `netbox>=4.0.0`
->
-> - <u>v0.x.x</u> works with `netbox>=3.7.0`
+> Since netbox introduces breaking changes in minor releases, netbox-ssot also introduces breaking changes in minor releases.
+> See the table below for compatibility between netbox-ssot and netbox.
+
+| Version       | Supported Netbox Version |
+| ------------- | ------------------------ |
+| v1.9.x        | >= 4.2.0                 |
+| v1.0.0-v1.8.x | >=4.0.0, < 4.2.0         |
+| v0.x.x        | >=3.7.0, < 4.0.0         |
 
 ## Configuration
 
@@ -86,9 +91,9 @@ Example configuration can be found [here](#example-config).
 | `source.permittedSubnets`                | List of subnets, which will be permitted (e.g. only IPs in these subnets will be synced).                                                                                              | all                        | []string | any                                      | []         | No       |
 | `source.interfaceFilter`                 | Regex representation of interface names to be ignored (e.g. `(cali\|vxlan\|flannel\|[a-f0-9]{15})`)                                                                                    | all                        | string   | any                                      | []         | No       |
 | `source.collectArpData`                  | Collect data from the arp table of the device.                                                                                                                                         | [**paloalto**, **ios-xe**] | bool     | [true, false]                            | false      | No       |
-| `source.ignoreAssetTags`                  | Don't sync asset tags of devices.   | all | bool     | [true, false]                            | false      | No       |
-| `source.ignoreSerialNumbers`                  | Don't sync serial numbers of devices.   | all | bool     | [true, false]                            | false      | No       |
-| `source.ignoreVMTemplates`                  | Don't sync vm templates.  | [**vmware**] | bool     | [true, false]                            | false      | No       |
+| `source.ignoreAssetTags`                 | Don't sync asset tags of devices.                                                                                                                                                      | all                        | bool     | [true, false]                            | false      | No       |
+| `source.ignoreSerialNumbers`             | Don't sync serial numbers of devices.                                                                                                                                                  | all                        | bool     | [true, false]                            | false      | No       |
+| `source.ignoreVMTemplates`               | Don't sync vm templates.                                                                                                                                                               | [**vmware**]               | bool     | [true, false]                            | false      | No       |
 | `source.datacenterClusterGroupRelations` | Regex relations in format `regex = clusterGroupName`, that map each datacenter that satisfies regex to clusterGroupname (see [#130](https://github.com/bl4ko/netbox-ssot/issues/130)). | [**vmware**, **ovirt**]    | []string | any                                      | []         | No       |
 | `source.hostSiteRelations`               | Regex relations in format `regex = siteName`, that map each host that satisfies regex to site.                                                                                         | all                        | []string | any                                      | []         | No       |
 | `source.clusterSiteRelations`            | Regex relations in format `regex = siteName`, that map each cluster that satisfies regex to site.                                                                                      | all                        | []string | any                                      | []         | No       |
@@ -100,7 +105,7 @@ Example configuration can be found [here](#example-config).
 | `source.vmTenantRelations`               | Regex relations in format `regex = tenantName`, that map each vm that satisfies regex to tenant.                                                                                       | all                        | []string | any                                      | []         | No       |
 | `source.vmRoleRelations`                 | Regex relations in format `regex = roleName`, that map each vm that satisfies regex to device role.                                                                                    | all                        | []string | any                                      | []         | No       |
 | `source.vlanGroupRelations`              | Regex relations in format `regex = vlanGroup`, that map each vlan that satisfies regex to vlanGroup.                                                                                   | all                        | []string | any                                      | []         | No       |
-| `source.vlanGroupSiteRelations`              | Regex relations in format `regex = vlanGroup`, that map each vlan that satisfies regex to vlanGroup.                                                                                   | all                        | []string | any                                      | []         | No       |
+| `source.vlanGroupSiteRelations`          | Regex relations in format `regex = vlanGroup`, that map each vlan that satisfies regex to vlanGroup.                                                                                   | all                        | []string | any                                      | []         | No       |
 | `source.wlanTenantRelations`             | Regex relations in format `regex = tenantName`, that map each wlan that satisfies regex to tenant.                                                                                     | [dnac]                     | []string | any                                      | []         | No       |
 | `source.customFieldMappings`             | Mappings of format `customFieldName = option`. Currently, supported options are `contact`, `owner`, `description`.                                                                     | [**vmware**]               | []string | any                                      | []         | No       |
 | `source.caFile`                          | Path to a self signed certificate for the source.                                                                                                                                      | any                        | string   | Valid path                               | ""         | No       |

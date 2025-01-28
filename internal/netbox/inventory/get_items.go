@@ -90,6 +90,20 @@ func (nbi *NetboxInventory) GetSite(siteName string) (*objects.Site, bool) {
 	return site, true
 }
 
+// GetSiteByID returns the Site for the given siteID.
+// It returns nil if the Site is not found.
+// This function is thread-safe.
+func (nbi *NetboxInventory) GetSiteByID(siteID int) *objects.Site {
+	nbi.sitesLock.Lock()
+	defer nbi.sitesLock.Unlock()
+	for _, site := range nbi.sitesIndexByName {
+		if site.ID == siteID {
+			return site
+		}
+	}
+	return nil
+}
+
 // GetVlanGroup returns the VlanGroup for the given vlanGroupName.
 // It returns nil if the VlanGroup is not found.
 // This function is thread-safe.

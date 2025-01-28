@@ -149,15 +149,21 @@ func (fs *FortigateSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 			Type:   &objects.OtherInterfaceType,
 			Name:   ifaceName,
 			MTU:    interfaceMTU,
-			MAC:    strings.ToUpper(interfaceMAC),
 			Status: interfaceStatus,
-
-			Vdcs: vdcs,
+			Vdcs:   vdcs,
 		})
 		if err != nil {
 			return fmt.Errorf("add interface: %s", err)
 		}
-
+		if interfaceMAC != "" {
+			nbMACAddress, err := common.CreateMACAddressForObjectType(fs.Ctx, nbi, interfaceMAC, NBIface)
+			if err != nil {
+				return fmt.Errorf("create mac address for object type: %s", err)
+			}
+			if err = common.SetPrimaryMACForInterface(fs.Ctx, nbi, NBIface, nbMACAddress); err != nil {
+				return fmt.Errorf("set primary mac for interface: %s", err)
+			}
+		}
 		NBIPAddress, err := syncInterfaceIPs(fs, nbi, iface, NBIface)
 		if err != nil {
 			return fmt.Errorf("sync interface ips: %s", err)

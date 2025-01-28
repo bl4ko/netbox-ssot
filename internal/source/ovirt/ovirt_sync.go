@@ -127,9 +127,15 @@ func (o *OVirtSource) syncClusters(nbi *inventory.NetboxInventory) error {
 			clusterGroup, _ = nbi.GetClusterGroup(clusterGroupName)
 		}
 
+		var clusterScopeType constants.ContentType
+		var clusterScopeID int
 		clusterSite, err := common.MatchClusterToSite(o.Ctx, nbi, clusterName, o.SourceConfig.ClusterSiteRelations)
 		if err != nil {
 			return fmt.Errorf("match cluster to site: %s", err)
+		}
+		if clusterSite != nil {
+			clusterScopeType = constants.ContentTypeDcimSite
+			clusterScopeID = clusterSite.ID
 		}
 
 		clusterTenant, err := common.MatchClusterToTenant(o.Ctx, nbi, clusterName, o.SourceConfig.ClusterTenantRelations)
@@ -142,12 +148,13 @@ func (o *OVirtSource) syncClusters(nbi *inventory.NetboxInventory) error {
 				Description: description,
 				Tags:        o.Config.SourceTags,
 			},
-			Name:   clusterName,
-			Type:   nbClusterType,
-			Status: objects.ClusterStatusActive,
-			Group:  clusterGroup,
-			Site:   clusterSite,
-			Tenant: clusterTenant,
+			Name:      clusterName,
+			Type:      nbClusterType,
+			Status:    objects.ClusterStatusActive,
+			Group:     clusterGroup,
+			ScopeType: clusterScopeType,
+			ScopeID:   clusterScopeID,
+			Tenant:    clusterTenant,
 		}
 		_, err = nbi.AddCluster(o.Ctx, nbCluster)
 		if err != nil {
@@ -365,6 +372,8 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 		nicID2IPv4 := map[string]string{}
 		// nic ID -> [ipv6Address/mask, ...]
 		nicID2IPv6 := map[string]string{}
+		// nic ID -> MAC address
+		nicID2MAC := map[string]string{}
 
 		var hostIP string
 		if hostAddress, exists := ovirtHost.Address(); exists {
@@ -373,21 +382,21 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 
 		// Firstly we loop through all the host's nics and collect
 		// all the relevant information from ovirt API.
-		err := o.collectHostNicsData(nbHost, nbi, nics, parentID2childID, masterID2slaveIDs, nicName2nicID, nicID2nbNic, processedNicsIDs, nicID2IPv4, nicID2IPv6)
+		err := o.collectHostNicsData(nbHost, nbi, nics, parentID2childID, masterID2slaveIDs, nicName2nicID, nicID2nbNic, processedNicsIDs, nicID2IPv4, nicID2IPv6, nicID2MAC)
 		if err != nil {
 			return fmt.Errorf("collect host nics data: %s", err)
 		}
 
 		// Secondly we loop to add relations between interfaces
 		// (e.g. [eno1, eno2] -> bond1).
-		err = o.matchHostMasterAndSlaveNics(nbi, masterID2slaveIDs, nicID2nbNic, processedNicsIDs)
+		err = o.matchHostMasterAndSlaveNics(nbi, masterID2slaveIDs, nicID2nbNic, processedNicsIDs, nicID2MAC)
 		if err != nil {
 			return fmt.Errorf("match host master and slave nics: %s", err)
 		}
 
 		// Thirdly we connect children nics with parents
 		// (e.g. [bond1.605, bond1.604, bond1.603] -> bond1).
-		err = o.matchHostParentAndChildNics(nbi, parentID2childID, nicName2nicID, nicID2nbNic, processedNicsIDs)
+		err = o.matchHostParentAndChildNics(nbi, parentID2childID, nicName2nicID, nicID2nbNic, processedNicsIDs, nicID2MAC)
 		if err != nil {
 			return fmt.Errorf("match host parent and child nics: %s", err)
 		}
@@ -398,6 +407,15 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 			nbNic, err := nbi.AddInterface(o.Ctx, nicID2nbNic[nicID])
 			if err != nil {
 				return fmt.Errorf("failed to add oVirt interface %+v with error: %v", nicID2nbNic[nicID], err)
+			}
+			if nicID2MAC[nicID] != "" {
+				nbMACAddress, err := common.CreateMACAddressForObjectType(o.Ctx, nbi, nicID2MAC[nicID], nbNic)
+				if err != nil {
+					return fmt.Errorf("create mac address for object type: %s", err)
+				}
+				if err = common.SetPrimaryMACForInterface(o.Ctx, nbi, nbNic, nbMACAddress); err != nil {
+					return fmt.Errorf("set primary mac for interface: %s", err)
+				}
 			}
 			nicID2nbNic[nicID] = nbNic
 		}
@@ -489,7 +507,7 @@ func (o *OVirtSource) syncHostNics(nbi *inventory.NetboxInventory, ovirtHost *ov
 	return nil
 }
 
-func (o *OVirtSource) matchHostMasterAndSlaveNics(nbi *inventory.NetboxInventory, masterID2slaveIDs map[string][]string, nicID2nbNic map[string]*objects.Interface, processedNicsIDs map[string]bool) error {
+func (o *OVirtSource) matchHostMasterAndSlaveNics(nbi *inventory.NetboxInventory, masterID2slaveIDs map[string][]string, nicID2nbNic map[string]*objects.Interface, processedNicsIDs map[string]bool, nicID2MAC map[string]string) error {
 	for masterID, slavesIDs := range masterID2slaveIDs {
 		var err error
 		masterInterface := nicID2nbNic[masterID]
@@ -497,6 +515,15 @@ func (o *OVirtSource) matchHostMasterAndSlaveNics(nbi *inventory.NetboxInventory
 			masterInterface, err = nbi.AddInterface(o.Ctx, masterInterface)
 			if err != nil {
 				return fmt.Errorf("failed to add oVirt master interface %+v with error: %v", masterInterface, err)
+			}
+			if nicID2MAC[masterID] != "" {
+				nbMacAddress, err := common.CreateMACAddressForObjectType(o.Ctx, nbi, nicID2MAC[masterID], masterInterface)
+				if err != nil {
+					return fmt.Errorf("create mac address for object type: %s", err)
+				}
+				if err = common.SetPrimaryMACForInterface(o.Ctx, nbi, masterInterface, nbMacAddress); err != nil {
+					return fmt.Errorf("set primary mac for interface: %s", err)
+				}
 			}
 			delete(processedNicsIDs, masterID)
 			nicID2nbNic[masterID] = masterInterface
@@ -508,6 +535,15 @@ func (o *OVirtSource) matchHostMasterAndSlaveNics(nbi *inventory.NetboxInventory
 			if err != nil {
 				return fmt.Errorf("failed to add oVirt slave interface %+v with error: %v", slaveInterface, err)
 			}
+			if nicID2MAC[slaveID] != "" {
+				nbMACAddress, err := common.CreateMACAddressForObjectType(o.Ctx, nbi, nicID2MAC[slaveID], slaveInterface)
+				if err != nil {
+					return fmt.Errorf("create mac address for object type: %s", err)
+				}
+				if err = common.SetPrimaryMACForInterface(o.Ctx, nbi, slaveInterface, nbMACAddress); err != nil {
+					return fmt.Errorf("set primary mac for interface: %s", err)
+				}
+			}
 			delete(processedNicsIDs, slaveID)
 			nicID2nbNic[slaveID] = slaveInterface
 		}
@@ -515,7 +551,7 @@ func (o *OVirtSource) matchHostMasterAndSlaveNics(nbi *inventory.NetboxInventory
 	return nil
 }
 
-func (o *OVirtSource) matchHostParentAndChildNics(nbi *inventory.NetboxInventory, parentID2childID map[string][]string, nicName2nicID map[string]string, nicID2nbNic map[string]*objects.Interface, processedNicsIDs map[string]bool) error {
+func (o *OVirtSource) matchHostParentAndChildNics(nbi *inventory.NetboxInventory, parentID2childID map[string][]string, nicName2nicID map[string]string, nicID2nbNic map[string]*objects.Interface, processedNicsIDs map[string]bool, nicID2MAC map[string]string) error {
 	for parent, children := range parentID2childID {
 		parentNicID := nicName2nicID[parent]
 		parentInterface := nicID2nbNic[parentNicID]
@@ -524,17 +560,35 @@ func (o *OVirtSource) matchHostParentAndChildNics(nbi *inventory.NetboxInventory
 			if err != nil {
 				return fmt.Errorf("failed to add oVirt parent interface %+v with error: %v", parentInterface, err)
 			}
+			if nicID2MAC[parentNicID] != "" {
+				nbMACAddress, err := common.CreateMACAddressForObjectType(o.Ctx, nbi, nicID2MAC[parentNicID], parentInterface)
+				if err != nil {
+					return fmt.Errorf("create mac address for object type: %s", err)
+				}
+				if err = common.SetPrimaryMACForInterface(o.Ctx, nbi, parentInterface, nbMACAddress); err != nil {
+					return fmt.Errorf("set primary mac for interface: %s", err)
+				}
+			}
 			delete(processedNicsIDs, parentNicID)
 		}
 		for _, child := range children {
 			childInterface := nicID2nbNic[child]
 			childInterface.ParentInterface = parentInterface
-			if childInterface.MAC == "" {
-				childInterface.MAC = parentInterface.MAC
+			if nicID2MAC[child] == "" {
+				nicID2MAC[child] = nicID2MAC[parent]
 			}
 			childInterface, err := nbi.AddInterface(o.Ctx, childInterface)
 			if err != nil {
-				return fmt.Errorf("failed to add oVirt child interface %+v with error: %v", childInterface, err)
+				return fmt.Errorf("failed to add oVirt child interface %+v with error: %s", childInterface, err)
+			}
+			if nicID2MAC[child] != "" {
+				nbMACAddress, err := common.CreateMACAddressForObjectType(o.Ctx, nbi, nicID2MAC[child], childInterface)
+				if err != nil {
+					return fmt.Errorf("create mac address for object type: %s", err)
+				}
+				if err = common.SetPrimaryMACForInterface(o.Ctx, nbi, childInterface, nbMACAddress); err != nil {
+					return fmt.Errorf("set primary mac for interface %+v: %s", childInterface, err)
+				}
 			}
 			nicID2nbNic[child] = childInterface
 			delete(processedNicsIDs, child)
@@ -543,7 +597,7 @@ func (o *OVirtSource) matchHostParentAndChildNics(nbi *inventory.NetboxInventory
 	return nil
 }
 
-func (o *OVirtSource) collectHostNicsData(nbHost *objects.Device, nbi *inventory.NetboxInventory, nics *ovirtsdk4.HostNicSlice, parentID2childID map[string][]string, master2slave map[string][]string, nicName2nicID map[string]string, nicID2nbNic map[string]*objects.Interface, processedNicsIDs map[string]bool, nicID2IPv4 map[string]string, nicID2IPv6 map[string]string) error {
+func (o *OVirtSource) collectHostNicsData(nbHost *objects.Device, nbi *inventory.NetboxInventory, nics *ovirtsdk4.HostNicSlice, parentID2childID map[string][]string, master2slave map[string][]string, nicName2nicID map[string]string, nicID2nbNic map[string]*objects.Interface, processedNicsIDs map[string]bool, nicID2IPv4 map[string]string, nicID2IPv6 map[string]string, nicID2MAC map[string]string) error {
 	for _, nic := range nics.Slice() {
 		nicID, exists := nic.Id()
 		if !exists {
@@ -659,6 +713,8 @@ func (o *OVirtSource) collectHostNicsData(nbHost *objects.Device, nbi *inventory
 			}
 		}
 
+		nicID2MAC[nicID] = strings.ToUpper(nicMAC)
+
 		newInterface := &objects.Interface{
 			NetboxObject: objects.NetboxObject{
 				Tags:        o.Config.SourceTags,
@@ -669,7 +725,6 @@ func (o *OVirtSource) collectHostNicsData(nbHost *objects.Device, nbi *inventory
 			Speed:       objects.InterfaceSpeed(nicSpeedKbps),
 			Status:      nicEnabled,
 			MTU:         int(nicMtu),
-			MAC:         strings.ToUpper(nicMAC),
 			Type:        nicType,
 			TaggedVlans: nicTaggedVlans,
 		}
@@ -788,7 +843,9 @@ func (o *OVirtSource) extractVMData(nbi *inventory.NetboxInventory, vmID string,
 	if vmCluster != nil {
 		vmTenantGroup = vmCluster.TenantGroup
 		vmTenant = vmCluster.Tenant
-		vmSite = vmCluster.Site
+		if vmCluster.ScopeType == constants.ContentTypeDcimSite {
+			vmSite = nbi.GetSiteByID(vmCluster.ScopeID)
+		}
 	}
 
 	// VM's Status
@@ -964,14 +1021,22 @@ func (o *OVirtSource) syncVMInterfaces(nbi *inventory.NetboxInventory, ovirtVM *
 								Tags:        o.Config.SourceTags,
 								Description: reportedDevice.MustDescription(),
 							},
-							VM:         netboxVM,
-							Name:       reportedDeviceName,
-							MACAddress: strings.ToUpper(vmInterfaceMac),
-							Enabled:    true, // TODO
+							VM:      netboxVM,
+							Name:    reportedDeviceName,
+							Enabled: true, // TODO
 						}
 						vmInterface, err = nbi.AddVMInterface(o.Ctx, vmInterfaceStruct)
 						if err != nil {
 							return fmt.Errorf("failed to sync oVirt vm %s's interface %+v: %v", netboxVM.Name, vmInterfaceStruct, err)
+						}
+						if vmInterfaceMac != "" {
+							nbMACAddress, err := common.CreateMACAddressForObjectType(o.Ctx, nbi, vmInterfaceMac, vmInterface)
+							if err != nil {
+								return fmt.Errorf("create mac address for object type: %s", err)
+							}
+							if err = common.SetPrimaryMACForInterface(o.Ctx, nbi, vmInterface, nbMACAddress); err != nil {
+								return fmt.Errorf("set primary mac for interface: %s", err)
+							}
 						}
 					} else {
 						o.Logger.Warning(o.Ctx, "name for oVirt vm's reported device is empty. Skipping...")
@@ -1117,7 +1182,7 @@ func (o *OVirtSource) syncVMNics(nbi *inventory.NetboxInventory, ovirtVM *ovirts
 				}
 			}
 
-			_, err := nbi.AddVMInterface(o.Ctx, &objects.VMInterface{
+			nbVMInterface, err := nbi.AddVMInterface(o.Ctx, &objects.VMInterface{
 				NetboxObject: objects.NetboxObject{
 					Tags:        o.SourceTags,
 					Description: nicDescription,
@@ -1127,13 +1192,21 @@ func (o *OVirtSource) syncVMNics(nbi *inventory.NetboxInventory, ovirtVM *ovirts
 				},
 				VM:          netboxVM,
 				Name:        nicName,
-				MACAddress:  nicMAC,
 				Mode:        nicMode,
 				Enabled:     true,
 				TaggedVlans: nicVlans,
 			})
 			if err != nil {
 				return fmt.Errorf("add vm interface: %s", err)
+			}
+			if nicMAC != "" {
+				nbMACAddress, err := common.CreateMACAddressForObjectType(o.Ctx, nbi, nicMAC, nbVMInterface)
+				if err != nil {
+					return fmt.Errorf("create mac address for vm interface %+v: %s", nbVMInterface, err)
+				}
+				if err = common.SetPrimaryMACForInterface(o.Ctx, nbi, nbVMInterface, nbMACAddress); err != nil {
+					return fmt.Errorf("set primary mac for vm interface %+v: %s", nbVMInterface, err)
+				}
 			}
 		}
 	}

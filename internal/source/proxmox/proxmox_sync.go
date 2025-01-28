@@ -14,9 +14,15 @@ import (
 )
 
 func (ps *ProxmoxSource) syncCluster(nbi *inventory.NetboxInventory) error {
+	var clusterScopeType constants.ContentType
+	var clusterScopeID int
 	clusterSite, err := common.MatchClusterToSite(ps.Ctx, nbi, ps.Cluster.Name, ps.SourceConfig.ClusterSiteRelations)
 	if err != nil {
 		return err
+	}
+	if clusterSite != nil {
+		clusterScopeType = constants.ContentTypeDcimSite
+		clusterScopeID = clusterSite.ID
 	}
 	clusterTenant, err := common.MatchClusterToTenant(ps.Ctx, nbi, ps.Cluster.Name, ps.SourceConfig.ClusterTenantRelations)
 	if err != nil {
@@ -44,10 +50,11 @@ func (ps *ProxmoxSource) syncCluster(nbi *inventory.NetboxInventory) error {
 		NetboxObject: objects.NetboxObject{
 			Tags: ps.SourceTags,
 		},
-		Name:   ps.Cluster.Name,
-		Type:   clusterType,
-		Site:   clusterSite,
-		Tenant: clusterTenant,
+		Name:      ps.Cluster.Name,
+		Type:      clusterType,
+		ScopeType: clusterScopeType,
+		ScopeID:   clusterScopeID,
+		Tenant:    clusterTenant,
 	}
 	nbCluster, err := nbi.AddCluster(ps.Ctx, clusterStruct)
 	if err != nil {
@@ -60,7 +67,10 @@ func (ps *ProxmoxSource) syncCluster(nbi *inventory.NetboxInventory) error {
 func (ps *ProxmoxSource) syncNodes(nbi *inventory.NetboxInventory) error {
 	ps.NetboxNodes = make(map[string]*objects.Device, len(ps.Nodes))
 	for _, node := range ps.Nodes {
-		hostSite := ps.NetboxCluster.Site
+		var hostSite *objects.Site
+		if ps.NetboxCluster.ScopeType == constants.ContentTypeDcimSite {
+			hostSite = nbi.GetSiteByID(ps.NetboxCluster.ScopeID)
+		}
 		var err error
 		if hostSite == nil {
 			hostSite, err = common.MatchHostToSite(ps.Ctx, nbi, node.Name, ps.SourceConfig.HostSiteRelations)
@@ -284,13 +294,22 @@ func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *ob
 			NetboxObject: objects.NetboxObject{
 				Tags: ps.SourceTags,
 			},
-			Name:       vmNetwork.Name,
-			MACAddress: strings.ToUpper(vmNetwork.HardwareAddress),
-			VM:         nbVM,
+			Name: vmNetwork.Name,
+			VM:   nbVM,
 		}
 		nbVMIface, err := nbi.AddVMInterface(ps.Ctx, vmInterfaceStruct)
 		if err != nil {
 			return fmt.Errorf("add vm interface %+v: %s", vmInterfaceStruct, err)
+		}
+		vmIfaceMAC := strings.ToUpper(vmNetwork.HardwareAddress)
+		if vmIfaceMAC == "" {
+			nbMACAddress, err := common.CreateMACAddressForObjectType(ps.Ctx, nbi, vmIfaceMAC, nbVMIface)
+			if err != nil {
+				return fmt.Errorf("create mac address for object type: %s", err)
+			}
+			if err = common.SetPrimaryMACForInterface(ps.Ctx, nbi, nbVMIface, nbMACAddress); err != nil {
+				return fmt.Errorf("set primary mac for interface %+v: %s", nbVMIface, err)
+			}
 		}
 
 		for _, ipAddress := range vmNetwork.IPAddresses {
@@ -421,13 +440,22 @@ func (ps *ProxmoxSource) syncContainerNetworks(nbi *inventory.NetboxInventory, n
 			NetboxObject: objects.NetboxObject{
 				Tags: ps.SourceTags,
 			},
-			Name:       containerIface.Name,
-			MACAddress: strings.ToUpper(containerIface.HWAddr),
-			VM:         nbContainer,
+			Name: containerIface.Name,
+			VM:   nbContainer,
 		}
 		nbVMIface, err := nbi.AddVMInterface(ps.Ctx, vmIfaceStruct)
 		if err != nil {
 			return fmt.Errorf("add vm interface: %s", err)
+		}
+		vmIfaceMAC := strings.ToUpper(containerIface.HWAddr)
+		if vmIfaceMAC != "" {
+			nbMACAddress, err := common.CreateMACAddressForObjectType(ps.Ctx, nbi, vmIfaceMAC, nbVMIface)
+			if err != nil {
+				return fmt.Errorf("create mac address for container iface: %s", err)
+			}
+			if err = common.SetPrimaryMACForInterface(ps.Ctx, nbi, nbVMIface, nbMACAddress); err != nil {
+				return fmt.Errorf("set primary mac for container iface %+v: %s", nbVMIface, err)
+			}
 		}
 
 		// Check if IPv4 address is present
