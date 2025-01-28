@@ -909,9 +909,9 @@ func (vc *VmwareSource) syncVM(nbi *inventory.NetboxInventory, vmKey string, vm 
 				if mappedField, ok := vc.SourceConfig.CustomFieldMappings[fieldName]; ok {
 					switch mappedField {
 					case "owner":
-						vmOwners = strings.Split(field.Value, ",")
+						vmOwners = utils.SerializeOwners(strings.Split(field.Value, ","))
 					case "email":
-						vmOwnerEmails = strings.Split(field.Value, ",")
+						vmOwnerEmails = utils.SerializeEmails(strings.Split(field.Value, ","))
 					case "description":
 						vmDescription = strings.TrimSpace(field.Value)
 					}

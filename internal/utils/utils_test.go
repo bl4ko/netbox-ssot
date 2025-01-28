@@ -653,3 +653,55 @@ func TestExtractFunctionNameWithTrimPrefix(t *testing.T) {
 		})
 	}
 }
+
+func TestSerializeEmails(t *testing.T) {
+	type args struct {
+		emails []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{
+			name: "Serialize emails",
+			args: args{
+				emails: []string{"Jack.sparrow@example.com"},
+			},
+			want: []string{"jack.sparrow@example.com"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := SerializeEmails(tt.args.emails); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("SerializeEmails() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSerializeOwners(t *testing.T) {
+	type args struct {
+		owners []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{
+			name: "Serialize owners",
+			args: args{
+				owners: []string{"Jack Sparrow", "jack sparrow", "jack Sparrow"},
+			},
+			want: []string{"Jack Sparrow", "Jack Sparrow", "Jack Sparrow"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := SerializeOwners(tt.args.owners); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("SerializeOwners() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
