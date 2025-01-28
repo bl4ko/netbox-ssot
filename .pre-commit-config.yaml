@@ -15,6 +15,16 @@ repos:
     hooks:
       - id: golangci-lint
 
+  # - repo: https://github.com/segmentio/golines
+  #   rev: v0.12.2
+  #   hooks:
+  #     - id: golines
+  #       name: golines
+  #       description: A golang formatter that fixes long lines.
+  #       entry: golines -w
+  #       types: [go]
+  #       language: golang
+
   - repo: https://github.com/dnephin/pre-commit-golang
     rev: v0.5.1
     hooks:

@@ -705,3 +705,23 @@ func TestSerializeOwners(t *testing.T) {
 		})
 	}
 }
+
+func TestSerializeOwner(t *testing.T) {
+	type args struct {
+		owner string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := SerializeOwner(tt.args.owner); got != tt.want {
+				t.Errorf("SerializeOwner() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
