@@ -404,17 +404,19 @@ func (ds *DnacSource) syncDeviceInterface(
 		return fmt.Errorf("add device interface: %s", err)
 	}
 
-	nbMACAddress, err := common.CreateMACAddressForObjectType(
-		ds.Ctx,
-		nbi,
-		iface.MacAddress,
-		nbIface,
-	)
-	if err != nil {
-		return fmt.Errorf("creating MAC address: %s", err)
-	}
-	if err = common.SetPrimaryMACForInterface(ds.Ctx, nbi, nbIface, nbMACAddress); err != nil {
-		return fmt.Errorf("setting primary MAC for interface: %s", err)
+	if iface.MacAddress != "" {
+		nbMACAddress, err := common.CreateMACAddressForObjectType(
+			ds.Ctx,
+			nbi,
+			iface.MacAddress,
+			nbIface,
+		)
+		if err != nil {
+			return fmt.Errorf("creating MAC address: %s", err)
+		}
+		if err = common.SetPrimaryMACForInterface(ds.Ctx, nbi, nbIface, nbMACAddress); err != nil {
+			return fmt.Errorf("setting primary MAC for interface: %s", err)
+		}
 	}
 
 	err = ds.addIPAddressToInterface(nbi, nbIface, iface, ifaceDevice)

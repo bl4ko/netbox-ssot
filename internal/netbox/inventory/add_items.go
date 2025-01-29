@@ -860,8 +860,8 @@ func (nbi *NetboxInventory) AddVirtualDeviceContext(
 	newVDC.NetboxObject.AddTag(nbi.SsotTag)
 	addSourceNameCustomField(ctx, &newVDC.NetboxObject)
 	newVDC.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
-	nbi.devicesLock.Lock()
-	defer nbi.devicesLock.Unlock()
+	nbi.virtualDeviceContextsLock.Lock()
+	defer nbi.virtualDeviceContextsLock.Unlock()
 	if newVDC.Device == nil {
 		return nil, fmt.Errorf(
 			"VirtualDeviceContext %s is not assigned to a device, but it should be",
