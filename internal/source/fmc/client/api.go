@@ -8,6 +8,7 @@ import (
 	"io"
 	"math"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -52,7 +53,12 @@ func (fmcc FMCClient) Authenticate() (string, string, error) {
 func (fmcc FMCClient) authenticateOnce() (string, string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), fmcc.DefaultTimeout)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s/fmc_platform/v1/auth/generatetoken", fmcc.BaseURL), nil)
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		fmt.Sprintf("%s/fmc_platform/v1/auth/generatetoken", fmcc.BaseURL),
+		nil,
+	)
 	if err != nil {
 		return "", "", fmt.Errorf("new request with context: %w", err)
 	}
@@ -72,18 +78,29 @@ func (fmcc FMCClient) authenticateOnce() (string, string, error) {
 	accessToken := res.Header.Get("X-auth-access-token")
 	refreshToken := res.Header.Get("X-auth-refresh-token")
 	if accessToken == "" || refreshToken == "" {
-		return "", "", fmt.Errorf("failed extracting access and refresh tokens from response") //nolint:goerr113
+		return "", "", fmt.Errorf(
+			"failed extracting access and refresh tokens from response",
+		) //nolint:goerr113
 	}
 	return accessToken, refreshToken, nil
 }
 
 // makeRequestOnce sends an HTTP request to the specified path using the given method and body.
 // It reads the response body and returns it along with the response object.
-func (fmcc *FMCClient) makeRequestOnce(ctx context.Context, method, path string, body io.Reader) (*http.Response, []byte, error) {
+func (fmcc *FMCClient) makeRequestOnce(
+	ctx context.Context,
+	method, path string,
+	body io.Reader,
+) (*http.Response, []byte, error) {
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, fmcc.DefaultTimeout)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctxWithTimeout, method, fmt.Sprintf("%s/%s", fmcc.BaseURL, path), body)
+	req, err := http.NewRequestWithContext(
+		ctxWithTimeout,
+		method,
+		fmt.Sprintf("%s/%s", fmcc.BaseURL, path),
+		body,
+	)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -109,7 +126,12 @@ func (fmcc *FMCClient) makeRequestOnce(ctx context.Context, method, path string,
 // MakeRequest sends an HTTP request to the specified path using the given method and body.
 // It retries the request with exponential backoff up to a maximum number of attempts.
 // If the request fails after the maximum number of attempts, it returns an error.
-func (fmcc *FMCClient) MakeRequest(ctx context.Context, method, path string, body io.Reader, result interface{}) error {
+func (fmcc *FMCClient) MakeRequest(
+	ctx context.Context,
+	method, path string,
+	body io.Reader,
+	result interface{},
+) error {
 	var (
 		resp           *http.Response
 		bodyBytes      []byte
@@ -127,11 +149,24 @@ func (fmcc *FMCClient) MakeRequest(ctx context.Context, method, path string, bod
 		reqCtx, cancel := context.WithTimeout(ctx, fmcc.DefaultTimeout)
 		defer cancel()
 
-		fmcc.Logger.Debugf(fmcc.Ctx, "Making %s request to %s with body=%v (attempt=%d)", method, path, body, attempt)
+		fmcc.Logger.Debugf(
+			fmcc.Ctx,
+			"Making %s request to %s with body=%v (attempt=%d)",
+			method,
+			path,
+			body,
+			attempt,
+		)
+
 		resp, bodyBytes, err = fmcc.makeRequestOnce(reqCtx, method, path, body)
 		if err != nil {
 			if reqCtx.Err() == context.Canceled || reqCtx.Err() == context.DeadlineExceeded {
-				fmcc.Logger.Debugf(fmcc.Ctx, "request attempt %d failed due to context timeout/cancellation: %s", attempt, err)
+				fmcc.Logger.Debugf(
+					fmcc.Ctx,
+					"request attempt %d failed due to context timeout/cancellation: %s",
+					attempt,
+					err,
+				)
 				time.Sleep(exponentialBackoff(attempt))
 				continue
 			}
@@ -143,7 +178,10 @@ func (fmcc *FMCClient) MakeRequest(ctx context.Context, method, path string, bod
 		// Check if the status code is 401 Unauthorized
 		if resp.StatusCode == http.StatusUnauthorized {
 			if !tokenRefreshed {
-				fmcc.Logger.Debugf(fmcc.Ctx, "received 401 Unauthorized, attempting to refresh token")
+				fmcc.Logger.Debugf(
+					fmcc.Ctx,
+					"received 401 Unauthorized, attempting to refresh token",
+				)
 
 				accessToken, refreshToken, authErr := fmcc.Authenticate()
 				if authErr != nil {
@@ -169,7 +207,11 @@ func (fmcc *FMCClient) MakeRequest(ctx context.Context, method, path string, bod
 			if len(bodyBytes) > 0 {
 				respBody = string(bodyBytes)
 			}
-			return fmt.Errorf("unexpected status code: %d, response body: %s", resp.StatusCode, respBody)
+			return fmt.Errorf(
+				"unexpected status code: %d, response body: %s",
+				resp.StatusCode,
+				respBody,
+			)
 		}
 
 		err = json.Unmarshal(bodyBytes, result)
@@ -220,7 +262,12 @@ func (fmcc *FMCClient) GetDevices(domainUUID string) ([]Device, error) {
 	ctx := context.Background()
 
 	for {
-		devicesURL := fmt.Sprintf("fmc_config/v1/domain/%s/devices/devicerecords?offset=%d&limit=%d", domainUUID, offset, limit)
+		devicesURL := fmt.Sprintf(
+			"fmc_config/v1/domain/%s/devices/devicerecords?offset=%d&limit=%d",
+			domainUUID,
+			offset,
+			limit,
+		)
 		var marshaledResponse APIResponse[Device]
 		err := fmcc.MakeRequest(ctx, http.MethodGet, devicesURL, nil, &marshaledResponse)
 		if err != nil {
@@ -241,18 +288,31 @@ func (fmcc *FMCClient) GetDevices(domainUUID string) ([]Device, error) {
 }
 
 // GetDevicePhysicalInterfaces returns a list of physical interfaces for the specified device in the specified domain.
-func (fmcc *FMCClient) GetDevicePhysicalInterfaces(domainUUID string, deviceID string) ([]PhysicalInterface, error) {
+func (fmcc *FMCClient) GetDevicePhysicalInterfaces(
+	domainUUID string,
+	deviceID string,
+) ([]PhysicalInterface, error) {
 	offset := 0
 	limit := 25
 	pIfaces := []PhysicalInterface{}
 	ctx := context.Background()
 
 	for {
-		pInterfacesURL := fmt.Sprintf("fmc_config/v1/domain/%s/devices/devicerecords/%s/physicalinterfaces?offset=%d&limit=%d", domainUUID, deviceID, offset, limit)
+		pInterfacesURL := fmt.Sprintf(
+			"fmc_config/v1/domain/%s/devices/devicerecords/%s/physicalinterfaces?offset=%d&limit=%d",
+			domainUUID,
+			deviceID,
+			offset,
+			limit,
+		)
 		var marshaledResponse APIResponse[PhysicalInterface]
 		err := fmcc.MakeRequest(ctx, http.MethodGet, pInterfacesURL, nil, &marshaledResponse)
 		if err != nil {
-			return nil, fmt.Errorf("make request for physical interfaces (%s): %w", pInterfacesURL, err)
+			return nil, fmt.Errorf(
+				"make request for physical interfaces (%s): %w",
+				pInterfacesURL,
+				err,
+			)
 		}
 
 		if len(marshaledResponse.Items) > 0 {
@@ -268,18 +328,41 @@ func (fmcc *FMCClient) GetDevicePhysicalInterfaces(domainUUID string, deviceID s
 	return pIfaces, nil
 }
 
-func (fmcc *FMCClient) GetDeviceVLANInterfaces(domainUUID string, deviceID string) ([]VlanInterface, error) {
+func (fmcc *FMCClient) GetDeviceVLANInterfaces(
+	domainUUID string,
+	deviceID string,
+) ([]VlanInterface, error) {
 	offset := 0
 	limit := 25
 	vlanIfaces := []VlanInterface{}
 	ctx := context.Background()
 
 	for {
-		vInterfacesURL := fmt.Sprintf("fmc_config/v1/domain/%s/devices/devicerecords/%s/vlaninterfaces?offset=%d&limit=%d", domainUUID, deviceID, offset, limit)
+		vInterfacesURL := fmt.Sprintf(
+			"%s/devices/devicerecords/%s/vlaninterfaces?offset=%d&limit=%d",
+			domainUUID,
+			deviceID,
+			offset,
+			limit,
+		)
 		var marshaledResponse APIResponse[VlanInterface]
 		err := fmcc.MakeRequest(ctx, http.MethodGet, vInterfacesURL, nil, &marshaledResponse)
 		if err != nil {
-			return nil, fmt.Errorf("make request for VLAN interfaces with (%s): %w", vInterfacesURL, err)
+			if strings.Contains(
+				err.Error(),
+				"VLAN Interface type is not supported on this device model",
+			) {
+				fmcc.Logger.Debugf(
+					fmcc.Ctx,
+					"VLAN Interface type is not supported on this device model",
+				)
+				return nil, nil
+			}
+			return nil, fmt.Errorf(
+				"make request for VLAN interfaces with (%s): %w",
+				vInterfacesURL,
+				err,
+			)
 		}
 
 		if len(marshaledResponse.Items) > 0 {
@@ -295,11 +378,20 @@ func (fmcc *FMCClient) GetDeviceVLANInterfaces(domainUUID string, deviceID strin
 	return vlanIfaces, nil
 }
 
-func (fmcc *FMCClient) GetPhysicalInterfaceInfo(domainUUID string, deviceID string, interfaceID string) (*PhysicalInterfaceInfo, error) {
+func (fmcc *FMCClient) GetPhysicalInterfaceInfo(
+	domainUUID string,
+	deviceID string,
+	interfaceID string,
+) (*PhysicalInterfaceInfo, error) {
 	var pInterfaceInfo PhysicalInterfaceInfo
 	ctx := context.Background()
 
-	devicesURL := fmt.Sprintf("fmc_config/v1/domain/%s/devices/devicerecords/%s/physicalinterfaces/%s", domainUUID, deviceID, interfaceID)
+	devicesURL := fmt.Sprintf(
+		"fmc_config/v1/domain/%s/devices/devicerecords/%s/physicalinterfaces/%s",
+		domainUUID,
+		deviceID,
+		interfaceID,
+	)
 	err := fmcc.MakeRequest(ctx, http.MethodGet, devicesURL, nil, &pInterfaceInfo)
 	if err != nil {
 		return nil, fmt.Errorf("make request for physical interface info (%s): %w", devicesURL, err)
@@ -308,14 +400,27 @@ func (fmcc *FMCClient) GetPhysicalInterfaceInfo(domainUUID string, deviceID stri
 	return &pInterfaceInfo, nil
 }
 
-func (fmcc *FMCClient) GetVLANInterfaceInfo(domainUUID string, deviceID string, interfaceID string) (*VLANInterfaceInfo, error) {
+func (fmcc *FMCClient) GetVLANInterfaceInfo(
+	domainUUID string,
+	deviceID string,
+	interfaceID string,
+) (*VLANInterfaceInfo, error) {
 	var vlanInterfaceInfo VLANInterfaceInfo
 	ctx := context.Background()
 
-	devicesURL := fmt.Sprintf("fmc_config/v1/domain/%s/devices/devicerecords/%s/vlaninterfaces/%s", domainUUID, deviceID, interfaceID)
+	devicesURL := fmt.Sprintf(
+		"fmc_config/v1/domain/%s/devices/devicerecords/%s/vlaninterfaces/%s",
+		domainUUID,
+		deviceID,
+		interfaceID,
+	)
 	err := fmcc.MakeRequest(ctx, http.MethodGet, devicesURL, nil, &vlanInterfaceInfo)
 	if err != nil {
-		return nil, fmt.Errorf("make request for VLAN interface info with (%s): %w", devicesURL, err)
+		return nil, fmt.Errorf(
+			"make request for VLAN interface info with (%s): %w",
+			devicesURL,
+			err,
+		)
 	}
 
 	return &vlanInterfaceInfo, nil
@@ -325,7 +430,11 @@ func (fmcc *FMCClient) GetDeviceInfo(domainUUID string, deviceID string) (*Devic
 	var deviceInfo DeviceInfo
 	ctx := context.Background()
 
-	devicesURL := fmt.Sprintf("fmc_config/v1/domain/%s/devices/devicerecords/%s", domainUUID, deviceID)
+	devicesURL := fmt.Sprintf(
+		"fmc_config/v1/domain/%s/devices/devicerecords/%s",
+		domainUUID,
+		deviceID,
+	)
 	err := fmcc.MakeRequest(ctx, http.MethodGet, devicesURL, nil, &deviceInfo)
 	if err != nil {
 		return nil, fmt.Errorf("make request for device info with (%s): %w", devicesURL, err)

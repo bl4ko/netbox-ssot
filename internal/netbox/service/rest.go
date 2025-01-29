@@ -60,7 +60,7 @@ func GetAll[T any](
 	if path == "" {
 		return nil, fmt.Errorf("path not found for type %T", dummy)
 	}
-	limit := 200
+	limit := 250
 	offset := 0
 
 	netboxClient.Logger.Debugf(ctx, "Getting all %T from Netbox", dummy)

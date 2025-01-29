@@ -27,6 +27,7 @@ func (fmcs *FMCSource) initDomains(c *client.FMCClient) ([]client.Domain, error)
 	if err != nil {
 		return nil, fmt.Errorf("get domains: %s", err)
 	}
+	fmcs.Domains = make(map[string]client.Domain, len(domains))
 	for _, domain := range domains {
 		fmcs.Domains[domain.UUID] = domain
 	}
@@ -42,6 +43,7 @@ func (fmcs *FMCSource) initDevices(c *client.FMCClient, domain client.Domain) er
 	}
 	fmcs.Logger.Debugf(fmcs.Ctx, "Received devices %v", devices)
 
+	fmcs.Devices = make(map[string]*client.DeviceInfo, len(devices))
 	for _, device := range devices {
 		deviceInfo, err := c.GetDeviceInfo(domain.UUID, device.ID)
 		if err != nil {
@@ -66,26 +68,39 @@ func (fmcs *FMCSource) initDevices(c *client.FMCClient, domain client.Domain) er
 	return nil
 }
 
-func (fmcs *FMCSource) initDevicePhysicalInterfaces(c *client.FMCClient, domain client.Domain, device client.Device) error {
+func (fmcs *FMCSource) initDevicePhysicalInterfaces(
+	c *client.FMCClient,
+	domain client.Domain,
+	device client.Device,
+) error {
 	pIfaces, err := c.GetDevicePhysicalInterfaces(domain.UUID, device.ID)
 	if err != nil {
 		return fmt.Errorf("error getting physical interfaces: %s", err)
 	}
+	fmcs.DevicePhysicalIfaces = make(map[string][]*client.PhysicalInterfaceInfo, len(pIfaces))
 	for _, pInterface := range pIfaces {
 		pIfaceInfo, err := c.GetPhysicalInterfaceInfo(domain.UUID, device.ID, pInterface.ID)
 		if err != nil {
 			return fmt.Errorf("get physical interface info: %s", err)
 		}
-		fmcs.DevicePhysicalIfaces[device.ID] = append(fmcs.DevicePhysicalIfaces[device.ID], pIfaceInfo)
+		fmcs.DevicePhysicalIfaces[device.ID] = append(
+			fmcs.DevicePhysicalIfaces[device.ID],
+			pIfaceInfo,
+		)
 	}
 	return nil
 }
 
-func (fmcs *FMCSource) initDeviceVLANInterfaces(c *client.FMCClient, domain client.Domain, device client.Device) error {
+func (fmcs *FMCSource) initDeviceVLANInterfaces(
+	c *client.FMCClient,
+	domain client.Domain,
+	device client.Device,
+) error {
 	vlanIfaces, err := c.GetDeviceVLANInterfaces(domain.UUID, device.ID)
 	if err != nil {
 		return fmt.Errorf("error getting vlan interfaces: %s", err)
 	}
+	fmcs.DeviceVlanIfaces = make(map[string][]*client.VLANInterfaceInfo, len(vlanIfaces))
 	for _, vlanIface := range vlanIfaces {
 		vlanIfaceInfo, err := c.GetVLANInterfaceInfo(domain.UUID, device.ID, vlanIface.ID)
 		if err != nil {
