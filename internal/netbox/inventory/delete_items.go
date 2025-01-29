@@ -28,13 +28,13 @@ func (nbi *NetboxInventory) DeleteOrphans(hard bool) error {
 		for _, orphanItem := range id2orphanItem {
 			if hard {
 				// Perform hard deletion
-				err := nbi.hardDelete(objectAPIPath, orphanItem)
+				err := nbi.hardDelete(orphanItem)
 				if err != nil {
 					nbi.OrphanManager.Logger.Errorf(nbi.Ctx, "hard delete object: %s", err)
 					continue
 				}
 			} else {
-				err := nbi.softDelete(objectAPIPath, orphanItem)
+				err := nbi.softDelete(orphanItem)
 				if err != nil {
 					nbi.OrphanManager.Logger.Errorf(nbi.Ctx, "soft delete object: %s", err)
 				}
@@ -45,16 +45,16 @@ func (nbi *NetboxInventory) DeleteOrphans(hard bool) error {
 	return nil
 }
 
-func (nbi *NetboxInventory) hardDelete(apiPath string, orphanItem objects.OrphanItem) error {
+func (nbi *NetboxInventory) hardDelete(orphanItem objects.OrphanItem) error {
 	// Perform hard deletion
-	err := nbi.NetboxAPI.DeleteObject(nbi.Ctx, apiPath, orphanItem.GetID())
+	err := nbi.NetboxAPI.DeleteObject(nbi.Ctx, orphanItem)
 	if err != nil {
 		return fmt.Errorf("Failed deleting %s object: %s", orphanItem, err)
 	}
 	return nil
 }
 
-func (nbi *NetboxInventory) softDelete(apiPath string, orphanItem objects.OrphanItem) error {
+func (nbi *NetboxInventory) softDelete(orphanItem objects.OrphanItem) error {
 	// Perform soft deletion
 	// Add tag to the object to mark it as orphaned
 	todayDate := time.Now().Format(constants.CustomFieldOrphanLastSeenFormat)
@@ -119,7 +119,7 @@ func (nbi *NetboxInventory) softDelete(apiPath string, orphanItem objects.Orphan
 			return fmt.Errorf("failed parsing last seen date: %s", err)
 		}
 		if int((time.Since(lastSeen).Hours())/24) > nbi.NetboxConfig.RemoveOrphansAfterDays { //nolint:mnd
-			err := nbi.hardDelete(apiPath, orphanItem)
+			err := nbi.hardDelete(orphanItem)
 			if err != nil {
 				return fmt.Errorf("failed deleting %s object: %s", orphanItem, err)
 			}

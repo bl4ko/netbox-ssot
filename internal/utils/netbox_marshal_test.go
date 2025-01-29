@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 )
 
@@ -43,18 +44,8 @@ func TestComplexClusterMarshal(t *testing.T) {
 			Name: "New Cluster Group",
 			Slug: "new-cluster-group",
 		},
-		Site: &objects.Site{
-			NetboxObject: objects.NetboxObject{
-				ID: 2,
-				Tags: []*objects.Tag{
-					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-					{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
-				},
-			},
-			Name:   "New York",
-			Slug:   "new-york",
-			Status: &objects.SiteStatusActive,
-		},
+		ScopeType: constants.ContentTypeDcimSite,
+		ScopeID:   2,
 		Tenant: &objects.Tenant{
 			NetboxObject: objects.NetboxObject{
 				ID: 1,
@@ -74,7 +65,8 @@ func TestComplexClusterMarshal(t *testing.T) {
 		"name":        "Test",
 		"type":        2,
 		"status":      "active",
-		"site":        2,
+		"scope_type":  "dcim.site",
+		"scope_id":    2,
 		"group":       4,
 		"tenant":      1,
 	}

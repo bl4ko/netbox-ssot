@@ -41,7 +41,12 @@ func (fmcs *FMCSource) syncDevices(nbi *inventory.NetboxInventory) error {
 		if err != nil {
 			return fmt.Errorf("add device type: %s", err)
 		}
-		deviceTenant, err := common.MatchHostToTenant(fmcs.Ctx, nbi, deviceName, fmcs.SourceConfig.HostTenantRelations)
+		deviceTenant, err := common.MatchHostToTenant(
+			fmcs.Ctx,
+			nbi,
+			deviceName,
+			fmcs.SourceConfig.HostTenantRelations,
+		)
 		if err != nil {
 			return fmt.Errorf("match host to tenant %s", err)
 		}
@@ -50,7 +55,12 @@ func (fmcs *FMCSource) syncDevices(nbi *inventory.NetboxInventory) error {
 		// use default firewall role.
 		var deviceRole *objects.DeviceRole
 		if len(fmcs.SourceConfig.HostRoleRelations) > 0 {
-			deviceRole, err = common.MatchHostToRole(fmcs.Ctx, nbi, deviceName, fmcs.SourceConfig.HostRoleRelations)
+			deviceRole, err = common.MatchHostToRole(
+				fmcs.Ctx,
+				nbi,
+				deviceName,
+				fmcs.SourceConfig.HostRoleRelations,
+			)
 			if err != nil {
 				return fmt.Errorf("match host to role: %s", err)
 			}
@@ -62,7 +72,12 @@ func (fmcs *FMCSource) syncDevices(nbi *inventory.NetboxInventory) error {
 			}
 		}
 
-		deviceSite, err := common.MatchHostToSite(fmcs.Ctx, nbi, deviceName, fmcs.SourceConfig.HostSiteRelations)
+		deviceSite, err := common.MatchHostToSite(
+			fmcs.Ctx,
+			nbi,
+			deviceName,
+			fmcs.SourceConfig.HostSiteRelations,
+		)
 		if err != nil {
 			return fmt.Errorf("match host to site: %s", err)
 		}
@@ -83,7 +98,10 @@ func (fmcs *FMCSource) syncDevices(nbi *inventory.NetboxInventory) error {
 					constants.CustomFieldSourceIDName:     deviceUUID,
 					constants.CustomFieldDeviceUUIDName:   deviceUUID,
 					constants.CustomFieldHostCPUCoresName: device.Metadata.InventoryData.CPUCores,
-					constants.CustomFieldHostMemoryName:   fmt.Sprintf("%sMB", device.Metadata.InventoryData.MemoryInMB),
+					constants.CustomFieldHostMemoryName: fmt.Sprintf(
+						"%sMB",
+						device.Metadata.InventoryData.MemoryInMB,
+					),
 				},
 			},
 			Name:         deviceName,
@@ -110,23 +128,44 @@ func (fmcs *FMCSource) syncDevices(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
-func (fmcs *FMCSource) syncVlanInterfaces(nbi *inventory.NetboxInventory, nbDevice *objects.Device, deviceUUID string) error {
+func (fmcs *FMCSource) syncVlanInterfaces(
+	nbi *inventory.NetboxInventory,
+	nbDevice *objects.Device,
+	deviceUUID string,
+) error {
 	if vlanIfaces, ok := fmcs.DeviceVlanIfaces[deviceUUID]; ok {
 		for _, vlanIface := range vlanIfaces {
 			// Add vlan
 			ifaceTaggedVlans := []*objects.Vlan{}
 			if vlanIface.VID != 0 {
 				// Match vlan to site
-				vlanSite, err := common.MatchVlanToSite(fmcs.Ctx, nbi, vlanIface.Name, fmcs.SourceConfig.VlanSiteRelations)
+				vlanSite, err := common.MatchVlanToSite(
+					fmcs.Ctx,
+					nbi,
+					vlanIface.Name,
+					fmcs.SourceConfig.VlanSiteRelations,
+				)
 				if err != nil {
 					return fmt.Errorf("match vlan to site: %s", err)
 				}
 				// Match vlan to group
-				vlanGroup, err := common.MatchVlanToGroup(fmcs.Ctx, nbi, vlanIface.Name, vlanSite, fmcs.SourceConfig.VlanGroupRelations, fmcs.SourceConfig.VlanGroupSiteRelations)
+				vlanGroup, err := common.MatchVlanToGroup(
+					fmcs.Ctx,
+					nbi,
+					vlanIface.Name,
+					vlanSite,
+					fmcs.SourceConfig.VlanGroupRelations,
+					fmcs.SourceConfig.VlanGroupSiteRelations,
+				)
 				if err != nil {
 					return fmt.Errorf("match vlan to group: %s", err)
 				}
-				vlanTenent, err := common.MatchVlanToTenant(fmcs.Ctx, nbi, vlanIface.Name, fmcs.SourceConfig.VlanTenantRelations)
+				vlanTenent, err := common.MatchVlanToTenant(
+					fmcs.Ctx,
+					nbi,
+					vlanIface.Name,
+					fmcs.SourceConfig.VlanTenantRelations,
+				)
 				if err != nil {
 					return fmt.Errorf("match vlan to tenant: %s", err)
 				}
@@ -168,8 +207,16 @@ func (fmcs *FMCSource) syncVlanInterfaces(nbi *inventory.NetboxInventory, nbDevi
 			}
 
 			if vlanIface.IPv4 != nil && vlanIface.IPv4.Static != nil {
-				if utils.IsPermittedIPAddress(vlanIface.IPv4.Static.Address, fmcs.SourceConfig.PermittedSubnets, fmcs.SourceConfig.IgnoredSubnets) {
-					address := fmt.Sprintf("%s/%s", vlanIface.IPv4.Static.Address, vlanIface.IPv4.Static.Netmask)
+				if utils.IsPermittedIPAddress(
+					vlanIface.IPv4.Static.Address,
+					fmcs.SourceConfig.PermittedSubnets,
+					fmcs.SourceConfig.IgnoredSubnets,
+				) {
+					address := fmt.Sprintf(
+						"%s/%s",
+						vlanIface.IPv4.Static.Address,
+						vlanIface.IPv4.Static.Netmask,
+					)
 					dnsName := utils.ReverseLookup(vlanIface.IPv4.Static.Address)
 					_, err := nbi.AddIPAddress(fmcs.Ctx, &objects.IPAddress{
 						NetboxObject: objects.NetboxObject{
@@ -181,7 +228,7 @@ func (fmcs *FMCSource) syncVlanInterfaces(nbi *inventory.NetboxInventory, nbDevi
 						Address:            address,
 						DNSName:            dnsName,
 						AssignedObjectID:   NBIface.ID,
-						AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
+						AssignedObjectType: constants.ContentTypeDcimInterface,
 					})
 					if err != nil {
 						return fmt.Errorf("add ip address")
@@ -213,7 +260,11 @@ func (fmcs *FMCSource) syncVlanInterfaces(nbi *inventory.NetboxInventory, nbDevi
 	return nil
 }
 
-func (fmcs *FMCSource) syncPhysicalInterfaces(nbi *inventory.NetboxInventory, nbDevice *objects.Device, deviceUUID string) error {
+func (fmcs *FMCSource) syncPhysicalInterfaces(
+	nbi *inventory.NetboxInventory,
+	nbDevice *objects.Device,
+	deviceUUID string,
+) error {
 	if physicalIfaces, ok := fmcs.DevicePhysicalIfaces[deviceUUID]; ok {
 		for _, pIface := range physicalIfaces {
 			NBIface, err := nbi.AddInterface(fmcs.Ctx, &objects.Interface{
@@ -235,8 +286,16 @@ func (fmcs *FMCSource) syncPhysicalInterfaces(nbi *inventory.NetboxInventory, nb
 			}
 
 			if pIface.IPv4 != nil && pIface.IPv4.Static != nil {
-				if utils.IsPermittedIPAddress(pIface.IPv4.Static.Address, fmcs.SourceConfig.PermittedSubnets, fmcs.SourceConfig.IgnoredSubnets) {
-					address := fmt.Sprintf("%s/%s", pIface.IPv4.Static.Address, pIface.IPv4.Static.Netmask)
+				if utils.IsPermittedIPAddress(
+					pIface.IPv4.Static.Address,
+					fmcs.SourceConfig.PermittedSubnets,
+					fmcs.SourceConfig.IgnoredSubnets,
+				) {
+					address := fmt.Sprintf(
+						"%s/%s",
+						pIface.IPv4.Static.Address,
+						pIface.IPv4.Static.Netmask,
+					)
 					dnsName := utils.ReverseLookup(pIface.IPv4.Static.Address)
 					_, err := nbi.AddIPAddress(fmcs.Ctx, &objects.IPAddress{
 						NetboxObject: objects.NetboxObject{
@@ -248,7 +307,7 @@ func (fmcs *FMCSource) syncPhysicalInterfaces(nbi *inventory.NetboxInventory, nb
 						Address:            address,
 						DNSName:            dnsName,
 						AssignedObjectID:   NBIface.ID,
-						AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
+						AssignedObjectType: constants.ContentTypeDcimInterface,
 					})
 					if err != nil {
 						return fmt.Errorf("add ip address")

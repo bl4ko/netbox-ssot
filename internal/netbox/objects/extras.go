@@ -22,6 +22,13 @@ func (t Tag) String() string {
 func (t *Tag) GetID() int {
 	return t.ID
 }
+func (t *Tag) GetObjectType() constants.ContentType {
+	return constants.ContentTypeExtrasTag
+}
+
+func (t *Tag) GetAPIPath() constants.APIPath {
+	return constants.TagsAPIPath
+}
 
 // CustomFieldTypes are predefined netbox's types for CustomFields.
 type CustomFieldType struct {
@@ -107,4 +114,10 @@ func (cf CustomField) String() string {
 // CustomField implements IDItem interface.
 func (cf *CustomField) GetID() int {
 	return cf.ID
+}
+func (cf *CustomField) GetObjectType() constants.ContentType {
+	return constants.ContentTypeExtrasCustomField
+}
+func (cf *CustomField) GetAPIPath() constants.APIPath {
+	return constants.CustomFieldsAPIPath
 }

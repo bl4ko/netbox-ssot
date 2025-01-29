@@ -1,6 +1,10 @@
 package objects
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/bl4ko/netbox-ssot/internal/constants"
+)
 
 type ClusterGroup struct {
 	NetboxObject
@@ -18,6 +22,12 @@ func (cg ClusterGroup) String() string {
 // ClusterGroup implements IDItem interface.
 func (cg *ClusterGroup) GetID() int {
 	return cg.ID
+}
+func (cg *ClusterGroup) GetObjectType() constants.ContentType {
+	return constants.ContentTypeVirtualizationClusterGroup
+}
+func (cg *ClusterGroup) GetAPIPath() constants.APIPath {
+	return constants.ClusterGroupsAPIPath
 }
 
 // ClusterGroup implements OrphanItem interface.
@@ -40,6 +50,12 @@ func (ct ClusterType) String() string {
 // ClusterType implements IDItem interface.
 func (ct *ClusterType) GetID() int {
 	return ct.ID
+}
+func (ct *ClusterType) GetObjectType() constants.ContentType {
+	return constants.ContentTypeVirtualizationClusterType
+}
+func (ct *ClusterType) GetAPIPath() constants.APIPath {
+	return constants.ClusterTypesAPIPath
 }
 
 // ClusterType implements OrphanItem interface.
@@ -65,8 +81,10 @@ type Cluster struct {
 	Type *ClusterType `json:"type,omitempty"`
 	// ClusterGroup is the cluster group to which this cluster belongs.
 	Group *ClusterGroup `json:"group,omitempty"`
-	// Site is the site to which this cluster belongs.
-	Site *Site `json:"site,omitempty"`
+	// ScopeType is the scope of the cluster.
+	ScopeType constants.ContentType `json:"scope_type,omitempty"`
+	// ScopeID is the ID of the scope object.
+	ScopeID int `json:"scope_id,omitempty"`
 	// Status is the operational status of the cluster. This field is required.
 	Status ClusterStatus `json:"status,omitempty"`
 	// TenantGroup is the tenant group to which this cluster belongs.
@@ -82,6 +100,12 @@ func (c Cluster) String() string {
 // Cluster implements IDItem interface.
 func (c *Cluster) GetID() int {
 	return c.ID
+}
+func (c *Cluster) GetObjectType() constants.ContentType {
+	return constants.ContentTypeVirtualizationCluster
+}
+func (c *Cluster) GetAPIPath() constants.APIPath {
+	return constants.ClustersAPIPath
 }
 
 // Cluster implements OrphanItem interface.
@@ -145,6 +169,26 @@ func (vm VM) String() string {
 func (vm *VM) GetID() int {
 	return vm.ID
 }
+func (vm *VM) GetObjectType() constants.ContentType {
+	return constants.ContentTypeVirtualizationVirtualMachine
+}
+func (vm *VM) GetAPIPath() constants.APIPath {
+	return constants.VirtualMachinesAPIPath
+}
+
+// VM implements IPAddressOwner interface.
+func (vm *VM) GetPrimaryIPv4Address() *IPAddress {
+	return vm.PrimaryIPv4
+}
+func (vm *VM) GetPrimaryIPv6Address() *IPAddress {
+	return vm.PrimaryIPv6
+}
+func (vm *VM) SetPrimaryIPAddress(ip *IPAddress) {
+	vm.PrimaryIPv4 = ip
+}
+func (vm *VM) SetPrimaryIPv6Address(ip *IPAddress) {
+	vm.PrimaryIPv6 = ip
+}
 
 // VM implements OrphanItem interface.
 func (vm *VM) GetNetboxObject() *NetboxObject {
@@ -168,8 +212,8 @@ type VMInterface struct {
 	VM *VM `json:"virtual_machine,omitempty"`
 	// Name is the name of the interface. This field is required.
 	Name string `json:"name,omitempty"`
-	// MAC address of the interface.
-	MACAddress string `json:"mac_address,omitempty"`
+	// PrimaryMACAddress is the primary MAC address of the interface.
+	PrimaryMACAddress *MACAddress `json:"primary_mac_address,omitempty"`
 	// MTU of the interface.
 	MTU int `json:"mtu,omitempty"`
 	// Enabled is true if interface is enabled, false otherwise.
@@ -193,6 +237,20 @@ func (vmi VMInterface) String() string {
 // VMInterface implements IDItem interface.
 func (vmi *VMInterface) GetID() int {
 	return vmi.ID
+}
+func (vmi *VMInterface) GetObjectType() constants.ContentType {
+	return constants.ContentTypeVirtualizationVMInterface
+}
+func (vmi *VMInterface) GetAPIPath() constants.APIPath {
+	return constants.VMInterfacesAPIPath
+}
+
+// VMInterface also implements MACAddressOwner interface.
+func (vmi *VMInterface) GetPrimaryMACAddress() *MACAddress {
+	return vmi.PrimaryMACAddress
+}
+func (vmi *VMInterface) SetPrimaryMACAddress(mac *MACAddress) {
+	vmi.PrimaryMACAddress = mac
 }
 
 // VMInterface implements OrphanItem interface.

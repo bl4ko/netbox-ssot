@@ -1,6 +1,10 @@
 package objects
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/bl4ko/netbox-ssot/internal/constants"
+)
 
 type WirelessLANGroup struct {
 	NetboxObject
@@ -19,6 +23,12 @@ func (wlg WirelessLANGroup) String() string {
 // WirelessLANGroup implements IDItem interface.
 func (wlg *WirelessLANGroup) GetID() int {
 	return wlg.ID
+}
+func (wlg *WirelessLANGroup) GetObjectType() constants.ContentType {
+	return constants.ContentTypeWirelessLANGroup
+}
+func (wlg *WirelessLANGroup) GetAPIPath() constants.APIPath {
+	return constants.WirelessLANGroupsAPIPath
 }
 
 // WirelessLANGroup implements OrphanItem interface.
@@ -88,6 +98,12 @@ func (wl WirelessLAN) String() string {
 // WirelessLAN implements IDItem interface.
 func (wl *WirelessLAN) GetID() int {
 	return wl.ID
+}
+func (wl *WirelessLAN) GetObjectType() constants.ContentType {
+	return constants.ContentTypeWirelessLAN
+}
+func (wl *WirelessLAN) GetAPIPath() constants.APIPath {
+	return constants.WirelessLANsAPIPath
 }
 
 // WirelessLAN implements OrphanItem interface.

@@ -163,7 +163,7 @@ func CreateMockServer() *httptest.Server {
 		}
 	})
 
-	handler.HandleFunc(constants.TagsAPIPath, func(w http.ResponseWriter, r *http.Request) {
+	handler.HandleFunc(string(constants.TagsAPIPath), func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPatch:
 			tagStr, err := json.Marshal(MockTagPatchResponse)
@@ -201,7 +201,7 @@ func CreateMockServer() *httptest.Server {
 		}
 	})
 
-	handler.HandleFunc(constants.TenantsAPIPath, func(w http.ResponseWriter, r *http.Request) {
+	handler.HandleFunc(string(constants.TenantsAPIPath), func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPatch:
 			tenantStr, err := json.Marshal(MockTenantPatchResponse)
@@ -239,7 +239,7 @@ func CreateMockServer() *httptest.Server {
 		}
 	})
 
-	handler.HandleFunc(constants.SitesAPIPath, func(w http.ResponseWriter, r *http.Request) {
+	handler.HandleFunc(string(constants.SitesAPIPath), func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPatch:
 			siteStr, err := json.Marshal(MockSitePatchResponse)

@@ -32,13 +32,6 @@ var (
 	IPAddressRoleCARP      = IPAddressRole{Choice{Value: "carp", Label: "CARP"}}
 )
 
-type AssignedObjectType string
-
-const (
-	AssignedObjectTypeVMInterface     = "virtualization.vminterface"
-	AssignedObjectTypeDeviceInterface = "dcim.interface"
-)
-
 type IPAddress struct {
 	NetboxObject
 	// IPv4 or IPv6 address (with mask). This field is required.
@@ -53,18 +46,30 @@ type IPAddress struct {
 	Tenant *Tenant `json:"tenant,omitempty"`
 
 	// AssignedObjectType is either a DeviceInterface or a VMInterface.
-	AssignedObjectType AssignedObjectType `json:"assigned_object_type,omitempty"`
+	AssignedObjectType constants.ContentType `json:"assigned_object_type,omitempty"`
 	// ID of the assigned object (either an ID of DeviceInterface or an ID of VMInterface).
 	AssignedObjectID int `json:"assigned_object_id,omitempty"`
 }
 
 func (ip IPAddress) String() string {
-	return fmt.Sprintf("IPAddress{ID: %d, Address: %s, Status: %s, DNSName: %s}", ip.ID, ip.Address, ip.Status, ip.DNSName)
+	return fmt.Sprintf(
+		"IPAddress{ID: %d, Address: %s, Status: %s, DNSName: %s}",
+		ip.ID,
+		ip.Address,
+		ip.Status,
+		ip.DNSName,
+	)
 }
 
 // IPAddress implements IDItem interface.
 func (ip *IPAddress) GetID() int {
 	return ip.ID
+}
+func (ip *IPAddress) GetObjectType() constants.ContentType {
+	return constants.ContentTypeIpamIPAddress
+}
+func (ip *IPAddress) GetAPIPath() constants.APIPath {
+	return constants.IPAddressesAPIPath
 }
 
 // IPAddress implements OrphanItem interface.
@@ -82,7 +87,7 @@ type VlanGroup struct {
 	Slug string `json:"slug,omitempty"`
 	// VidRanges is a list of VID ranges that this VlanGroup can use.
 	VidRanges []VidRange `json:"vid_ranges,omitempty"`
-	// Scope_type is the scope of the VlanGroup.
+	// ScopeType is the scope of the VlanGroup.
 	ScopeType constants.ContentType `json:"scope_type,omitempty"`
 	// ScopeID is the ID of the scope object.
 	ScopeID int `json:"scope_id,omitempty"`
@@ -95,6 +100,12 @@ func (vg VlanGroup) String() string {
 // VlanGroup implements IDItem interface.
 func (vg *VlanGroup) GetID() int {
 	return vg.ID
+}
+func (vg *VlanGroup) GetObjectType() constants.ContentType {
+	return constants.ContentTypeIpamVlanGroup
+}
+func (vg *VlanGroup) GetAPIPath() constants.APIPath {
+	return constants.VlanGroupsAPIPath
 }
 
 // VlanGroup implements OrphanItem interface.
@@ -138,6 +149,12 @@ func (v Vlan) String() string {
 func (v *Vlan) GetID() int {
 	return v.ID
 }
+func (v *Vlan) GetObjectType() constants.ContentType {
+	return constants.ContentTypeIpamVlan
+}
+func (v *Vlan) GetAPIPath() constants.APIPath {
+	return constants.VlansAPIPath
+}
 
 // Vlan implements OrphanItem interface.
 func (v *Vlan) GetNetboxObject() *NetboxObject {
@@ -168,7 +185,9 @@ type Prefix struct {
 	Status *PrefixStatus `json:"status,omitempty"`
 
 	// Site that this prefix belongs to.
-	Site *Site `json:"site,omitempty"`
+	ScopeID   int                   `json:"scope_id,omitempty"`
+	ScopeType constants.ContentType `json:"scope_type,omitempty"`
+
 	// Vlan that this prefix belongs to.
 	Vlan *Vlan `json:"vlan,omitempty"`
 
@@ -185,6 +204,12 @@ func (p Prefix) String() string {
 // Prefix implements IDItem interface.
 func (p *Prefix) GetID() int {
 	return p.ID
+}
+func (p *Prefix) GetObjectType() constants.ContentType {
+	return constants.ContentTypeIpamPrefix
+}
+func (p *Prefix) GetAPIPath() constants.APIPath {
+	return constants.PrefixesAPIPath
 }
 
 // Prefix implements OrphanItem interface.

@@ -19,6 +19,12 @@ type TenantGroup struct {
 func (tg *TenantGroup) GetID() int {
 	return tg.ID
 }
+func (tg *TenantGroup) GetObjectType() constants.ContentType {
+	return constants.ContentTypeTenancyTenantGroup
+}
+func (tg *TenantGroup) GetAPIPath() constants.APIPath {
+	return constants.TenantGroupsAPIPath
+}
 
 // TenantGroup implements OrphanItem interface.
 func (tg *TenantGroup) GetNetboxObject() *NetboxObject {
@@ -43,6 +49,12 @@ func (t Tenant) String() string {
 func (t *Tenant) GetID() int {
 	return t.ID
 }
+func (t *Tenant) GetObjectType() constants.ContentType {
+	return constants.ContentTypeTenancyTenant
+}
+func (t *Tenant) GetAPIPath() constants.APIPath {
+	return constants.TenantsAPIPath
+}
 
 // Tenant implements OrphanItem interface.
 func (t *Tenant) GetNetboxObject() *NetboxObject {
@@ -66,6 +78,9 @@ func (cg ContactGroup) String() string {
 // ContactGroup implements IDItem interface.
 func (cg *ContactGroup) GetID() int {
 	return cg.ID
+}
+func (cg *ContactGroup) GetObjectType() constants.ContentType {
+	return constants.ContentTypeTenancyContactGroup
 }
 
 // ContactGroup implements OrphanItem interface.
@@ -95,6 +110,9 @@ func (cr ContactRole) String() string {
 // ContactRole implements IDItem interface.
 func (cr *ContactRole) GetID() int {
 	return cr.ID
+}
+func (cr *ContactRole) GetObjectType() constants.ContentType {
+	return constants.ContentTypeTenancyContactRole
 }
 
 // ContactRole implements OrphanItem interface.
@@ -127,6 +145,12 @@ func (c Contact) String() string {
 // Contact implements IDItem interface.
 func (c *Contact) GetID() int {
 	return c.ID
+}
+func (c *Contact) GetObjectType() constants.ContentType {
+	return constants.ContentTypeTenancyContact
+}
+func (c *Contact) GetAPIPath() constants.APIPath {
+	return constants.ContactsAPIPath
 }
 
 // Contact implements OrphanItem interface.
@@ -167,6 +191,12 @@ func (ca ContactAssignment) String() string {
 // ContactAssignment implements IDItem interface.
 func (ca *ContactAssignment) GetID() int {
 	return ca.ID
+}
+func (ca *ContactAssignment) GetObjectType() constants.ContentType {
+	return constants.ContentTypeTenancyContactAssignment
+}
+func (ca *ContactAssignment) GetAPIPath() constants.APIPath {
+	return constants.ContactAssignmentsAPIPath
 }
 
 // ContactAssignment implements OrphanItem interface.

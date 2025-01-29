@@ -33,16 +33,19 @@ func (fmcs *FMCSource) Init() error {
 		return fmt.Errorf("create new http client: %s", err)
 	}
 
-	c, err := client.NewFMCClient(fmcs.Ctx, fmcs.SourceConfig.Username, fmcs.SourceConfig.Password, string(fmcs.SourceConfig.HTTPScheme), fmcs.SourceConfig.Hostname, fmcs.SourceConfig.Port, httpClient, fmcs.Logger)
+	c, err := client.NewFMCClient(
+		fmcs.Ctx,
+		fmcs.SourceConfig.Username,
+		fmcs.SourceConfig.Password,
+		string(fmcs.SourceConfig.HTTPScheme),
+		fmcs.SourceConfig.Hostname,
+		fmcs.SourceConfig.Port,
+		httpClient,
+		fmcs.Logger,
+	)
 	if err != nil {
 		return fmt.Errorf("create FMC client: %s", err)
 	}
-
-	// Init FMC objects
-	fmcs.Domains = make(map[string]client.Domain)
-	fmcs.Devices = make(map[string]*client.DeviceInfo)
-	fmcs.DevicePhysicalIfaces = make(map[string][]*client.PhysicalInterfaceInfo)
-	fmcs.DeviceVlanIfaces = make(map[string][]*client.VLANInterfaceInfo)
 
 	initFunctions := []func(*client.FMCClient) error{
 		fmcs.initObjects,
@@ -53,7 +56,12 @@ func (fmcs *FMCSource) Init() error {
 			return fmt.Errorf("fmc initialization failure: %v", err)
 		}
 		duration := time.Since(startTime)
-		fmcs.Logger.Infof(fmcs.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionNameWithTrimPrefix(initFunc, "init"), duration.Seconds())
+		fmcs.Logger.Infof(
+			fmcs.Ctx,
+			"Successfully initialized %s in %f seconds",
+			utils.ExtractFunctionNameWithTrimPrefix(initFunc, "init"),
+			duration.Seconds(),
+		)
 	}
 	return nil
 }
@@ -70,7 +78,12 @@ func (fmcs *FMCSource) Sync(nbi *inventory.NetboxInventory) error {
 			return err
 		}
 		duration := time.Since(startTime)
-		fmcs.Logger.Infof(fmcs.Ctx, "Successfully synced %s in %f seconds", utils.ExtractFunctionNameWithTrimPrefix(syncFunc, "sync"), duration.Seconds())
+		fmcs.Logger.Infof(
+			fmcs.Ctx,
+			"Successfully synced %s in %f seconds",
+			utils.ExtractFunctionNameWithTrimPrefix(syncFunc, "sync"),
+			duration.Seconds(),
+		)
 	}
 	return nil
 }

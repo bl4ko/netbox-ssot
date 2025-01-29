@@ -51,8 +51,15 @@ func (s *Site) GetNetboxObject() *NetboxObject {
 	return &s.NetboxObject
 }
 
+// Implements IDItem interface.
 func (s *Site) GetID() int {
 	return s.ID
+}
+func (s *Site) GetObjectType() constants.ContentType {
+	return constants.ContentTypeDcimSite
+}
+func (s *Site) GetAPIPath() constants.APIPath {
+	return constants.SitesAPIPath
 }
 
 // Platform represents an operating system or other software platform which may be running on a device.
@@ -75,8 +82,15 @@ func (p *Platform) GetNetboxObject() *NetboxObject {
 	return &p.NetboxObject
 }
 
+// Implements IDItem interface.
 func (p *Platform) GetID() int {
 	return p.ID
+}
+func (p *Platform) GetObjectType() constants.ContentType {
+	return constants.ContentTypeDcimPlatform
+}
+func (p *Platform) GetAPIPath() constants.APIPath {
+	return constants.PlatformsAPIPath
 }
 
 type Region struct {
@@ -96,8 +110,15 @@ func (r *Region) GetNetboxObject() *NetboxObject {
 	return &r.NetboxObject
 }
 
+// Implements IDItem interface.
 func (r *Region) GetID() int {
 	return r.ID
+}
+func (r *Region) GetObjectType() constants.ContentType {
+	return constants.ContentTypeDcimRegion
+}
+func (r *Region) GetAPIPath() constants.APIPath {
+	return constants.RegionsAPIPath
 }
 
 // Location represents a physical location, such as a floor or room in a building.
@@ -121,6 +142,12 @@ func (l Location) String() string {
 func (l *Location) GetID() int {
 	return l.ID
 }
+func (l *Location) GetObjectType() constants.ContentType {
+	return constants.ContentTypeDcimLocation
+}
+func (l *Location) GetAPIPath() constants.APIPath {
+	return constants.LocationsAPIPath
+}
 
 // Location implements OrphanItem interface.
 func (l *Location) GetNetboxObject() *NetboxObject {
@@ -143,6 +170,12 @@ func (m Manufacturer) String() string {
 // Manufacturer implements IDItem interface.
 func (m *Manufacturer) GetID() int {
 	return m.ID
+}
+func (m *Manufacturer) GetObjectType() constants.ContentType {
+	return constants.ContentTypeDcimManufacturer
+}
+func (m *Manufacturer) GetAPIPath() constants.APIPath {
+	return constants.ManufacturersAPIPath
 }
 
 // Manufacturer implements OrphanItem interface.
@@ -169,6 +202,12 @@ func (dt DeviceType) String() string {
 // DeviceType implements OrphanItem interface.
 func (dt *DeviceType) GetID() int {
 	return dt.ID
+}
+func (dt *DeviceType) GetObjectType() constants.ContentType {
+	return constants.ContentTypeDcimDeviceType
+}
+func (dt *DeviceType) GetAPIPath() constants.APIPath {
+	return constants.DeviceTypesAPIPath
 }
 
 // DeviceType implements OrphanItem interface.
@@ -197,6 +236,12 @@ func (dr DeviceRole) String() string {
 // DeviceRole implements IDItem interface.
 func (dr *DeviceRole) GetID() int {
 	return dr.ID
+}
+func (dr *DeviceRole) GetObjectType() constants.ContentType {
+	return constants.ContentTypeDcimDeviceRole
+}
+func (dr *DeviceRole) GetAPIPath() constants.APIPath {
+	return constants.DeviceRolesAPIPath
 }
 
 // DeviceRole implements OrphanItem interface.
@@ -297,6 +342,26 @@ func (d Device) String() string {
 // Device implements IDItem interface.
 func (d *Device) GetID() int {
 	return d.ID
+}
+func (d *Device) GetObjectType() constants.ContentType {
+	return constants.ContentTypeDcimDevice
+}
+func (d *Device) GetAPIPath() constants.APIPath {
+	return constants.DevicesAPIPath
+}
+
+// Device implements IPAddressOwner interface.
+func (d *Device) GetPrimaryIPv4Address() *IPAddress {
+	return d.PrimaryIPv4
+}
+func (d *Device) GetPrimaryIPv6Address() *IPAddress {
+	return d.PrimaryIPv6
+}
+func (d *Device) SetPrimaryIPAddress(ip *IPAddress) {
+	d.PrimaryIPv4 = ip
+}
+func (d *Device) SetPrimaryIPv6Address(ip *IPAddress) {
+	d.PrimaryIPv6 = ip
 }
 
 // Device implements OrphanItem interface.
@@ -490,8 +555,8 @@ type Interface struct {
 	LAG *Interface `json:"lag,omitempty"`
 	// MTU is the maximum transmission unit (MTU) configured for the interface.
 	MTU int `json:"mtu,omitempty"`
-	// MAC is the mac address of the interface
-	MAC string `json:"mac_address,omitempty"`
+	// PrimaryMACAddress is the primary MAC address of the interface.
+	PrimaryMACAddress *MACAddress `json:"primary_mac_address,omitempty"`
 
 	// Duplex is the duplex mode of the interface
 	Duplex *InterfaceDuplex `json:"duplex,omitempty"`
@@ -514,10 +579,25 @@ func (i Interface) String() string {
 func (i *Interface) GetID() int {
 	return i.ID
 }
+func (i *Interface) GetObjectType() constants.ContentType {
+	return constants.ContentTypeDcimInterface
+}
+func (i *Interface) GetAPIPath() constants.APIPath {
+	return constants.InterfacesAPIPath
+}
 
 // Interface implements OrphanItem interface.
 func (i *Interface) GetNetboxObject() *NetboxObject {
 	return &i.NetboxObject
+}
+
+// Interface Implements MACAddressOwner interface.
+func (i *Interface) GetPrimaryMACAddress() *MACAddress {
+	return i.PrimaryMACAddress
+}
+
+func (i *Interface) SetPrimaryMACAddress(mac *MACAddress) {
+	i.PrimaryMACAddress = mac
 }
 
 // Virtual Device Context status.
@@ -558,8 +638,44 @@ func (vdc VirtualDeviceContext) String() string {
 func (vdc *VirtualDeviceContext) GetID() int {
 	return vdc.ID
 }
+func (vdc *VirtualDeviceContext) GetObjectType() constants.ContentType {
+	return constants.ContentTypeDcimVirtualDeviceContext
+}
+func (vdc *VirtualDeviceContext) GetAPIPath() constants.APIPath {
+	return constants.VirtualDeviceContextsAPIPath
+}
 
 // VirtualDeviceContext implements OrphanItem interface.
 func (vdc *VirtualDeviceContext) GetNetboxObject() *NetboxObject {
 	return &vdc.NetboxObject
+}
+
+type MACAddress struct {
+	NetboxObject
+	// MAC is the MAC address. This field is required.
+	MAC string `json:"mac_address,omitempty"`
+	// AssignedObjectType is the type of object to which the MAC address is assigned.
+	AssignedObjectType constants.ContentType `json:"assigned_object_type,omitempty"`
+	// AssignedObjectID is the ID of the object to which the MAC address is assigned.
+	AssignedObjectID int `json:"assigned_object_id,omitempty"`
+}
+
+func (m MACAddress) String() string {
+	return fmt.Sprintf("MACAddress{MAC: %s}", m.MAC)
+}
+
+// MACAddress implements IDItem interface.
+func (m *MACAddress) GetID() int {
+	return m.ID
+}
+func (m *MACAddress) GetObjectType() constants.ContentType {
+	return constants.ContentTypeDcimMACAddress
+}
+func (m *MACAddress) GetAPIPath() constants.APIPath {
+	return constants.MACAddressesAPIPath
+}
+
+// MACAddress implements OrphanItem interface.
+func (m *MACAddress) GetNetboxObject() *NetboxObject {
+	return &m.NetboxObject
 }

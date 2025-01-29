@@ -8,7 +8,9 @@ import (
 	"net/http"
 	"reflect"
 
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/mapper"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
@@ -44,23 +46,33 @@ func GetVersion(ctx context.Context, netboxClient *NetboxClient) (string, error)
 }
 
 // GetAll queries all objects of type T from Netbox's API.
-// It is querying objects via pagination of limit=100.
+// It is querying objects via pagination of limit=200.
 //
 // extraParams in a string format of: &extraParam1=...&extraParam2=...
-func GetAll[T any](ctx context.Context, netboxClient *NetboxClient, extraParams string) ([]T, error) {
+func GetAll[T any](
+	ctx context.Context,
+	netboxClient *NetboxClient,
+	extraParams string,
+) ([]T, error) {
 	var allResults []T
 	var dummy T // Dummy variable for extracting type of generic
 	path := mapper.Type2Path[reflect.TypeOf(dummy)]
 	if path == "" {
 		return nil, fmt.Errorf("path not found for type %T", dummy)
 	}
-	limit := 100
+	limit := 250
 	offset := 0
 
 	netboxClient.Logger.Debugf(ctx, "Getting all %T from Netbox", dummy)
 
 	for {
-		netboxClient.Logger.Debugf(ctx, "Getting %T with limit=%d and offset=%d", dummy, limit, offset)
+		netboxClient.Logger.Debugf(
+			ctx,
+			"Getting %T with limit=%d and offset=%d",
+			dummy,
+			limit,
+			offset,
+		)
 		queryPath := fmt.Sprintf("%s?limit=%d&offset=%d%s", path, limit, offset, extraParams)
 		response, err := netboxClient.doRequest(http.MethodGet, queryPath, nil)
 		if err != nil {
@@ -68,7 +80,11 @@ func GetAll[T any](ctx context.Context, netboxClient *NetboxClient, extraParams 
 		}
 
 		if response.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf("unexpected status code %d: %s", response.StatusCode, response.Body)
+			return nil, fmt.Errorf(
+				"unexpected status code %d: %s",
+				response.StatusCode,
+				response.Body,
+			)
 		}
 
 		var responseObj Response[T]
@@ -92,14 +108,25 @@ func GetAll[T any](ctx context.Context, netboxClient *NetboxClient, extraParams 
 
 // Patch func patches the object of type T, with the given api path and body.
 // Path of the object (must contain the id), for example /api/dcim/devices/1/.
-func Patch[T any](ctx context.Context, netboxClient *NetboxClient, objectID int, body map[string]interface{}) (*T, error) {
+func Patch[T any](
+	ctx context.Context,
+	netboxClient *NetboxClient,
+	objectID int,
+	body map[string]interface{},
+) (*T, error) {
 	var dummy T // dummy variable for printf
-	path := mapper.Type2Path[reflect.TypeOf(dummy)]
-	if path == "" {
+	objectPath := mapper.Type2Path[reflect.TypeOf(dummy)]
+	if objectPath == "" {
 		return nil, fmt.Errorf("path not found for type %T", dummy)
 	}
-	path = fmt.Sprintf("%s%d/", path, objectID)
-	netboxClient.Logger.Debugf(ctx, "Patching %T with path %s with data: %v", dummy, path, body)
+	path := fmt.Sprintf("%s%d/", objectPath, objectID)
+	netboxClient.Logger.Debugf(
+		ctx,
+		"Patching %T with path %s with data: %v",
+		dummy,
+		objectPath,
+		body,
+	)
 
 	requestBody, err := json.Marshal(body)
 	if err != nil {
@@ -129,19 +156,25 @@ func Patch[T any](ctx context.Context, netboxClient *NetboxClient, objectID int,
 // Create func creates the new NetboxObject of type T, with the given api path and body.
 func Create[T any](ctx context.Context, netboxClient *NetboxClient, object *T) (*T, error) {
 	var dummy T // dummy variable for printf
-	path := mapper.Type2Path[reflect.TypeOf(dummy)]
-	if path == "" {
+	objectPath := mapper.Type2Path[reflect.TypeOf(dummy)]
+	if objectPath == "" {
 		return nil, fmt.Errorf("path not found for type %T", dummy)
 	}
 
-	netboxClient.Logger.Debugf(ctx, "Creating %T with path %s with data: %v", dummy, path, object)
+	netboxClient.Logger.Debugf(
+		ctx,
+		"Creating %T with path %s with data: %v",
+		dummy,
+		objectPath,
+		object,
+	)
 	requestBody, err := utils.NetboxJSONMarshal(object)
 	if err != nil {
 		return nil, err
 	}
 
 	requestBodyBuffer := bytes.NewBuffer(requestBody)
-	response, err := netboxClient.doRequest(http.MethodPost, path, requestBodyBuffer)
+	response, err := netboxClient.doRequest(http.MethodPost, string(objectPath), requestBodyBuffer)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +196,11 @@ func Create[T any](ctx context.Context, netboxClient *NetboxClient, object *T) (
 // Function that deletes object on path objectPath.
 // It deletes objects in pages of 50 so we don't stress
 // the API too much.
-func (api *NetboxClient) BulkDeleteObjects(ctx context.Context, objectPath string, idSet map[int]bool) error {
+func (api *NetboxClient) BulkDeleteObjects(
+	ctx context.Context,
+	objectPath constants.APIPath,
+	idSet map[int]bool,
+) error {
 	const pageSize = 50
 
 	// Convert the map to a slice for easier slicing.
@@ -173,7 +210,13 @@ func (api *NetboxClient) BulkDeleteObjects(ctx context.Context, objectPath strin
 	}
 
 	for i := 0; i < len(ids); i += pageSize {
-		api.Logger.Debugf(ctx, "Deleting %s with pagesize=%d and offset=%d", objectPath, pageSize, i)
+		api.Logger.Debugf(
+			ctx,
+			"Deleting %s with pagesize=%d and offset=%d",
+			objectPath,
+			pageSize,
+			i,
+		)
 		end := i + pageSize
 		if end > len(ids) {
 			end = len(ids)
@@ -192,7 +235,7 @@ func (api *NetboxClient) BulkDeleteObjects(ctx context.Context, objectPath strin
 		}
 
 		requestBodyBuffer := bytes.NewBuffer(requestBody)
-		response, err := api.doRequest(http.MethodDelete, objectPath, requestBodyBuffer)
+		response, err := api.doRequest(http.MethodDelete, string(objectPath), requestBodyBuffer)
 		if err != nil {
 			return err
 		}
@@ -209,7 +252,9 @@ func (api *NetboxClient) BulkDeleteObjects(ctx context.Context, objectPath strin
 // Function that deletes objectas on path objectPath.
 // It deletes a single object at a time. It is alternative to bulk delete
 // because if one delete fails other still go.
-func (api *NetboxClient) DeleteObject(ctx context.Context, objectPath string, id int) error {
+func (api *NetboxClient) DeleteObject(ctx context.Context, idItem objects.IDItem) error {
+	id := idItem.GetID()
+	objectPath := idItem.GetAPIPath()
 	api.Logger.Debugf(ctx, "Deleting object with id %d on route %s", id, objectPath)
 
 	response, err := api.doRequest(http.MethodDelete, fmt.Sprintf("%s%d/", objectPath, id), nil)

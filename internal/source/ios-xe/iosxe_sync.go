@@ -2,7 +2,6 @@ package iosxe
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
@@ -142,12 +141,20 @@ func (is *IOSXESource) syncInterfaces(nbi *inventory.NetboxInventory) error {
 			Name:   ifaceName,
 			Type:   ifaceType,
 			Device: is.NBDevice,
-			MAC:    strings.ToUpper(ifaceMAC),
 			Speed:  ifaceLinkSpeed,
 			Status: ifaceEnabled,
 		})
 		if err != nil {
 			return fmt.Errorf("add interface: %s", err)
+		}
+		if ifaceMAC != "" {
+			nbMACAddress, err := common.CreateMACAddressForObjectType(is.Ctx, nbi, ifaceMAC, nbIface)
+			if err != nil {
+				return fmt.Errorf("create mac address for object type: %s", err)
+			}
+			if err = common.SetPrimaryMACForInterface(is.Ctx, nbi, nbIface, nbMACAddress); err != nil {
+				return fmt.Errorf("set primary mac for interface: %s", err)
+			}
 		}
 		is.NBInterfaces[ifaceName] = nbIface
 	}

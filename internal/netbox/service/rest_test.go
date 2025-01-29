@@ -158,7 +158,7 @@ func TestCreate(t *testing.T) {
 func TestBulkDeleteObjects(t *testing.T) {
 	type args struct {
 		ctx        context.Context
-		objectPath string
+		objectPath constants.APIPath
 		idSet      map[int]bool
 		api        *NetboxClient
 	}

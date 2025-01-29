@@ -14,6 +14,8 @@ import (
 	"unicode"
 
 	"github.com/bl4ko/netbox-ssot/internal/logger"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"golang.org/x/text/runes"
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
@@ -177,6 +179,40 @@ func MatchNamesWithEmails(ctx context.Context, names []string, emails []string, 
 		}
 	}
 	return matches
+}
+
+// SerializeEmails receieve an array of emails and
+// transforms each array to lowercase strings and
+// removes any whitespace.
+func SerializeEmails(emails []string) []string {
+	serializedEmails := make([]string, len(emails))
+	for i, email := range emails {
+		serializedEmails[i] = strings.ToLower(strings.ReplaceAll(email, " ", ""))
+	}
+	return serializedEmails
+}
+
+// SerializeOwner receives an owner string and serializes it in the following way.
+// If owner string is composed of name and surname, it returns the name and surname
+// capitalized and separated by a space. If owner string is composed of only one word,
+// it returns the word capitalized.
+func SerializeOwner(owner string) string {
+	owner = strings.TrimSpace(owner)
+	owner = strings.ToLower(owner)
+	caser := cases.Title(language.Und)
+	owner = caser.String(owner)
+	return owner
+}
+
+// SerializeOwners receives an array of owners and serializes each owner
+// in the following way. If owner string is composed of name and surname,
+// it returns the name and surname capitalized and separated by a space.
+func SerializeOwners(owners []string) []string {
+	serializedOwners := make([]string, len(owners))
+	for i, owner := range owners {
+		serializedOwners[i] = SerializeOwner(owner)
+	}
+	return serializedOwners
 }
 
 // Function that loads additional certs from the given certDirPath.

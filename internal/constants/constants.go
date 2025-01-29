@@ -213,16 +213,21 @@ type ContentType string
 // Content types predefined in netbox.
 const (
 	// DCIM object types.
-	ContentTypeDcimDevice           ContentType = "dcim.device"
-	ContentTypeDcimDeviceRole       ContentType = "dcim.devicerole"
-	ContentTypeDcimDeviceType       ContentType = "dcim.devicetype"
-	ContentTypeDcimInterface        ContentType = "dcim.interface"
-	ContentTypeDcimLocation         ContentType = "dcim.location"
-	ContentTypeDcimManufacturer     ContentType = "dcim.manufacturer"
-	ContentTypeDcimPlatform         ContentType = "dcim.platform"
-	ContentTypeDcimRegion           ContentType = "dcim.region"
-	ContentTypeDcimSite             ContentType = "dcim.site"
-	ContentTypeVirtualDeviceContext ContentType = "dcim.virtualdevicecontext"
+	ContentTypeDcimDevice               ContentType = "dcim.device"
+	ContentTypeDcimDeviceRole           ContentType = "dcim.devicerole"
+	ContentTypeDcimDeviceType           ContentType = "dcim.devicetype"
+	ContentTypeDcimInterface            ContentType = "dcim.interface"
+	ContentTypeDcimLocation             ContentType = "dcim.location"
+	ContentTypeDcimManufacturer         ContentType = "dcim.manufacturer"
+	ContentTypeDcimPlatform             ContentType = "dcim.platform"
+	ContentTypeDcimRegion               ContentType = "dcim.region"
+	ContentTypeDcimSite                 ContentType = "dcim.site"
+	ContentTypeDcimVirtualDeviceContext ContentType = "dcim.virtualdevicecontext"
+	ContentTypeDcimMACAddress           ContentType = "dcim.macaddress"
+
+	// Extras object types.
+	ContentTypeExtrasCustomField ContentType = "extras.customfield"
+	ContentTypeExtrasTag         ContentType = "extras.tag"
 
 	// IPAM object types.
 	ContentTypeIpamIPAddress ContentType = "ipam.ipaddress"
@@ -253,44 +258,50 @@ const (
 
 // Here all mappings are defined so we don't hardcode api paths of objects
 // in our code.
+type APIPath string
+
 const (
 	// Tenancy paths.
-	ContactGroupsAPIPath      = "/api/tenancy/contact-groups/"
-	ContactRolesAPIPath       = "/api/tenancy/contact-roles/"
-	ContactsAPIPath           = "/api/tenancy/contacts/"
-	TenantsAPIPath            = "/api/tenancy/tenants/"
-	ContactAssignmentsAPIPath = "/api/tenancy/contact-assignments/"
+	ContactGroupsAPIPath      APIPath = "/api/tenancy/contact-groups/"
+	ContactRolesAPIPath       APIPath = "/api/tenancy/contact-roles/"
+	ContactsAPIPath           APIPath = "/api/tenancy/contacts/"
+	TenantsAPIPath            APIPath = "/api/tenancy/tenants/"
+	TenantGroupsAPIPath       APIPath = "/api/tenancy/tenant-groups/"
+	ContactAssignmentsAPIPath APIPath = "/api/tenancy/contact-assignments/"
 
 	// IPAM paths.
-	PrefixesAPIPath    = "/api/ipam/prefixes/"
-	VlanGroupsAPIPath  = "/api/ipam/vlan-groups/"
-	VlansAPIPath       = "/api/ipam/vlans/"
-	IPAddressesAPIPath = "/api/ipam/ip-addresses/"
+	PrefixesAPIPath    APIPath = "/api/ipam/prefixes/"
+	VlanGroupsAPIPath  APIPath = "/api/ipam/vlan-groups/"
+	VlansAPIPath       APIPath = "/api/ipam/vlans/"
+	IPAddressesAPIPath APIPath = "/api/ipam/ip-addresses/"
 
 	// Virtualization paths.
-	ClusterTypesAPIPath    = "/api/virtualization/cluster-types/"
-	ClusterGroupsAPIPath   = "/api/virtualization/cluster-groups/"
-	ClustersAPIPath        = "/api/virtualization/clusters/"
-	VirtualMachinesAPIPath = "/api/virtualization/virtual-machines/"
-	VMInterfacesAPIPath    = "/api/virtualization/interfaces/"
+	ClusterTypesAPIPath    APIPath = "/api/virtualization/cluster-types/"
+	ClusterGroupsAPIPath   APIPath = "/api/virtualization/cluster-groups/"
+	ClustersAPIPath        APIPath = "/api/virtualization/clusters/"
+	VirtualMachinesAPIPath APIPath = "/api/virtualization/virtual-machines/"
+	VMInterfacesAPIPath    APIPath = "/api/virtualization/interfaces/"
 
 	// DCIM paths.
-	DevicesAPIPath               = "/api/dcim/devices/"
-	DeviceRolesAPIPath           = "/api/dcim/device-roles/"
-	DeviceTypesAPIPath           = "/api/dcim/device-types/"
-	InterfacesAPIPath            = "/api/dcim/interfaces/"
-	SitesAPIPath                 = "/api/dcim/sites/"
-	ManufacturersAPIPath         = "/api/dcim/manufacturers/"
-	PlatformsAPIPath             = "/api/dcim/platforms/"
-	VirtualDeviceContextsAPIPath = "/api/dcim/virtual-device-contexts/"
+	DevicesAPIPath               APIPath = "/api/dcim/devices/"
+	MACAddressesAPIPath          APIPath = "/api/dcim/mac-addresses/"
+	DeviceRolesAPIPath           APIPath = "/api/dcim/device-roles/"
+	DeviceTypesAPIPath           APIPath = "/api/dcim/device-types/"
+	InterfacesAPIPath            APIPath = "/api/dcim/interfaces/"
+	SitesAPIPath                 APIPath = "/api/dcim/sites/"
+	RegionsAPIPath               APIPath = "/api/dcim/regions/"
+	LocationsAPIPath             APIPath = "/api/dcim/locations/"
+	ManufacturersAPIPath         APIPath = "/api/dcim/manufacturers/"
+	PlatformsAPIPath             APIPath = "/api/dcim/platforms/"
+	VirtualDeviceContextsAPIPath APIPath = "/api/dcim/virtual-device-contexts/"
 
 	// Wireless paths.
-	WirelessLANsAPIPath      = "/api/wireless/wireless-lans/"
-	WirelessLANGroupsAPIPath = "/api/wireless/wireless-lan-groups/"
+	WirelessLANsAPIPath      APIPath = "/api/wireless/wireless-lans/"
+	WirelessLANGroupsAPIPath APIPath = "/api/wireless/wireless-lan-groups/"
 
 	// Extras paths.
-	CustomFieldsAPIPath = "/api/extras/custom-fields/"
-	TagsAPIPath         = "/api/extras/tags/"
+	CustomFieldsAPIPath APIPath = "/api/extras/custom-fields/"
+	TagsAPIPath         APIPath = "/api/extras/tags/"
 )
 
 var Arch2Bit = map[string]string{

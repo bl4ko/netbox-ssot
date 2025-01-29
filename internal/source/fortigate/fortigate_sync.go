@@ -43,14 +43,24 @@ func (fs *FortigateSource) syncDevice(nbi *inventory.NetboxInventory) error {
 		return fmt.Errorf("add device type: %s", err)
 	}
 
-	deviceTenant, err := common.MatchHostToTenant(fs.Ctx, nbi, deviceName, fs.SourceConfig.HostTenantRelations)
+	deviceTenant, err := common.MatchHostToTenant(
+		fs.Ctx,
+		nbi,
+		deviceName,
+		fs.SourceConfig.HostTenantRelations,
+	)
 	if err != nil {
 		return fmt.Errorf("match host to tenant: %s", err)
 	}
 
 	var deviceRole *objects.DeviceRole
 	if len(fs.SourceConfig.HostRoleRelations) > 0 {
-		deviceRole, err = common.MatchHostToRole(fs.Ctx, nbi, deviceName, fs.SourceConfig.HostRoleRelations)
+		deviceRole, err = common.MatchHostToRole(
+			fs.Ctx,
+			nbi,
+			deviceName,
+			fs.SourceConfig.HostRoleRelations,
+		)
 		if err != nil {
 			return fmt.Errorf("match host to role: %s", err)
 		}
@@ -61,7 +71,12 @@ func (fs *FortigateSource) syncDevice(nbi *inventory.NetboxInventory) error {
 			return fmt.Errorf("add DeviceRole firewall: %s", err)
 		}
 	}
-	deviceSite, err := common.MatchHostToSite(fs.Ctx, nbi, deviceName, fs.SourceConfig.HostSiteRelations)
+	deviceSite, err := common.MatchHostToSite(
+		fs.Ctx,
+		nbi,
+		deviceName,
+		fs.SourceConfig.HostSiteRelations,
+	)
 	if err != nil {
 		return fmt.Errorf("match host to site: %s", err)
 	}
@@ -114,7 +129,12 @@ func (fs *FortigateSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 		}
 
 		if utils.FilterInterfaceName(ifaceName, fs.SourceConfig.InterfaceFilter) {
-			fs.Logger.Debugf(fs.Ctx, "interface %s is filtered out with interfaceFilter %s", ifaceName, fs.SourceConfig.InterfaceFilter)
+			fs.Logger.Debugf(
+				fs.Ctx,
+				"interface %s is filtered out with interfaceFilter %s",
+				ifaceName,
+				fs.SourceConfig.InterfaceFilter,
+			)
 			continue
 		}
 
@@ -149,15 +169,26 @@ func (fs *FortigateSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 			Type:   &objects.OtherInterfaceType,
 			Name:   ifaceName,
 			MTU:    interfaceMTU,
-			MAC:    strings.ToUpper(interfaceMAC),
 			Status: interfaceStatus,
-
-			Vdcs: vdcs,
+			Vdcs:   vdcs,
 		})
 		if err != nil {
 			return fmt.Errorf("add interface: %s", err)
 		}
-
+		if interfaceMAC != "" {
+			nbMACAddress, err := common.CreateMACAddressForObjectType(
+				fs.Ctx,
+				nbi,
+				interfaceMAC,
+				NBIface,
+			)
+			if err != nil {
+				return fmt.Errorf("create mac address for object type: %s", err)
+			}
+			if err = common.SetPrimaryMACForInterface(fs.Ctx, nbi, NBIface, nbMACAddress); err != nil {
+				return fmt.Errorf("set primary mac for interface: %s", err)
+			}
+		}
 		NBIPAddress, err := syncInterfaceIPs(fs, nbi, iface, NBIface)
 		if err != nil {
 			return fmt.Errorf("sync interface ips: %s", err)
@@ -167,15 +198,32 @@ func (fs *FortigateSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 			// Add Vlan for interface
 			vlanID := iface.VlanID
 			vlanName := fmt.Sprintf("Vlan%d", vlanID)
-			vlanSite, err := common.MatchVlanToSite(fs.Ctx, nbi, vlanName, fs.SourceConfig.VlanSiteRelations)
+			vlanSite, err := common.MatchVlanToSite(
+				fs.Ctx,
+				nbi,
+				vlanName,
+				fs.SourceConfig.VlanSiteRelations,
+			)
 			if err != nil {
 				return fmt.Errorf("match vlan to site: %s", err)
 			}
-			vlanGroup, err := common.MatchVlanToGroup(fs.Ctx, nbi, vlanName, vlanSite, fs.SourceConfig.VlanGroupRelations, fs.SourceConfig.VlanGroupSiteRelations)
+			vlanGroup, err := common.MatchVlanToGroup(
+				fs.Ctx,
+				nbi,
+				vlanName,
+				vlanSite,
+				fs.SourceConfig.VlanGroupRelations,
+				fs.SourceConfig.VlanGroupSiteRelations,
+			)
 			if err != nil {
 				return fmt.Errorf("match vlan to group: %s", err)
 			}
-			vlanTenant, err := common.MatchVlanToTenant(fs.Ctx, nbi, vlanName, fs.SourceConfig.VlanTenantRelations)
+			vlanTenant, err := common.MatchVlanToTenant(
+				fs.Ctx,
+				nbi,
+				vlanName,
+				fs.SourceConfig.VlanTenantRelations,
+			)
 			if err != nil {
 				return fmt.Errorf("match vlan to tenant: %s", err)
 			}
@@ -217,11 +265,20 @@ func (fs *FortigateSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 
 // syncInterfaceIPs is a helper function for syncInterfaces.
 // it synces IPs for an interface.
-func syncInterfaceIPs(fs *FortigateSource, nbi *inventory.NetboxInventory, iface InterfaceResponse, nbIface *objects.Interface) (*objects.IPAddress, error) {
+func syncInterfaceIPs(
+	fs *FortigateSource,
+	nbi *inventory.NetboxInventory,
+	iface InterfaceResponse,
+	nbIface *objects.Interface,
+) (*objects.IPAddress, error) {
 	var NBIPAddress *objects.IPAddress
 	ipAndMask := strings.Split(iface.IP, " ")
 	if len(ipAndMask) == 2 && ipAndMask[0] != constants.WildcardIP {
-		if utils.IsPermittedIPAddress(ipAndMask[0], fs.SourceConfig.PermittedSubnets, fs.SourceConfig.IgnoredSubnets) {
+		if utils.IsPermittedIPAddress(
+			ipAndMask[0],
+			fs.SourceConfig.PermittedSubnets,
+			fs.SourceConfig.IgnoredSubnets,
+		) {
 			maskBits, err := utils.MaskToBits(ipAndMask[1])
 			if err != nil {
 				return nil, fmt.Errorf("mask to bits: %s", err)
@@ -234,7 +291,7 @@ func syncInterfaceIPs(fs *FortigateSource, nbi *inventory.NetboxInventory, iface
 					},
 				},
 				Address:            fmt.Sprintf("%s/%d", ipAndMask[0], maskBits),
-				AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
+				AssignedObjectType: constants.ContentTypeDcimInterface,
 				AssignedObjectID:   nbIface.ID,
 			})
 			if err != nil {
@@ -246,7 +303,11 @@ func syncInterfaceIPs(fs *FortigateSource, nbi *inventory.NetboxInventory, iface
 		for _, secondaryIP := range iface.SecondaryIP {
 			ipAndMask := strings.Split(secondaryIP.IP, " ")
 			if len(ipAndMask) == 2 && ipAndMask[0] != constants.WildcardIP {
-				if utils.IsPermittedIPAddress(ipAndMask[0], fs.SourceConfig.PermittedSubnets, fs.SourceConfig.IgnoredSubnets) {
+				if utils.IsPermittedIPAddress(
+					ipAndMask[0],
+					fs.SourceConfig.PermittedSubnets,
+					fs.SourceConfig.IgnoredSubnets,
+				) {
 					maskBits, err := utils.MaskToBits(ipAndMask[1])
 					if err != nil {
 						return nil, fmt.Errorf("mask to bits: %s", err)
@@ -259,7 +320,7 @@ func syncInterfaceIPs(fs *FortigateSource, nbi *inventory.NetboxInventory, iface
 							},
 						},
 						Address:            fmt.Sprintf("%s/%d", ipAndMask[0], maskBits),
-						AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
+						AssignedObjectType: constants.ContentTypeDcimInterface,
 						AssignedObjectID:   nbIface.ID,
 					})
 					if err != nil {
@@ -274,7 +335,11 @@ func syncInterfaceIPs(fs *FortigateSource, nbi *inventory.NetboxInventory, iface
 		for _, vrrp := range iface.VRRPIP {
 			ipAndMask := []string{vrrp.VRIP, "255.255.255.255"}
 			if len(ipAndMask) == 2 && ipAndMask[0] != constants.WildcardIP {
-				if utils.IsPermittedIPAddress(ipAndMask[0], fs.SourceConfig.PermittedSubnets, fs.SourceConfig.IgnoredSubnets) {
+				if utils.IsPermittedIPAddress(
+					ipAndMask[0],
+					fs.SourceConfig.PermittedSubnets,
+					fs.SourceConfig.IgnoredSubnets,
+				) {
 					maskBits, err := utils.MaskToBits(ipAndMask[1])
 					if err != nil {
 						return nil, fmt.Errorf("mask to bits: %s", err)
@@ -287,7 +352,7 @@ func syncInterfaceIPs(fs *FortigateSource, nbi *inventory.NetboxInventory, iface
 							},
 						},
 						Address:            fmt.Sprintf("%s/%d", ipAndMask[0], maskBits),
-						AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
+						AssignedObjectType: constants.ContentTypeDcimInterface,
 						AssignedObjectID:   nbIface.ID,
 						Role:               &objects.IPAddressRoleVRRP,
 					})
