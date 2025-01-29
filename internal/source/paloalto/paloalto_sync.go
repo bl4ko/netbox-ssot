@@ -25,7 +25,10 @@ func (pas *PaloAltoSource) syncDevice(nbi *inventory.NetboxInventory) error {
 	}
 	deviceModel := pas.SystemInfo["model"]
 	if deviceModel == "" {
-		pas.Logger.Warningf(pas.Ctx, "model field in system info is empty. Using fallback mechanism.")
+		pas.Logger.Warningf(
+			pas.Ctx,
+			"model field in system info is empty. Using fallback mechanism.",
+		)
 		deviceModel = constants.DefaultModel
 	}
 	deviceManufacturer, err := nbi.AddManufacturer(pas.Ctx, &objects.Manufacturer{
@@ -45,14 +48,24 @@ func (pas *PaloAltoSource) syncDevice(nbi *inventory.NetboxInventory) error {
 		return fmt.Errorf("add device type %+v: %s", deviceTypeStruct, err)
 	}
 
-	deviceTenant, err := common.MatchHostToTenant(pas.Ctx, nbi, deviceName, pas.SourceConfig.HostTenantRelations)
+	deviceTenant, err := common.MatchHostToTenant(
+		pas.Ctx,
+		nbi,
+		deviceName,
+		pas.SourceConfig.HostTenantRelations,
+	)
 	if err != nil {
 		return fmt.Errorf("match host %s to tenant: %s", deviceName, err)
 	}
 
 	var deviceRole *objects.DeviceRole
 	if len(pas.SourceConfig.HostRoleRelations) > 0 {
-		deviceRole, err = common.MatchHostToRole(pas.Ctx, nbi, deviceName, pas.SourceConfig.HostRoleRelations)
+		deviceRole, err = common.MatchHostToRole(
+			pas.Ctx,
+			nbi,
+			deviceName,
+			pas.SourceConfig.HostRoleRelations,
+		)
 		if err != nil {
 			return fmt.Errorf("match host to role: %s", err)
 		}
@@ -63,7 +76,12 @@ func (pas *PaloAltoSource) syncDevice(nbi *inventory.NetboxInventory) error {
 			return fmt.Errorf("add DeviceRole firewall: %s", err)
 		}
 	}
-	deviceSite, err := common.MatchHostToSite(pas.Ctx, nbi, deviceName, pas.SourceConfig.HostSiteRelations)
+	deviceSite, err := common.MatchHostToSite(
+		pas.Ctx,
+		nbi,
+		deviceName,
+		pas.SourceConfig.HostSiteRelations,
+	)
 	if err != nil {
 		return fmt.Errorf("match host to site: %s", err)
 	}
@@ -106,7 +124,12 @@ func (pas *PaloAltoSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 			continue
 		}
 		if utils.FilterInterfaceName(iface.Name, pas.SourceConfig.InterfaceFilter) {
-			pas.Logger.Debugf(pas.Ctx, "interface %s is filtered out with interface filter %s", iface.Name, pas.SourceConfig.InterfaceFilter)
+			pas.Logger.Debugf(
+				pas.Ctx,
+				"interface %s is filtered out with interface filter %s",
+				iface.Name,
+				pas.SourceConfig.InterfaceFilter,
+			)
 			continue
 		}
 		var ifaceLinkSpeed objects.InterfaceSpeed
@@ -169,15 +192,32 @@ func (pas *PaloAltoSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 			if subIface.Tag != 0 {
 				// Extract Vlan
 				vlanName := fmt.Sprintf("Vlan%d", subIface.Tag)
-				vlanSite, err := common.MatchVlanToSite(pas.Ctx, nbi, vlanName, pas.SourceConfig.VlanSiteRelations)
+				vlanSite, err := common.MatchVlanToSite(
+					pas.Ctx,
+					nbi,
+					vlanName,
+					pas.SourceConfig.VlanSiteRelations,
+				)
 				if err != nil {
 					return fmt.Errorf("match vlan to site: %s", err)
 				}
-				vlanGroup, err := common.MatchVlanToGroup(pas.Ctx, nbi, vlanName, vlanSite, pas.SourceConfig.VlanGroupRelations, pas.SourceConfig.VlanGroupSiteRelations)
+				vlanGroup, err := common.MatchVlanToGroup(
+					pas.Ctx,
+					nbi,
+					vlanName,
+					vlanSite,
+					pas.SourceConfig.VlanGroupRelations,
+					pas.SourceConfig.VlanGroupSiteRelations,
+				)
 				if err != nil {
 					return fmt.Errorf("match vlan to group: %s", err)
 				}
-				vlanTenant, err := common.MatchVlanToTenant(pas.Ctx, nbi, vlanName, pas.SourceConfig.VlanTenantRelations)
+				vlanTenant, err := common.MatchVlanToTenant(
+					pas.Ctx,
+					nbi,
+					vlanName,
+					pas.SourceConfig.VlanTenantRelations,
+				)
 				if err != nil {
 					return fmt.Errorf("match vlan to tenant: %s", err)
 				}
@@ -232,9 +272,18 @@ func (pas *PaloAltoSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 
 // syncIPs adds all of the given ips to the given nbIface. It also
 // Extracts prefixes from ips and connect them with prefix vlan.
-func (pas *PaloAltoSource) syncIPs(nbi *inventory.NetboxInventory, nbIface *objects.Interface, ips []string, prefixVlan *objects.Vlan) {
+func (pas *PaloAltoSource) syncIPs(
+	nbi *inventory.NetboxInventory,
+	nbIface *objects.Interface,
+	ips []string,
+	prefixVlan *objects.Vlan,
+) {
 	for _, ipAddress := range ips {
-		if utils.IsPermittedIPAddress(ipAddress, pas.SourceConfig.PermittedSubnets, pas.SourceConfig.IgnoredSubnets) {
+		if utils.IsPermittedIPAddress(
+			ipAddress,
+			pas.SourceConfig.PermittedSubnets,
+			pas.SourceConfig.IgnoredSubnets,
+		) {
 			dnsName := utils.ReverseLookup(ipAddress)
 			_, err := nbi.AddIPAddress(pas.Ctx, &objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
@@ -246,10 +295,15 @@ func (pas *PaloAltoSource) syncIPs(nbi *inventory.NetboxInventory, nbIface *obje
 				Address:            ipAddress,
 				AssignedObjectID:   nbIface.ID,
 				DNSName:            dnsName,
-				AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
+				AssignedObjectType: constants.ContentTypeDcimInterface,
 			})
 			if err != nil {
-				pas.Logger.Errorf(pas.Ctx, "adding ip address %s failed with error: %s", ipAddress, err)
+				pas.Logger.Errorf(
+					pas.Ctx,
+					"adding ip address %s failed with error: %s",
+					ipAddress,
+					err,
+				)
 				continue
 			}
 			prefix, mask, err := utils.GetPrefixAndMaskFromIPAddress(ipAddress)
@@ -295,7 +349,10 @@ func (pas *PaloAltoSource) syncSecurityZones(nbi *inventory.NetboxInventory) err
 }
 
 // getVirtualDeviceContext retrieves the virtual device context associated with the given interface name.
-func (pas *PaloAltoSource) getVirtualDeviceContext(nbi *inventory.NetboxInventory, ifaceName string) *objects.VirtualDeviceContext {
+func (pas *PaloAltoSource) getVirtualDeviceContext(
+	nbi *inventory.NetboxInventory,
+	ifaceName string,
+) *objects.VirtualDeviceContext {
 	var virtualDeviceContext *objects.VirtualDeviceContext
 	zoneName := pas.Iface2SecurityZone[ifaceName]
 	if vdc, ok := nbi.GetVirtualDeviceContext(zoneName, pas.NBFirewall.ID); ok {
@@ -356,8 +413,16 @@ func (pas *PaloAltoSource) syncArpTable(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
-func (pas *PaloAltoSource) syncArpEntry(nbi *inventory.NetboxInventory, entry ArpEntry, arpTag *objects.Tag) error {
-	if utils.IsPermittedIPAddress(entry.IP, pas.SourceConfig.PermittedSubnets, pas.SourceConfig.IgnoredSubnets) {
+func (pas *PaloAltoSource) syncArpEntry(
+	nbi *inventory.NetboxInventory,
+	entry ArpEntry,
+	arpTag *objects.Tag,
+) error {
+	if utils.IsPermittedIPAddress(
+		entry.IP,
+		pas.SourceConfig.PermittedSubnets,
+		pas.SourceConfig.IgnoredSubnets,
+	) {
 		newTags := pas.SourceTags
 		newTags = append(newTags, arpTag)
 		currentTime := time.Now()
@@ -370,8 +435,10 @@ func (pas *PaloAltoSource) syncArpEntry(nbi *inventory.NetboxInventory, entry Ar
 				Tags:        newTags,
 				Description: fmt.Sprintf("IP collected from %s arp table", pas.SourceConfig.Name),
 				CustomFields: map[string]interface{}{
-					constants.CustomFieldOrphanLastSeenName: currentTime.Format(constants.CustomFieldOrphanLastSeenFormat),
-					constants.CustomFieldArpEntryName:       true,
+					constants.CustomFieldOrphanLastSeenName: currentTime.Format(
+						constants.CustomFieldOrphanLastSeenFormat,
+					),
+					constants.CustomFieldArpEntryName: true,
 				},
 			},
 			Address: addressWithMask,

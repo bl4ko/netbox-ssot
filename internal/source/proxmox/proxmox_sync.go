@@ -16,7 +16,12 @@ import (
 func (ps *ProxmoxSource) syncCluster(nbi *inventory.NetboxInventory) error {
 	var clusterScopeType constants.ContentType
 	var clusterScopeID int
-	clusterSite, err := common.MatchClusterToSite(ps.Ctx, nbi, ps.Cluster.Name, ps.SourceConfig.ClusterSiteRelations)
+	clusterSite, err := common.MatchClusterToSite(
+		ps.Ctx,
+		nbi,
+		ps.Cluster.Name,
+		ps.SourceConfig.ClusterSiteRelations,
+	)
 	if err != nil {
 		return err
 	}
@@ -24,7 +29,12 @@ func (ps *ProxmoxSource) syncCluster(nbi *inventory.NetboxInventory) error {
 		clusterScopeType = constants.ContentTypeDcimSite
 		clusterScopeID = clusterSite.ID
 	}
-	clusterTenant, err := common.MatchClusterToTenant(ps.Ctx, nbi, ps.Cluster.Name, ps.SourceConfig.ClusterTenantRelations)
+	clusterTenant, err := common.MatchClusterToTenant(
+		ps.Ctx,
+		nbi,
+		ps.Cluster.Name,
+		ps.SourceConfig.ClusterTenantRelations,
+	)
 	if err != nil {
 		return err
 	}
@@ -73,12 +83,22 @@ func (ps *ProxmoxSource) syncNodes(nbi *inventory.NetboxInventory) error {
 		}
 		var err error
 		if hostSite == nil {
-			hostSite, err = common.MatchHostToSite(ps.Ctx, nbi, node.Name, ps.SourceConfig.HostSiteRelations)
+			hostSite, err = common.MatchHostToSite(
+				ps.Ctx,
+				nbi,
+				node.Name,
+				ps.SourceConfig.HostSiteRelations,
+			)
 			if err != nil {
 				return fmt.Errorf("match host to site: %s", err)
 			}
 		}
-		hostTenant, err := common.MatchHostToTenant(ps.Ctx, nbi, node.Name, ps.SourceConfig.HostTenantRelations)
+		hostTenant, err := common.MatchHostToTenant(
+			ps.Ctx,
+			nbi,
+			node.Name,
+			ps.SourceConfig.HostTenantRelations,
+		)
 		if err != nil {
 			return fmt.Errorf("match host to tenant: %s", err)
 		}
@@ -111,7 +131,12 @@ func (ps *ProxmoxSource) syncNodes(nbi *inventory.NetboxInventory) error {
 		// use default server role.
 		var hostRole *objects.DeviceRole
 		if len(ps.SourceConfig.HostRoleRelations) > 0 {
-			hostRole, err = common.MatchHostToRole(ps.Ctx, nbi, node.Name, ps.SourceConfig.HostRoleRelations)
+			hostRole, err = common.MatchHostToRole(
+				ps.Ctx,
+				nbi,
+				node.Name,
+				ps.SourceConfig.HostRoleRelations,
+			)
 			if err != nil {
 				return fmt.Errorf("match host to role: %s", err)
 			}
@@ -128,7 +153,10 @@ func (ps *ProxmoxSource) syncNodes(nbi *inventory.NetboxInventory) error {
 				Tags: ps.Config.SourceTags,
 				CustomFields: map[string]interface{}{
 					constants.CustomFieldHostCPUCoresName: fmt.Sprintf("%d", node.CPUInfo.CPUs),
-					constants.CustomFieldHostMemoryName:   fmt.Sprintf("%d GB", node.Memory.Total/constants.GiB),
+					constants.CustomFieldHostMemoryName: fmt.Sprintf(
+						"%d GB",
+						node.Memory.Total/constants.GiB,
+					),
 				},
 			},
 			Name:       node.Name,
@@ -151,7 +179,10 @@ func (ps *ProxmoxSource) syncNodes(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
-func (ps *ProxmoxSource) syncNodeNetworks(nbi *inventory.NetboxInventory, node *proxmox.Node) error {
+func (ps *ProxmoxSource) syncNodeNetworks(
+	nbi *inventory.NetboxInventory,
+	node *proxmox.Node,
+) error {
 	// hostIPv4Addresses := []*objects.IPAddress TODO
 	// hostIPv6Addresses := []*objects.IPAddress TODO
 	for _, nodeNetwork := range ps.NodeIfaces[node.Name] {
@@ -161,7 +192,12 @@ func (ps *ProxmoxSource) syncNodeNetworks(nbi *inventory.NetboxInventory, node *
 		}
 		nbHost := ps.NetboxNodes[node.Name]
 		if utils.FilterInterfaceName(nodeNetwork.Iface, ps.SourceConfig.InterfaceFilter) {
-			ps.Logger.Debugf(ps.Ctx, "interface %s is filtered out with interfaceFilter %s", nodeNetwork.Iface, ps.SourceConfig.InterfaceFilter)
+			ps.Logger.Debugf(
+				ps.Ctx,
+				"interface %s is filtered out with interfaceFilter %s",
+				nodeNetwork.Iface,
+				ps.SourceConfig.InterfaceFilter,
+			)
 			continue
 		}
 		_, err := nbi.AddInterface(ps.Ctx, &objects.Interface{
@@ -221,7 +257,11 @@ func (ps *ProxmoxSource) syncVMs(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
-func (ps *ProxmoxSource) syncVM(nbi *inventory.NetboxInventory, vm *proxmox.VirtualMachine, nbHost *objects.Device) error {
+func (ps *ProxmoxSource) syncVM(
+	nbi *inventory.NetboxInventory,
+	vm *proxmox.VirtualMachine,
+	nbHost *objects.Device,
+) error {
 	// Determine VM status
 	vmStatus := &objects.VMStatusActive
 	if vm.Status == "stopped" {
@@ -287,7 +327,12 @@ func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *ob
 	vmIPv6Addresses := make([]*objects.IPAddress, 0)
 	for _, vmNetwork := range ps.VMIfaces[nbVM.Name] {
 		if utils.FilterInterfaceName(vmNetwork.Name, ps.SourceConfig.InterfaceFilter) {
-			ps.Logger.Debugf(ps.Ctx, "interface %s is filtered out with interface filter %s", vmNetwork.Name, ps.SourceConfig.InterfaceFilter)
+			ps.Logger.Debugf(
+				ps.Ctx,
+				"interface %s is filtered out with interface filter %s",
+				vmNetwork.Name,
+				ps.SourceConfig.InterfaceFilter,
+			)
 			continue
 		}
 		vmInterfaceStruct := &objects.VMInterface{
@@ -303,7 +348,12 @@ func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *ob
 		}
 		vmIfaceMAC := strings.ToUpper(vmNetwork.HardwareAddress)
 		if vmIfaceMAC == "" {
-			nbMACAddress, err := common.CreateMACAddressForObjectType(ps.Ctx, nbi, vmIfaceMAC, nbVMIface)
+			nbMACAddress, err := common.CreateMACAddressForObjectType(
+				ps.Ctx,
+				nbi,
+				vmIfaceMAC,
+				nbVMIface,
+			)
 			if err != nil {
 				return fmt.Errorf("create mac address for object type: %s", err)
 			}
@@ -313,7 +363,11 @@ func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *ob
 		}
 
 		for _, ipAddress := range vmNetwork.IPAddresses {
-			if utils.IsPermittedIPAddress(ipAddress.IPAddress, ps.SourceConfig.PermittedSubnets, ps.SourceConfig.IgnoredSubnets) {
+			if utils.IsPermittedIPAddress(
+				ipAddress.IPAddress,
+				ps.SourceConfig.PermittedSubnets,
+				ps.SourceConfig.IgnoredSubnets,
+			) {
 				ipAddress.IPAddress = utils.RemoveZoneIndexFromIPAddress(ipAddress.IPAddress)
 				ipAddressStruct := &objects.IPAddress{
 					NetboxObject: objects.NetboxObject{
@@ -325,13 +379,18 @@ func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *ob
 					Address:            fmt.Sprintf("%s/%d", ipAddress.IPAddress, ipAddress.Prefix),
 					DNSName:            utils.ReverseLookup(ipAddress.IPAddress),
 					Tenant:             nbVM.Tenant,
-					AssignedObjectType: objects.AssignedObjectTypeVMInterface,
+					AssignedObjectType: constants.ContentTypeVirtualizationVMInterface,
 					AssignedObjectID:   nbVMIface.ID,
 					Status:             &objects.IPAddressStatusActive, //TODO: this is hardcoded
 				}
 				nbIPAddress, err := nbi.AddIPAddress(ps.Ctx, ipAddressStruct)
 				if err != nil {
-					ps.Logger.Warningf(ps.Ctx, "failed adding ip address %s with: %s", ipAddressStruct, err)
+					ps.Logger.Warningf(
+						ps.Ctx,
+						"failed adding ip address %s with: %s",
+						ipAddressStruct,
+						err,
+					)
 					continue
 				}
 				switch ipAddress.IPAddressType {
@@ -340,11 +399,21 @@ func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *ob
 				case "ipv6":
 					vmIPv6Addresses = append(vmIPv6Addresses, nbIPAddress)
 				default:
-					ps.Logger.Warningf(ps.Ctx, "wrong IP type: %s for ip %s", ipAddress.IPAddressType, ipAddress.IPAddress)
+					ps.Logger.Warningf(
+						ps.Ctx,
+						"wrong IP type: %s for ip %s",
+						ipAddress.IPAddressType,
+						ipAddress.IPAddress,
+					)
 				}
 				prefix, mask, err := utils.GetPrefixAndMaskFromIPAddress(nbIPAddress.Address)
 				if err != nil {
-					ps.Logger.Warningf(ps.Ctx, "failed extracting prefix from ip address %s with: %s", nbIPAddress.Address, err)
+					ps.Logger.Warningf(
+						ps.Ctx,
+						"failed extracting prefix from ip address %s with: %s",
+						nbIPAddress.Address,
+						err,
+					)
 				} else if (ipAddress.IPAddressType == "ipv4" && mask != constants.MaxIPv4MaskBits) || (ipAddress.IPAddressType == "ipv6" && mask != constants.MaxIPv6MaskBits) {
 					_, err = nbi.AddPrefix(ps.Ctx, &objects.Prefix{
 						Prefix: prefix,
@@ -392,7 +461,12 @@ func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 					containerStatus = &objects.VMStatusOffline
 				}
 				// Determine Container tenant
-				vmTenant, err := common.MatchVMToTenant(ps.Ctx, nbi, container.Name, ps.SourceConfig.VMTenantRelations)
+				vmTenant, err := common.MatchVMToTenant(
+					ps.Ctx,
+					nbi,
+					container.Name,
+					ps.SourceConfig.VMTenantRelations,
+				)
 				if err != nil {
 					return fmt.Errorf("match vm to tenant: %s", err)
 				}
@@ -428,12 +502,20 @@ func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
-func (ps *ProxmoxSource) syncContainerNetworks(nbi *inventory.NetboxInventory, nbContainer *objects.VM) error {
+func (ps *ProxmoxSource) syncContainerNetworks(
+	nbi *inventory.NetboxInventory,
+	nbContainer *objects.VM,
+) error {
 	vmIPv4Addresses := make([]*objects.IPAddress, 0)
 	vmIPv6Addresses := make([]*objects.IPAddress, 0)
 	for _, containerIface := range ps.ContainerIfaces[nbContainer.Name] {
 		if utils.FilterInterfaceName(containerIface.Name, ps.SourceConfig.InterfaceFilter) {
-			ps.Logger.Debugf(ps.Ctx, "interface %s is filtered out with interface filter %s", containerIface.Name, ps.SourceConfig.InterfaceFilter)
+			ps.Logger.Debugf(
+				ps.Ctx,
+				"interface %s is filtered out with interface filter %s",
+				containerIface.Name,
+				ps.SourceConfig.InterfaceFilter,
+			)
 			continue
 		}
 		vmIfaceStruct := &objects.VMInterface{
@@ -449,7 +531,12 @@ func (ps *ProxmoxSource) syncContainerNetworks(nbi *inventory.NetboxInventory, n
 		}
 		vmIfaceMAC := strings.ToUpper(containerIface.HWAddr)
 		if vmIfaceMAC != "" {
-			nbMACAddress, err := common.CreateMACAddressForObjectType(ps.Ctx, nbi, vmIfaceMAC, nbVMIface)
+			nbMACAddress, err := common.CreateMACAddressForObjectType(
+				ps.Ctx,
+				nbi,
+				vmIfaceMAC,
+				nbVMIface,
+			)
 			if err != nil {
 				return fmt.Errorf("create mac address for container iface: %s", err)
 			}
@@ -459,7 +546,11 @@ func (ps *ProxmoxSource) syncContainerNetworks(nbi *inventory.NetboxInventory, n
 		}
 
 		// Check if IPv4 address is present
-		if utils.IsPermittedIPAddress(containerIface.Inet, ps.SourceConfig.PermittedSubnets, ps.SourceConfig.IgnoredSubnets) {
+		if utils.IsPermittedIPAddress(
+			containerIface.Inet,
+			ps.SourceConfig.PermittedSubnets,
+			ps.SourceConfig.IgnoredSubnets,
+		) {
 			// Check if IPv4 address is present
 			if containerIface.Inet != "" {
 				nbIPAddress, err := nbi.AddIPAddress(ps.Ctx, &objects.IPAddress{
@@ -472,7 +563,7 @@ func (ps *ProxmoxSource) syncContainerNetworks(nbi *inventory.NetboxInventory, n
 					Address:            containerIface.Inet,
 					DNSName:            utils.ReverseLookup(containerIface.Inet),
 					Tenant:             nbContainer.Tenant,
-					AssignedObjectType: objects.AssignedObjectTypeVMInterface,
+					AssignedObjectType: constants.ContentTypeVirtualizationVMInterface,
 					AssignedObjectID:   nbVMIface.ID,
 					Status:             &objects.IPAddressStatusActive, //TODO: this is hardcoded
 				})
@@ -495,7 +586,11 @@ func (ps *ProxmoxSource) syncContainerNetworks(nbi *inventory.NetboxInventory, n
 			}
 		}
 		// Check if IPv6 address is present
-		if utils.IsPermittedIPAddress(containerIface.Inet6, ps.SourceConfig.PermittedSubnets, ps.SourceConfig.IgnoredSubnets) {
+		if utils.IsPermittedIPAddress(
+			containerIface.Inet6,
+			ps.SourceConfig.PermittedSubnets,
+			ps.SourceConfig.IgnoredSubnets,
+		) {
 			if containerIface.Inet6 != "" {
 				containerIface.Inet6 = utils.RemoveZoneIndexFromIPAddress(containerIface.Inet6)
 				nbIPAddress, err := nbi.AddIPAddress(ps.Ctx, &objects.IPAddress{
@@ -508,7 +603,7 @@ func (ps *ProxmoxSource) syncContainerNetworks(nbi *inventory.NetboxInventory, n
 					Address:            containerIface.Inet6,
 					DNSName:            utils.ReverseLookup(containerIface.Inet6),
 					Tenant:             nbContainer.Tenant,
-					AssignedObjectType: objects.AssignedObjectTypeVMInterface,
+					AssignedObjectType: constants.ContentTypeVirtualizationVMInterface,
 					AssignedObjectID:   nbVMIface.ID,
 					Status:             &objects.IPAddressStatusActive, //TODO: this is hardcoded
 				})

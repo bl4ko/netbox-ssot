@@ -181,7 +181,10 @@ func (nbi *NetboxInventory) GetContactRole(contactRoleName string) (*objects.Con
 // GetVirtualDeviceContext returns the VirtualDeviceContext for the given zoneName and deviceID.
 // It returns nil if the VirtualDeviceContext is not found.
 // This function is thread-safe.
-func (nbi *NetboxInventory) GetVirtualDeviceContext(zoneName string, deviceID int) (*objects.VirtualDeviceContext, bool) {
+func (nbi *NetboxInventory) GetVirtualDeviceContext(
+	zoneName string,
+	deviceID int,
+) (*objects.VirtualDeviceContext, bool) {
 	nbi.virtualDeviceContextsLock.Lock()
 	defer nbi.virtualDeviceContextsLock.Unlock()
 	vdc, vdcExists := nbi.virtualDeviceContextsIndexByNameAndDeviceID[zoneName][deviceID]
@@ -194,7 +197,10 @@ func (nbi *NetboxInventory) GetVirtualDeviceContext(zoneName string, deviceID in
 // GetInterface returns the Interface for the given interfaceName and deviceID.
 // It returns nil if the Interface is not found.
 // This function is thread-safe.
-func (nbi *NetboxInventory) GetInterface(interfaceName string, deviceID int) (*objects.Interface, bool) {
+func (nbi *NetboxInventory) GetInterface(
+	interfaceName string,
+	deviceID int,
+) (*objects.Interface, bool) {
 	nbi.interfacesLock.Lock()
 	defer nbi.interfacesLock.Unlock()
 
@@ -208,7 +214,12 @@ func (nbi *NetboxInventory) GetInterface(interfaceName string, deviceID int) (*o
 // GetContactAssignment returns the ContactAssignment for the given contentType, objectID, contactID and roleID.
 // It returns nil if the ContactAssignment is not found.
 // This function is thread-safe.
-func (nbi *NetboxInventory) GetContactAssignment(contentType constants.ContentType, objectID int, contactID int, roleID int) (*objects.ContactAssignment, bool) {
+func (nbi *NetboxInventory) GetContactAssignment(
+	contentType constants.ContentType,
+	objectID int,
+	contactID int,
+	roleID int,
+) (*objects.ContactAssignment, bool) {
 	nbi.contactAssignmentsLock.Lock()
 	defer nbi.contactAssignmentsLock.Unlock()
 	contactAssignment, contactAssignmentExists := nbi.contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[contentType][objectID][contactID][roleID]
@@ -216,4 +227,40 @@ func (nbi *NetboxInventory) GetContactAssignment(contentType constants.ContentTy
 		return nil, false
 	}
 	return contactAssignment, true
+}
+
+// GetInterfaceByID returns the Interface for the given interfaceID.
+// It returns nil if the Interface is not found.
+// This function is thread-safe.
+func (nbi *NetboxInventory) GetInterfaceByID(interfaceID int) *objects.Interface {
+	nbi.interfacesLock.Lock()
+	defer nbi.interfacesLock.Unlock()
+	return nbi.interfacesIndexByID[interfaceID]
+}
+
+// GetVMInterfaceByID returns the VMInterface for the given vmInterfaceID.
+// It returns nil if the VMInterface is not found.
+// This function is thread-safe.
+func (nbi *NetboxInventory) GetVMInterfaceByID(vmInterfaceID int) *objects.VMInterface {
+	nbi.vmInterfacesLock.Lock()
+	defer nbi.vmInterfacesLock.Unlock()
+	return nbi.vmInterfacesIndexByID[vmInterfaceID]
+}
+
+// GetDeviceByID returns the Device for the given deviceID.
+// It returns nil if the Device is not found.
+// This function is thread-safe.
+func (nbi *NetboxInventory) GetDeviceByID(deviceID int) *objects.Device {
+	nbi.devicesLock.Lock()
+	defer nbi.devicesLock.Unlock()
+	return nbi.devicesIndexByID[deviceID]
+}
+
+// GetVMByID returns the VirtualMachine for the given vmID.
+// It returns nil if the VirtualMachine is not found.
+// This function is thread-safe.
+func (nbi *NetboxInventory) GetVMByID(vmID int) *objects.VM {
+	nbi.vmsLock.Lock()
+	defer nbi.vmsLock.Unlock()
+	return nbi.vmsIndexByID[vmID]
 }

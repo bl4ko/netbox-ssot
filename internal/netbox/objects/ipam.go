@@ -32,13 +32,6 @@ var (
 	IPAddressRoleCARP      = IPAddressRole{Choice{Value: "carp", Label: "CARP"}}
 )
 
-type AssignedObjectType string
-
-const (
-	AssignedObjectTypeVMInterface     = "virtualization.vminterface"
-	AssignedObjectTypeDeviceInterface = "dcim.interface"
-)
-
 type IPAddress struct {
 	NetboxObject
 	// IPv4 or IPv6 address (with mask). This field is required.
@@ -53,13 +46,19 @@ type IPAddress struct {
 	Tenant *Tenant `json:"tenant,omitempty"`
 
 	// AssignedObjectType is either a DeviceInterface or a VMInterface.
-	AssignedObjectType AssignedObjectType `json:"assigned_object_type,omitempty"`
+	AssignedObjectType constants.ContentType `json:"assigned_object_type,omitempty"`
 	// ID of the assigned object (either an ID of DeviceInterface or an ID of VMInterface).
 	AssignedObjectID int `json:"assigned_object_id,omitempty"`
 }
 
 func (ip IPAddress) String() string {
-	return fmt.Sprintf("IPAddress{ID: %d, Address: %s, Status: %s, DNSName: %s}", ip.ID, ip.Address, ip.Status, ip.DNSName)
+	return fmt.Sprintf(
+		"IPAddress{ID: %d, Address: %s, Status: %s, DNSName: %s}",
+		ip.ID,
+		ip.Address,
+		ip.Status,
+		ip.DNSName,
+	)
 }
 
 // IPAddress implements IDItem interface.

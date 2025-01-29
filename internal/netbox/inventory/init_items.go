@@ -168,30 +168,6 @@ func (nbi *NetboxInventory) initContactAssignments(ctx context.Context) error {
 	return nil
 }
 
-func (nbi *NetboxInventory) initMACAddresses(ctx context.Context) error {
-	extraArgs := fmt.Sprintf(
-		"&fields=%s",
-		utils.ExtractJSONTagsFromStructIntoString(objects.MACAddress{}),
-	)
-	nbMACAddresses, err := service.GetAll[objects.MACAddress](ctx, nbi.NetboxAPI, extraArgs)
-	if err != nil {
-		return err
-	}
-	// We also create an index of MAC addresses by address for easier access
-	nbi.macAddressesIndexByAddress = make(map[string]*objects.MACAddress)
-	for i := range nbMACAddresses {
-		macAddress := &nbMACAddresses[i]
-		nbi.macAddressesIndexByAddress[macAddress.MAC] = macAddress
-		nbi.OrphanManager.AddItem(macAddress)
-	}
-	nbi.Logger.Debug(
-		ctx,
-		"Successfully collected MAC addresses from Netbox: ",
-		nbi.macAddressesIndexByAddress,
-	)
-	return nil
-}
-
 // Initializes default admin contact role used for adding admin contacts of vms.
 func (nbi *NetboxInventory) initAdminContactRole(ctx context.Context) error {
 	_, err := nbi.AddContactRole(ctx, &objects.ContactRole{
@@ -334,11 +310,14 @@ func (nbi *NetboxInventory) initDevices(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	// Initialize internal index of devices by Name and SiteId
+	// Initialize main index of devices by Name and SiteId
 	nbi.devicesIndexByNameAndSiteID = make(map[string]map[int]*objects.Device)
+	// Initialize helper index of devices by ID
+	nbi.devicesIndexByID = make(map[int]*objects.Device)
 
 	for i, device := range nbDevices {
 		nbDevice := &nbDevices[i]
+		nbi.devicesIndexByID[device.ID] = nbDevice
 		if nbi.devicesIndexByNameAndSiteID[device.Name] == nil {
 			nbi.devicesIndexByNameAndSiteID[device.Name] = make(map[int]*objects.Device)
 		}
@@ -767,11 +746,14 @@ func (nbi *NetboxInventory) initInterfaces(ctx context.Context) error {
 		return err
 	}
 
-	// Initialize internal index of interfaces by device id and name
+	// Initialize main index of interfaces by device id and name
 	nbi.interfacesIndexByDeviceIDAndName = make(map[int]map[string]*objects.Interface)
+	// Initialize helper index for interfaces by ID
+	nbi.interfacesIndexByID = make(map[int]*objects.Interface)
 
 	for i := range nbInterfaces {
 		intf := &nbInterfaces[i]
+		nbi.interfacesIndexByID[intf.ID] = intf
 		if nbi.interfacesIndexByDeviceIDAndName[intf.Device.ID] == nil {
 			nbi.interfacesIndexByDeviceIDAndName[intf.Device.ID] = make(
 				map[string]*objects.Interface,
@@ -867,9 +849,11 @@ func (nbi *NetboxInventory) initVMs(ctx context.Context) error {
 
 	// Initialize internal index of VMs by name and cluster id
 	nbi.vmsIndexByNameAndClusterID = make(map[string]map[int]*objects.VM)
+	nbi.vmsIndexByID = make(map[int]*objects.VM)
 
 	for i := range nbVMs {
 		vm := &nbVMs[i]
+		nbi.vmsIndexByID[vm.ID] = vm
 		if nbi.vmsIndexByNameAndClusterID[vm.Name] == nil {
 			nbi.vmsIndexByNameAndClusterID[vm.Name] = make(map[int]*objects.VM)
 		}
@@ -902,8 +886,10 @@ func (nbi *NetboxInventory) initVMInterfaces(ctx context.Context) error {
 
 	// Initialize internal index of VM interfaces by VM id and name
 	nbi.vmInterfacesIndexByVMIdAndName = make(map[int]map[string]*objects.VMInterface)
+	nbi.vmInterfacesIndexByID = make(map[int]*objects.VMInterface)
 	for i := range nbVMInterfaces {
 		vmIntf := &nbVMInterfaces[i]
+		nbi.vmInterfacesIndexByID[vmIntf.ID] = vmIntf
 		if nbi.vmInterfacesIndexByVMIdAndName[vmIntf.VM.ID] == nil {
 			nbi.vmInterfacesIndexByVMIdAndName[vmIntf.VM.ID] = make(map[string]*objects.VMInterface)
 		}
@@ -930,13 +916,19 @@ func (nbi *NetboxInventory) initIPAddresses(ctx context.Context) error {
 		return err
 	}
 
-	// Initializes internal index of IP addresses by address
-	nbi.ipAdressesIndexByAddress = make(map[string]*objects.IPAddress)
-
+	// Initializes internal index
+	nbi.ipAddressesIndex = make(
+		map[constants.ContentType]map[string]map[string]map[string]*objects.IPAddress,
+	)
 	for i := range ipAddresses {
 		ipAddr := &ipAddresses[i]
 		if ipAddr.HasTag(nbi.SsotTag) {
-			nbi.ipAdressesIndexByAddress[ipAddr.Address] = ipAddr
+			ifaceType, ifaceName, ifaceParentName, err := nbi.getIndexValuesForIPAddress(ipAddr)
+			if err != nil {
+				return fmt.Errorf("get index values for ip address: %s", err)
+			}
+			nbi.verifyIPAddressIndexExists(ifaceType, ifaceName, ifaceParentName)
+			nbi.ipAddressesIndex[ifaceType][ifaceName][ifaceParentName][ipAddr.Address] = ipAddr
 			nbi.OrphanManager.AddItem(ipAddr)
 		}
 	}
@@ -944,7 +936,43 @@ func (nbi *NetboxInventory) initIPAddresses(ctx context.Context) error {
 	nbi.Logger.Debug(
 		ctx,
 		"Successfully collected IP addresses from Netbox: ",
-		nbi.ipAdressesIndexByAddress,
+		nbi.ipAddressesIndex,
+	)
+	return nil
+}
+
+func (nbi *NetboxInventory) initMACAddresses(ctx context.Context) error {
+	extraArgs := fmt.Sprintf(
+		"&fields=%s",
+		utils.ExtractJSONTagsFromStructIntoString(objects.MACAddress{}),
+	)
+	nbMACAddresses, err := service.GetAll[objects.MACAddress](ctx, nbi.NetboxAPI, extraArgs)
+	if err != nil {
+		return err
+	}
+	// Initializes internal indexx
+	nbi.macAddressesIndex = make(
+		map[constants.ContentType]map[string]map[string]map[string]*objects.MACAddress,
+	)
+	for i := range nbMACAddresses {
+		macAddress := &nbMACAddresses[i]
+		if macAddress.HasTag(nbi.SsotTag) {
+			ifaceType, ifaceName, ifaceParentName, err := nbi.getIndexValuesForMACAddress(
+				macAddress,
+			)
+			if err != nil {
+				return fmt.Errorf("get index values for mac address: %s", err)
+			}
+			nbi.verifyMACAddressIndexExists(ifaceType, ifaceName, ifaceParentName)
+			nbi.macAddressesIndex[ifaceType][ifaceName][ifaceParentName][macAddress.MAC] = macAddress
+			nbi.OrphanManager.AddItem(macAddress)
+		}
+	}
+
+	nbi.Logger.Debug(
+		ctx,
+		"Successfully collected MAC addresses from Netbox: ",
+		nbi.macAddressesIndex,
 	)
 	return nil
 }

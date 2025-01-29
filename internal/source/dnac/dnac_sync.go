@@ -52,15 +52,32 @@ func (ds *DnacSource) syncSites(nbi *inventory.NetboxInventory) error {
 // Syncs dnac vlans to netbox inventory.
 func (ds *DnacSource) syncVlans(nbi *inventory.NetboxInventory) error {
 	for vid, vlan := range ds.Vlans {
-		vlanSite, err := common.MatchVlanToSite(ds.Ctx, nbi, vlan.InterfaceName, ds.SourceConfig.VlanSiteRelations)
+		vlanSite, err := common.MatchVlanToSite(
+			ds.Ctx,
+			nbi,
+			vlan.InterfaceName,
+			ds.SourceConfig.VlanSiteRelations,
+		)
 		if err != nil {
 			return fmt.Errorf("match vlan to site: %s", err)
 		}
-		vlanGroup, err := common.MatchVlanToGroup(ds.Ctx, nbi, vlan.InterfaceName, vlanSite, ds.SourceConfig.VlanGroupRelations, ds.SourceConfig.VlanGroupSiteRelations)
+		vlanGroup, err := common.MatchVlanToGroup(
+			ds.Ctx,
+			nbi,
+			vlan.InterfaceName,
+			vlanSite,
+			ds.SourceConfig.VlanGroupRelations,
+			ds.SourceConfig.VlanGroupSiteRelations,
+		)
 		if err != nil {
 			return fmt.Errorf("vlanGroup: %s", err)
 		}
-		vlanTenant, err := common.MatchVlanToTenant(ds.Ctx, nbi, vlan.InterfaceName, ds.SourceConfig.VlanTenantRelations)
+		vlanTenant, err := common.MatchVlanToTenant(
+			ds.Ctx,
+			nbi,
+			vlan.InterfaceName,
+			ds.SourceConfig.VlanTenantRelations,
+		)
 		if err != nil {
 			return fmt.Errorf("vlanTenant: %s", err)
 		}
@@ -139,7 +156,11 @@ func (ds *DnacSource) syncDevices(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
-func (ds *DnacSource) syncDevice(nbi *inventory.NetboxInventory, deviceID string, device dnac.ResponseDevicesGetDeviceListResponse) error {
+func (ds *DnacSource) syncDevice(
+	nbi *inventory.NetboxInventory,
+	deviceID string,
+	device dnac.ResponseDevicesGetDeviceListResponse,
+) error {
 	var description, comments string
 	if device.Description != "" {
 		description = device.Description
@@ -160,7 +181,12 @@ func (ds *DnacSource) syncDevice(nbi *inventory.NetboxInventory, deviceID string
 	// Match device to a role.
 	var deviceRole *objects.DeviceRole
 	if len(ds.SourceConfig.HostRoleRelations) > 0 {
-		deviceRole, err = common.MatchHostToRole(ds.Ctx, nbi, device.Hostname, ds.SourceConfig.HostRoleRelations)
+		deviceRole, err = common.MatchHostToRole(
+			ds.Ctx,
+			nbi,
+			device.Hostname,
+			ds.SourceConfig.HostRoleRelations,
+		)
 		if err != nil {
 			return fmt.Errorf("match host to role: %s", err)
 		}
@@ -196,7 +222,11 @@ func (ds *DnacSource) syncDevice(nbi *inventory.NetboxInventory, deviceID string
 	var deviceSite *objects.Site
 	if site, ok := ds.SiteID2nbSite.Load(ds.Device2Site[device.ID]); ok {
 		if deviceSite, ok = site.(*objects.Site); !ok {
-			ds.Logger.Errorf(ds.Ctx, "Type assertion to *objects.Site failed for device %s, this should not happen. This device will be skipped", device.ID)
+			ds.Logger.Errorf(
+				ds.Ctx,
+				"Type assertion to *objects.Site failed for device %s, this should not happen. This device will be skipped",
+				device.ID,
+			)
 			return nil
 		}
 	} else {
@@ -205,7 +235,11 @@ func (ds *DnacSource) syncDevice(nbi *inventory.NetboxInventory, deviceID string
 	}
 
 	if device.Type == "" {
-		ds.Logger.Errorf(ds.Ctx, "Device type for device %s is empty, this should not happen. This device will be skipped", device.ID)
+		ds.Logger.Errorf(
+			ds.Ctx,
+			"Device type for device %s is empty, this should not happen. This device will be skipped",
+			device.ID,
+		)
 		return nil
 	}
 
@@ -218,7 +252,12 @@ func (ds *DnacSource) syncDevice(nbi *inventory.NetboxInventory, deviceID string
 		return fmt.Errorf("add device type: %s", err)
 	}
 
-	deviceTenant, err := common.MatchHostToTenant(ds.Ctx, nbi, device.Hostname, ds.SourceConfig.HostTenantRelations)
+	deviceTenant, err := common.MatchHostToTenant(
+		ds.Ctx,
+		nbi,
+		device.Hostname,
+		ds.SourceConfig.HostTenantRelations,
+	)
 	if err != nil {
 		return fmt.Errorf("hostTenant: %s", err)
 	}
@@ -295,7 +334,12 @@ func (ds *DnacSource) syncDeviceInterfaces(nbi *inventory.NetboxInventory) error
 
 	return nil
 }
-func (ds *DnacSource) syncDeviceInterface(nbi *inventory.NetboxInventory, ifaceID string, iface dnac.ResponseDevicesGetAllInterfacesResponse) error {
+
+func (ds *DnacSource) syncDeviceInterface(
+	nbi *inventory.NetboxInventory,
+	ifaceID string,
+	iface dnac.ResponseDevicesGetAllInterfacesResponse,
+) error {
 	ifaceDescription := iface.Description
 
 	ifaceDevice, err := ds.getDevice(iface.DeviceID)
@@ -360,7 +404,12 @@ func (ds *DnacSource) syncDeviceInterface(nbi *inventory.NetboxInventory, ifaceI
 		return fmt.Errorf("add device interface: %s", err)
 	}
 
-	nbMACAddress, err := common.CreateMACAddressForObjectType(ds.Ctx, nbi, iface.MacAddress, nbIface)
+	nbMACAddress, err := common.CreateMACAddressForObjectType(
+		ds.Ctx,
+		nbi,
+		iface.MacAddress,
+		nbIface,
+	)
 	if err != nil {
 		return fmt.Errorf("creating MAC address: %s", err)
 	}
@@ -414,7 +463,10 @@ func (ds *DnacSource) getInterfaceStatus(status string) (bool, error) {
 	}
 }
 
-func (ds *DnacSource) getInterfaceType(interfaceType string, speed int) (*objects.InterfaceType, error) {
+func (ds *DnacSource) getInterfaceType(
+	interfaceType string,
+	speed int,
+) (*objects.InterfaceType, error) {
 	switch interfaceType {
 	case "Physical":
 		ifaceType := objects.IfaceSpeed2IfaceType[objects.InterfaceSpeed(speed)]
@@ -434,12 +486,18 @@ func (ds *DnacSource) validateInterfaceName(ifaceName, ifaceID string) error {
 		return fmt.Errorf("unknown interface name for iface: %s", ifaceID)
 	}
 	if utils.FilterInterfaceName(ifaceName, ds.SourceConfig.InterfaceFilter) {
-		return fmt.Errorf("interface %s is filtered out with interfaceFilter %s", ifaceName, ds.SourceConfig.InterfaceFilter)
+		return fmt.Errorf(
+			"interface %s is filtered out with interfaceFilter %s",
+			ifaceName,
+			ds.SourceConfig.InterfaceFilter,
+		)
 	}
 	return nil
 }
 
-func (ds *DnacSource) getVlanModeAndAccessVlan(portMode, vlanID string) (*objects.InterfaceMode, *objects.Vlan, error) {
+func (ds *DnacSource) getVlanModeAndAccessVlan(
+	portMode, vlanID string,
+) (*objects.InterfaceMode, *objects.Vlan, error) {
 	vid, err := strconv.Atoi(vlanID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("can't parse vid for iface %s", vlanID)
@@ -465,8 +523,18 @@ func (ds *DnacSource) getVlanModeAndAccessVlan(portMode, vlanID string) (*object
 	}
 }
 
-func (ds *DnacSource) addIPAddressToInterface(nbi *inventory.NetboxInventory, iface *objects.Interface, ifaceDetails dnac.ResponseDevicesGetAllInterfacesResponse, ifaceDevice *objects.Device) error {
-	if ifaceDetails.IPv4Address == "" || utils.IsPermittedIPAddress(ifaceDetails.IPv4Address, ds.SourceConfig.PermittedSubnets, ds.SourceConfig.IgnoredSubnets) {
+func (ds *DnacSource) addIPAddressToInterface(
+	nbi *inventory.NetboxInventory,
+	iface *objects.Interface,
+	ifaceDetails dnac.ResponseDevicesGetAllInterfacesResponse,
+	ifaceDevice *objects.Device,
+) error {
+	if ifaceDetails.IPv4Address == "" ||
+		utils.IsPermittedIPAddress(
+			ifaceDetails.IPv4Address,
+			ds.SourceConfig.PermittedSubnets,
+			ds.SourceConfig.IgnoredSubnets,
+		) {
 		return nil
 	}
 
@@ -490,7 +558,7 @@ func (ds *DnacSource) addIPAddressToInterface(nbi *inventory.NetboxInventory, if
 		Address:            fmt.Sprintf("%s/%d", ifaceDetails.IPv4Address, defaultMask),
 		Status:             &objects.IPAddressStatusActive,
 		DNSName:            utils.ReverseLookup(ifaceDetails.IPv4Address),
-		AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
+		AssignedObjectType: constants.ContentTypeDcimInterface,
 		AssignedObjectID:   iface.ID,
 		Tenant:             iface.Device.Tenant,
 	})
@@ -545,11 +613,23 @@ func (ds *DnacSource) syncWirelessLANs(nbi *inventory.NetboxInventory) error {
 		if err != nil {
 			return fmt.Errorf("add wirelessLANGroup %s: %s", wlanGroup, err)
 		}
-		vlanSite, err := common.MatchVlanToSite(ds.Ctx, nbi, wlanWirelessProfile.InterfaceName, ds.SourceConfig.VlanSiteRelations)
+		vlanSite, err := common.MatchVlanToSite(
+			ds.Ctx,
+			nbi,
+			wlanWirelessProfile.InterfaceName,
+			ds.SourceConfig.VlanSiteRelations,
+		)
 		if err != nil {
 			return fmt.Errorf("match vlan to site: %s", err)
 		}
-		vlanGroup, err := common.MatchVlanToGroup(ds.Ctx, nbi, wlanWirelessProfile.InterfaceName, vlanSite, ds.SourceConfig.VlanGroupRelations, ds.SourceConfig.VlanGroupSiteRelations)
+		vlanGroup, err := common.MatchVlanToGroup(
+			ds.Ctx,
+			nbi,
+			wlanWirelessProfile.InterfaceName,
+			vlanSite,
+			ds.SourceConfig.VlanGroupRelations,
+			ds.SourceConfig.VlanGroupSiteRelations,
+		)
 		if err != nil {
 			return err
 		}
@@ -564,7 +644,11 @@ func (ds *DnacSource) syncWirelessLANs(nbi *inventory.NetboxInventory) error {
 		case "wep":
 			wlanAuthType = &objects.WirelessLanAuthTypeWep
 		default:
-			ds.Logger.Debugf(ds.Ctx, "wlan auth type %s is not implemented yet", wlanSecDetails.SecurityLevel)
+			ds.Logger.Debugf(
+				ds.Ctx,
+				"wlan auth type %s is not implemented yet",
+				wlanSecDetails.SecurityLevel,
+			)
 		}
 
 		var wlanStatus *objects.WirelessLANStatus
@@ -644,7 +728,12 @@ func (ds *DnacSource) syncMissingDevicePrimaryIPs(nbi *inventory.NetboxInventory
 				return false
 			}
 
-			nbMACAddress, err := common.CreateMACAddressForObjectType(ds.Ctx, nbi, device.MacAddress, nbIface)
+			nbMACAddress, err := common.CreateMACAddressForObjectType(
+				ds.Ctx,
+				nbi,
+				device.MacAddress,
+				nbIface,
+			)
 			if err != nil {
 				syncErr = fmt.Errorf("creating MAC address: %s", err)
 				return false
@@ -666,7 +755,7 @@ func (ds *DnacSource) syncMissingDevicePrimaryIPs(nbi *inventory.NetboxInventory
 				Status:             &objects.IPAddressStatusActive,
 				DNSName:            utils.ReverseLookup(device.ManagementIPAddress),
 				Tenant:             nbDevice.Tenant,
-				AssignedObjectType: objects.AssignedObjectTypeDeviceInterface,
+				AssignedObjectType: constants.ContentTypeDcimInterface,
 				AssignedObjectID:   nbIface.ID,
 			}
 			nbIPAddress, err := nbi.AddIPAddress(ds.Ctx, nbIPAddressStruct)

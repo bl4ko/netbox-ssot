@@ -90,7 +90,10 @@ type NetboxInventory struct {
 	// devicesIndexByNameAndSiteID is a map of all devices in the Netbox's inventory,
 	// indexed by their name and SiteID
 	devicesIndexByNameAndSiteID map[string]map[int]*objects.Device
-	devicesLock                 sync.Mutex
+	// devicesIndexByID is a helper index, that we use in init functions
+	// to create relationships between objects.
+	devicesIndexByID map[int]*objects.Device
+	devicesLock      sync.Mutex
 
 	// virtualDeviceContextsIndexByNameAndDeviceID is a map of all virtual device contexts
 	// in the Netbox's inventory indexed by their name and device ID.
@@ -140,22 +143,44 @@ type NetboxInventory struct {
 	// InterfacesIndexByDeviceAnName is a map of all interfaces in the inventory,
 	// indexed by their's device id and their name.
 	interfacesIndexByDeviceIDAndName map[int]map[string]*objects.Interface
-	interfacesLock                   sync.Mutex
+	// interfacesIndexByID is a helper index, that we use in init functions
+	// to create relationships between objects.
+	interfacesIndexByID map[int]*objects.Interface
+	interfacesLock      sync.Mutex
 
 	// vmsIndexByNameAndClusterID is a map of all virtual machines in the inventory,
 	// indexed by their name and their cluster id
 	vmsIndexByNameAndClusterID map[string]map[int]*objects.VM
-	vmsLock                    sync.Mutex
+	// vmsIndexByID is a helper index, that we use in init functions
+	// to create relationships between objects.
+	vmsIndexByID map[int]*objects.VM
+	vmsLock      sync.Mutex
 
 	// vmInterfacesIndexByVMAndName is a map of all virtual machine interfaces in the
 	// inventory, indexed by their's virtual machine id and their name
 	vmInterfacesIndexByVMIdAndName map[int]map[string]*objects.VMInterface
-	vmInterfacesLock               sync.Mutex
+	// vmInterfacesIndexByID is a helper index, that we use in init functions
+	// to create relationships between objects.
+	vmInterfacesIndexByID map[int]*objects.VMInterface
+	vmInterfacesLock      sync.Mutex
 
-	// ipAdressesIndexByAddress is a map of all IP addresses in the inventory,
-	// indexed by their address
-	ipAdressesIndexByAddress map[string]*objects.IPAddress
-	ipAddressesLock          sync.Mutex
+	// ipAdressesIndex is a map of all IP addresses in the inventory,
+	// indexed:
+	//   * iface type (vmiface or device iface)
+	//   * iface name (name of the vminterface/deviceinterface)
+	//   * iface parent name (name of the vm/device that the interface belongs to)
+	//   * ip address
+	ipAddressesIndex map[constants.ContentType]map[string]map[string]map[string]*objects.IPAddress
+	ipAddressesLock  sync.Mutex
+
+	// macAddressesIndex is a map of all MAC addresses in the inventory,
+	// indexed with these levels:
+	//  * iface type (vmiface or device iface)
+	//  * iface name (name of the vminterface/deviceinterface)
+	//  * iface parent name (name of the vm/device that the interface belongs to)
+	//  * mac address
+	macAddressesIndex map[constants.ContentType]map[string]map[string]map[string]*objects.MACAddress
+	macAddressesLock  sync.Mutex
 
 	// wirelessLANGroupsIndexByName is a map of all wireless lan groups in the Netbox's
 	// inventory, indexed by their name
@@ -166,38 +191,60 @@ type NetboxInventory struct {
 	// indexed by their ssid
 	wirelessLANsIndexBySSID map[string]*objects.WirelessLAN
 	wirelessLANsLock        sync.Mutex
-
-	// macAddressesIndexByAddress is a map of all MAC addresses in the inventory, indexed by their MAC address
-	macAddressesIndexByAddress map[string]*objects.MACAddress
-	macAddressesLock           sync.Mutex
 }
 
 // Func string representation.
 func (nbi *NetboxInventory) String() string {
-	return fmt.Sprintf("NetBoxInventory{Logger: %+v, NetboxConfig: %+v...}", nbi.Logger, nbi.NetboxConfig)
+	return fmt.Sprintf(
+		"NetBoxInventory{Logger: %+v, NetboxConfig: %+v...}",
+		nbi.Logger,
+		nbi.NetboxConfig,
+	)
 }
 
 // NewNetboxInventory creates a new NetBoxInventory object.
 // It takes a logger and a NetboxConfig as parameters, and returns a pointer to the newly created NetBoxInventory.
 // The logger is used for logging messages, and the NetboxConfig is used to configure the NetBoxInventory.
-func NewNetboxInventory(ctx context.Context, logger *logger.Logger, nbConfig *parser.NetboxConfig) *NetboxInventory {
+func NewNetboxInventory(
+	ctx context.Context,
+	logger *logger.Logger,
+	nbConfig *parser.NetboxConfig,
+) *NetboxInventory {
 	sourcePriority := make(map[string]int, len(nbConfig.SourcePriority))
 	for i, sourceName := range nbConfig.SourcePriority {
 		sourcePriority[sourceName] = i
 	}
 	orphanManager := NewOrphanManager(logger)
 
-	nbi := &NetboxInventory{Ctx: ctx, Logger: logger, NetboxConfig: nbConfig, SourcePriority: sourcePriority, OrphanManager: orphanManager}
+	nbi := &NetboxInventory{
+		Ctx:            ctx,
+		Logger:         logger,
+		NetboxConfig:   nbConfig,
+		SourcePriority: sourcePriority,
+		OrphanManager:  orphanManager,
+	}
 	return nbi
 }
 
 // Init function that initializes the NetBoxInventory object with objects from Netbox.
 func (nbi *NetboxInventory) Init() error {
-	baseURL := fmt.Sprintf("%s://%s:%d", nbi.NetboxConfig.HTTPScheme, nbi.NetboxConfig.Hostname, nbi.NetboxConfig.Port)
+	baseURL := fmt.Sprintf(
+		"%s://%s:%d",
+		nbi.NetboxConfig.HTTPScheme,
+		nbi.NetboxConfig.Hostname,
+		nbi.NetboxConfig.Port,
+	)
 
 	nbi.Logger.Debug(nbi.Ctx, "Initializing Netbox API with baseURL: ", baseURL)
 	var err error
-	nbi.NetboxAPI, err = service.NewNetboxClient(nbi.Logger, baseURL, nbi.NetboxConfig.APIToken, nbi.NetboxConfig.ValidateCert, nbi.NetboxConfig.Timeout, nbi.NetboxConfig.CAFile)
+	nbi.NetboxAPI, err = service.NewNetboxClient(
+		nbi.Logger,
+		baseURL,
+		nbi.NetboxConfig.APIToken,
+		nbi.NetboxConfig.ValidateCert,
+		nbi.NetboxConfig.Timeout,
+		nbi.NetboxConfig.CAFile,
+	)
 	if err != nil {
 		return fmt.Errorf("create new netbox client: %s", err)
 	}
@@ -212,7 +259,6 @@ func (nbi *NetboxInventory) Init() error {
 		nbi.initCustomFields,
 		nbi.initSsotCustomFields,
 		nbi.initTags,
-		nbi.initMACAddresses,
 		nbi.initContactGroups,
 		nbi.initContactRoles,
 		nbi.initAdminContactRole,
@@ -223,10 +269,12 @@ func (nbi *NetboxInventory) Init() error {
 		nbi.initDefaultSite,
 		nbi.initManufacturers,
 		nbi.initPlatforms,
+		nbi.initVMs,
+		nbi.initVMInterfaces,
 		nbi.initDevices,
-		nbi.initVirtualDeviceContexts,
 		nbi.initInterfaces,
 		nbi.initIPAddresses,
+		nbi.initMACAddresses,
 		nbi.initVlanGroups,
 		nbi.initPrefixes,
 		nbi.initVlans,
@@ -235,8 +283,7 @@ func (nbi *NetboxInventory) Init() error {
 		nbi.initClusterGroups,
 		nbi.initClusterTypes,
 		nbi.initClusters,
-		nbi.initVMs,
-		nbi.initVMInterfaces,
+		nbi.initVirtualDeviceContexts,
 		nbi.initWirelessLANs,
 		nbi.initWirelessLANGroups,
 	}
@@ -246,7 +293,12 @@ func (nbi *NetboxInventory) Init() error {
 			return fmt.Errorf("%s: %s", err, utils.ExtractFunctionName(initFunc))
 		}
 		duration := time.Since(startTime)
-		nbi.Logger.Infof(nbi.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionNameWithTrimPrefix(initFunc, "init"), duration.Seconds())
+		nbi.Logger.Infof(
+			nbi.Ctx,
+			"Successfully initialized %s in %f seconds",
+			utils.ExtractFunctionNameWithTrimPrefix(initFunc, "init"),
+			duration.Seconds(),
+		)
 	}
 
 	return nil
@@ -269,8 +321,10 @@ func (nbi *NetboxInventory) checkVersion() error {
 		return fmt.Errorf("parse minor version: %s", err)
 	}
 	if majorVersion != supportedVersion || minorVersion < supportedMinorVersion {
-		return fmt.Errorf("this version of netbox-ssot works only with netbox version >= 4.2.0, but received version: %s", version)
+		return fmt.Errorf(
+			"this version of netbox-ssot works only with netbox version >= 4.2.0, but received version: %s",
+			version,
+		)
 	}
-
 	return nil
 }
