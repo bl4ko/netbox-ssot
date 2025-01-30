@@ -339,7 +339,7 @@ func (fmcc *FMCClient) GetDeviceVLANInterfaces(
 
 	for {
 		vInterfacesURL := fmt.Sprintf(
-			"%s/devices/devicerecords/%s/vlaninterfaces?offset=%d&limit=%d",
+			"fmc_config/v1/domain/%s/devices/devicerecords/%s/vlaninterfaces?offset=%d&limit=%d",
 			domainUUID,
 			deviceID,
 			offset,
