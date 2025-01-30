@@ -215,7 +215,7 @@ func (fmcs *FMCSource) syncVlanInterfaces(
 					address := fmt.Sprintf(
 						"%s/%s",
 						vlanIface.IPv4.Static.Address,
-						vlanIface.IPv4.Static.Netmask,
+						utils.SerializeMask(vlanIface.IPv4.Static.Netmask),
 					)
 					dnsName := utils.ReverseLookup(vlanIface.IPv4.Static.Address)
 					_, err := nbi.AddIPAddress(fmcs.Ctx, &objects.IPAddress{
@@ -294,7 +294,7 @@ func (fmcs *FMCSource) syncPhysicalInterfaces(
 					address := fmt.Sprintf(
 						"%s/%s",
 						pIface.IPv4.Static.Address,
-						pIface.IPv4.Static.Netmask,
+						utils.SerializeMask(pIface.IPv4.Static.Netmask),
 					)
 					dnsName := utils.ReverseLookup(pIface.IPv4.Static.Address)
 					_, err := nbi.AddIPAddress(fmcs.Ctx, &objects.IPAddress{

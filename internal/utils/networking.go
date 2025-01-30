@@ -41,6 +41,18 @@ func Lookup(hostname string) string {
 	return ips[0].String()
 }
 
+// SerializeMask serializes mask into a bit representation.
+// If a mask is already in bit rerpesentation, it returns the mask:
+// mask "24" -> "24",
+// mask "255.255.255.0" -> "24".
+func SerializeMask(mask string) string {
+	if strings.Contains(mask, ".") {
+		maskBits, _ := MaskToBits(mask)
+		return fmt.Sprintf("%d", maskBits)
+	}
+	return mask
+}
+
 // Function that converts string representation of ipv4 mask (e.g. 255.255.255.128) to
 // bit representation (e.g. 25).
 func MaskToBits(mask string) (int, error) {
@@ -115,7 +127,11 @@ func subnetsContainIPAddress(ipAddress string, subnets []string) bool {
 	return false
 }
 
-func IsPermittedIPAddress(ipAddress string, permittedSubnets []string, ignoredSubnets []string) bool {
+func IsPermittedIPAddress(
+	ipAddress string,
+	permittedSubnets []string,
+	ignoredSubnets []string,
+) bool {
 	if subnetsContainIPAddress(ipAddress, ignoredSubnets) {
 		return false
 	}

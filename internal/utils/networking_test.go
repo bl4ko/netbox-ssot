@@ -480,3 +480,36 @@ func TestIsPermittedIPAddress(t *testing.T) {
 		})
 	}
 }
+
+func TestSerializeMask(t *testing.T) {
+	type args struct {
+		mask string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "Test valid mask",
+			args: args{
+				"24",
+			},
+			want: "24",
+		},
+		{
+			name: "Test mask of bits",
+			args: args{
+				"255.255.255.0",
+			},
+			want: "24",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := SerializeMask(tt.args.mask); got != tt.want {
+				t.Errorf("SerializeMask() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
