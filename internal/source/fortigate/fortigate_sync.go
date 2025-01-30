@@ -248,10 +248,18 @@ func (fs *FortigateSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 				if err != nil {
 					fs.Logger.Warningf(fs.Ctx, "extract prefix from ip address: %s", err)
 				} else if mask != constants.MaxIPv4MaskBits {
+					var scopeID int
+					var scopeType constants.ContentType
+					if vlanSite != nil {
+						scopeID = vlanSite.ID
+						scopeType = constants.ContentTypeDcimSite
+					}
 					_, err = nbi.AddPrefix(fs.Ctx, &objects.Prefix{
-						Prefix: prefix,
-						Tenant: NBVlan.Tenant,
-						Vlan:   NBVlan,
+						Prefix:    prefix,
+						Tenant:    NBVlan.Tenant,
+						Vlan:      NBVlan,
+						ScopeID:   scopeID,
+						ScopeType: scopeType,
 					})
 					if err != nil {
 						return fmt.Errorf("add prefix: %s", err)
