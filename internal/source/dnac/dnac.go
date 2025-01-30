@@ -27,6 +27,7 @@ type DnacSource struct {
 	SSID2SecurityDetails            map[string]dnac.ResponseItemWirelessGetEnterpriseSSIDSSIDDetails // WirelessLANName -> SSIDDetails
 
 	// Relations between dnac data. Initialized in init functions.
+	Site2Parent           map[string]string          // Site ID -> Parent Site ID
 	Site2Devices          map[string]map[string]bool // Site ID - > set of device IDs
 	Device2Site           map[string]string          // Device ID -> Site ID
 	DeviceID2InterfaceIDs map[string][]string        // DeviceID -> []InterfaceID
@@ -40,8 +41,20 @@ type DnacSource struct {
 }
 
 func (ds *DnacSource) Init() error {
-	dnacURL := fmt.Sprintf("%s://%s:%d", ds.Config.SourceConfig.HTTPScheme, ds.Config.SourceConfig.Hostname, ds.Config.SourceConfig.Port)
-	Client, err := dnac.NewClientWithOptions(dnacURL, ds.SourceConfig.Username, ds.SourceConfig.Password, "false", strconv.FormatBool(ds.SourceConfig.ValidateCert), nil)
+	dnacURL := fmt.Sprintf(
+		"%s://%s:%d",
+		ds.Config.SourceConfig.HTTPScheme,
+		ds.Config.SourceConfig.Hostname,
+		ds.Config.SourceConfig.Port,
+	)
+	Client, err := dnac.NewClientWithOptions(
+		dnacURL,
+		ds.SourceConfig.Username,
+		ds.SourceConfig.Password,
+		"false",
+		strconv.FormatBool(ds.SourceConfig.ValidateCert),
+		nil,
+	)
 	if err != nil {
 		return fmt.Errorf("creating dnac client: %s", err)
 	}
@@ -60,7 +73,12 @@ func (ds *DnacSource) Init() error {
 			return fmt.Errorf("dnac initialization failure: %v", err)
 		}
 		duration := time.Since(startTime)
-		ds.Logger.Infof(ds.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionNameWithTrimPrefix(initFunc, "init"), duration.Seconds())
+		ds.Logger.Infof(
+			ds.Ctx,
+			"Successfully initialized %s in %f seconds",
+			utils.ExtractFunctionNameWithTrimPrefix(initFunc, "init"),
+			duration.Seconds(),
+		)
 	}
 	return nil
 }
@@ -82,7 +100,12 @@ func (ds *DnacSource) Sync(nbi *inventory.NetboxInventory) error {
 			return err
 		}
 		duration := time.Since(startTime)
-		ds.Logger.Infof(ds.Ctx, "Successfully synced %s in %f seconds", utils.ExtractFunctionNameWithTrimPrefix(syncFunc, "sync"), duration.Seconds())
+		ds.Logger.Infof(
+			ds.Ctx,
+			"Successfully synced %s in %f seconds",
+			utils.ExtractFunctionNameWithTrimPrefix(syncFunc, "sync"),
+			duration.Seconds(),
+		)
 	}
 	return nil
 }

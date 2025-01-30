@@ -68,6 +68,11 @@ type NetboxInventory struct {
 	sitesIndexByName map[string]*objects.Site
 	sitesLock        sync.Mutex
 
+	// siteGroupsIndexByName is a map of all site groups in the Netbox's inventory,
+	// indexed by their name
+	siteGroupsIndexByName map[string]*objects.SiteGroup
+	siteGroupsLock        sync.Mutex
+
 	// manufacturersIndexByName is a map of all manufacturers in the Netbox's inventory,
 	// indexed by their name
 	manufacturersIndexByName map[string]*objects.Manufacturer
@@ -265,6 +270,7 @@ func (nbi *NetboxInventory) Init() error {
 		nbi.initContacts,
 		nbi.initContactAssignments,
 		nbi.initTenants,
+		nbi.initSiteGroups,
 		nbi.initSites,
 		nbi.initDefaultSite,
 		nbi.initManufacturers,

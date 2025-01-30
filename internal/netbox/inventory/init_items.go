@@ -227,6 +227,30 @@ func (nbi *NetboxInventory) initSites(ctx context.Context) error {
 	return nil
 }
 
+// Collects all sites from Netbox API and store them in the NetBoxInventory.
+func (nbi *NetboxInventory) initSiteGroups(ctx context.Context) error {
+	extraArgs := fmt.Sprintf(
+		"&fields=%s",
+		utils.ExtractJSONTagsFromStructIntoString(objects.SiteGroup{}),
+	)
+	nbSiteGroups, err := service.GetAll[objects.SiteGroup](ctx, nbi.NetboxAPI, extraArgs)
+	if err != nil {
+		return err
+	}
+	// We also create an index of sites by name for easier access
+	nbi.siteGroupsIndexByName = make(map[string]*objects.SiteGroup)
+	for i := range nbSiteGroups {
+		siteGroup := &nbSiteGroups[i]
+		nbi.siteGroupsIndexByName[siteGroup.Name] = siteGroup
+	}
+	nbi.Logger.Debug(
+		ctx,
+		"Successfully collected SiteGroups from Netbox: ",
+		nbi.siteGroupsIndexByName,
+	)
+	return nil
+}
+
 // initDefaultSite inits default site, which is used for hosts that have no corresponding site.
 // This is because site is required for adding new hosts.
 func (nbi *NetboxInventory) initDefaultSite(ctx context.Context) error {

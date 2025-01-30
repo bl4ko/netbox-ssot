@@ -24,6 +24,7 @@ const OrphanTagColor = ColorGrey
 const OrphanTagDescription = "Tag used by netbox-ssot to mark orphaned objects"
 
 const DefaultVlanGroupName = "DefaultVlanGroup"
+
 const DefaultVlanGroupDescription = "Default netbox-ssot VlanGroup for all vlans that are not part of any other vlanGroup. This group is required for netbox-ssot vlan index to work."
 
 const DefaultArpTagName = "arp-entry"
@@ -222,6 +223,7 @@ const (
 	ContentTypeDcimPlatform             ContentType = "dcim.platform"
 	ContentTypeDcimRegion               ContentType = "dcim.region"
 	ContentTypeDcimSite                 ContentType = "dcim.site"
+	ContentTypeDcimSiteGroup            ContentType = "dcim.sitegroup"
 	ContentTypeDcimVirtualDeviceContext ContentType = "dcim.virtualdevicecontext"
 	ContentTypeDcimMACAddress           ContentType = "dcim.macaddress"
 
@@ -289,6 +291,7 @@ const (
 	DeviceTypesAPIPath           APIPath = "/api/dcim/device-types/"
 	InterfacesAPIPath            APIPath = "/api/dcim/interfaces/"
 	SitesAPIPath                 APIPath = "/api/dcim/sites/"
+	SiteGroupsAPIPath            APIPath = "/api/dcim/site-groups/"
 	RegionsAPIPath               APIPath = "/api/dcim/regions/"
 	LocationsAPIPath             APIPath = "/api/dcim/locations/"
 	ManufacturersAPIPath         APIPath = "/api/dcim/manufacturers/"

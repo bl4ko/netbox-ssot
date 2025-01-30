@@ -163,7 +163,7 @@ func (ds *DnacSource) syncDevice(
 ) error {
 	var description, comments string
 	if device.Description != "" {
-		description = device.Description
+		description = strings.TrimSpace(device.Description)
 	}
 	if len(description) > objects.MaxDescriptionLength {
 		comments = description
@@ -384,7 +384,7 @@ func (ds *DnacSource) syncDeviceInterface(
 
 	nbIface, err := nbi.AddInterface(ds.Ctx, &objects.Interface{
 		NetboxObject: objects.NetboxObject{
-			Description: ifaceDescription,
+			Description: strings.TrimSpace(ifaceDescription),
 			Tags:        ds.Config.SourceTags,
 			CustomFields: map[string]interface{}{
 				constants.CustomFieldSourceName: ds.SourceConfig.Name,

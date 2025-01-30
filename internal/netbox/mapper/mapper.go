@@ -31,6 +31,7 @@ var Type2Path = map[reflect.Type]constants.APIPath{
 	reflect.TypeOf((*objects.DeviceType)(nil)).Elem():           constants.DeviceTypesAPIPath,
 	reflect.TypeOf((*objects.Interface)(nil)).Elem():            constants.InterfacesAPIPath,
 	reflect.TypeOf((*objects.Site)(nil)).Elem():                 constants.SitesAPIPath,
+	reflect.TypeOf((*objects.SiteGroup)(nil)).Elem():            constants.SiteGroupsAPIPath,
 	reflect.TypeOf((*objects.Manufacturer)(nil)).Elem():         constants.ManufacturersAPIPath,
 	reflect.TypeOf((*objects.Platform)(nil)).Elem():             constants.PlatformsAPIPath,
 	reflect.TypeOf((*objects.Tenant)(nil)).Elem():               constants.TenantsAPIPath,

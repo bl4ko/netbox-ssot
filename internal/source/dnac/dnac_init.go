@@ -14,7 +14,9 @@ func (ds *DnacSource) initSites(c *dnac.Client) error {
 	limit := 100
 	allSites := make([]dnac.ResponseSitesGetSiteResponse, 0)
 	for {
-		sites, response, err := c.Sites.GetSite(&dnac.GetSiteQueryParams{Offset: offset, Limit: limit})
+		sites, response, err := c.Sites.GetSite(
+			&dnac.GetSiteQueryParams{Offset: offset, Limit: limit},
+		)
 		if err != nil {
 			return fmt.Errorf("init sites: %s", err)
 		}
@@ -27,9 +29,11 @@ func (ds *DnacSource) initSites(c *dnac.Client) error {
 		}
 		offset += limit
 	}
+	ds.Site2Parent = make(map[string]string, len(allSites))
 	ds.Sites = make(map[string]dnac.ResponseSitesGetSiteResponse, len(allSites))
 	for _, site := range allSites {
 		ds.Sites[site.ID] = site
+		ds.Site2Parent[site.ID] = site.ParentID
 	}
 	return nil
 }
@@ -41,7 +45,9 @@ func (ds *DnacSource) initDevices(c *dnac.Client) error {
 	limit := 100
 	allDevices := make([]dnac.ResponseDevicesGetDeviceListResponse, 0)
 	for {
-		devices, response, err := c.Devices.GetDeviceList(&dnac.GetDeviceListQueryParams{Offset: offset, Limit: limit})
+		devices, response, err := c.Devices.GetDeviceList(
+			&dnac.GetDeviceListQueryParams{Offset: offset, Limit: limit},
+		)
 		if err != nil {
 			return fmt.Errorf("init devices: %s", err)
 		}
@@ -85,7 +91,9 @@ func (ds *DnacSource) initInterfaces(c *dnac.Client) error {
 	limit := 100
 	allInterfaces := make([]dnac.ResponseDevicesGetAllInterfacesResponse, 0)
 	for {
-		interfacesResponse, response, err := c.Devices.GetAllInterfaces(&dnac.GetAllInterfacesQueryParams{Offset: offset, Limit: limit})
+		interfacesResponse, response, err := c.Devices.GetAllInterfaces(
+			&dnac.GetAllInterfacesQueryParams{Offset: offset, Limit: limit},
+		)
 		if err != nil {
 			return fmt.Errorf("init interfaces: %s", err)
 		}
@@ -99,14 +107,20 @@ func (ds *DnacSource) initInterfaces(c *dnac.Client) error {
 		}
 		offset += limit
 	}
-	ds.Interfaces = make(map[string]dnac.ResponseDevicesGetAllInterfacesResponse, len(allInterfaces))
+	ds.Interfaces = make(
+		map[string]dnac.ResponseDevicesGetAllInterfacesResponse,
+		len(allInterfaces),
+	)
 	ds.DeviceID2InterfaceIDs = make(map[string][]string)
 	for _, intf := range allInterfaces {
 		ds.Interfaces[intf.ID] = intf
 		if ds.DeviceID2InterfaceIDs[intf.DeviceID] == nil {
 			ds.DeviceID2InterfaceIDs[intf.DeviceID] = make([]string, 0)
 		}
-		ds.DeviceID2InterfaceIDs[intf.DeviceID] = append(ds.DeviceID2InterfaceIDs[intf.DeviceID], intf.ID)
+		ds.DeviceID2InterfaceIDs[intf.DeviceID] = append(
+			ds.DeviceID2InterfaceIDs[intf.DeviceID],
+			intf.ID,
+		)
 	}
 	return nil
 }
@@ -122,7 +136,10 @@ func (ds *DnacSource) initMemberships(c *dnac.Client) error {
 	ds.Device2Site = make(map[string]string)
 	for _, site := range ds.Sites {
 		for {
-			membershipResp, _, _ := c.Sites.GetMembership(site.ID, &dnac.GetMembershipQueryParams{Offset: float64(offset), Limit: float64(limit)})
+			membershipResp, _, _ := c.Sites.GetMembership(
+				site.ID,
+				&dnac.GetMembershipQueryParams{Offset: float64(offset), Limit: float64(limit)},
+			)
 			if len(*membershipResp.Device) > 0 {
 				deviceResponses := *membershipResp.Device
 				for _, deviceResponse := range deviceResponses {
@@ -184,12 +201,16 @@ func (ds *DnacSource) initWirelessLANs(c *dnac.Client) error {
 	// Create a map of IntefaceName -> VLAN
 	ds.WirelessLANInterfaceName2VlanID = make(map[string]int)
 	for _, dynamicInterface := range *wirelessDynamicInterfaces {
-		ds.WirelessLANInterfaceName2VlanID[dynamicInterface.InterfaceName] = int(*dynamicInterface.VLANID)
+		ds.WirelessLANInterfaceName2VlanID[dynamicInterface.InterfaceName] = int(
+			*dynamicInterface.VLANID,
+		)
 	}
 
 	// Create a map of SSID -> WirelessLANGroup
 	ds.SSID2WlanGroupName = make(map[string]string)
-	ds.SSID2WirelessProfileDetails = make(map[string]dnac.ResponseItemWirelessGetWirelessProfileProfileDetailsSSIDDetails)
+	ds.SSID2WirelessProfileDetails = make(
+		map[string]dnac.ResponseItemWirelessGetWirelessProfileProfileDetailsSSIDDetails,
+	)
 	for _, wirelessProfile := range *wirelessProfiles {
 		for _, ssid := range *wirelessProfile.ProfileDetails.SSIDDetails {
 			ds.SSID2WirelessProfileDetails[ssid.Name] = ssid

@@ -92,7 +92,7 @@ func (nbi *NetboxInventory) AddTenant(
 	return nbi.tenantsIndexByName[newTenant.Name], nil
 }
 
-// AddContact adds a contact to the local netbox inventory.
+// AddSite adds a site to the local netbox inventory.
 func (nbi *NetboxInventory) AddSite(
 	ctx context.Context,
 	newSite *objects.Site,
@@ -119,7 +119,7 @@ func (nbi *NetboxInventory) AddSite(
 			}
 			nbi.sitesIndexByName[newSite.Name] = patchedSite
 		} else {
-			nbi.Logger.Debug(ctx, "Site ", newSite.Name, " already exists in Netbox and is up to date...")
+			nbi.Logger.Debugf(ctx, "Site %s already exists in Netbox and is up to date...", newSite.Name)
 		}
 	} else {
 		nbi.Logger.Debug(ctx, "Site ", newSite.Name, " does not exist in Netbox. Creating it...")
@@ -130,6 +130,55 @@ func (nbi *NetboxInventory) AddSite(
 		nbi.sitesIndexByName[newSite.Name] = createdContact
 	}
 	return nbi.sitesIndexByName[newSite.Name], nil
+}
+
+// AddSiteGroup adds a SiteGroup to the local netbox inventory.
+func (nbi *NetboxInventory) AddSiteGroup(
+	ctx context.Context,
+	newSiteGroup *objects.SiteGroup,
+) (*objects.SiteGroup, error) {
+	newSiteGroup.NetboxObject.AddTag(nbi.SsotTag)
+	nbi.siteGroupsLock.Lock()
+	defer nbi.sitesLock.Unlock()
+	if _, ok := nbi.siteGroupsIndexByName[newSiteGroup.Name]; ok {
+		oldSiteGroup := nbi.siteGroupsIndexByName[newSiteGroup.Name]
+		diffMap, err := utils.JSONDiffMapExceptID(
+			newSiteGroup,
+			oldSiteGroup,
+			false,
+			nbi.SourcePriority,
+		)
+		if err != nil {
+			return nil, err
+		}
+		if len(diffMap) > 0 {
+			nbi.Logger.Debugf(
+				ctx,
+				"SiteGroup %s already exists in Netbox but is out of date. Patching it...",
+				newSiteGroup.Name,
+			)
+			patchedSiteGroup, err := service.Patch[objects.SiteGroup](
+				ctx,
+				nbi.NetboxAPI,
+				oldSiteGroup.ID,
+				diffMap,
+			)
+			if err != nil {
+				return nil, err
+			}
+			nbi.siteGroupsIndexByName[newSiteGroup.Name] = patchedSiteGroup
+		} else {
+			nbi.Logger.Debugf(ctx, "SiteGroup %s already exists in Netbox and is up to date...", newSiteGroup.Name)
+		}
+	} else {
+		nbi.Logger.Debugf(ctx, "SiteGroup %s does not exist in Netbox. Creating it...", newSiteGroup.Name)
+		createdSiteGroup, err := service.Create(ctx, nbi.NetboxAPI, newSiteGroup)
+		if err != nil {
+			return nil, err
+		}
+		nbi.siteGroupsIndexByName[newSiteGroup.Name] = createdSiteGroup
+	}
+	return nbi.siteGroupsIndexByName[newSiteGroup.Name], nil
 }
 
 // AddContactRole adds the newContactRole to the local netbox inventory.
