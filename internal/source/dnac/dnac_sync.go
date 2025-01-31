@@ -19,7 +19,7 @@ func (ds *DnacSource) syncSites(nbi *inventory.NetboxInventory) error {
 	for _, site := range ds.Sites {
 		dnacSite := &objects.Site{
 			NetboxObject: objects.NetboxObject{
-				Tags: ds.Config.SourceTags,
+				Tags: ds.Config.GetSourceTags(),
 				CustomFields: map[string]interface{}{
 					constants.CustomFieldSourceName: ds.SourceConfig.Name,
 				},
@@ -83,7 +83,7 @@ func (ds *DnacSource) syncVlans(nbi *inventory.NetboxInventory) error {
 		}
 		newVlan, err := nbi.AddVlan(ds.Ctx, &objects.Vlan{
 			NetboxObject: objects.NetboxObject{
-				Tags:        ds.Config.SourceTags,
+				Tags:        ds.GetSourceTags(),
 				Description: vlan.VLANType,
 				CustomFields: map[string]interface{}{
 					constants.CustomFieldSourceName: ds.SourceConfig.Name,
@@ -104,7 +104,7 @@ func (ds *DnacSource) syncVlans(nbi *inventory.NetboxInventory) error {
 			prefix := fmt.Sprintf("%s/%s", vlan.NetworkAddress, vlan.Prefix)
 			_, err = nbi.AddPrefix(ds.Ctx, &objects.Prefix{
 				NetboxObject: objects.NetboxObject{
-					Tags: ds.Config.SourceTags,
+					Tags: ds.GetSourceTags(),
 					CustomFields: map[string]interface{}{
 						constants.CustomFieldSourceName: ds.SourceConfig.Name,
 					},
@@ -274,7 +274,7 @@ func (ds *DnacSource) syncDevice(
 
 	nbDevice, err := nbi.AddDevice(ds.Ctx, &objects.Device{
 		NetboxObject: objects.NetboxObject{
-			Tags:        ds.Config.SourceTags,
+			Tags:        ds.GetSourceTags(),
 			Description: description,
 			CustomFields: map[string]interface{}{
 				constants.CustomFieldSourceName:     ds.SourceConfig.Name,
@@ -385,7 +385,7 @@ func (ds *DnacSource) syncDeviceInterface(
 	nbIface, err := nbi.AddInterface(ds.Ctx, &objects.Interface{
 		NetboxObject: objects.NetboxObject{
 			Description: strings.TrimSpace(ifaceDescription),
-			Tags:        ds.Config.SourceTags,
+			Tags:        ds.GetSourceTags(),
 			CustomFields: map[string]interface{}{
 				constants.CustomFieldSourceName: ds.SourceConfig.Name,
 			},
@@ -551,7 +551,7 @@ func (ds *DnacSource) addIPAddressToInterface(
 
 	nbIPAddress, err := nbi.AddIPAddress(ds.Ctx, &objects.IPAddress{
 		NetboxObject: objects.NetboxObject{
-			Tags: ds.Config.SourceTags,
+			Tags: ds.GetSourceTags(),
 			CustomFields: map[string]interface{}{
 				constants.CustomFieldSourceName:   ds.SourceConfig.Name,
 				constants.CustomFieldArpEntryName: false,
@@ -575,7 +575,7 @@ func (ds *DnacSource) addIPAddressToInterface(
 	} else if mask != constants.MaxIPv4MaskBits {
 		_, err = nbi.AddPrefix(ds.Ctx, &objects.Prefix{
 			NetboxObject: objects.NetboxObject{
-				Tags: ds.Config.SourceTags,
+				Tags: ds.GetSourceTags(),
 			},
 			Prefix: prefix,
 			Tenant: iface.Device.Tenant,
@@ -604,7 +604,7 @@ func (ds *DnacSource) syncWirelessLANs(nbi *inventory.NetboxInventory) error {
 		wlanGroupName := ds.SSID2WlanGroupName[wlanName]
 		wlanGroup, err := nbi.AddWirelessLANGroup(ds.Ctx, &objects.WirelessLANGroup{
 			NetboxObject: objects.NetboxObject{
-				Tags: ds.Config.SourceTags,
+				Tags: ds.GetSourceTags(),
 				CustomFields: map[string]interface{}{
 					constants.CustomFieldSourceName: ds.SourceConfig.Name,
 				},
@@ -665,7 +665,7 @@ func (ds *DnacSource) syncWirelessLANs(nbi *inventory.NetboxInventory) error {
 		vlan, _ := nbi.GetVlan(vlanGroup.ID, wlanVID)
 		wlanStruct := &objects.WirelessLAN{
 			NetboxObject: objects.NetboxObject{
-				Tags: ds.Config.SourceTags,
+				Tags: ds.GetSourceTags(),
 				CustomFields: map[string]interface{}{
 					constants.CustomFieldSourceName: ds.SourceConfig.Name,
 				},
@@ -716,7 +716,7 @@ func (ds *DnacSource) syncMissingDevicePrimaryIPs(nbi *inventory.NetboxInventory
 			// We create a management interface for a device
 			managementInterfaceStruct := &objects.Interface{
 				NetboxObject: objects.NetboxObject{
-					Tags:        ds.Config.SourceTags,
+					Tags:        ds.GetSourceTags(),
 					Description: "Management interface",
 				},
 				Device: nbDevice,
@@ -747,7 +747,7 @@ func (ds *DnacSource) syncMissingDevicePrimaryIPs(nbi *inventory.NetboxInventory
 
 			nbIPAddressStruct := &objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
-					Tags: ds.Config.SourceTags,
+					Tags: ds.GetSourceTags(),
 					CustomFields: map[string]interface{}{
 						constants.CustomFieldSourceName:   ds.SourceConfig.Name,
 						constants.CustomFieldArpEntryName: false,

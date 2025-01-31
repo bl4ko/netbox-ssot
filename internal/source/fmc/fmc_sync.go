@@ -94,7 +94,7 @@ func (fmcs *FMCSource) syncDevices(nbi *inventory.NetboxInventory) error {
 		NBDevice, err := nbi.AddDevice(fmcs.Ctx, &objects.Device{
 			NetboxObject: objects.NetboxObject{
 				Description: device.Description,
-				Tags:        fmcs.SourceTags,
+				Tags:        fmcs.GetSourceTags(),
 				CustomFields: map[string]interface{}{
 					constants.CustomFieldSourceIDName:     deviceUUID,
 					constants.CustomFieldDeviceUUIDName:   deviceUUID,
@@ -197,7 +197,7 @@ func (fmcs *FMCSource) syncVlanInterfaces(
 				}
 				vlan, err := nbi.AddVlan(fmcs.Ctx, &objects.Vlan{
 					NetboxObject: objects.NetboxObject{
-						Tags:        fmcs.SourceTags,
+						Tags:        fmcs.GetSourceTags(),
 						Description: vlanIface.Description,
 					},
 					Status: &objects.VlanStatusActive,
@@ -216,7 +216,7 @@ func (fmcs *FMCSource) syncVlanInterfaces(
 			NBIface, err := nbi.AddInterface(fmcs.Ctx, &objects.Interface{
 				NetboxObject: objects.NetboxObject{
 					Description: vlanIface.Description,
-					Tags:        fmcs.SourceTags,
+					Tags:        fmcs.GetSourceTags(),
 					CustomFields: map[string]interface{}{
 						constants.CustomFieldSourceIDName: vlanIface.ID,
 					},
@@ -241,7 +241,7 @@ func (fmcs *FMCSource) syncVlanInterfaces(
 					dnsName := utils.ReverseLookup(vlanIface.IPv4.Static.Address)
 					_, err := nbi.AddIPAddress(fmcs.Ctx, &objects.IPAddress{
 						NetboxObject: objects.NetboxObject{
-							Tags: fmcs.SourceTags,
+							Tags: fmcs.GetSourceTags(),
 							CustomFields: map[string]interface{}{
 								constants.CustomFieldArpEntryName: false,
 							},
@@ -291,7 +291,7 @@ func (fmcs *FMCSource) syncPhysicalInterfaces(
 			NBIface, err := nbi.AddInterface(fmcs.Ctx, &objects.Interface{
 				NetboxObject: objects.NetboxObject{
 					Description: pIface.Description,
-					Tags:        fmcs.SourceTags,
+					Tags:        fmcs.GetSourceTags(),
 					CustomFields: map[string]interface{}{
 						constants.CustomFieldSourceIDName: pIface.ID,
 					},
@@ -315,7 +315,7 @@ func (fmcs *FMCSource) syncPhysicalInterfaces(
 					dnsName := utils.ReverseLookup(pIface.IPv4.Static.Address)
 					_, err := nbi.AddIPAddress(fmcs.Ctx, &objects.IPAddress{
 						NetboxObject: objects.NetboxObject{
-							Tags: fmcs.SourceTags,
+							Tags: fmcs.GetSourceTags(),
 							CustomFields: map[string]interface{}{
 								constants.CustomFieldArpEntryName: false,
 							},

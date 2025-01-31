@@ -140,7 +140,13 @@ func main() {
 	minutes := int(duration.Minutes())
 	seconds := int((duration - time.Duration(minutes)*time.Minute).Seconds())
 	if successfullRun {
-		ssotLogger.Infof(mainCtx, "%s Syncing took %d min %d sec in total", constants.Rocket, minutes, seconds)
+		ssotLogger.Infof(
+			mainCtx,
+			"%s Syncing took %d min %d sec in total",
+			constants.Rocket,
+			minutes,
+			seconds,
+		)
 	} else {
 		for source := range encounteredErrors {
 			ssotLogger.Infof(mainCtx, "%s syncing of source %s failed", constants.WarningSign, source)

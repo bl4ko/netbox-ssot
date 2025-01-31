@@ -33,7 +33,12 @@ func (is *IOSXESource) syncDevice(nbi *inventory.NetboxInventory) error {
 	if err != nil {
 		return fmt.Errorf("add device type: %s", err)
 	}
-	deviceTenant, err := common.MatchHostToTenant(is.Ctx, nbi, deviceName, is.SourceConfig.HostTenantRelations)
+	deviceTenant, err := common.MatchHostToTenant(
+		is.Ctx,
+		nbi,
+		deviceName,
+		is.SourceConfig.HostTenantRelations,
+	)
 	if err != nil {
 		return fmt.Errorf("match host to tenant: %s", err)
 	}
@@ -42,7 +47,12 @@ func (is *IOSXESource) syncDevice(nbi *inventory.NetboxInventory) error {
 	// not use default switch role.
 	var deviceRole *objects.DeviceRole
 	if len(is.SourceConfig.HostRoleRelations) > 0 {
-		deviceRole, err = common.MatchHostToRole(is.Ctx, nbi, deviceName, is.SourceConfig.HostRoleRelations)
+		deviceRole, err = common.MatchHostToRole(
+			is.Ctx,
+			nbi,
+			deviceName,
+			is.SourceConfig.HostRoleRelations,
+		)
 		if err != nil {
 			return fmt.Errorf("match host to role: %s", err)
 		}
@@ -54,7 +64,12 @@ func (is *IOSXESource) syncDevice(nbi *inventory.NetboxInventory) error {
 		}
 	}
 
-	deviceSite, err := common.MatchHostToSite(is.Ctx, nbi, deviceName, is.SourceConfig.HostSiteRelations)
+	deviceSite, err := common.MatchHostToSite(
+		is.Ctx,
+		nbi,
+		deviceName,
+		is.SourceConfig.HostSiteRelations,
+	)
 	if err != nil {
 		return fmt.Errorf("match host to site: %s", err)
 	}
@@ -70,7 +85,7 @@ func (is *IOSXESource) syncDevice(nbi *inventory.NetboxInventory) error {
 	}
 	NBDevice, err := nbi.AddDevice(is.Ctx, &objects.Device{
 		NetboxObject: objects.NetboxObject{
-			Tags: is.SourceTags,
+			Tags: is.GetSourceTags(),
 		},
 		Name:       deviceName,
 		Site:       deviceSite,
@@ -136,7 +151,7 @@ func (is *IOSXESource) syncInterfaces(nbi *inventory.NetboxInventory) error {
 
 		nbIface, err := nbi.AddInterface(is.Ctx, &objects.Interface{
 			NetboxObject: objects.NetboxObject{
-				Tags: is.SourceTags,
+				Tags: is.GetSourceTags(),
 			},
 			Name:   ifaceName,
 			Type:   ifaceType,
@@ -148,7 +163,12 @@ func (is *IOSXESource) syncInterfaces(nbi *inventory.NetboxInventory) error {
 			return fmt.Errorf("add interface: %s", err)
 		}
 		if ifaceMAC != "" {
-			nbMACAddress, err := common.CreateMACAddressForObjectType(is.Ctx, nbi, ifaceMAC, nbIface)
+			nbMACAddress, err := common.CreateMACAddressForObjectType(
+				is.Ctx,
+				nbi,
+				ifaceMAC,
+				nbIface,
+			)
 			if err != nil {
 				return fmt.Errorf("create mac address for object type: %s", err)
 			}
@@ -179,8 +199,12 @@ func (is *IOSXESource) syncArpTable(nbi *inventory.NetboxInventory) error {
 	}
 
 	for _, arpEntry := range is.ArpEntries {
-		if utils.IsPermittedIPAddress(arpEntry.Address, is.SourceConfig.PermittedSubnets, is.SourceConfig.IgnoredSubnets) {
-			newTags := is.SourceTags
+		if utils.IsPermittedIPAddress(
+			arpEntry.Address,
+			is.SourceConfig.PermittedSubnets,
+			is.SourceConfig.IgnoredSubnets,
+		) {
+			newTags := is.GetSourceTags()
 			newTags = append(newTags, arpTag)
 			currentTime := time.Now()
 			dnsName := utils.ReverseLookup(arpEntry.Address)
@@ -188,11 +212,16 @@ func (is *IOSXESource) syncArpTable(nbi *inventory.NetboxInventory) error {
 			addressWithMask := fmt.Sprintf("%s/%d", arpEntry.Address, defaultMask)
 			_, err := nbi.AddIPAddress(is.Ctx, &objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
-					Tags:        newTags,
-					Description: fmt.Sprintf("IP collected from %s arp table", is.SourceConfig.Name),
+					Tags: newTags,
+					Description: fmt.Sprintf(
+						"IP collected from %s arp table",
+						is.SourceConfig.Name,
+					),
 					CustomFields: map[string]interface{}{
-						constants.CustomFieldOrphanLastSeenName: currentTime.Format(constants.CustomFieldOrphanLastSeenFormat),
-						constants.CustomFieldArpEntryName:       true,
+						constants.CustomFieldOrphanLastSeenName: currentTime.Format(
+							constants.CustomFieldOrphanLastSeenFormat,
+						),
+						constants.CustomFieldArpEntryName: true,
 					},
 				},
 				Address: addressWithMask,

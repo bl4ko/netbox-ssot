@@ -97,7 +97,7 @@ func (pas *PaloAltoSource) syncDevice(nbi *inventory.NetboxInventory) error {
 	}
 	deviceStruct := &objects.Device{
 		NetboxObject: objects.NetboxObject{
-			Tags: pas.SourceTags,
+			Tags: pas.GetSourceTags(),
 		},
 		Name:         deviceName,
 		Site:         deviceSite,
@@ -162,7 +162,7 @@ func (pas *PaloAltoSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 		}
 		nbIface, err := nbi.AddInterface(pas.Ctx, &objects.Interface{
 			NetboxObject: objects.NetboxObject{
-				Tags:        pas.SourceTags,
+				Tags:        pas.GetSourceTags(),
 				Description: iface.Comment,
 			},
 			Name:   iface.Name,
@@ -223,7 +223,7 @@ func (pas *PaloAltoSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 				}
 				vlanStruct := &objects.Vlan{
 					NetboxObject: objects.NetboxObject{
-						Tags:        pas.SourceTags,
+						Tags:        pas.GetSourceTags(),
 						Description: subIface.Comment,
 					},
 					Status: &objects.VlanStatusActive,
@@ -246,7 +246,7 @@ func (pas *PaloAltoSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 			}
 			interfaceStruct := &objects.Interface{
 				NetboxObject: objects.NetboxObject{
-					Tags:        pas.SourceTags,
+					Tags:        pas.GetSourceTags(),
 					Description: subIface.Comment,
 				},
 				Name:            subIface.Name,
@@ -287,7 +287,7 @@ func (pas *PaloAltoSource) syncIPs(
 			dnsName := utils.ReverseLookup(ipAddress)
 			_, err := nbi.AddIPAddress(pas.Ctx, &objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
-					Tags: pas.SourceTags,
+					Tags: pas.GetSourceTags(),
 					CustomFields: map[string]interface{}{
 						constants.CustomFieldArpEntryName: false,
 					},
@@ -334,7 +334,7 @@ func (pas *PaloAltoSource) syncSecurityZones(nbi *inventory.NetboxInventory) err
 	for _, securityZone := range pas.SecurityZones {
 		virtualDeviceContextStruct := &objects.VirtualDeviceContext{
 			NetboxObject: objects.NetboxObject{
-				Tags: pas.SourceTags,
+				Tags: pas.GetSourceTags(),
 			},
 			Name:   securityZone.Name,
 			Device: pas.NBFirewall,
@@ -423,7 +423,7 @@ func (pas *PaloAltoSource) syncArpEntry(
 		pas.SourceConfig.PermittedSubnets,
 		pas.SourceConfig.IgnoredSubnets,
 	) {
-		newTags := pas.SourceTags
+		newTags := pas.GetSourceTags()
 		newTags = append(newTags, arpTag)
 		currentTime := time.Now()
 		dnsName := utils.ReverseLookup(entry.IP)

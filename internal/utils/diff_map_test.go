@@ -83,7 +83,12 @@ func TestPrimaryAttributesDiff(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			outputDiff, err := JSONDiffMapExceptID(tt.newStruct, tt.existingStruct, tt.resetFields, nil)
+			outputDiff, err := JSONDiffMapExceptID(
+				tt.newStruct,
+				tt.existingStruct,
+				tt.resetFields,
+				nil,
+			)
 			if err != nil {
 				t.Errorf("JsonDiffMapExceptID() error = %v", err)
 			}
@@ -150,7 +155,12 @@ func TestChoicesAttributesDiff(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			outputDiff, err := JSONDiffMapExceptID(tt.newStruct, tt.existingStruct, tt.resetFields, nil)
+			outputDiff, err := JSONDiffMapExceptID(
+				tt.newStruct,
+				tt.existingStruct,
+				tt.resetFields,
+				nil,
+			)
 			if err != nil {
 				t.Errorf("JsonDiffMapExceptID() error = %v", err)
 			}
@@ -222,11 +232,27 @@ func TestStructAttributeDiff(t *testing.T) {
 				"device_type": IDObject{ID: 1},
 			},
 		},
+		{
+			name:        "Struct diff",
+			resetFields: false,
+			newStruct: &objects.VMInterface{
+				Mode: &objects.VMInterfaceModeTaggedAll,
+			},
+			existingStruct: &objects.VMInterface{
+				Mode: &objects.VMInterfaceModeTaggedAll,
+			},
+			expectedDiff: map[string]interface{}{},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			outputDiff, err := JSONDiffMapExceptID(tt.newStruct, tt.existingStruct, tt.resetFields, nil)
+			outputDiff, err := JSONDiffMapExceptID(
+				tt.newStruct,
+				tt.existingStruct,
+				tt.resetFields,
+				nil,
+			)
 			if err != nil {
 				t.Errorf("JsonDiffMapExceptID() error = %v", err)
 			}
@@ -308,7 +334,12 @@ func TestSliceAttributeDiff(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			outputDiff, err := JSONDiffMapExceptID(tt.newStruct, tt.existingStruct, tt.resetFields, nil)
+			outputDiff, err := JSONDiffMapExceptID(
+				tt.newStruct,
+				tt.existingStruct,
+				tt.resetFields,
+				nil,
+			)
 			if err != nil {
 				t.Errorf("JsonDiffMapExceptID() error = %v", err)
 			}
@@ -413,7 +444,12 @@ func TestMapAttributeDiff(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			outputDiff, err := JSONDiffMapExceptID(tt.newStruct, tt.existingStruct, tt.resetFields, nil)
+			outputDiff, err := JSONDiffMapExceptID(
+				tt.newStruct,
+				tt.existingStruct,
+				tt.resetFields,
+				nil,
+			)
 			if err != nil {
 				t.Errorf("JsonDiffMapExceptID() error = %v", err)
 			}
@@ -516,7 +552,12 @@ func TestPriorityMergeDiff(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			outputDiff, err := JSONDiffMapExceptID(tt.newStruct, tt.existingStruct, tt.resetFields, tt.sourcePriority)
+			outputDiff, err := JSONDiffMapExceptID(
+				tt.newStruct,
+				tt.existingStruct,
+				tt.resetFields,
+				tt.sourcePriority,
+			)
 			if err != nil {
 				t.Errorf("JsonDiffMapExceptID() error = %v", err)
 			}
@@ -797,7 +838,9 @@ func TestJSONDiffMapExceptID(t *testing.T) {
 		{
 			name: "Fail with case reflect.Slice",
 			args: args{
-				newObj:          testSliceStruct{Test: []testStructWithTestAttribute{{Test: "test1"}, {Test: "test2"}}},
+				newObj: testSliceStruct{
+					Test: []testStructWithTestAttribute{{Test: "test1"}, {Test: "test2"}},
+				},
 				existingObj:     testSliceStruct{Test: []testStructWithTestAttribute{}},
 				resetFields:     false,
 				source2priority: map[string]int{},
@@ -807,8 +850,10 @@ func TestJSONDiffMapExceptID(t *testing.T) {
 		{
 			name: "Fail with case reflect.Struct",
 			args: args{
-				newObj:          testStructWithWrongIDField{SubStruct: wrongIDField{ID: "wrong"}},
-				existingObj:     testStructWithWrongIDField{SubStruct: wrongIDField{ID: "should be int"}},
+				newObj: testStructWithWrongIDField{SubStruct: wrongIDField{ID: "wrong"}},
+				existingObj: testStructWithWrongIDField{
+					SubStruct: wrongIDField{ID: "should be int"},
+				},
 				resetFields:     false,
 				source2priority: map[string]int{},
 			},
@@ -827,7 +872,12 @@ func TestJSONDiffMapExceptID(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := JSONDiffMapExceptID(tt.args.newObj, tt.args.existingObj, tt.args.resetFields, tt.args.source2priority)
+			got, err := JSONDiffMapExceptID(
+				tt.args.newObj,
+				tt.args.existingObj,
+				tt.args.resetFields,
+				tt.args.source2priority,
+			)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("JSONDiffMapExceptID() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -972,11 +1022,13 @@ func Test_addSliceDiff(t *testing.T) {
 		{
 			name: "Test interface slices of same length. Fails because struct elements don't have an ID attribute",
 			args: args{
-				existingSlice: reflect.ValueOf([]testStructWithTestAttribute{{Test: "1"}, {Test: "test"}}),
-				newSlice:      reflect.ValueOf([]testStructWithTestAttribute{{Test: "1"}}),
-				jsonTag:       "test",
-				hasPriority:   true,
-				diffMap:       map[string]interface{}{},
+				existingSlice: reflect.ValueOf(
+					[]testStructWithTestAttribute{{Test: "1"}, {Test: "test"}},
+				),
+				newSlice:    reflect.ValueOf([]testStructWithTestAttribute{{Test: "1"}}),
+				jsonTag:     "test",
+				hasPriority: true,
+				diffMap:     map[string]interface{}{},
 			},
 			wantErr:     true,
 			wantDiffMap: map[string]interface{}{},
@@ -1135,7 +1187,9 @@ func Test_addMapDiff(t *testing.T) {
 				diffMap:     map[string]interface{}{},
 			},
 			wantDiffMap: map[string]interface{}{
-				"CustomFields": map[string]interface{}{constants.CustomFieldOrphanLastSeenName: "2024-04-18 10:59:17"},
+				"CustomFields": map[string]interface{}{
+					constants.CustomFieldOrphanLastSeenName: "2024-04-18 10:59:17",
+				},
 			},
 		},
 		{
@@ -1153,7 +1207,9 @@ func Test_addMapDiff(t *testing.T) {
 				diffMap:     map[string]interface{}{},
 			},
 			wantDiffMap: map[string]interface{}{
-				"CustomFields": map[string]interface{}{constants.CustomFieldOrphanLastSeenName: "2024-04-18 10:59:17"},
+				"CustomFields": map[string]interface{}{
+					constants.CustomFieldOrphanLastSeenName: "2024-04-18 10:59:17",
+				},
 			},
 		},
 	}
@@ -1187,7 +1243,13 @@ func Test_addPrimaryDiff(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(_ *testing.T) {
-			addPrimaryDiff(tt.args.newField, tt.args.existingField, tt.args.jsonTag, tt.args.hasPriority, tt.args.diffMap)
+			addPrimaryDiff(
+				tt.args.newField,
+				tt.args.existingField,
+				tt.args.jsonTag,
+				tt.args.hasPriority,
+				tt.args.diffMap,
+			)
 		})
 	}
 }
@@ -1290,7 +1352,10 @@ func TestExtractFieldsFromDiffMap(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := ExtractFieldsFromDiffMap(tt.args.diffMap, tt.args.field); !reflect.DeepEqual(got, tt.want) {
+			if got := ExtractFieldsFromDiffMap(tt.args.diffMap, tt.args.field); !reflect.DeepEqual(
+				got,
+				tt.want,
+			) {
 				t.Errorf("ExtractFieldsFromDiffMap() = %v, want %v", got, tt.want)
 			}
 		})

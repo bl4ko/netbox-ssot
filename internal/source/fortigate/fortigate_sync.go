@@ -91,7 +91,7 @@ func (fs *FortigateSource) syncDevice(nbi *inventory.NetboxInventory) error {
 	}
 	NBDevice, err := nbi.AddDevice(fs.Ctx, &objects.Device{
 		NetboxObject: objects.NetboxObject{
-			Tags: fs.SourceTags,
+			Tags: fs.GetSourceTags(),
 		},
 		Name:         deviceName,
 		Site:         deviceSite,
@@ -149,7 +149,7 @@ func (fs *FortigateSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 		if iface.Vdom != "" {
 			vdom, err := nbi.AddVirtualDeviceContext(fs.Ctx, &objects.VirtualDeviceContext{
 				NetboxObject: objects.NetboxObject{
-					Tags: fs.SourceTags,
+					Tags: fs.GetSourceTags(),
 				},
 				Name:   iface.Vdom,
 				Device: fs.NBFirewall,
@@ -162,7 +162,7 @@ func (fs *FortigateSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 		}
 		NBIface, err := nbi.AddInterface(fs.Ctx, &objects.Interface{
 			NetboxObject: objects.NetboxObject{
-				Tags:        fs.SourceTags,
+				Tags:        fs.GetSourceTags(),
 				Description: iface.Description,
 			},
 			Device: fs.NBFirewall,
@@ -229,7 +229,7 @@ func (fs *FortigateSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 			}
 			NBVlan, err := nbi.AddVlan(fs.Ctx, &objects.Vlan{
 				NetboxObject: objects.NetboxObject{
-					Tags: fs.SourceTags,
+					Tags: fs.GetSourceTags(),
 				},
 				Status: &objects.VlanStatusActive,
 				Name:   vlanName,
@@ -293,7 +293,7 @@ func syncInterfaceIPs(
 			}
 			NBIPAddress, err = nbi.AddIPAddress(fs.Ctx, &objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
-					Tags: fs.SourceTags,
+					Tags: fs.GetSourceTags(),
 					CustomFields: map[string]interface{}{
 						constants.CustomFieldArpEntryName: false,
 					},
@@ -322,7 +322,7 @@ func syncInterfaceIPs(
 					}
 					_, err = nbi.AddIPAddress(fs.Ctx, &objects.IPAddress{
 						NetboxObject: objects.NetboxObject{
-							Tags: fs.SourceTags,
+							Tags: fs.GetSourceTags(),
 							CustomFields: map[string]interface{}{
 								constants.CustomFieldArpEntryName: false,
 							},
@@ -354,7 +354,7 @@ func syncInterfaceIPs(
 					}
 					_, err = nbi.AddIPAddress(fs.Ctx, &objects.IPAddress{
 						NetboxObject: objects.NetboxObject{
-							Tags: fs.SourceTags,
+							Tags: fs.GetSourceTags(),
 							CustomFields: map[string]interface{}{
 								constants.CustomFieldArpEntryName: false,
 							},

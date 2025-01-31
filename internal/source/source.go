@@ -23,32 +23,44 @@ import (
 )
 
 // NewSource creates a Source from the given configuration.
-func NewSource(ctx context.Context, config *parser.SourceConfig, logger *logger.Logger, netboxInventory *inventory.NetboxInventory) (common.Source, error) {
+func NewSource(
+	ctx context.Context,
+	config *parser.SourceConfig,
+	logger *logger.Logger,
+	netboxInventory *inventory.NetboxInventory,
+) (common.Source, error) {
 	// First we create default tags for the source
-	sourceTag, err := netboxInventory.AddTag(ctx, &objects.Tag{
-		Name:        config.Tag,
-		Slug:        utils.Slugify("source-" + config.Name),
-		Color:       constants.Color(config.TagColor),
-		Description: fmt.Sprintf("Automatically created tag by netbox-ssot for source %s", config.Name),
+	sourceNameTag, err := netboxInventory.AddTag(ctx, &objects.Tag{
+		Name:  config.Tag,
+		Slug:  utils.Slugify("source-" + config.Name),
+		Color: constants.Color(config.TagColor),
+		Description: fmt.Sprintf(
+			"Automatically created tag by netbox-ssot for source %s",
+			config.Name,
+		),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error creating sourceTag: %s", err)
 	}
 	sourceTypeTag, err := netboxInventory.AddTag(ctx, &objects.Tag{
-		Name:        string(config.Type),
-		Slug:        utils.Slugify("type-" + string(config.Type)),
-		Color:       constants.Color(constants.SourceTypeTagColorMap[config.Type]),
-		Description: fmt.Sprintf("Automatically created tag by netbox-ssot for source type %s", config.Type),
+		Name:  string(config.Type),
+		Slug:  utils.Slugify("type-" + string(config.Type)),
+		Color: constants.Color(constants.SourceTypeTagColorMap[config.Type]),
+		Description: fmt.Sprintf(
+			"Automatically created tag by netbox-ssot for source type %s",
+			config.Type,
+		),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error creating sourceTypeTag: %s", err)
 	}
 	commonConfig := common.Config{
-		Logger:       logger,
-		SourceConfig: config,
-		SourceTags:   []*objects.Tag{sourceTag, sourceTypeTag},
-		Ctx:          ctx,
-		CAFile:       config.CAFile,
+		Logger:        logger,
+		SourceConfig:  config,
+		SourceNameTag: sourceNameTag,
+		SourceTypeTag: sourceTypeTag,
+		Ctx:           ctx,
+		CAFile:        config.CAFile,
 	}
 
 	switch config.Type {

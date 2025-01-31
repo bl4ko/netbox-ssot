@@ -22,8 +22,13 @@ type Source interface {
 type Config struct {
 	Logger         *logger.Logger
 	SourceConfig   *parser.SourceConfig
-	SourceTags     []*objects.Tag
 	CustomCertPool *x509.CertPool
+	SourceNameTag  *objects.Tag
+	SourceTypeTag  *objects.Tag
 	Ctx            context.Context //nolint:containedctx
 	CAFile         string          // path to the ca file
+}
+
+func (c Config) GetSourceTags() []*objects.Tag {
+	return []*objects.Tag{c.SourceNameTag, c.SourceTypeTag}
 }

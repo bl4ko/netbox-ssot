@@ -60,7 +60,7 @@ func (o *OVirtSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 				vlanStruct := &objects.Vlan{
 					NetboxObject: objects.NetboxObject{
 						Description: description,
-						Tags:        o.Config.SourceTags,
+						Tags:        o.GetSourceTags(),
 					},
 					Name:     name,
 					Group:    vlanGroup,
@@ -100,7 +100,7 @@ func (o *OVirtSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
 		clusterGroupStruct := &objects.ClusterGroup{
 			NetboxObject: objects.NetboxObject{
 				Description: description,
-				Tags:        o.Config.SourceTags,
+				Tags:        o.GetSourceTags(),
 			},
 			Name: nbClusterGroupName,
 			Slug: utils.Slugify(nbClusterGroupName),
@@ -120,7 +120,7 @@ func (o *OVirtSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
 func (o *OVirtSource) syncClusters(nbi *inventory.NetboxInventory) error {
 	clusterTypeStruct := &objects.ClusterType{
 		NetboxObject: objects.NetboxObject{
-			Tags: o.Config.SourceTags,
+			Tags: []*objects.Tag{o.SourceTypeTag},
 		},
 		Name: "oVirt",
 		Slug: "ovirt",
@@ -182,7 +182,7 @@ func (o *OVirtSource) syncClusters(nbi *inventory.NetboxInventory) error {
 		nbCluster := &objects.Cluster{
 			NetboxObject: objects.NetboxObject{
 				Description: description,
-				Tags:        o.Config.SourceTags,
+				Tags:        o.GetSourceTags(),
 			},
 			Name:      clusterName,
 			Type:      nbClusterType,
@@ -397,7 +397,7 @@ func extractHostData(
 	return &objects.Device{
 		NetboxObject: objects.NetboxObject{
 			Description: hostDescription,
-			Tags:        o.Config.SourceTags,
+			Tags:        o.GetSourceTags(),
 			CustomFields: map[string]interface{}{
 				constants.CustomFieldSourceIDName:     hostID,
 				constants.CustomFieldHostCPUCoresName: hostCPUCores,
@@ -532,7 +532,7 @@ func (o *OVirtSource) syncHostNics(
 			) {
 				ipAddressStruct := &objects.IPAddress{
 					NetboxObject: objects.NetboxObject{
-						Tags: o.Config.SourceTags,
+						Tags: o.GetSourceTags(),
 						CustomFields: map[string]interface{}{
 							constants.CustomFieldArpEntryName: false,
 						},
@@ -586,7 +586,7 @@ func (o *OVirtSource) syncHostNics(
 			) {
 				ipAddressStruct := &objects.IPAddress{
 					NetboxObject: objects.NetboxObject{
-						Tags: o.Config.SourceTags,
+						Tags: o.GetSourceTags(),
 						CustomFields: map[string]interface{}{
 							constants.CustomFieldArpEntryName: false,
 						},
@@ -916,7 +916,7 @@ func (o *OVirtSource) collectHostNicsData(
 
 		newInterface := &objects.Interface{
 			NetboxObject: objects.NetboxObject{
-				Tags:        o.Config.SourceTags,
+				Tags:        o.GetSourceTags(),
 				Description: nicComment,
 			},
 			Device:      nbHost,
@@ -1188,7 +1188,7 @@ func (o *OVirtSource) extractVMData(
 
 	return &objects.VM{
 		NetboxObject: objects.NetboxObject{
-			Tags: o.Config.SourceTags,
+			Tags: o.GetSourceTags(),
 			CustomFields: map[string]interface{}{
 				constants.CustomFieldSourceName: o.SourceConfig.Name,
 			},
@@ -1247,7 +1247,7 @@ func (o *OVirtSource) syncVMInterfaces(
 						}
 						vmInterfaceStruct := &objects.VMInterface{
 							NetboxObject: objects.NetboxObject{
-								Tags:        o.Config.SourceTags,
+								Tags:        o.GetSourceTags(),
 								Description: reportedDevice.MustDescription(),
 							},
 							VM:      netboxVM,
@@ -1324,7 +1324,7 @@ func (o *OVirtSource) processVMInterfaceIPs(
 					) {
 						ipAddressStruct := &objects.IPAddress{
 							NetboxObject: objects.NetboxObject{
-								Tags: o.Config.SourceTags,
+								Tags: o.GetSourceTags(),
 								CustomFields: map[string]interface{}{
 									constants.CustomFieldSourceName:   o.SourceConfig.Name,
 									constants.CustomFieldArpEntryName: false,
@@ -1474,7 +1474,7 @@ func (o *OVirtSource) syncVMNics(
 
 			nbVMInterface, err := nbi.AddVMInterface(o.Ctx, &objects.VMInterface{
 				NetboxObject: objects.NetboxObject{
-					Tags:        o.SourceTags,
+					Tags:        o.GetSourceTags(),
 					Description: nicDescription,
 					CustomFields: map[string]interface{}{
 						constants.CustomFieldSourceIDName: nicID,

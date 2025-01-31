@@ -75,7 +75,7 @@ func (vc *VmwareSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 			networkTags := vc.Object2NBTags[dvpgID]
 			vlanStruct := &objects.Vlan{
 				NetboxObject: objects.NetboxObject{
-					Tags: append(vc.Config.SourceTags, networkTags...),
+					Tags: append(vc.Config.GetSourceTags(), networkTags...),
 					CustomFields: map[string]interface{}{
 						constants.CustomFieldSourceIDName: dvpgID,
 					},
@@ -111,7 +111,7 @@ func (vc *VmwareSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
 		clusterGroupStruct := &objects.ClusterGroup{
 			NetboxObject: objects.NetboxObject{
 				Description: fmt.Sprintf("Datacenter from source %s", vc.SourceConfig.Hostname),
-				Tags:        vc.Config.SourceTags,
+				Tags:        vc.Config.GetSourceTags(),
 				CustomFields: map[string]interface{}{
 					constants.CustomFieldSourceIDName: dcID,
 				},
@@ -177,7 +177,7 @@ func (vc *VmwareSource) syncClusters(nbi *inventory.NetboxInventory) error {
 
 		clusterStruct := &objects.Cluster{
 			NetboxObject: objects.NetboxObject{
-				Tags: append(vc.Config.SourceTags, clusterTags...),
+				Tags: append(vc.Config.GetSourceTags(), clusterTags...),
 				CustomFields: map[string]interface{}{
 					constants.CustomFieldSourceIDName: clusterID,
 				},
@@ -375,7 +375,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 
 		hostStruct := &objects.Device{
 			NetboxObject: objects.NetboxObject{
-				Tags: append(vc.Config.SourceTags, hostTags...),
+				Tags: append(vc.Config.GetSourceTags(), hostTags...),
 				CustomFields: map[string]interface{}{
 					constants.CustomFieldSourceIDName:     hostID,
 					constants.CustomFieldDeviceUUIDName:   hostUUID,
@@ -590,7 +590,7 @@ func (vc *VmwareSource) collectHostPhysicalNicData(
 				if !newVlanExists {
 					vlanStruct := &objects.Vlan{
 						NetboxObject: objects.NetboxObject{
-							Tags: vc.Config.SourceTags,
+							Tags: vc.Config.GetSourceTags(),
 						},
 						Status: &objects.VlanStatusActive,
 						Name:   vlanName,
@@ -637,7 +637,7 @@ func (vc *VmwareSource) collectHostPhysicalNicData(
 	}
 	return &objects.Interface{
 		NetboxObject: objects.NetboxObject{
-			Tags:        vc.Config.SourceTags,
+			Tags:        vc.Config.GetSourceTags(),
 			Description: pnicDescription,
 			CustomFields: map[string]interface{}{
 				constants.CustomFieldSourceName: vc.SourceConfig.Name,
@@ -698,7 +698,7 @@ func (vc *VmwareSource) syncHostVirtualNics(
 				ipv4DNS := utils.ReverseLookup(ipv4Address)
 				nbIPv4Address, err := nbi.AddIPAddress(vc.Ctx, &objects.IPAddress{
 					NetboxObject: objects.NetboxObject{
-						Tags: vc.Config.SourceTags,
+						Tags: vc.Config.GetSourceTags(),
 						CustomFields: map[string]interface{}{
 							constants.CustomFieldArpEntryName: false,
 						},
@@ -740,7 +740,7 @@ func (vc *VmwareSource) syncHostVirtualNics(
 					) {
 						nbIPv6Address, err := nbi.AddIPAddress(vc.Ctx, &objects.IPAddress{
 							NetboxObject: objects.NetboxObject{
-								Tags: vc.Config.SourceTags,
+								Tags: vc.Config.GetSourceTags(),
 								CustomFields: map[string]interface{}{
 									constants.CustomFieldArpEntryName: false,
 								},
@@ -907,7 +907,7 @@ func (vc *VmwareSource) collectHostVirtualNicData(
 	}
 	return &objects.Interface{
 		NetboxObject: objects.NetboxObject{
-			Tags:        vc.Config.SourceTags,
+			Tags:        vc.Config.GetSourceTags(),
 			Description: vnicDescription,
 		},
 		Device:       nbHost,
@@ -1119,7 +1119,7 @@ func (vc *VmwareSource) syncVM(
 
 	vmStruct := &objects.VM{
 		NetboxObject: objects.NetboxObject{
-			Tags:         append(vc.Config.SourceTags, vc.Object2NBTags[vmKey]...),
+			Tags:         append(vc.Config.GetSourceTags(), vc.Object2NBTags[vmKey]...),
 			Description:  vmDescription,
 			CustomFields: vmCustomFields,
 		},
@@ -1432,7 +1432,7 @@ func (vc *VmwareSource) collectVMInterfaceData(
 	}
 	return nicIPv4Addresses, nicIPv6Addresses, &objects.VMInterface{
 		NetboxObject: objects.NetboxObject{
-			Tags:        vc.Config.SourceTags,
+			Tags:        vc.Config.GetSourceTags(),
 			Description: intDescription,
 		},
 		VM:           netboxVM,
@@ -1464,7 +1464,7 @@ func (vc *VmwareSource) addVMInterfaceIPs(
 		) {
 			ipAddressStruct := &objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
-					Tags: vc.Config.SourceTags,
+					Tags: vc.Config.GetSourceTags(),
 					CustomFields: map[string]interface{}{
 						constants.CustomFieldArpEntryName: false,
 					},
@@ -1505,7 +1505,7 @@ func (vc *VmwareSource) addVMInterfaceIPs(
 		) {
 			nbIPv6Address, err := nbi.AddIPAddress(vc.Ctx, &objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
-					Tags: vc.Config.SourceTags,
+					Tags: vc.Config.GetSourceTags(),
 					CustomFields: map[string]interface{}{
 						constants.CustomFieldArpEntryName: false,
 					},
@@ -1638,7 +1638,7 @@ func (vc *VmwareSource) createVmwareClusterType(
 ) (*objects.ClusterType, error) {
 	clusterType := &objects.ClusterType{
 		NetboxObject: objects.NetboxObject{
-			Tags: vc.Config.SourceTags,
+			Tags: []*objects.Tag{vc.Config.SourceTypeTag},
 		},
 		Name: "VMware ESXi",
 		Slug: utils.Slugify("VMware ESXi"),
@@ -1671,7 +1671,7 @@ func (vc *VmwareSource) createHypotheticalCluster(
 	}
 	clusterStruct := &objects.Cluster{
 		NetboxObject: objects.NetboxObject{
-			Tags: vc.Config.SourceTags,
+			Tags: vc.Config.GetSourceTags(),
 		},
 		Name:      hostName,
 		Type:      clusterType,
