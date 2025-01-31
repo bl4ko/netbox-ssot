@@ -7,6 +7,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
+	"github.com/bl4ko/netbox-ssot/internal/source/fmc/client"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
@@ -128,6 +129,31 @@ func (fmcs *FMCSource) syncDevices(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
+func getIPAddressForIface(ipv4 *client.InterfaceIPv4) string {
+	if ipv4 != nil {
+		if ipv4.Static != nil {
+			if ipv4.Static.Address != "" {
+				return fmt.Sprintf(
+					"%s/%s",
+					ipv4.Static.Address,
+					utils.SerializeMask(ipv4.Static.Netmask),
+				)
+			}
+		}
+		if ipv4.Dhcp != nil {
+			if ipv4.Dhcp.Address != "" {
+				addr := fmt.Sprintf(
+					"%s/%s",
+					ipv4.Dhcp.Address,
+					utils.SerializeMask(ipv4.Dhcp.Netmask),
+				)
+				return addr
+			}
+		}
+	}
+	return ""
+}
+
 func (fmcs *FMCSource) syncVlanInterfaces(
 	nbi *inventory.NetboxInventory,
 	nbDevice *objects.Device,
@@ -206,17 +232,12 @@ func (fmcs *FMCSource) syncVlanInterfaces(
 				return fmt.Errorf("add vlan interface: %s", err)
 			}
 
-			if vlanIface.IPv4 != nil && vlanIface.IPv4.Static != nil {
+			if ipAddress := getIPAddressForIface(vlanIface.IPv4); ipAddress != "" {
 				if utils.IsPermittedIPAddress(
-					vlanIface.IPv4.Static.Address,
+					ipAddress,
 					fmcs.SourceConfig.PermittedSubnets,
 					fmcs.SourceConfig.IgnoredSubnets,
 				) {
-					address := fmt.Sprintf(
-						"%s/%s",
-						vlanIface.IPv4.Static.Address,
-						utils.SerializeMask(vlanIface.IPv4.Static.Netmask),
-					)
 					dnsName := utils.ReverseLookup(vlanIface.IPv4.Static.Address)
 					_, err := nbi.AddIPAddress(fmcs.Ctx, &objects.IPAddress{
 						NetboxObject: objects.NetboxObject{
@@ -225,7 +246,7 @@ func (fmcs *FMCSource) syncVlanInterfaces(
 								constants.CustomFieldArpEntryName: false,
 							},
 						},
-						Address:            address,
+						Address:            ipAddress,
 						DNSName:            dnsName,
 						AssignedObjectID:   NBIface.ID,
 						AssignedObjectType: constants.ContentTypeDcimInterface,
@@ -234,7 +255,7 @@ func (fmcs *FMCSource) syncVlanInterfaces(
 						return fmt.Errorf("add ip address")
 					}
 					// Also add prefix
-					prefix, mask, err := utils.GetPrefixAndMaskFromIPAddress(address)
+					prefix, mask, err := utils.GetPrefixAndMaskFromIPAddress(ipAddress)
 					if err != nil {
 						fmcs.Logger.Debugf(fmcs.Ctx, "extract prefix from address: %s", err)
 					} else if mask != constants.MaxIPv4MaskBits {
@@ -285,17 +306,12 @@ func (fmcs *FMCSource) syncPhysicalInterfaces(
 				return fmt.Errorf("add vlan interface: %s", err)
 			}
 
-			if pIface.IPv4 != nil && pIface.IPv4.Static != nil {
+			if ipAddr := getIPAddressForIface(pIface.IPv4); ipAddr != "" {
 				if utils.IsPermittedIPAddress(
-					pIface.IPv4.Static.Address,
+					ipAddr,
 					fmcs.SourceConfig.PermittedSubnets,
 					fmcs.SourceConfig.IgnoredSubnets,
 				) {
-					address := fmt.Sprintf(
-						"%s/%s",
-						pIface.IPv4.Static.Address,
-						utils.SerializeMask(pIface.IPv4.Static.Netmask),
-					)
 					dnsName := utils.ReverseLookup(pIface.IPv4.Static.Address)
 					_, err := nbi.AddIPAddress(fmcs.Ctx, &objects.IPAddress{
 						NetboxObject: objects.NetboxObject{
@@ -304,7 +320,7 @@ func (fmcs *FMCSource) syncPhysicalInterfaces(
 								constants.CustomFieldArpEntryName: false,
 							},
 						},
-						Address:            address,
+						Address:            ipAddr,
 						DNSName:            dnsName,
 						AssignedObjectID:   NBIface.ID,
 						AssignedObjectType: constants.ContentTypeDcimInterface,

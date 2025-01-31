@@ -1,34 +1,5 @@
 package client
 
-// VLANInterfaceInfo represents information about a VLAN interface.
-type VLANInterfaceInfo struct {
-	Type        string `json:"type"`
-	Mode        string `json:"mode"`
-	VID         int    `json:"vlanId"`
-	MTU         int    `json:"MTU"`
-	Enabled     bool   `json:"enabled"`
-	Name        string `json:"name"`
-	ID          string `json:"id"`
-	Description string `json:"description"`
-	Hardware    *struct {
-		Speed  string `json:"speed"`
-		Duplex string `json:"duplex"`
-	} `json:"hardware"`
-	SecurityZone *struct {
-		ID   string `json:"id"`
-		Type string `json:"type"`
-	} `json:"securityZone"`
-	IPv4 *struct {
-		Static *struct {
-			Address string `json:"address"`
-			Netmask string `json:"netmask"`
-		} `json:"static"`
-	} `json:"ipv4"`
-	IPv6 *struct {
-		EnableIPv6 bool `json:"enableIPV6"`
-	} `json:"ipv6"`
-}
-
 // DeviceInfo represents information about a FMC device.
 type DeviceInfo struct {
 	Name        string `json:"name"`
@@ -96,6 +67,17 @@ type Device struct {
 	Name string `json:"name"`
 }
 
+type InterfaceIPv4 struct {
+	Static *struct {
+		Address string `json:"address"`
+		Netmask string `json:"netmask"`
+	} `json:"static"`
+	Dhcp *struct {
+		Address string `json:"address"`
+		Netmask string `json:"netmask"`
+	} `json:"dhcp"`
+}
+
 // PhysicalInterfaceInfo represents information about a physical interface.
 type PhysicalInterfaceInfo struct {
 	Type        string `json:"type"`
@@ -113,12 +95,31 @@ type PhysicalInterfaceInfo struct {
 		ID   string `json:"id"`
 		Type string `json:"type"`
 	} `json:"securityZone"`
-	IPv4 *struct {
-		Static *struct {
-			Address string `json:"address"`
-			Netmask string `json:"netmask"`
-		} `json:"static"`
-	} `json:"ipv4"`
+	IPv4 *InterfaceIPv4 `json:"ipv4"`
+	IPv6 *struct {
+		EnableIPv6 bool `json:"enableIPV6"`
+	} `json:"ipv6"`
+}
+
+// VLANInterfaceInfo represents information about a VLAN interface.
+type VLANInterfaceInfo struct {
+	Type        string `json:"type"`
+	Mode        string `json:"mode"`
+	VID         int    `json:"vlanId"`
+	MTU         int    `json:"MTU"`
+	Enabled     bool   `json:"enabled"`
+	Name        string `json:"name"`
+	ID          string `json:"id"`
+	Description string `json:"description"`
+	Hardware    *struct {
+		Speed  string `json:"speed"`
+		Duplex string `json:"duplex"`
+	} `json:"hardware"`
+	SecurityZone *struct {
+		ID   string `json:"id"`
+		Type string `json:"type"`
+	} `json:"securityZone"`
+	IPv4 *InterfaceIPv4 `json:"ipv4"`
 	IPv6 *struct {
 		EnableIPv6 bool `json:"enableIPV6"`
 	} `json:"ipv6"`
