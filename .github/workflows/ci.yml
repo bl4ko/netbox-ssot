@@ -38,7 +38,7 @@ jobs:
 
       - name: golangci-lint
         if: steps.changed-files.outputs.any_modified == 'true'
-        uses: golangci/golangci-lint-action@ec5d18412c0aeab7936cb16880d708ba2a64e1ae # v6
+        uses: golangci/golangci-lint-action@e60da84bfae8c7920a47be973d75e15710aa8bd7 # v6
         with:
           version: v1.61.0
           args: --timeout=5m
