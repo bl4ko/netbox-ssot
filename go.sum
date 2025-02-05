@@ -14,6 +14,7 @@ github.com/buger/goterm v1.0.4 h1:Z9YvGmOih81P0FbVtEYTFF6YsSgxSUKEhf/f9bTMXbY=
 github.com/buger/goterm v1.0.4/go.mod h1:HiFWV3xnkolgrBV3mY8m0X0Pumt4zg4QhbdOzQtB8tE=
 github.com/cisco-en-programmability/dnacenter-go-sdk/v6 v6.0.0 h1:UAkph9VReeOVkE3pX6G12IuJOWFg41Q7PL4er3zD3Sc=
 github.com/cisco-en-programmability/dnacenter-go-sdk/v6 v6.0.0/go.mod h1:Chafvg+TCkqlROEOlX/WlK5Wk8nTtMCqhuCZSYtlLCE=
+github.com/cisco-en-programmability/dnacenter-go-sdk/v7 v7.0.0/go.mod h1:UcGpH8J9EboPCWB4UEH/p2ZfUzJ3LpH2qCL7Fk1EAMo=
 github.com/creack/pty v1.1.24 h1:bJrF4RRfyJnbTJqzRLHzcGaZK1NeM5kTC9jGgovnR1s=
 github.com/creack/pty v1.1.24/go.mod h1:08sCNb52WyoAwi2QDyzUCTgcvVFhUzewun7wtTfvcwE=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
