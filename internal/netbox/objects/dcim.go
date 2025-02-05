@@ -785,7 +785,12 @@ type MACAddress struct {
 }
 
 func (m MACAddress) String() string {
-	return fmt.Sprintf("MACAddress{MAC: %s}", m.MAC)
+	return fmt.Sprintf(
+		"MACAddress{MAC: %s, AssignedObjectType: %s, AssignedObjectID: %d}",
+		m.MAC,
+		m.AssignedObjectType,
+		m.AssignedObjectID,
+	)
 }
 
 // MACAddress implements IDItem interface.

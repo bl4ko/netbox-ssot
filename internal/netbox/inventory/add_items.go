@@ -1075,11 +1075,11 @@ func (nbi *NetboxInventory) AddInterface(
 	newInterface.NetboxObject.AddTag(nbi.SsotTag)
 	addSourceNameCustomField(ctx, &newInterface.NetboxObject)
 	newInterface.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
-	nbi.interfacesLock.Lock()
-	defer nbi.interfacesLock.Unlock()
 	if len(newInterface.Name) > constants.MaxInterfaceNameLength {
 		newInterface.Name = newInterface.Name[:constants.MaxInterfaceNameLength]
 	}
+	nbi.interfacesLock.Lock()
+	defer nbi.interfacesLock.Unlock()
 	if _, ok := nbi.interfacesIndexByDeviceIDAndName[newInterface.Device.ID][newInterface.Name]; ok {
 		oldInterface := nbi.interfacesIndexByDeviceIDAndName[newInterface.Device.ID][newInterface.Name]
 		nbi.OrphanManager.RemoveItem(oldInterface)
@@ -1124,6 +1124,7 @@ func (nbi *NetboxInventory) AddInterface(
 		}
 		nbi.interfacesIndexByDeviceIDAndName[newInterface.Device.ID][newInterface.Name] = newInterface
 		nbi.interfacesIndexByID[newInterface.ID] = newInterface
+		return newInterface, nil
 	}
 	return nbi.interfacesIndexByDeviceIDAndName[newInterface.Device.ID][newInterface.Name], nil
 }

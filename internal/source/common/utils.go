@@ -13,7 +13,12 @@ import (
 // Function that matches cluster to tenant using regexRelationsMap.
 //
 // In case there is no match or regexRelations is nil, it will return nil.
-func MatchClusterToTenant(ctx context.Context, nbi *inventory.NetboxInventory, clusterName string, clusterTenantRelations map[string]string) (*objects.Tenant, error) {
+func MatchClusterToTenant(
+	ctx context.Context,
+	nbi *inventory.NetboxInventory,
+	clusterName string,
+	clusterTenantRelations map[string]string,
+) (*objects.Tenant, error) {
 	if clusterTenantRelations == nil {
 		return nil, nil
 	}
@@ -41,7 +46,12 @@ func MatchClusterToTenant(ctx context.Context, nbi *inventory.NetboxInventory, c
 // Function that matches cluster to tenant using regexRelationsMap.
 //
 // In case there is no match or regexRelations is nil, it will return nil.
-func MatchClusterToSite(ctx context.Context, nbi *inventory.NetboxInventory, clusterName string, clusterSiteRelations map[string]string) (*objects.Site, error) {
+func MatchClusterToSite(
+	ctx context.Context,
+	nbi *inventory.NetboxInventory,
+	clusterName string,
+	clusterSiteRelations map[string]string,
+) (*objects.Site, error) {
 	if clusterSiteRelations == nil {
 		return nil, nil
 	}
@@ -69,7 +79,14 @@ func MatchClusterToSite(ctx context.Context, nbi *inventory.NetboxInventory, clu
 // Function that matches vlanName to vlanGroupName using regexRelationsMap.
 //
 // In case there is no match or regexRelations is nil, it will return default VlanGroup.
-func MatchVlanToGroup(ctx context.Context, nbi *inventory.NetboxInventory, vlanName string, vlanSite *objects.Site, vlanGroupRelations map[string]string, vlanGroupSiteRelations map[string]string) (*objects.VlanGroup, error) {
+func MatchVlanToGroup(
+	ctx context.Context,
+	nbi *inventory.NetboxInventory,
+	vlanName string,
+	vlanSite *objects.Site,
+	vlanGroupRelations map[string]string,
+	vlanGroupSiteRelations map[string]string,
+) (*objects.VlanGroup, error) {
 	if vlanGroupRelations == nil {
 		vlanGroup, _ := nbi.CreateDefaultVlanGroupForVlan(ctx, vlanSite)
 		return vlanGroup, nil
@@ -117,7 +134,12 @@ func MatchVlanToGroup(ctx context.Context, nbi *inventory.NetboxInventory, vlanN
 // Function that matches vlanName to tenant using vlanTenantRelations regex relations map.
 //
 // In case there is no match or vlanTenantRelations is nil, it will return nil.
-func MatchVlanToTenant(ctx context.Context, nbi *inventory.NetboxInventory, vlanName string, vlanTenantRelations map[string]string) (*objects.Tenant, error) {
+func MatchVlanToTenant(
+	ctx context.Context,
+	nbi *inventory.NetboxInventory,
+	vlanName string,
+	vlanTenantRelations map[string]string,
+) (*objects.Tenant, error) {
 	if vlanTenantRelations == nil {
 		return nil, nil
 	}
@@ -146,7 +168,12 @@ func MatchVlanToTenant(ctx context.Context, nbi *inventory.NetboxInventory, vlan
 // MathcVlanToSite matches vlanName to Site using vlanSiteRelations.
 //
 // In case there is no match or vlanSiteRelations is nil, it returns nil.
-func MatchVlanToSite(ctx context.Context, nbi *inventory.NetboxInventory, vlanName string, vlanSiteRelations map[string]string) (*objects.Site, error) {
+func MatchVlanToSite(
+	ctx context.Context,
+	nbi *inventory.NetboxInventory,
+	vlanName string,
+	vlanSiteRelations map[string]string,
+) (*objects.Site, error) {
 	if vlanSiteRelations == nil {
 		return nil, nil
 	}
@@ -174,7 +201,12 @@ func MatchVlanToSite(ctx context.Context, nbi *inventory.NetboxInventory, vlanNa
 // Function that matches Host from hostName to Site using hostSiteRelations.
 //
 // In case that there is not match or hostSiteRelations is nil, it will return default site.
-func MatchHostToSite(ctx context.Context, nbi *inventory.NetboxInventory, hostName string, hostSiteRelations map[string]string) (*objects.Site, error) {
+func MatchHostToSite(
+	ctx context.Context,
+	nbi *inventory.NetboxInventory,
+	hostName string,
+	hostSiteRelations map[string]string,
+) (*objects.Site, error) {
 	if hostSiteRelations == nil {
 		return nil, nil
 	}
@@ -203,7 +235,12 @@ func MatchHostToSite(ctx context.Context, nbi *inventory.NetboxInventory, hostNa
 // Function that matches Host from hostName to Tenant using hostTenantRelations.
 //
 // In case that there is not match or hostTenantRelations is nil, it will return nil.
-func MatchHostToTenant(ctx context.Context, nbi *inventory.NetboxInventory, hostName string, hostTenantRelations map[string]string) (*objects.Tenant, error) {
+func MatchHostToTenant(
+	ctx context.Context,
+	nbi *inventory.NetboxInventory,
+	hostName string,
+	hostTenantRelations map[string]string,
+) (*objects.Tenant, error) {
 	if hostTenantRelations == nil {
 		return nil, nil
 	}
@@ -231,7 +268,12 @@ func MatchHostToTenant(ctx context.Context, nbi *inventory.NetboxInventory, host
 // MatchHostToRole matches Host from hostName to DeviceRole using hostRoleRelations.
 //
 // In case that there is not match or hostRoleRelations is nil, it will return nil.
-func MatchHostToRole(ctx context.Context, nbi *inventory.NetboxInventory, hostName string, hostRoleRelations map[string]string) (*objects.DeviceRole, error) {
+func MatchHostToRole(
+	ctx context.Context,
+	nbi *inventory.NetboxInventory,
+	hostName string,
+	hostRoleRelations map[string]string,
+) (*objects.DeviceRole, error) {
 	if hostRoleRelations == nil {
 		return nil, nil
 	}
@@ -255,7 +297,12 @@ func MatchHostToRole(ctx context.Context, nbi *inventory.NetboxInventory, hostNa
 // Function that matches Vm from vmName to Tenant using vmTenantRelations.
 //
 // In case that there is not match or hostTenantRelations is nil, it will return nil.
-func MatchVMToTenant(ctx context.Context, nbi *inventory.NetboxInventory, vmName string, vmTenantRelations map[string]string) (*objects.Tenant, error) {
+func MatchVMToTenant(
+	ctx context.Context,
+	nbi *inventory.NetboxInventory,
+	vmName string,
+	vmTenantRelations map[string]string,
+) (*objects.Tenant, error) {
 	if vmTenantRelations == nil {
 		return nil, nil
 	}
@@ -283,7 +330,12 @@ func MatchVMToTenant(ctx context.Context, nbi *inventory.NetboxInventory, vmName
 // MatchVMToRole matches VM from vmName to DeviceRole using vmRoleRelations.
 //
 // In case that there is not match or hostRoleRelations is nil, it will return nil.
-func MatchVMToRole(ctx context.Context, nbi *inventory.NetboxInventory, vmName string, vmRoleRelations map[string]string) (*objects.DeviceRole, error) {
+func MatchVMToRole(
+	ctx context.Context,
+	nbi *inventory.NetboxInventory,
+	vmName string,
+	vmRoleRelations map[string]string,
+) (*objects.DeviceRole, error) {
 	if vmRoleRelations == nil {
 		return nil, nil
 	}
@@ -305,7 +357,12 @@ func MatchVMToRole(ctx context.Context, nbi *inventory.NetboxInventory, vmName s
 }
 
 // CreateMACAddressForObjectType creates MAC address for object type.
-func CreateMACAddressForObjectType(ctx context.Context, nbi *inventory.NetboxInventory, mac string, targetInterface objects.MACAddressOwner) (*objects.MACAddress, error) {
+func CreateMACAddressForObjectType(
+	ctx context.Context,
+	nbi *inventory.NetboxInventory,
+	mac string,
+	targetInterface objects.MACAddressOwner,
+) (*objects.MACAddress, error) {
 	macAddress := &objects.MACAddress{
 		MAC:                mac,
 		AssignedObjectType: targetInterface.GetObjectType(),
@@ -313,12 +370,23 @@ func CreateMACAddressForObjectType(ctx context.Context, nbi *inventory.NetboxInv
 	}
 	nbMACAddress, err := nbi.AddMACAddress(ctx, macAddress)
 	if err != nil {
-		return nil, fmt.Errorf("add mac address %+v: %s", macAddress, err)
+		return nil, fmt.Errorf(
+			"add mac address %+v for interface %+v: %s",
+			macAddress,
+			targetInterface,
+			err,
+		)
 	}
 	return nbMACAddress, nil
 }
 
-func SetPrimaryIPAddressForObject(ctx context.Context, nbi *inventory.NetboxInventory, targetObject objects.IPAddressOwner, ipv4 *objects.IPAddress, ipv6 *objects.IPAddress) error {
+func SetPrimaryIPAddressForObject(
+	ctx context.Context,
+	nbi *inventory.NetboxInventory,
+	targetObject objects.IPAddressOwner,
+	ipv4 *objects.IPAddress,
+	ipv6 *objects.IPAddress,
+) error {
 	switch targetObject := targetObject.(type) {
 	case *objects.Device:
 		deviceCopy := *targetObject
@@ -340,7 +408,12 @@ func SetPrimaryIPAddressForObject(ctx context.Context, nbi *inventory.NetboxInve
 	return nil
 }
 
-func SetPrimaryMACForInterface(ctx context.Context, nbi *inventory.NetboxInventory, targetInterface objects.MACAddressOwner, mac *objects.MACAddress) error {
+func SetPrimaryMACForInterface(
+	ctx context.Context,
+	nbi *inventory.NetboxInventory,
+	targetInterface objects.MACAddressOwner,
+	mac *objects.MACAddress,
+) error {
 	switch targetInterface := targetInterface.(type) {
 	case *objects.Interface:
 		interfaceCopy := *targetInterface
