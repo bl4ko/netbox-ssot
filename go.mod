@@ -6,6 +6,7 @@ require (
 	github.com/PaloAltoNetworks/pango v0.10.2
 	github.com/bl4ko/go-devicetype-library v0.1.43
 	github.com/cisco-en-programmability/dnacenter-go-sdk/v6 v6.0.0
+	github.com/cisco-en-programmability/dnacenter-go-sdk/v7 v7.0.0
 	github.com/luthermonson/go-proxmox v0.2.1
 	github.com/ovirt/go-ovirt v4.3.4+incompatible
 	github.com/scrapli/scrapligo v1.3.3
