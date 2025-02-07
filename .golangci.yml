@@ -1,4 +1,6 @@
 linters-settings:
+  lll:
+    line-length: 120
   misspell:
     locale: US
   errcheck:
@@ -23,12 +25,12 @@ linters:
   enable:
     - revive
     - gocyclo
+    - lll
     # - dupl # TODO: enable in future
     # - errorlint # TODO: enable in future
     # - gocognit # TODO: enable in future
     # - cyclop # TODO: enable in future
     # - paralleltest # TODO: enable in future
-    # - lll # TODO: enable in future
     # - nestif # TODO: enable in future
     # - maintidx # TODO: enable in future
     # - exhaustive # TODO: enable in future

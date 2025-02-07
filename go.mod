@@ -1,6 +1,6 @@
 module github.com/bl4ko/netbox-ssot
 
-go 1.23.1
+go 1.23.6
 
 require (
 	github.com/PaloAltoNetworks/pango v0.10.2

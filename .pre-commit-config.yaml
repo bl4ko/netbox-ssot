@@ -15,15 +15,15 @@ repos:
     hooks:
       - id: golangci-lint
 
-  # - repo: https://github.com/segmentio/golines
-  #   rev: v0.12.2
-  #   hooks:
-  #     - id: golines
-  #       name: golines
-  #       description: A golang formatter that fixes long lines.
-  #       entry: golines -w
-  #       types: [go]
-  #       language: golang
+  - repo: https://github.com/segmentio/golines
+    rev: v0.12.2
+    hooks:
+      - id: golines
+        name: golines
+        description: A golang formatter that fixes long lines.
+        entry: golines -w
+        types: [go]
+        language: golang
 
   - repo: https://github.com/dnephin/pre-commit-golang
     rev: v0.5.1
@@ -40,6 +40,12 @@ repos:
     rev: v8.17.1
     hooks:
       - id: cspell
+
+  - repo: https://github.com/google/osv-scanner/
+    rev: v1.9.2
+    hooks:
+      - id: osv-scanner
+        args: ["-r", "."]
 
   - repo: https://github.com/mxab/pre-commit-trivy.git
     rev: v0.14.0
