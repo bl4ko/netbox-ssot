@@ -25,7 +25,8 @@ const OrphanTagDescription = "Tag used by netbox-ssot to mark orphaned objects"
 
 const DefaultVlanGroupName = "DefaultVlanGroup"
 
-const DefaultVlanGroupDescription = "Default netbox-ssot VlanGroup for all vlans that are not part of any other vlanGroup. This group is required for netbox-ssot vlan index to work."
+const DefaultVlanGroupDescription = "Default netbox-ssot VlanGroup for all vlans that are not part of " +
+	"any other vlanGroup. This group is required for netbox-ssot vlan index to work."
 
 const DefaultArpTagName = "arp-entry"
 const DefaultArpTagColor = ColorRed
@@ -330,7 +331,8 @@ const (
 	MaxVMNameLength          = 64
 	MaxVMInterfaceNameLength = 64
 
-	// Limitations for devices: https://github.com/netbox-community/netbox/blob/d03d302eef3819db64cad8ae74dc5255647045f6/netbox/dcim/models/device_components.py.
+	//nolint:lll
+	// Limitations for devices https://github.com/netbox-community/netbox/blob/d03d302eef3819db64cad8ae74dc5255647045f6/netbox/dcim/models/device_components.py.
 	MaxDeviceNameLength   = 64
 	MaxSerialNumberLength = 50
 	MaxAssetTagLength     = 50

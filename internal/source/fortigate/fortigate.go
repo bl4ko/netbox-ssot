@@ -44,7 +44,11 @@ func NewAPIClient(apiToken string, baseURL string, httpClient *http.Client) *For
 	}
 }
 
-func (c FortiClient) MakeRequest(ctx context.Context, method, path string, body io.Reader) (*http.Response, error) {
+func (c FortiClient) MakeRequest(
+	ctx context.Context,
+	method, path string,
+	body io.Reader,
+) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, method, fmt.Sprintf("%s/%s", c.BaseURL, path), body)
 	if err != nil {
 		return nil, err
@@ -59,7 +63,16 @@ func (fs *FortigateSource) Init() error {
 	if err != nil {
 		return fmt.Errorf("create new http client: %s", err)
 	}
-	c := NewAPIClient(fs.SourceConfig.APIToken, fmt.Sprintf("%s://%s:%d/api/v2", fs.SourceConfig.HTTPScheme, fs.SourceConfig.Hostname, fs.SourceConfig.Port), httpClient)
+	c := NewAPIClient(
+		fs.SourceConfig.APIToken,
+		fmt.Sprintf(
+			"%s://%s:%d/api/v2",
+			fs.SourceConfig.HTTPScheme,
+			fs.SourceConfig.Hostname,
+			fs.SourceConfig.Port,
+		),
+		httpClient,
+	)
 	ctx := context.Background()
 	defer ctx.Done()
 
@@ -73,7 +86,12 @@ func (fs *FortigateSource) Init() error {
 			return fmt.Errorf("fortigate initialization failure: %v", err)
 		}
 		duration := time.Since(startTime)
-		fs.Logger.Infof(fs.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionNameWithTrimPrefix(initFunc, "init"), duration.Seconds())
+		fs.Logger.Infof(
+			fs.Ctx,
+			"Successfully initialized %s in %f seconds",
+			utils.ExtractFunctionNameWithTrimPrefix(initFunc, "init"),
+			duration.Seconds(),
+		)
 	}
 	return nil
 }
@@ -91,7 +109,12 @@ func (fs *FortigateSource) Sync(nbi *inventory.NetboxInventory) error {
 			return err
 		}
 		duration := time.Since(startTime)
-		fs.Logger.Infof(fs.Ctx, "Successfully synced %s in %f seconds", utils.ExtractFunctionNameWithTrimPrefix(syncFunc, "sync"), duration.Seconds())
+		fs.Logger.Infof(
+			fs.Ctx,
+			"Successfully synced %s in %f seconds",
+			utils.ExtractFunctionNameWithTrimPrefix(syncFunc, "sync"),
+			duration.Seconds(),
+		)
 	}
 	return nil
 }

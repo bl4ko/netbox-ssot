@@ -8,7 +8,11 @@ import (
 
 // Fetches networks from ovirt api and stores them to local object.
 func (o *OVirtSource) initNetworks(conn *ovirtsdk4.Connection) error {
-	networksResponse, err := conn.SystemService().NetworksService().List().Follow("vnicprofiles").Send()
+	networksResponse, err := conn.SystemService().
+		NetworksService().
+		List().
+		Follow("vnicprofiles").
+		Send()
 	if err != nil {
 		return fmt.Errorf("init oVirt networks: %v", err)
 	}
@@ -115,7 +119,11 @@ func (o *OVirtSource) initHosts(conn *ovirtsdk4.Connection) error {
 
 // Function that queries the ovirt api for vms and stores them locally.
 func (o *OVirtSource) initVms(conn *ovirtsdk4.Connection) error {
-	vmsResponse, err := conn.SystemService().VmsService().List().Follow("nics,diskattachments,reporteddevices").Send()
+	vmsResponse, err := conn.SystemService().
+		VmsService().
+		List().
+		Follow("nics,diskattachments,reporteddevices").
+		Send()
 	if err != nil {
 		return fmt.Errorf("failed to get oVirt vms: %+v", err)
 	}

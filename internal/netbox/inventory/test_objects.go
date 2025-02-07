@@ -72,7 +72,11 @@ var MockInventory = &NetboxInventory{
 	sitesIndexByName:   MockExistingSites,
 	sitesLock:          sync.Mutex{},
 	NetboxAPI:          service.MockNetboxClient,
-	Ctx:                context.WithValue(context.Background(), constants.CustomFieldSourceName, "testInventory"), //nolint
+	Ctx: context.WithValue(
+		context.Background(),
+		constants.CtxSourceKey,
+		"testInventory",
+	),
 	SsotTag: &objects.Tag{
 		ID:          0,
 		Name:        "netbox-ssot",

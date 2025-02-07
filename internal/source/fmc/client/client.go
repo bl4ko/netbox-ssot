@@ -24,7 +24,16 @@ type FMCClient struct {
 
 // NewFMCClient creates a new FMC client with the given parameters.
 // It authenticates to the FMC API and stores the access and refresh tokens.
-func NewFMCClient(context context.Context, username string, password string, httpScheme string, hostname string, port int, httpClient *http.Client, logger *logger.Logger) (*FMCClient, error) {
+func NewFMCClient(
+	context context.Context,
+	username string,
+	password string,
+	httpScheme string,
+	hostname string,
+	port int,
+	httpClient *http.Client,
+	logger *logger.Logger,
+) (*FMCClient, error) {
 	c := &FMCClient{
 		HTTPClient:     httpClient,
 		BaseURL:        fmt.Sprintf("%s://%s:%d/api", httpScheme, hostname, port),

@@ -24,7 +24,11 @@ func TestGetAll(t *testing.T) {
 		{
 			name: "TestGetAll_Success",
 			args: args{
-				ctx:         context.WithValue(context.Background(), constants.CtxSourceKey, "test"),
+				ctx: context.WithValue(
+					context.Background(),
+					constants.CtxSourceKey,
+					"test",
+				),
 				api:         MockNetboxClient,
 				extraParams: "",
 			},
@@ -99,7 +103,12 @@ func TestPatch(t *testing.T) {
 		defer mockServer.Close()
 		MockNetboxClient.BaseURL = mockServer.URL
 		t.Run(tt.name, func(t *testing.T) {
-			response, err := Patch[objects.Tag](tt.args.ctx, tt.args.api, tt.args.objectID, tt.args.body)
+			response, err := Patch[objects.Tag](
+				tt.args.ctx,
+				tt.args.api,
+				tt.args.objectID,
+				tt.args.body,
+			)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetAll() error = %v, wantErr %v", err, tt.wantErr)
 				return

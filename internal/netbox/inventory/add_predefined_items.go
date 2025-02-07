@@ -8,7 +8,9 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
-func (nbi *NetboxInventory) AddContainerDeviceRole(ctx context.Context) (*objects.DeviceRole, error) {
+func (nbi *NetboxInventory) AddContainerDeviceRole(
+	ctx context.Context,
+) (*objects.DeviceRole, error) {
 	newRole, err := nbi.AddDeviceRole(ctx, &objects.DeviceRole{
 		NetboxObject: objects.NetboxObject{
 			Description: constants.DeviceRoleContainerDescription,
@@ -25,7 +27,9 @@ func (nbi *NetboxInventory) AddContainerDeviceRole(ctx context.Context) (*object
 	return newRole, nil
 }
 
-func (nbi *NetboxInventory) AddFirewallDeviceRole(ctx context.Context) (*objects.DeviceRole, error) {
+func (nbi *NetboxInventory) AddFirewallDeviceRole(
+	ctx context.Context,
+) (*objects.DeviceRole, error) {
 	newRole, err := nbi.AddDeviceRole(ctx, &objects.DeviceRole{
 		NetboxObject: objects.NetboxObject{
 			Description: constants.DeviceRoleFirewallDescription,
@@ -93,7 +97,9 @@ func (nbi *NetboxInventory) AddVMDeviceRole(ctx context.Context) (*objects.Devic
 	return newRole, nil
 }
 
-func (nbi *NetboxInventory) AddVMTemplateDeviceRole(ctx context.Context) (*objects.DeviceRole, error) {
+func (nbi *NetboxInventory) AddVMTemplateDeviceRole(
+	ctx context.Context,
+) (*objects.DeviceRole, error) {
 	newRole, err := nbi.AddDeviceRole(ctx, &objects.DeviceRole{
 		NetboxObject: objects.NetboxObject{
 			Description: constants.DeviceRoleVMTemplateDescription,

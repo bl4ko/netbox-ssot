@@ -37,11 +37,15 @@ func TestNewNetBoxAPI(t *testing.T) {
 				caCert:       "",
 			},
 			want: &NetboxClient{
-				Logger:     &logger.Logger{Logger: log.Default()},
-				BaseURL:    "netbox.example.com",
-				APIToken:   "apitoken",
-				HTTPClient: &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}},
-				Timeout:    constants.DefaultAPITimeout,
+				Logger:   &logger.Logger{Logger: log.Default()},
+				BaseURL:  "netbox.example.com",
+				APIToken: "apitoken",
+				HTTPClient: &http.Client{
+					Transport: &http.Transport{
+						TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+					},
+				},
+				Timeout: constants.DefaultAPITimeout,
 			},
 		},
 		{
@@ -67,13 +71,21 @@ func TestNewNetBoxAPI(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewNetboxClient(tt.args.logger, tt.args.baseURL, tt.args.apiToken, tt.args.validateCert, tt.args.timeout, tt.args.caCert)
+			got, err := NewNetboxClient(
+				tt.args.logger,
+				tt.args.baseURL,
+				tt.args.apiToken,
+				tt.args.validateCert,
+				tt.args.timeout,
+				tt.args.caCert,
+			)
 			if err != nil {
 				t.Errorf("NewNetboxClient() error = %v", err)
 				return
 			}
 			// Check non-pointer fields for simplicity or use an interface to mock clients
-			if got.BaseURL != tt.want.BaseURL || got.APIToken != tt.want.APIToken || got.Timeout != tt.want.Timeout {
+			if got.BaseURL != tt.want.BaseURL || got.APIToken != tt.want.APIToken ||
+				got.Timeout != tt.want.Timeout {
 				t.Errorf("NewNetboxClient() got = %v, want %v", got, tt.want)
 			}
 			// Optionally check if HTTPClient is not nil to confirm it's initialized

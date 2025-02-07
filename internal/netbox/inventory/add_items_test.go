@@ -25,19 +25,38 @@ func TestNetboxInventory_AddTag(t *testing.T) {
 		{
 			name: "Test add new tag",
 			nbi:  MockInventory,
-			args: args{ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "test"), newTag: &objects.Tag{Name: "new tag", Description: "New Tag", Color: constants.ColorBlack, Slug: "new_tag"}},
+			args: args{
+				ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "test"),
+				newTag: &objects.Tag{
+					Name:        "new tag",
+					Description: "New Tag",
+					Color:       constants.ColorBlack,
+					Slug:        "new_tag",
+				},
+			},
 			want: &service.MockTagCreateResponse,
 		},
 		{
 			name: "Test update existing tag",
 			nbi:  MockInventory,
-			args: args{ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "test"), newTag: &objects.Tag{Name: "existing_tag1", Description: "New Tag", Color: constants.ColorBlack, Slug: "new_tag"}},
+			args: args{
+				ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "test"),
+				newTag: &objects.Tag{
+					Name:        "existing_tag1",
+					Description: "New Tag",
+					Color:       constants.ColorBlack,
+					Slug:        "new_tag",
+				},
+			},
 			want: &service.MockTagPatchResponse,
 		},
 		{
 			name: "Test add the same tag",
 			nbi:  MockInventory,
-			args: args{ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "test"), newTag: MockExistingTags["existing_tag2"]},
+			args: args{
+				ctx:    context.WithValue(context.Background(), constants.CtxSourceKey, "test"),
+				newTag: MockExistingTags["existing_tag2"],
+			},
 			want: MockExistingTags["existing_tag2"],
 		},
 	}
@@ -78,19 +97,28 @@ func TestNetboxInventory_AddTenant(t *testing.T) {
 		{
 			name: "Test add new tenant",
 			nbi:  MockInventory,
-			args: args{ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "test"), newTenant: &objects.Tenant{Name: "new tenant", Slug: "new_tenant"}},
+			args: args{
+				ctx:       context.WithValue(context.Background(), constants.CtxSourceKey, "test"),
+				newTenant: &objects.Tenant{Name: "new tenant", Slug: "new_tenant"},
+			},
 			want: &service.MockTenantCreateResponse,
 		},
 		{
 			name: "Test update existing tenant",
 			nbi:  MockInventory,
-			args: args{ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "test"), newTenant: &objects.Tenant{Name: "existing_tenant1", Slug: "new_tenant"}},
+			args: args{
+				ctx:       context.WithValue(context.Background(), constants.CtxSourceKey, "test"),
+				newTenant: &objects.Tenant{Name: "existing_tenant1", Slug: "new_tenant"},
+			},
 			want: &service.MockTenantPatchResponse,
 		},
 		{
 			name: "Test add the same tenant",
 			nbi:  MockInventory,
-			args: args{ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "test"), newTenant: &objects.Tenant{Name: "existing_tenant2"}},
+			args: args{
+				ctx:       context.WithValue(context.Background(), constants.CtxSourceKey, "test"),
+				newTenant: &objects.Tenant{Name: "existing_tenant2"},
+			},
 			want: MockExistingTenants["existing_tenant2"],
 		},
 	}
@@ -127,19 +155,28 @@ func TestNetboxInventory_AddSite(t *testing.T) {
 		{
 			name: "Test add new site",
 			nbi:  MockInventory,
-			args: args{ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "test"), newSite: &objects.Site{Name: "new site", Slug: "new_site"}},
+			args: args{
+				ctx:     context.WithValue(context.Background(), constants.CtxSourceKey, "test"),
+				newSite: &objects.Site{Name: "new site", Slug: "new_site"},
+			},
 			want: &service.MockSiteCreateResponse,
 		},
 		{
 			name: "Test update existing site",
 			nbi:  MockInventory,
-			args: args{ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "test"), newSite: &objects.Site{Name: "existing_site1", Slug: "new_site"}},
+			args: args{
+				ctx:     context.WithValue(context.Background(), constants.CtxSourceKey, "test"),
+				newSite: &objects.Site{Name: "existing_site1", Slug: "new_site"},
+			},
 			want: &service.MockSitePatchResponse,
 		},
 		{
 			name: "Test add the same site",
 			nbi:  MockInventory,
-			args: args{ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "test"), newSite: &objects.Site{Name: "existing_site2"}},
+			args: args{
+				ctx:     context.WithValue(context.Background(), constants.CtxSourceKey, "test"),
+				newSite: &objects.Site{Name: "existing_site2"},
+			},
 			want: MockExistingSites["existing_site2"],
 		},
 	}
@@ -207,7 +244,11 @@ func TestNetboxInventory_AddContactGroup(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.nbi.AddContactGroup(tt.args.ctx, tt.args.newContactGroup)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.AddContactGroup() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.AddContactGroup() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -263,7 +304,11 @@ func TestNetboxInventory_AddContactAssignment(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.nbi.AddContactAssignment(tt.args.ctx, tt.args.newCA)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.AddContactAssignment() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.AddContactAssignment() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -319,7 +364,11 @@ func TestNetboxInventory_AddClusterGroup(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.nbi.AddClusterGroup(tt.args.ctx, tt.args.newCg)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.AddClusterGroup() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.AddClusterGroup() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -431,7 +480,11 @@ func TestNetboxInventory_AddManufacturer(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.nbi.AddManufacturer(tt.args.ctx, tt.args.newManufacturer)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.AddManufacturer() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.AddManufacturer() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -739,7 +792,11 @@ func TestNetboxInventory_AddVirtualDeviceContext(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.nbi.AddVirtualDeviceContext(tt.args.ctx, tt.args.newVDC)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.AddVirtualDeviceContext() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.AddVirtualDeviceContext() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -795,7 +852,11 @@ func TestNetboxInventory_AddWirelessLANGroup(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.nbi.AddWirelessLANGroup(tt.args.ctx, tt.args.newWirelessLANGroup)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.AddWirelessLANGroup() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.AddWirelessLANGroup() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -818,7 +879,11 @@ func Test_addSourceNameCustomField(t *testing.T) {
 		{
 			name: "Add source custom field to netbox object",
 			args: args{
-				ctx:          context.WithValue(context.Background(), constants.CtxSourceKey, "testSource"),
+				ctx: context.WithValue(
+					context.Background(),
+					constants.CtxSourceKey,
+					"testSource",
+				),
 				netboxObject: &objects.NetboxObject{},
 			},
 			want: &objects.NetboxObject{

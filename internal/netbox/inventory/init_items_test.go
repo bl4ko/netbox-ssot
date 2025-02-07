@@ -83,7 +83,11 @@ func TestNetboxInventory_InitContactRoles(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initContactRoles(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.InitContactRoles() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.InitContactRoles() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -104,7 +108,11 @@ func TestNetboxInventory_InitContactAssignments(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initContactAssignments(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.InitContactAssignments() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.InitContactAssignments() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -125,7 +133,11 @@ func TestNetboxInventory_InitAdminContactRole(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initAdminContactRole(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.InitAdminContactRole() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.InitAdminContactRole() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -146,7 +158,11 @@ func TestNetboxInventory_InitContactGroups(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initContactGroups(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.InitContactGroups() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.InitContactGroups() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -188,7 +204,11 @@ func TestNetboxInventory_InitManufacturers(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initManufacturers(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.InitManufacturers() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.InitManufacturers() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -251,7 +271,11 @@ func TestNetboxInventory_InitDeviceRoles(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initDeviceRoles(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.InitDeviceRoles() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.InitDeviceRoles() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -272,7 +296,11 @@ func TestNetboxInventory_InitCustomFields(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initCustomFields(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.InitCustomFields() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.InitCustomFields() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -293,7 +321,11 @@ func TestNetboxInventory_InitSsotCustomFields(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initSsotCustomFields(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.InitSsotCustomFields() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.InitSsotCustomFields() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -314,7 +346,11 @@ func TestNetboxInventory_InitClusterGroups(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initClusterGroups(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.InitClusterGroups() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.InitClusterGroups() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -335,7 +371,11 @@ func TestNetboxInventory_InitClusterTypes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initClusterTypes(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.InitClusterTypes() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.InitClusterTypes() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -377,7 +417,11 @@ func TestNetboxInventory_InitDeviceTypes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initDeviceTypes(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.InitDeviceTypes() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.InitDeviceTypes() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -482,7 +526,11 @@ func TestNetboxInventory_InitVMInterfaces(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initVMInterfaces(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.InitVMInterfaces() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.InitVMInterfaces() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -503,7 +551,11 @@ func TestNetboxInventory_InitIPAddresses(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initIPAddresses(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.InitIPAddresses() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.InitIPAddresses() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -608,7 +660,11 @@ func TestNetboxInventory_initContactRoles(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initContactRoles(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.initContactRoles() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.initContactRoles() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -629,7 +685,11 @@ func TestNetboxInventory_initContactAssignments(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initContactAssignments(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.initContactAssignments() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.initContactAssignments() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -650,7 +710,11 @@ func TestNetboxInventory_initAdminContactRole(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initAdminContactRole(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.initAdminContactRole() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.initAdminContactRole() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -671,7 +735,11 @@ func TestNetboxInventory_initContactGroups(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initContactGroups(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.initContactGroups() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.initContactGroups() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -713,7 +781,11 @@ func TestNetboxInventory_initDefaultSite(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initDefaultSite(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.initDefaultSite() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.initDefaultSite() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -734,7 +806,11 @@ func TestNetboxInventory_initManufacturers(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initManufacturers(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.initManufacturers() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.initManufacturers() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -797,7 +873,11 @@ func TestNetboxInventory_initVirtualDeviceContexts(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initVirtualDeviceContexts(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.initVirtualDeviceContexts() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.initVirtualDeviceContexts() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -818,7 +898,11 @@ func TestNetboxInventory_initDeviceRoles(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initDeviceRoles(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.initDeviceRoles() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.initDeviceRoles() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -839,7 +923,11 @@ func TestNetboxInventory_initCustomFields(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initCustomFields(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.initCustomFields() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.initCustomFields() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -860,7 +948,11 @@ func TestNetboxInventory_initSsotCustomFields(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initSsotCustomFields(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.initSsotCustomFields() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.initSsotCustomFields() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -881,7 +973,11 @@ func TestNetboxInventory_initClusterGroups(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initClusterGroups(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.initClusterGroups() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.initClusterGroups() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -902,7 +998,11 @@ func TestNetboxInventory_initClusterTypes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initClusterTypes(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.initClusterTypes() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.initClusterTypes() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -944,7 +1044,11 @@ func TestNetboxInventory_initDeviceTypes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initDeviceTypes(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.initDeviceTypes() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.initDeviceTypes() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -1049,7 +1153,11 @@ func TestNetboxInventory_initVMInterfaces(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initVMInterfaces(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.initVMInterfaces() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.initVMInterfaces() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -1070,7 +1178,11 @@ func TestNetboxInventory_initIPAddresses(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initIPAddresses(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.initIPAddresses() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.initIPAddresses() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -1112,7 +1224,11 @@ func TestNetboxInventory_initWirelessLANs(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initWirelessLANs(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.initWirelessLANs() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.initWirelessLANs() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -1133,7 +1249,11 @@ func TestNetboxInventory_initWirelessLANGroups(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.nbi.initWirelessLANGroups(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.initWirelessLANGroups() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.initWirelessLANGroups() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}

@@ -42,8 +42,10 @@ var (
 	CustomFieldTypeLongText = CustomFieldType{Choice{Value: "longtext", Label: "Text (long)"}}
 	CustomFieldTypeInteger  = CustomFieldType{Choice{Value: "integer", Label: "Integer"}}
 	CustomFieldTypeDecimal  = CustomFieldType{Choice{Value: "decimal", Label: "Decimal"}}
-	CustomFieldTypeBoolean  = CustomFieldType{Choice{Value: "boolean", Label: "Boolean (true/false)"}}
-	CustomFieldTypeDate     = CustomFieldType{Choice{Value: "date", Label: "Date"}}
+	CustomFieldTypeBoolean  = CustomFieldType{
+		Choice{Value: "boolean", Label: "Boolean (true/false)"},
+	}
+	CustomFieldTypeDate = CustomFieldType{Choice{Value: "date", Label: "Date"}}
 )
 
 type FilterLogic struct {
@@ -83,9 +85,11 @@ type CustomField struct {
 	ID int `json:"id,omitempty"`
 	// Name of the custom field (e.g. host_cpu_cores). This field is required.
 	Name string `json:"name,omitempty"`
-	// Label represents name of the field as displayed to users (e.g. Physical CPU cores). If not provided, the name will be used instead.
+	// Label represents name of the field as displayed to users (e.g. Physical CPU cores).
+	// If not provided, the name will be used instead.
 	Label string `json:"label,omitempty"`
-	// Type is the type of the custom field. Valid choices are: text, integer, boolean, date, url, select, multiselect. This field is required.
+	// Type is the type of the custom field.
+	// Valid choices are: text, integer, boolean, date, url, select, multiselect. This field is required.
 	Type CustomFieldType `json:"type,omitempty"`
 	// Type of the related object (for object/multi-object fields only) (e.g. objects.device). This field is required.
 	ObjectTypes []constants.ContentType `json:"object_types,omitempty"`

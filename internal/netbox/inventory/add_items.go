@@ -339,24 +339,24 @@ func (nbi *NetboxInventory) AddContactAssignment(
 	newCA.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
 	nbi.contactAssignmentsLock.Lock()
 	defer nbi.contactAssignmentsLock.Unlock()
-	if nbi.contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ModelType] == nil {
-		nbi.contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ModelType] = make(
+	if nbi.contactAssignmentsIndex[newCA.ModelType] == nil {
+		nbi.contactAssignmentsIndex[newCA.ModelType] = make(
 			map[int]map[int]map[int]*objects.ContactAssignment,
 		)
 	}
-	if nbi.contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ModelType][newCA.ObjectID] == nil {
-		nbi.contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ModelType][newCA.ObjectID] = make(
+	if nbi.contactAssignmentsIndex[newCA.ModelType][newCA.ObjectID] == nil {
+		nbi.contactAssignmentsIndex[newCA.ModelType][newCA.ObjectID] = make(
 			map[int]map[int]*objects.ContactAssignment,
 		)
 	}
-	if nbi.contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ModelType][newCA.ObjectID][newCA.Contact.ID] == nil {
-		nbi.contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ModelType][newCA.ObjectID][newCA.Contact.ID] = make(
+	if nbi.contactAssignmentsIndex[newCA.ModelType][newCA.ObjectID][newCA.Contact.ID] == nil {
+		nbi.contactAssignmentsIndex[newCA.ModelType][newCA.ObjectID][newCA.Contact.ID] = make(
 			map[int]*objects.ContactAssignment,
 		)
 	}
 	newCA.Tags = append(newCA.Tags, nbi.SsotTag)
-	if _, ok := nbi.contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ModelType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID]; ok {
-		oldCA := nbi.contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ModelType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID]
+	if _, ok := nbi.contactAssignmentsIndex[newCA.ModelType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID]; ok {
+		oldCA := nbi.contactAssignmentsIndex[newCA.ModelType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID]
 		nbi.OrphanManager.RemoveItem(oldCA)
 		diffMap, err := utils.JSONDiffMapExceptID(newCA, oldCA, false, nbi.SourcePriority)
 		if err != nil {
@@ -378,7 +378,7 @@ func (nbi *NetboxInventory) AddContactAssignment(
 			if err != nil {
 				return nil, err
 			}
-			nbi.contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ModelType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID] = patchedCA
+			nbi.contactAssignmentsIndex[newCA.ModelType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID] = patchedCA
 		} else {
 			nbi.Logger.Debug(ctx, "ContactAssignment ", newCA.ID, " already exists in Netbox and is up to date...")
 		}
@@ -388,13 +388,14 @@ func (nbi *NetboxInventory) AddContactAssignment(
 		if err != nil {
 			return nil, err
 		}
-		nbi.contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ModelType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID] = newCA
+		nbi.contactAssignmentsIndex[newCA.ModelType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID] = newCA
 	}
-	return nbi.contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[newCA.ModelType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID], nil
+	return nbi.contactAssignmentsIndex[newCA.ModelType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID], nil
 }
 
 // AddCustomField adds a custom field to the Netbox inventory.
-// It takes a context and a newCf object as input and returns the created or patched custom field along with any error encountered.
+// It takes a context and a newCf object as input and
+// returns the created or patched custom field along with any error encountered.
 // If the custom field already exists in Netbox but is out of date, it will be patched with the new values.
 // If the custom field does not exist, it will be created.
 func (nbi *NetboxInventory) AddCustomField(
@@ -494,8 +495,10 @@ func (nbi *NetboxInventory) AddClusterGroup(
 }
 
 // AddClusterType adds a new cluster type to the Netbox inventory.
-// It takes a context and a newClusterType object as input and returns the created or updated cluster type object and an error, if any.
-// If the cluster type already exists in Netbox, it checks if it is up to date. If not, it patches the existing cluster type.
+// It takes a context and a newClusterType object as input and
+// returns the created or updated cluster type object and an error, if any.
+// If the cluster type already exists in Netbox, it checks if it is up to date.
+// If not, it patches the existing cluster type.
 // If the cluster type does not exist, it creates a new one.
 func (nbi *NetboxInventory) AddClusterType(
 	ctx context.Context,
@@ -614,7 +617,8 @@ func (nbi *NetboxInventory) AddCluster(
 }
 
 // AddDeviceRole adds a new device role to the Netbox inventory.
-// It takes a context and a newDeviceRole object as input and returns the created device role object and an error, if any.
+// It takes a context and a newDeviceRole object as input and
+// returns the created device role object and an error, if any.
 // If the device role already exists in Netbox, it checks if it is up to date and patches it if necessary.
 // If the device role does not exist, it creates a new one.
 func (nbi *NetboxInventory) AddDeviceRole(
@@ -728,7 +732,8 @@ func (nbi *NetboxInventory) AddManufacturer(
 }
 
 // AddDeviceType adds a new device type to the Netbox inventory.
-// It takes a context and a newDeviceType object as input and returns the created or updated device type object and an error, if any.
+// It takes a context and a newDeviceType object as input and
+// returns the created or updated device type object and an error, if any.
 // If the device type already exists in Netbox, it checks if it is up to date and patches it if necessary.
 // If the device type does not exist, it creates a new one.
 func (nbi *NetboxInventory) AddDeviceType(
@@ -783,7 +788,8 @@ func (nbi *NetboxInventory) AddDeviceType(
 }
 
 // AddPlatform adds a new platform to the Netbox inventory.
-// It takes a context and a newPlatform object as input and returns the created or updated platform object and an error, if any.
+// It takes a context and a newPlatform object as input and
+// returns the created or updated platform object and an error, if any.
 // If the platform already exists in Netbox, it checks if it is up to date and patches it if necessary.
 // If the platform does not exist, it creates a new one.
 func (nbi *NetboxInventory) AddPlatform(
@@ -839,7 +845,8 @@ func (nbi *NetboxInventory) AddPlatform(
 }
 
 // AddRackRole adds a new rack role to the Netbox inventory.
-// It takes a context and a newRackRole object as input and returns the created or updated rack role object and an error, if any.
+// It takes a context and a newRackRole object as input and
+// returns the created or updated rack role object and an error, if any.
 // If the rack role already exists in Netbox, it checks if it is up to date and patches it if necessary.
 // If the rack role does not exist, it creates a new one.
 func (nbi *NetboxInventory) AddDevice(
@@ -899,7 +906,8 @@ func (nbi *NetboxInventory) AddDevice(
 }
 
 // AddVirtualDeviceContext adds new virtual device context to the local inventory.
-// It takes a context and a newVDC object as input and returns the created or updated virtual device context object and an error, if any.
+// It takes a context and a newVDC object as input and
+// returns the created or updated virtual device context object and an error, if any.
 // If the virtual device context already exists in Netbox, it checks if it is up to date and patches it if necessary.
 // If the virtual device context does not exist, it creates a new one.
 func (nbi *NetboxInventory) AddVirtualDeviceContext(
@@ -917,8 +925,8 @@ func (nbi *NetboxInventory) AddVirtualDeviceContext(
 			newVDC,
 		)
 	}
-	if _, ok := nbi.virtualDeviceContextsIndexByNameAndDeviceID[newVDC.Name][newVDC.Device.ID]; ok {
-		oldVDC := nbi.virtualDeviceContextsIndexByNameAndDeviceID[newVDC.Name][newVDC.Device.ID]
+	if _, ok := nbi.virtualDeviceContextsIndex[newVDC.Name][newVDC.Device.ID]; ok {
+		oldVDC := nbi.virtualDeviceContextsIndex[newVDC.Name][newVDC.Device.ID]
 		nbi.OrphanManager.RemoveItem(oldVDC)
 		diffMap, err := utils.JSONDiffMapExceptID(newVDC, oldVDC, false, nbi.SourcePriority)
 		if err != nil {
@@ -940,7 +948,7 @@ func (nbi *NetboxInventory) AddVirtualDeviceContext(
 			if err != nil {
 				return nil, err
 			}
-			nbi.virtualDeviceContextsIndexByNameAndDeviceID[newVDC.Name][newVDC.Device.ID] = patchedVDC
+			nbi.virtualDeviceContextsIndex[newVDC.Name][newVDC.Device.ID] = patchedVDC
 		} else {
 			nbi.Logger.Debug(ctx, "VirtualDeviceContext ", newVDC.Name, " already exists in Netbox and is up to date...")
 		}
@@ -950,16 +958,17 @@ func (nbi *NetboxInventory) AddVirtualDeviceContext(
 		if err != nil {
 			return nil, err
 		}
-		if nbi.virtualDeviceContextsIndexByNameAndDeviceID[newDevice.Name] == nil {
-			nbi.virtualDeviceContextsIndexByNameAndDeviceID[newDevice.Name] = make(map[int]*objects.VirtualDeviceContext)
+		if nbi.virtualDeviceContextsIndex[newDevice.Name] == nil {
+			nbi.virtualDeviceContextsIndex[newDevice.Name] = make(map[int]*objects.VirtualDeviceContext)
 		}
-		nbi.virtualDeviceContextsIndexByNameAndDeviceID[newDevice.Name][newDevice.Device.ID] = newDevice
+		nbi.virtualDeviceContextsIndex[newDevice.Name][newDevice.Device.ID] = newDevice
 	}
-	return nbi.virtualDeviceContextsIndexByNameAndDeviceID[newVDC.Name][newVDC.Device.ID], nil
+	return nbi.virtualDeviceContextsIndex[newVDC.Name][newVDC.Device.ID], nil
 }
 
 // AddVlanGroup adds a new vlan group to the Netbox inventory.
-// It takes a context and a newVlanGroup object as input and returns the created or updated vlan group object and an error, if any.
+// It takes a context and a newVlanGroup object as input and
+// returns the created or updated vlan group object and an error, if any.
 // If the vlan group already exists in Netbox, it checks if it is up to date and patches it if necessary.
 // If the vlan group does not exist, it creates a new one.
 func (nbi *NetboxInventory) AddVlanGroup(
@@ -1065,7 +1074,8 @@ func (nbi *NetboxInventory) AddVlan(
 }
 
 // AddInterface adds a new interface to the Netbox inventory.
-// It takes a context and a newInterface object as input and returns the created or updated interface object and an error, if any.
+// It takes a context and a newInterface object as input and
+// returns the created or updated interface object and an error, if any.
 // If the interface already exists in Netbox, it checks if it is up to date and patches it if necessary.
 // If the interface does not exist, it creates a new one.
 func (nbi *NetboxInventory) AddInterface(
@@ -1130,7 +1140,8 @@ func (nbi *NetboxInventory) AddInterface(
 }
 
 // AddVM adds a new virtual machine to the Netbox inventory.
-// It takes a context and a newVM object as input and returns the created or updated virtual machine object and an error, if any.
+// It takes a context and a newVM object as input and
+// returns the created or updated virtual machine object and an error, if any.
 // If the virtual machine already exists in Netbox, it checks if it is up to date and patches it if necessary.
 // If the virtual machine does not exist, it creates a new one.
 func (nbi *NetboxInventory) AddVM(ctx context.Context, newVM *objects.VM) (*objects.VM, error) {
@@ -1184,7 +1195,8 @@ func (nbi *NetboxInventory) AddVM(ctx context.Context, newVM *objects.VM) (*obje
 }
 
 // AddVMInterface adds a new virtual machine interface to the Netbox inventory.
-// It takes a context and a newVMInterface object as input and returns the created or updated virtual machine interface object and an error, if any.
+// It takes a context and a newVMInterface object as input and
+// returns the created or updated virtual machine interface object and an error, if any.
 // If the virtual machine interface already exists in Netbox, it checks if it is up to date and patches it if necessary.
 // If the virtual machine interface does not exist, it creates a new one.
 func (nbi *NetboxInventory) AddVMInterface(
@@ -1248,7 +1260,8 @@ func (nbi *NetboxInventory) AddVMInterface(
 }
 
 // AddIPAddress adds a new IP address to the Netbox inventory.
-// It takes a context and a newIPAddress object as input and returns the created or updated IP address object and an error, if any.
+// It takes a context and a newIPAddress object as input and
+// returns the created or updated IP address object and an error, if any.
 // If the IP address already exists in Netbox, it checks if it is up to date and patches it if necessary.
 // If the IP address does not exist, it creates a new one.
 func (nbi *NetboxInventory) AddIPAddress(
@@ -1322,7 +1335,8 @@ func (nbi *NetboxInventory) AddIPAddress(
 }
 
 // AddMACAddress adds a new MAC address to the Netbox inventory.
-// It takes a context and a newMACAddress object as input and returns the created or updated MAC address object and an error, if any.
+// It takes a context and a newMACAddress object as input and
+// returns the created or updated MAC address object and an error, if any.
 // If the MAC address already exists in Netbox, it checks if it is up to date and patches it if necessary.
 // If the MAC address does not exist, it creates a new one.
 func (nbi *NetboxInventory) AddMACAddress(
@@ -1396,7 +1410,8 @@ func (nbi *NetboxInventory) AddMACAddress(
 }
 
 // AddPrefix adds a new prefix to the Netbox inventory.
-// It takes a context and a newPrefix object as input and returns the created or updated prefix object and an error, if any.
+// It takes a context and a newPrefix object as input and
+// returns the created or updated prefix object and an error, if any.
 // If the prefix already exists in Netbox, it checks if it is up to date and patches it if necessary.
 // If the prefix does not exist, it creates a new one.
 func (nbi *NetboxInventory) AddPrefix(
@@ -1410,7 +1425,8 @@ func (nbi *NetboxInventory) AddPrefix(
 	if newPrefix.NetboxObject.CustomFields == nil {
 		newPrefix.NetboxObject.CustomFields = make(map[string]interface{})
 	}
-	newPrefix.NetboxObject.CustomFields[constants.CustomFieldSourceName] = ctx.Value(constants.CtxSourceKey).(string) //nolint:forcetypeassert
+	//nolint:forcetypeassert
+	newPrefix.NetboxObject.CustomFields[constants.CustomFieldSourceName] = ctx.Value(constants.CtxSourceKey).(string)
 	defer nbi.prefixesLock.Unlock()
 	if _, ok := nbi.prefixesIndexByPrefix[newPrefix.Prefix]; ok {
 		oldPrefix := nbi.prefixesIndexByPrefix[newPrefix.Prefix]
@@ -1452,7 +1468,8 @@ func (nbi *NetboxInventory) AddPrefix(
 }
 
 // AddWirelessLAN adds a new wireless LAN to the Netbox inventory.
-// It takes a context and a newWirelessLan object as input and returns the created or updated wireless LAN object and an error, if any.
+// It takes a context and a newWirelessLan object as input and
+// returns the created or updated wireless LAN object and an error, if any.
 // If the wireless LAN already exists in Netbox, it checks if it is up to date and patches it if necessary.
 // If the wireless LAN does not exist, it creates a new one.
 func (nbi *NetboxInventory) AddWirelessLAN(
@@ -1508,7 +1525,8 @@ func (nbi *NetboxInventory) AddWirelessLAN(
 }
 
 // AddWirelessLANGroup adds a new wireless LAN group to the Netbox inventory.
-// It takes a context and a newWirelessLANGroup object as input and returns the created or updated wireless LAN group object and an error, if any.
+// It takes a context and a newWirelessLANGroup object as input and
+// returns the created or updated wireless LAN group object and an error, if any.
 // If the wireless LAN group already exists in Netbox, it checks if it is up to date and patches it if necessary.
 // If the wireless LAN group does not exist, it creates a new one.
 func (nbi *NetboxInventory) AddWirelessLANGroup(
@@ -1550,7 +1568,12 @@ func (nbi *NetboxInventory) AddWirelessLANGroup(
 			}
 			nbi.wirelessLANGroupsIndexByName[newWirelessLANGroup.Name] = patchedWirelessLANGroup
 		} else {
-			nbi.Logger.Debug(ctx, "WirelessLANGroup ", newWirelessLANGroup.Name, " already exists in Netbox and is up to date...")
+			nbi.Logger.Debug(
+				ctx,
+				"WirelessLANGroup ",
+				newWirelessLANGroup.Name,
+				" already exists in Netbox and is up to date...",
+			)
 		}
 	} else {
 		nbi.Logger.Debug(ctx, "WirelessLANGroup ", newWirelessLANGroup.Name, " does not exist in Netbox. Creating it...")

@@ -57,11 +57,11 @@ type NetboxInventory struct {
 	contactsIndexByName map[string]*objects.Contact
 	contactsLock        sync.Mutex
 
-	// contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID is a
+	// contactAssignmentsIndex is a
 	// map of all contact assignments indexed by their
 	// content type, object id, contact id and role id.
-	contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID map[constants.ContentType]map[int]map[int]map[int]*objects.ContactAssignment
-	contactAssignmentsLock                                              sync.Mutex
+	contactAssignmentsIndex map[constants.ContentType]map[int]map[int]map[int]*objects.ContactAssignment
+	contactAssignmentsLock  sync.Mutex
 
 	// sitesIndexByName is a map of all sites in the Netbox's inventory,
 	// indexed by their name
@@ -100,10 +100,10 @@ type NetboxInventory struct {
 	devicesIndexByID map[int]*objects.Device
 	devicesLock      sync.Mutex
 
-	// virtualDeviceContextsIndexByNameAndDeviceID is a map of all virtual device contexts
+	// virtualDeviceContextsIndex is a map of all virtual device contexts
 	// in the Netbox's inventory indexed by their name and device ID.
-	virtualDeviceContextsIndexByNameAndDeviceID map[string]map[int]*objects.VirtualDeviceContext
-	virtualDeviceContextsLock                   sync.Mutex
+	virtualDeviceContextsIndex map[string]map[int]*objects.VirtualDeviceContext
+	virtualDeviceContextsLock  sync.Mutex
 
 	// prefixesIndexByPrefix is a map of all prefixes in the Netbox's inventory,
 	// indexed by their prefix.

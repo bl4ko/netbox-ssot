@@ -36,7 +36,6 @@ func (wlg *WirelessLANGroup) GetNetboxObject() *NetboxObject {
 	return &wlg.NetboxObject
 }
 
-// https://github.com/netbox-community/netbox/blob/2e74952ac6cc68348284dee8b9517fe0a36179a2/netbox/wireless/choices.py#L16
 type WirelessLANStatus struct {
 	Choice
 }
@@ -45,7 +44,9 @@ var (
 	WirelessLanStatusActive     = WirelessLANStatus{Choice{Value: "active", Label: "Active"}}
 	WirelessLanStatusReserved   = WirelessLANStatus{Choice{Value: "reserved", Label: "Reserved"}}
 	WirelessLanStatusDisabled   = WirelessLANStatus{Choice{Value: "disabled", Label: "Disabled"}}
-	WirelessLanStatusDeprecated = WirelessLANStatus{Choice{Value: "deprecated", Label: "Deprecated"}}
+	WirelessLanStatusDeprecated = WirelessLANStatus{
+		Choice{Value: "deprecated", Label: "Deprecated"},
+	}
 )
 
 type WirelessLANAuthType struct {
@@ -53,10 +54,14 @@ type WirelessLANAuthType struct {
 }
 
 var (
-	WirelessLanAuthTypeOpen          = WirelessLANAuthType{Choice{Value: "open", Label: "Open"}}
-	WirelessLanAuthTypeWep           = WirelessLANAuthType{Choice{Value: "wep", Label: "WEP"}}
-	WirelessLanAuthTypeWpaPersonal   = WirelessLANAuthType{Choice{Value: "wpa-personal", Label: "WPA Personal (PSK)"}}
-	WirelessLanAuthTypeWpaEnterprise = WirelessLANAuthType{Choice{Value: "wpa-enterprise", Label: "WPA Enterprise"}}
+	WirelessLanAuthTypeOpen        = WirelessLANAuthType{Choice{Value: "open", Label: "Open"}}
+	WirelessLanAuthTypeWep         = WirelessLANAuthType{Choice{Value: "wep", Label: "WEP"}}
+	WirelessLanAuthTypeWpaPersonal = WirelessLANAuthType{
+		Choice{Value: "wpa-personal", Label: "WPA Personal (PSK)"},
+	}
+	WirelessLanAuthTypeWpaEnterprise = WirelessLANAuthType{
+		Choice{Value: "wpa-enterprise", Label: "WPA Enterprise"},
+	}
 )
 
 type WirelessLANAuthCipher struct {

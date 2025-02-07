@@ -18,14 +18,16 @@ func TestExtractCPUArch(t *testing.T) {
 		{
 			name: "Extract cpu arch from BOOT_IMAGE",
 			args: args{
-				input: "BOOT_IMAGE=(hd0,msdos1)/vmlinuz-5.15.0-207.156.6.el8uek.x86_64 root=/dev/mapper/ol-root ro crashkernel=auto resume=/dev/mapper/ol-swap00 rd.lvm.lv=ol/root rd.lvm.lv=ol/swap00 rhgb quiet intel_iommu=on",
+				input: "BOOT_IMAGE=(hd0,msdos1)/vmlinuz-5.15.0-207.156.6.el8uek.x86_64 root=/dev/mapper/ol-root ro" +
+					" crashkernel=auto resume=/dev/mapper/ol-swap00 rd.lvm.lv=ol/root rd.lvm.lv=ol/swap00 rhgb quiet intel_iommu=on",
 			},
 			want: "x86_64",
 		},
 		{
 			name: "Extract cpu arch from kernel version",
 			args: args{
-				input: "Linux version 4.15.0-1051-oem (buildd@lgw01-amd64-016) (gcc version 7.4.0 (Ubuntu 7.4.0-1ubuntu1~18.04.1)) #60-Ubuntu SMP Fri Sep 13 13:51:54 UTC 2019 (x86_64)",
+				input: "Linux version 4.15.0-1051-oem (buildd@lgw01-amd64-016) " +
+					"(gcc version 7.4.0 (Ubuntu 7.4.0-1ubuntu1~18.04.1)) #60-Ubuntu SMP Fri Sep 13 13:51:54 UTC 2019 (x86_64)",
 			},
 			want: "x86_64",
 		},

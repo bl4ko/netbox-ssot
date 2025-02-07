@@ -187,7 +187,7 @@ func (nbi *NetboxInventory) GetVirtualDeviceContext(
 ) (*objects.VirtualDeviceContext, bool) {
 	nbi.virtualDeviceContextsLock.Lock()
 	defer nbi.virtualDeviceContextsLock.Unlock()
-	vdc, vdcExists := nbi.virtualDeviceContextsIndexByNameAndDeviceID[zoneName][deviceID]
+	vdc, vdcExists := nbi.virtualDeviceContextsIndex[zoneName][deviceID]
 	if !vdcExists {
 		return nil, false
 	}
@@ -222,7 +222,7 @@ func (nbi *NetboxInventory) GetContactAssignment(
 ) (*objects.ContactAssignment, bool) {
 	nbi.contactAssignmentsLock.Lock()
 	defer nbi.contactAssignmentsLock.Unlock()
-	contactAssignment, contactAssignmentExists := nbi.contactAssignmentsIndexByObjectTypeAndObjectIDAndContactIDAndRoleID[contentType][objectID][contactID][roleID]
+	contactAssignment, contactAssignmentExists := nbi.contactAssignmentsIndex[contentType][objectID][contactID][roleID]
 	if !contactAssignmentExists {
 		return nil, false
 	}

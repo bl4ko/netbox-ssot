@@ -201,81 +201,87 @@ func CreateMockServer() *httptest.Server {
 		}
 	})
 
-	handler.HandleFunc(string(constants.TenantsAPIPath), func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodPatch:
-			tenantStr, err := json.Marshal(MockTenantPatchResponse)
-			if err != nil {
-				log.Printf("Error marshaling tenant patch response: %v", err)
+	handler.HandleFunc(
+		string(constants.TenantsAPIPath),
+		func(w http.ResponseWriter, r *http.Request) {
+			switch r.Method {
+			case http.MethodPatch:
+				tenantStr, err := json.Marshal(MockTenantPatchResponse)
+				if err != nil {
+					log.Printf("Error marshaling tenant patch response: %v", err)
+				}
+				_, err = w.Write(tenantStr)
+				if err != nil {
+					log.Printf("Error writing response: %v", err)
+				}
+			case http.MethodGet:
+				w.WriteHeader(http.StatusOK)
+				tenantsResponseStr, err := json.Marshal(MockTenantsGetResponse)
+				if err != nil {
+					log.Printf("Error marshaling tenants response: %v", err)
+				}
+				_, err = w.Write(tenantsResponseStr)
+				if err != nil {
+					log.Printf("Error writing response")
+				}
+			case http.MethodPost:
+				w.WriteHeader(http.StatusCreated)
+				tenantStr, err := json.Marshal(MockTenantCreateResponse)
+				if err != nil {
+					log.Printf("Error marshaling tenant create response: %v", err)
+				}
+				_, err = w.Write(tenantStr)
+				if err != nil {
+					log.Printf("Error writing response")
+				}
+			case http.MethodDelete:
+				w.WriteHeader(http.StatusNoContent)
+			default:
+				log.Printf("Wrong http method: %v", r.Method)
 			}
-			_, err = w.Write(tenantStr)
-			if err != nil {
-				log.Printf("Error writing response: %v", err)
-			}
-		case http.MethodGet:
-			w.WriteHeader(http.StatusOK)
-			tenantsResponseStr, err := json.Marshal(MockTenantsGetResponse)
-			if err != nil {
-				log.Printf("Error marshaling tenants response: %v", err)
-			}
-			_, err = w.Write(tenantsResponseStr)
-			if err != nil {
-				log.Printf("Error writing response")
-			}
-		case http.MethodPost:
-			w.WriteHeader(http.StatusCreated)
-			tenantStr, err := json.Marshal(MockTenantCreateResponse)
-			if err != nil {
-				log.Printf("Error marshaling tenant create response: %v", err)
-			}
-			_, err = w.Write(tenantStr)
-			if err != nil {
-				log.Printf("Error writing response")
-			}
-		case http.MethodDelete:
-			w.WriteHeader(http.StatusNoContent)
-		default:
-			log.Printf("Wrong http method: %v", r.Method)
-		}
-	})
+		},
+	)
 
-	handler.HandleFunc(string(constants.SitesAPIPath), func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodPatch:
-			siteStr, err := json.Marshal(MockSitePatchResponse)
-			if err != nil {
-				log.Printf("Error marshaling site patch response: %v", err)
+	handler.HandleFunc(
+		string(constants.SitesAPIPath),
+		func(w http.ResponseWriter, r *http.Request) {
+			switch r.Method {
+			case http.MethodPatch:
+				siteStr, err := json.Marshal(MockSitePatchResponse)
+				if err != nil {
+					log.Printf("Error marshaling site patch response: %v", err)
+				}
+				_, err = w.Write(siteStr)
+				if err != nil {
+					log.Printf("Error writing response: %v", err)
+				}
+			case http.MethodGet:
+				w.WriteHeader(http.StatusOK)
+				siteResponseStr, err := json.Marshal(MockSitesGetResponse)
+				if err != nil {
+					log.Printf("Error marshaling sites response: %v", err)
+				}
+				_, err = w.Write(siteResponseStr)
+				if err != nil {
+					log.Printf("Error writing response")
+				}
+			case http.MethodPost:
+				w.WriteHeader(http.StatusCreated)
+				siteStr, err := json.Marshal(MockSiteCreateResponse)
+				if err != nil {
+					log.Printf("Error marshaling site create response: %v", err)
+				}
+				_, err = w.Write(siteStr)
+				if err != nil {
+					log.Printf("Error writing response")
+				}
+			case http.MethodDelete:
+				w.WriteHeader(http.StatusNoContent)
+			default:
+				log.Printf("Wrong http method: %v", r.Method)
 			}
-			_, err = w.Write(siteStr)
-			if err != nil {
-				log.Printf("Error writing response: %v", err)
-			}
-		case http.MethodGet:
-			w.WriteHeader(http.StatusOK)
-			siteResponseStr, err := json.Marshal(MockSitesGetResponse)
-			if err != nil {
-				log.Printf("Error marshaling sites response: %v", err)
-			}
-			_, err = w.Write(siteResponseStr)
-			if err != nil {
-				log.Printf("Error writing response")
-			}
-		case http.MethodPost:
-			w.WriteHeader(http.StatusCreated)
-			siteStr, err := json.Marshal(MockSiteCreateResponse)
-			if err != nil {
-				log.Printf("Error marshaling site create response: %v", err)
-			}
-			_, err = w.Write(siteStr)
-			if err != nil {
-				log.Printf("Error writing response")
-			}
-		case http.MethodDelete:
-			w.WriteHeader(http.StatusNoContent)
-		default:
-			log.Printf("Wrong http method: %v", r.Method)
-		}
-	})
+		},
+	)
 
 	handler.HandleFunc("/api/read-error", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError) // or any relevant status

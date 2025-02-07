@@ -98,7 +98,13 @@ func TestContactAssignment_String(t *testing.T) {
 				},
 				ObjectID: 5,
 			},
-			want: fmt.Sprintf("ContactAssignment{ObjectType: %s, ObjectID: %d, %v, %v}", constants.ContentTypeVirtualizationVirtualMachine, 5, Contact{Name: "Test contact"}, ContactRole{Name: "Test contact role"}),
+			want: fmt.Sprintf(
+				"ContactAssignment{ObjectType: %s, ObjectID: %d, %v, %v}",
+				constants.ContentTypeVirtualizationVirtualMachine,
+				5,
+				Contact{Name: "Test contact"},
+				ContactRole{Name: "Test contact role"},
+			),
 		},
 	}
 	for _, tt := range tests {

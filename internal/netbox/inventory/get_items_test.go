@@ -340,10 +340,18 @@ func TestNetboxInventory_GetVirtualDeviceContext(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, got1 := tt.nbi.GetVirtualDeviceContext(tt.args.zoneName, tt.args.deviceID)
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NetboxInventory.GetVirtualDeviceContext() got = %v, want %v", got, tt.want)
+				t.Errorf(
+					"NetboxInventory.GetVirtualDeviceContext() got = %v, want %v",
+					got,
+					tt.want,
+				)
 			}
 			if got1 != tt.want1 {
-				t.Errorf("NetboxInventory.GetVirtualDeviceContext() got1 = %v, want %v", got1, tt.want1)
+				t.Errorf(
+					"NetboxInventory.GetVirtualDeviceContext() got1 = %v, want %v",
+					got1,
+					tt.want1,
+				)
 			}
 		})
 	}
@@ -394,12 +402,21 @@ func TestNetboxInventory_GetContactAssignment(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := tt.nbi.GetContactAssignment(tt.args.contentType, tt.args.objectID, tt.args.contactID, tt.args.roleID)
+			got, got1 := tt.nbi.GetContactAssignment(
+				tt.args.contentType,
+				tt.args.objectID,
+				tt.args.contactID,
+				tt.args.roleID,
+			)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NetboxInventory.GetContactAssignment() got = %v, want %v", got, tt.want)
 			}
 			if got1 != tt.want1 {
-				t.Errorf("NetboxInventory.GetContactAssignment() got1 = %v, want %v", got1, tt.want1)
+				t.Errorf(
+					"NetboxInventory.GetContactAssignment() got1 = %v, want %v",
+					got1,
+					tt.want1,
+				)
 			}
 		})
 	}

@@ -36,7 +36,13 @@ func (o *OVirtSource) Init() error {
 	// Build the connection
 	o.Logger.Debug(o.Ctx, "Initializing oVirt source ", o.SourceConfig.Name)
 	connBuilder := ovirtsdk4.NewConnectionBuilder().
-		URL(fmt.Sprintf("%s://%s:%d/ovirt-engine/api", o.SourceConfig.HTTPScheme, o.SourceConfig.Hostname, o.SourceConfig.Port)).
+		URL(fmt.Sprintf(
+			"%s://%s:%d/ovirt-engine/api",
+			o.SourceConfig.HTTPScheme,
+			o.SourceConfig.Hostname,
+			o.SourceConfig.Port,
+		),
+		).
 		Username(o.SourceConfig.Username).
 		Password(o.SourceConfig.Password).
 		Insecure(!o.SourceConfig.ValidateCert).
@@ -68,10 +74,19 @@ func (o *OVirtSource) Init() error {
 	for _, initFunc := range initFunctions {
 		startTime := time.Now()
 		if err := initFunc(conn); err != nil {
-			return fmt.Errorf("failed to initialize oVirt %s: %v", strings.TrimPrefix(fmt.Sprintf("%T", initFunc), "*source.OVirtSource.Init"), err)
+			return fmt.Errorf(
+				"failed to initialize oVirt %s: %v",
+				strings.TrimPrefix(fmt.Sprintf("%T", initFunc), "*source.OVirtSource.Init"),
+				err,
+			)
 		}
 		duration := time.Since(startTime)
-		o.Logger.Infof(o.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionNameWithTrimPrefix(initFunc, "init"), duration.Seconds())
+		o.Logger.Infof(
+			o.Ctx,
+			"Successfully initialized %s in %f seconds",
+			utils.ExtractFunctionNameWithTrimPrefix(initFunc, "init"),
+			duration.Seconds(),
+		)
 	}
 	return nil
 }
@@ -92,7 +107,12 @@ func (o *OVirtSource) Sync(nbi *inventory.NetboxInventory) error {
 			return err
 		}
 		duration := time.Since(startTime)
-		o.Logger.Infof(o.Ctx, "Successfully synced %s in %f seconds", utils.ExtractFunctionNameWithTrimPrefix(syncFunc, "sync"), duration.Seconds())
+		o.Logger.Infof(
+			o.Ctx,
+			"Successfully synced %s in %f seconds",
+			utils.ExtractFunctionNameWithTrimPrefix(syncFunc, "sync"),
+			duration.Seconds(),
+		)
 	}
 	return nil
 }

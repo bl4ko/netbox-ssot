@@ -163,11 +163,21 @@ type ContactAssignmentPriority struct {
 }
 
 // https://github.com/netbox-community/netbox/blob/487f1ccfde26ef3c1f8a28089826acc0cd6fadb2/netbox/tenancy/choices.py#L10
+//
+//nolint:lll
 var (
-	ContactAssignmentPriorityPrimary   = ContactAssignmentPriority{Choice{Value: "primary", Label: "Primary"}}
-	ContactAssignmentPrioritySecondary = ContactAssignmentPriority{Choice{Value: "secondary", Label: "Secondary"}}
-	ContactAssignmentPriorityTertiary  = ContactAssignmentPriority{Choice{Value: "tertiary", Label: "Tertiary"}}
-	ContactAssignmentPriorityInactive  = ContactAssignmentPriority{Choice{Value: "inactive", Label: "Inactive"}}
+	ContactAssignmentPriorityPrimary = ContactAssignmentPriority{
+		Choice{Value: "primary", Label: "Primary"},
+	}
+	ContactAssignmentPrioritySecondary = ContactAssignmentPriority{
+		Choice{Value: "secondary", Label: "Secondary"},
+	}
+	ContactAssignmentPriorityTertiary = ContactAssignmentPriority{
+		Choice{Value: "tertiary", Label: "Tertiary"},
+	}
+	ContactAssignmentPriorityInactive = ContactAssignmentPriority{
+		Choice{Value: "inactive", Label: "Inactive"},
+	}
 )
 
 type ContactAssignment struct {
@@ -185,7 +195,13 @@ type ContactAssignment struct {
 }
 
 func (ca ContactAssignment) String() string {
-	return fmt.Sprintf("ContactAssignment{ObjectType: %s, ObjectID: %d, %v, %v}", ca.ModelType, ca.ObjectID, ca.Contact, ca.Role)
+	return fmt.Sprintf(
+		"ContactAssignment{ObjectType: %s, ObjectID: %d, %v, %v}",
+		ca.ModelType,
+		ca.ObjectID,
+		ca.Contact,
+		ca.Role,
+	)
 }
 
 // ContactAssignment implements IDItem interface.

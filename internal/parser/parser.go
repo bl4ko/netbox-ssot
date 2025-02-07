@@ -94,7 +94,21 @@ type NetboxConfig struct {
 }
 
 func (n NetboxConfig) String() string {
-	return fmt.Sprintf("NetboxConfig{ApiToken: %s, Hostname: %s, Port: %d, HTTPScheme: %s, ValidateCert: %t, Timeout: %d, Tag: %s, TagColor: %s, RemoveOrphans: %t, RemoveOrphansAfterDays: %d}", n.APIToken, n.Hostname, n.Port, n.HTTPScheme, n.ValidateCert, n.Timeout, n.Tag, n.TagColor, n.RemoveOrphans, n.RemoveOrphansAfterDays)
+	return fmt.Sprintf(
+		"NetboxConfig{ApiToken: %s, Hostname: %s, Port: %d, "+
+			"HTTPScheme: %s, ValidateCert: %t, Timeout: %d, "+
+			"Tag: %s, TagColor: %s, RemoveOrphans: %t, RemoveOrphansAfterDays: %d}",
+		n.APIToken,
+		n.Hostname,
+		n.Port,
+		n.HTTPScheme,
+		n.ValidateCert,
+		n.Timeout,
+		n.Tag,
+		n.TagColor,
+		n.RemoveOrphans,
+		n.RemoveOrphansAfterDays,
+	)
 }
 
 // Configuration that can be used for each of the sources.
@@ -203,7 +217,9 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		if err != nil {
 			return fmt.Errorf("%s.datacenterClusterGroupRelations: %s", rawMarshal.Name, err)
 		}
-		sc.DatacenterClusterGroupRelations = utils.ConvertStringsToRegexPairs(rawMarshal.DatacenterClusterGroupRelations)
+		sc.DatacenterClusterGroupRelations = utils.ConvertStringsToRegexPairs(
+			rawMarshal.DatacenterClusterGroupRelations,
+		)
 	}
 	if len(rawMarshal.HostSiteRelations) > 0 {
 		err := utils.ValidateRegexRelations(rawMarshal.HostSiteRelations)
@@ -231,7 +247,9 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		if err != nil {
 			return fmt.Errorf("%s.clusterTenantRelations: %s", rawMarshal.Name, err)
 		}
-		sc.ClusterTenantRelations = utils.ConvertStringsToRegexPairs(rawMarshal.ClusterTenantRelations)
+		sc.ClusterTenantRelations = utils.ConvertStringsToRegexPairs(
+			rawMarshal.ClusterTenantRelations,
+		)
 	}
 	if len(rawMarshal.HostTenantRelations) > 0 {
 		err := utils.ValidateRegexRelations(rawMarshal.HostTenantRelations)
@@ -280,7 +298,9 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		if err != nil {
 			return fmt.Errorf("%s.vlanGroupSiteRelations: %v", rawMarshal.Name, err)
 		}
-		sc.VlanGroupSiteRelations = utils.ConvertStringsToRegexPairs(rawMarshal.VlanGroupSiteRelations)
+		sc.VlanGroupSiteRelations = utils.ConvertStringsToRegexPairs(
+			rawMarshal.VlanGroupSiteRelations,
+		)
 	}
 	if len(rawMarshal.WlanTenantRelations) > 0 {
 		err := utils.ValidateRegexRelations((rawMarshal.WlanTenantRelations))
@@ -300,7 +320,34 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (sc SourceConfig) String() string {
-	return fmt.Sprintf("SourceConfig{Name: %s, Type: %s, HTTPScheme: %s, Hostname: %s, Port: %d, Username: %s, Password: %s, PermittedSubnets: %v, ValidateCert: %t, Tag: %s, TagColor: %s, DatacenterClusterGroupRelations: %s, HostSiteRelations: %v, ClusterSiteRelations: %v, clusterTenantRelations: %v, HostTenantRelations: %v, VmTenantRelations %v, VlanGroupRelations: %v, VlanTenantRelations: %v, WlanTenantRelations: %v}", sc.Name, sc.Type, sc.HTTPScheme, sc.Hostname, sc.Port, sc.Username, sc.Password, sc.IgnoredSubnets, sc.ValidateCert, sc.Tag, sc.TagColor, sc.DatacenterClusterGroupRelations, sc.HostSiteRelations, sc.ClusterSiteRelations, sc.ClusterTenantRelations, sc.HostTenantRelations, sc.VMTenantRelations, sc.VlanGroupRelations, sc.VlanTenantRelations, sc.WlanTenantRelations)
+	return fmt.Sprintf(
+		"SourceConfig{Name: %s, Type: %s, HTTPScheme: %s, Hostname: %s, Port: %d, "+
+			"Username: %s, Password: %s, PermittedSubnets: %v, ValidateCert: %t, "+
+			"Tag: %s, TagColor: %s, DatacenterClusterGroupRelations: %s, "+
+			"HostSiteRelations: %v, ClusterSiteRelations: %v, ClusterTenantRelations: %v, "+
+			"HostTenantRelations: %v, VmTenantRelations: %v, VlanGroupRelations: %v, "+
+			"VlanTenantRelations: %v, WlanTenantRelations: %v}",
+		sc.Name,
+		sc.Type,
+		sc.HTTPScheme,
+		sc.Hostname,
+		sc.Port,
+		sc.Username,
+		sc.Password,
+		sc.IgnoredSubnets,
+		sc.ValidateCert,
+		sc.Tag,
+		sc.TagColor,
+		sc.DatacenterClusterGroupRelations,
+		sc.HostSiteRelations,
+		sc.ClusterSiteRelations,
+		sc.ClusterTenantRelations,
+		sc.HostTenantRelations,
+		sc.VMTenantRelations,
+		sc.VlanGroupRelations,
+		sc.VlanTenantRelations,
+		sc.WlanTenantRelations,
+	)
 }
 
 // Validates the user's config for limits and required fields.
@@ -337,13 +384,19 @@ func validateNetboxConfig(config *Config) error {
 		return errors.New("netbox.apiToken: cannot be empty")
 	}
 	if config.Netbox.HTTPScheme != HTTP && config.Netbox.HTTPScheme != HTTPS {
-		return errors.New("netbox.httpScheme: must be either http or https. Is " + string(config.Netbox.HTTPScheme))
+		return errors.New(
+			"netbox.httpScheme: must be either http or https. Is " + string(
+				config.Netbox.HTTPScheme,
+			),
+		)
 	}
 	if config.Netbox.Hostname == "" {
 		return errors.New("netbox.hostname: cannot be empty")
 	}
 	if config.Netbox.Port < 0 || config.Netbox.Port > 65535 {
-		return errors.New("netbox.port: must be between 0 and 65535. Is " + fmt.Sprintf("%d", config.Netbox.Port))
+		return errors.New(
+			"netbox.port: must be between 0 and 65535. Is " + fmt.Sprintf("%d", config.Netbox.Port),
+		)
 	}
 	if config.Netbox.Timeout < 0 {
 		return errors.New("netbox.timeout: cannot be negative")
@@ -376,7 +429,9 @@ func validateNetboxConfig(config *Config) error {
 	}
 	if len(config.Netbox.SourcePriority) > 0 {
 		if len(config.Netbox.SourcePriority) != len(config.Sources) {
-			return fmt.Errorf("netbox.sourcePriority: len(config.Netbox.SourcePriority) != len(config.Sources)")
+			return fmt.Errorf(
+				"netbox.sourcePriority: len(config.Netbox.SourcePriority) != len(config.Sources)",
+			)
 		}
 		for _, sourceName := range config.Netbox.SourcePriority {
 			contains := false
@@ -387,7 +442,10 @@ func validateNetboxConfig(config *Config) error {
 				}
 			}
 			if !contains {
-				return fmt.Errorf("netbox.sourcePriority: %s doesn't exist in the sources array", sourceName)
+				return fmt.Errorf(
+					"netbox.sourcePriority: %s doesn't exist in the sources array",
+					sourceName,
+				)
 			}
 		}
 	}
@@ -424,7 +482,11 @@ func validateSourceConfig(config *Config) error {
 		if externalSource.HTTPScheme == "" {
 			externalSource.HTTPScheme = "https"
 		} else if externalSource.HTTPScheme != HTTP && externalSource.HTTPScheme != HTTPS {
-			return fmt.Errorf("%s.httpScheme: must be either http or https. Is %s", externalSourceStr, string(externalSource.HTTPScheme))
+			return fmt.Errorf(
+				"%s.httpScheme: must be either http or https. Is %s",
+				externalSourceStr,
+				string(externalSource.HTTPScheme),
+			)
 		}
 		if externalSource.Hostname == "" {
 			return fmt.Errorf("%s.hostname: cannot be empty", externalSourceStr)
@@ -435,7 +497,11 @@ func validateSourceConfig(config *Config) error {
 			return fmt.Errorf("%s.port: must be between 0 and 65535. Is %d", externalSourceStr, externalSource.Port)
 		}
 		if externalSource.APIToken == "" && externalSource.Type == constants.Fortigate {
-			return fmt.Errorf("%s.apiToken is required for %s", externalSourceStr, constants.Fortigate)
+			return fmt.Errorf(
+				"%s.apiToken is required for %s",
+				externalSourceStr,
+				constants.Fortigate,
+			)
 		}
 		if externalSource.Username == "" && externalSource.Type != constants.Fortigate {
 			return fmt.Errorf("%s.username: cannot be empty", externalSourceStr)
@@ -457,14 +523,22 @@ func validateSourceConfig(config *Config) error {
 		if len(externalSource.IgnoredSubnets) > 0 {
 			for _, ignoredSubnet := range externalSource.IgnoredSubnets {
 				if !utils.VerifySubnet(ignoredSubnet) {
-					return fmt.Errorf("%s.ignoredSubnets: wrong format: %s", externalSourceStr, ignoredSubnet)
+					return fmt.Errorf(
+						"%s.ignoredSubnets: wrong format: %s",
+						externalSourceStr,
+						ignoredSubnet,
+					)
 				}
 			}
 		}
 		if len(externalSource.PermittedSubnets) > 0 {
 			for _, permittedSubnet := range externalSource.PermittedSubnets {
 				if !utils.VerifySubnet(permittedSubnet) {
-					return fmt.Errorf("%s.permittedSubnets: wrong format: %s", externalSourceStr, permittedSubnet)
+					return fmt.Errorf(
+						"%s.permittedSubnets: wrong format: %s",
+						externalSourceStr,
+						permittedSubnet,
+					)
 				}
 			}
 		}

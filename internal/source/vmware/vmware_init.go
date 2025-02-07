@@ -13,7 +13,12 @@ import (
 // In vsphere we get vlans from DistributedVirtualPortgroups.
 func (vc *VmwareSource) initNetworks(ctx context.Context, containerView *view.ContainerView) error {
 	var dvpgs []mo.DistributedVirtualPortgroup
-	err := containerView.Retrieve(ctx, []string{"DistributedVirtualPortgroup"}, []string{"config"}, &dvpgs)
+	err := containerView.Retrieve(
+		ctx,
+		[]string{"DistributedVirtualPortgroup"},
+		[]string{"config"},
+		&dvpgs,
+	)
 	if err != nil {
 		return fmt.Errorf("failed retrieving DistributedVirtualPortgroups: %s", err)
 	}
@@ -79,7 +84,12 @@ func (vc *VmwareSource) initNetworks(ctx context.Context, containerView *view.Co
 
 func (vc *VmwareSource) initDisks(ctx context.Context, containerView *view.ContainerView) error {
 	var disks []mo.Datastore
-	err := containerView.Retrieve(ctx, []string{"Datastore"}, []string{"summary", "host", "vm"}, &disks)
+	err := containerView.Retrieve(
+		ctx,
+		[]string{"Datastore"},
+		[]string{"summary", "host", "vm"},
+		&disks,
+	)
 	if err != nil {
 		return fmt.Errorf("failed retrieving disks: %s", err)
 	}
@@ -90,7 +100,10 @@ func (vc *VmwareSource) initDisks(ctx context.Context, containerView *view.Conta
 	return nil
 }
 
-func (vc *VmwareSource) initDataCenters(ctx context.Context, containerView *view.ContainerView) error {
+func (vc *VmwareSource) initDataCenters(
+	ctx context.Context,
+	containerView *view.ContainerView,
+) error {
 	var datacenters []mo.Datacenter
 	err := containerView.Retrieve(ctx, []string{"Datacenter"}, []string{"name"}, &datacenters)
 	if err != nil {
@@ -105,7 +118,12 @@ func (vc *VmwareSource) initDataCenters(ctx context.Context, containerView *view
 
 func (vc *VmwareSource) initClusters(ctx context.Context, containerView *view.ContainerView) error {
 	var clusters []mo.ClusterComputeResource
-	err := containerView.Retrieve(ctx, []string{"ClusterComputeResource"}, []string{"summary", "host", "name"}, &clusters)
+	err := containerView.Retrieve(
+		ctx,
+		[]string{"ClusterComputeResource"},
+		[]string{"summary", "host", "name"},
+		&clusters,
+	)
 	if err != nil {
 		return fmt.Errorf("failed retrieving clusters: %s", err)
 	}
@@ -122,7 +140,20 @@ func (vc *VmwareSource) initClusters(ctx context.Context, containerView *view.Co
 
 func (vc *VmwareSource) initHosts(ctx context.Context, containerView *view.ContainerView) error {
 	var hosts []mo.HostSystem
-	err := containerView.Retrieve(ctx, []string{"HostSystem"}, []string{"name", "summary.host", "summary.hardware", "summary.runtime", "summary.config", "vm", "config.network"}, &hosts)
+	err := containerView.Retrieve(
+		ctx,
+		[]string{"HostSystem"},
+		[]string{
+			"name",
+			"summary.host",
+			"summary.hardware",
+			"summary.runtime",
+			"summary.config",
+			"vm",
+			"config.network",
+		},
+		&hosts,
+	)
 	if err != nil {
 		return fmt.Errorf("failed retrieving hosts: %s", err)
 	}
@@ -191,7 +222,20 @@ func (vc *VmwareSource) initHosts(ctx context.Context, containerView *view.Conta
 
 func (vc *VmwareSource) initVms(ctx context.Context, containerView *view.ContainerView) error {
 	var vms []mo.VirtualMachine
-	err := containerView.Retrieve(ctx, []string{"VirtualMachine"}, []string{"summary", "name", "runtime", "guest", "config.hardware", "config.template", "config.guestFullName"}, &vms)
+	err := containerView.Retrieve(
+		ctx,
+		[]string{"VirtualMachine"},
+		[]string{
+			"summary",
+			"name",
+			"runtime",
+			"guest",
+			"config.hardware",
+			"config.template",
+			"config.guestFullName",
+		},
+		&vms,
+	)
 	if err != nil {
 		return fmt.Errorf("failed retrieving vms: %s", err)
 	}

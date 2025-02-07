@@ -578,7 +578,14 @@ func (vc *VmwareSource) collectHostPhysicalNicData(
 				if err != nil {
 					return nil, "", fmt.Errorf("match vlan to site: %s", err)
 				}
-				vlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, vlanName, vlanSite, vc.SourceConfig.VlanGroupRelations, vc.SourceConfig.VlanGroupSiteRelations)
+				vlanGroup, err := common.MatchVlanToGroup(
+					vc.Ctx,
+					nbi,
+					vlanName,
+					vlanSite,
+					vc.SourceConfig.VlanGroupRelations,
+					vc.SourceConfig.VlanGroupSiteRelations,
+				)
 				if err != nil {
 					return nil, "", fmt.Errorf("match vlan to group: %s", err)
 				}
@@ -886,11 +893,23 @@ func (vc *VmwareSource) collectHostVirtualNicData(
 			if vnicDvPortgroupDataVlanID == 0 {
 				continue
 			}
-			vnicTaggedVlanSite, err := common.MatchVlanToSite(vc.Ctx, nbi, vc.Networks.Vid2Name[vnicDvPortgroupDataVlanID], vc.SourceConfig.VlanSiteRelations)
+			vnicTaggedVlanSite, err := common.MatchVlanToSite(
+				vc.Ctx,
+				nbi,
+				vc.Networks.Vid2Name[vnicDvPortgroupDataVlanID],
+				vc.SourceConfig.VlanSiteRelations,
+			)
 			if err != nil {
 				return nil, fmt.Errorf("match vlan to site: %s", err)
 			}
-			vnicTaggedVlanGroup, err := common.MatchVlanToGroup(vc.Ctx, nbi, vc.Networks.Vid2Name[vnicDvPortgroupDataVlanID], vnicTaggedVlanSite, vc.SourceConfig.VlanGroupRelations, vc.SourceConfig.VlanGroupSiteRelations)
+			vnicTaggedVlanGroup, err := common.MatchVlanToGroup(
+				vc.Ctx,
+				nbi,
+				vc.Networks.Vid2Name[vnicDvPortgroupDataVlanID],
+				vnicTaggedVlanSite,
+				vc.SourceConfig.VlanGroupRelations,
+				vc.SourceConfig.VlanGroupSiteRelations,
+			)
 			if err != nil {
 				return nil, fmt.Errorf("match vlan to vlan group: %s", err)
 			}

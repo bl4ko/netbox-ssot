@@ -415,7 +415,8 @@ type InterfaceType struct {
 	Choice
 }
 
-// Predefined types: https://github.com/netbox-community/netbox/blob/ec245b968f50bdbafaadd5d6b885832d858fa167/netbox/dcim/choices.py#L800
+// Predefined types see :
+// https://github.com/netbox-community/netbox/blob/ec245b968f50bdbafaadd5d6b885832d858fa167/netbox/dcim/choices.py#L800
 var (
 	// Netbox's Virtual interface types.
 	VirtualInterfaceType = InterfaceType{Choice{Value: "virtual", Label: "Virtual"}}
@@ -602,7 +603,8 @@ var IfaceSpeed2IfaceType = map[InterfaceSpeed]*InterfaceType{
 // Interface speed in kbps.
 type InterfaceSpeed int64
 
-// Available interface speeds: https://github.com/netbox-community/netbox/blob/ec245b968f50bdbafaadd5d6b885832d858fa167/netbox/dcim/choices.py#L1139
+// Available interface speeds:
+// https://github.com/netbox-community/netbox/blob/72e93b04daf38b0a5f7dab70e96a9f96edd02649/netbox/dcim/choices.py#L1229
 const (
 	MBPS10      InterfaceSpeed = 10000
 	MBPS100     InterfaceSpeed = 100000

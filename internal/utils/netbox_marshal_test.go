@@ -26,7 +26,13 @@ func TestComplexClusterMarshal(t *testing.T) {
 				ID: 2,
 				Tags: []*objects.Tag{
 					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-					{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+					{
+						ID:          3,
+						Name:        "Test3",
+						Slug:        "test3",
+						Color:       "000000",
+						Description: "Test tag 3",
+					},
 				},
 			},
 			Name: "oVirt",
@@ -37,7 +43,13 @@ func TestComplexClusterMarshal(t *testing.T) {
 				ID: 4,
 				Tags: []*objects.Tag{
 					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-					{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+					{
+						ID:          3,
+						Name:        "Test3",
+						Slug:        "test3",
+						Color:       "000000",
+						Description: "Test tag 3",
+					},
 				},
 				Description: "New cluster group",
 			},
@@ -51,8 +63,20 @@ func TestComplexClusterMarshal(t *testing.T) {
 				ID: 1,
 				Tags: []*objects.Tag{
 					{ID: 1, Name: "Test", Slug: "test", Color: "000000", Description: "Test tag"},
-					{ID: 3, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
-					{ID: 4, Name: "Test3", Slug: "test3", Color: "000000", Description: "Test tag 3"},
+					{
+						ID:          3,
+						Name:        "Test3",
+						Slug:        "test3",
+						Color:       "000000",
+						Description: "Test tag 3",
+					},
+					{
+						ID:          4,
+						Name:        "Test3",
+						Slug:        "test3",
+						Color:       "000000",
+						Description: "Test tag 3",
+					},
 				},
 			},
 			Name: "Default",
@@ -190,7 +214,9 @@ func TestNetboxJSONMarshal(t *testing.T) {
 		{
 			name: "Struct with slice attribute of structs with no ids",
 			args: args{
-				obj: structWithSliceAttributeOfStructs{Test: []testStruct{{Test: "one"}, {Test: "two"}}},
+				obj: structWithSliceAttributeOfStructs{
+					Test: []testStruct{{Test: "one"}, {Test: "two"}},
+				},
 			},
 			want: []byte("{\"test\":[{\"test\":\"one\"},{\"test\":\"two\"}]}"),
 		},

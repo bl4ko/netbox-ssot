@@ -47,7 +47,11 @@ func TestPlatform_String(t *testing.T) {
 					Name: "TestManufacturer",
 				},
 			},
-			want: fmt.Sprintf("Platform{Name: %s, Manufacturer: %s}", "TestPlatform", Manufacturer{Name: "TestManufacturer"}),
+			want: fmt.Sprintf(
+				"Platform{Name: %s, Manufacturer: %s}",
+				"TestPlatform",
+				Manufacturer{Name: "TestManufacturer"},
+			),
 		},
 		// TODO: Add test cases.
 	}
@@ -98,7 +102,11 @@ func TestDeviceType_String(t *testing.T) {
 				},
 				Model: "test model",
 			},
-			want: fmt.Sprintf("DeviceType{Manufacturer: %s, Model: %s}", "Test manufacturer", "test model"),
+			want: fmt.Sprintf(
+				"DeviceType{Manufacturer: %s, Model: %s}",
+				"Test manufacturer",
+				"test model",
+			),
 		},
 	}
 	for _, tt := range tests {
@@ -156,7 +164,13 @@ func TestDevice_String(t *testing.T) {
 					Name: "Test site",
 				},
 			},
-			want: fmt.Sprintf("Device{Name: %s, Type: %s, Role: %s, Site: %s}", "Test device", "DeviceType{Manufacturer: Test manufacturer, Model: test model}", "DeviceRole{Name: Test device-role}", "Site{Name: Test site}"),
+			want: fmt.Sprintf(
+				"Device{Name: %s, Type: %s, Role: %s, Site: %s}",
+				"Test device",
+				"DeviceType{Manufacturer: Test manufacturer, Model: test model}",
+				"DeviceRole{Name: Test device-role}",
+				"Site{Name: Test site}",
+			),
 		},
 	}
 	for _, tt := range tests {
@@ -195,7 +209,12 @@ func TestInterface_String(t *testing.T) {
 					},
 				},
 			},
-			want: fmt.Sprintf("Interface{Name: %s, Device: %s, Type: %s}", "Test interface", "Test device", OtherInterfaceType.Label),
+			want: fmt.Sprintf(
+				"Interface{Name: %s, Device: %s, Type: %s}",
+				"Test interface",
+				"Test device",
+				OtherInterfaceType.Label,
+			),
 		},
 	}
 	for _, tt := range tests {
@@ -220,7 +239,12 @@ func TestVirtualDeviceContext_String(t *testing.T) {
 				Device: &Device{Name: "testdevice"},
 				Status: &VDCStatusActive,
 			},
-			want: fmt.Sprintf("VirtualDeviceContext{Name: %s, Device: %s, Status: %s}", "test", &Device{Name: "testdevice"}, &VDCStatusActive),
+			want: fmt.Sprintf(
+				"VirtualDeviceContext{Name: %s, Device: %s, Status: %s}",
+				"test",
+				&Device{Name: "testdevice"},
+				&VDCStatusActive,
+			),
 		},
 	}
 	for _, tt := range tests {

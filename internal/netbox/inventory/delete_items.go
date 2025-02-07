@@ -22,8 +22,18 @@ func (nbi *NetboxInventory) DeleteOrphans(hard bool) error {
 			continue
 		}
 
-		nbi.OrphanManager.Logger.Infof(nbi.Ctx, "Performing %s deletion of orphaned objects of type %s", deleteTypeStr, objectAPIPath)
-		nbi.OrphanManager.Logger.Debugf(nbi.Ctx, "IDs of objects to be %s deleted: %v", deleteTypeStr, id2orphanItem)
+		nbi.OrphanManager.Logger.Infof(
+			nbi.Ctx,
+			"Performing %s deletion of orphaned objects of type %s",
+			deleteTypeStr,
+			objectAPIPath,
+		)
+		nbi.OrphanManager.Logger.Debugf(
+			nbi.Ctx,
+			"IDs of objects to be %s deleted: %v",
+			deleteTypeStr,
+			id2orphanItem,
+		)
 
 		for _, orphanItem := range id2orphanItem {
 			if hard {
@@ -58,11 +68,18 @@ func (nbi *NetboxInventory) softDelete(orphanItem objects.OrphanItem) error {
 	// Perform soft deletion
 	// Add tag to the object to mark it as orphaned
 	todayDate := time.Now().Format(constants.CustomFieldOrphanLastSeenFormat)
-	if !orphanItem.GetNetboxObject().HasTag(nbi.OrphanManager.Tag) || orphanItem.GetNetboxObject().GetCustomField(constants.CustomFieldOrphanLastSeenName) == nil {
+	if !orphanItem.GetNetboxObject().HasTag(nbi.OrphanManager.Tag) ||
+		orphanItem.GetNetboxObject().
+			GetCustomField(constants.CustomFieldOrphanLastSeenName) ==
+			nil {
 		// This OrphanItem has been marked as orphan for the first time
 		orphanItem.GetNetboxObject().AddTag(nbi.OrphanManager.Tag)
-		orphanItem.GetNetboxObject().SetCustomField(constants.CustomFieldOrphanLastSeenName, todayDate)
-		diffMap := utils.ExtractFieldsFromDiffMap(utils.StructToNetboxJSONMap(orphanItem.GetNetboxObject()), []string{"tags", "custom_fields"})
+		orphanItem.GetNetboxObject().
+			SetCustomField(constants.CustomFieldOrphanLastSeenName, todayDate)
+		diffMap := utils.ExtractFieldsFromDiffMap(
+			utils.StructToNetboxJSONMap(orphanItem.GetNetboxObject()),
+			[]string{"tags", "custom_fields"},
+		)
 		// Update object on the API
 		var err error
 		switch orphanItem.(type) {
@@ -75,7 +92,12 @@ func (nbi *NetboxInventory) softDelete(orphanItem objects.OrphanItem) error {
 		case *objects.IPAddress:
 			_, err = service.Patch[objects.IPAddress](nbi.OrphanManager.Ctx, nbi.NetboxAPI, orphanItem.GetID(), diffMap)
 		case *objects.VirtualDeviceContext:
-			_, err = service.Patch[objects.VirtualDeviceContext](nbi.OrphanManager.Ctx, nbi.NetboxAPI, orphanItem.GetID(), diffMap)
+			_, err = service.Patch[objects.VirtualDeviceContext](
+				nbi.OrphanManager.Ctx,
+				nbi.NetboxAPI,
+				orphanItem.GetID(),
+				diffMap,
+			)
 		case *objects.Interface:
 			_, err = service.Patch[objects.Interface](nbi.OrphanManager.Ctx, nbi.NetboxAPI, orphanItem.GetID(), diffMap)
 		case *objects.VMInterface:
@@ -114,7 +136,10 @@ func (nbi *NetboxInventory) softDelete(orphanItem objects.OrphanItem) error {
 		}
 	} else {
 		nbi.Logger.Debugf(nbi.Ctx, "%s is already marked as orphan", orphanItem)
-		lastSeen, err := time.Parse(constants.CustomFieldOrphanLastSeenFormat, orphanItem.GetNetboxObject().GetCustomField(constants.CustomFieldOrphanLastSeenName).(string))
+		lastSeen, err := time.Parse(
+			constants.CustomFieldOrphanLastSeenFormat,
+			orphanItem.GetNetboxObject().GetCustomField(constants.CustomFieldOrphanLastSeenName).(string),
+		)
 		if err != nil {
 			return fmt.Errorf("failed parsing last seen date: %s", err)
 		}

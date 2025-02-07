@@ -69,7 +69,10 @@ func (pas *PaloAltoSource) initInterfaces(c *pango.Firewall) error {
 	pas.Iface2SubIfaces = make(map[string][]layer3.Entry)
 	for _, ethInterface := range ethInterfaces {
 		pas.Ifaces[ethInterface.Name] = ethInterface
-		subInterfaces, err := c.Network.Layer3Subinterface.GetAll(layer3.EthernetInterface, ethInterface.Name)
+		subInterfaces, err := c.Network.Layer3Subinterface.GetAll(
+			layer3.EthernetInterface,
+			ethInterface.Name,
+		)
 		if err != nil {
 			return fmt.Errorf("layer 3 subinterfaces: %s", err)
 		}

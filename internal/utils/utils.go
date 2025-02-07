@@ -27,7 +27,10 @@ func ValidateRegexRelations(regexRelations []string) error {
 	for _, regexRelation := range regexRelations {
 		relation := strings.Split(regexRelation, "=")
 		if len(relation) != len([]string{"regex", "value"}) {
-			return fmt.Errorf("invalid regex relation: %s. Should be of format: regex = value", regexRelation)
+			return fmt.Errorf(
+				"invalid regex relation: %s. Should be of format: regex = value",
+				regexRelation,
+			)
 		}
 		regexStr := strings.TrimSpace(relation[0])
 		_, err := regexp.Compile(regexStr)
@@ -156,7 +159,12 @@ func removeDiacritics(s string) string {
 //
 // E.g. names = ["John Doe", "Jane Doe"], emails = ["jane.doe@example"]
 // Output: map["Jane Doe"] = "jane.doe@example".
-func MatchNamesWithEmails(ctx context.Context, names []string, emails []string, logger *logger.Logger) map[string]string {
+func MatchNamesWithEmails(
+	ctx context.Context,
+	names []string,
+	emails []string,
+	logger *logger.Logger,
+) map[string]string {
 	normalizedNames := make(map[string]string) // Map for easy lookup
 	for _, name := range names {
 		// Normalize name: remove diacritics, spaces, and convert to lowercase

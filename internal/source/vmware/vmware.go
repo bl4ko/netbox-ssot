@@ -47,11 +47,16 @@ type VmwareSource struct {
 }
 
 type NetworkData struct {
-	DistributedVirtualPortgroups map[string]*DistributedPortgroupData         // Portgroup.key -> PortgroupData
-	Vid2Name                     map[int]string                               // Helper map, for quickly obtaining name of the vid
-	HostVirtualSwitches          map[string]map[string]*HostVirtualSwitchData // hostName -> VSwitchName-> VSwitchData
-	HostProxySwitches            map[string]map[string]*HostProxySwitchData   // hostName -> PSwitchName ->
-	HostPortgroups               map[string]map[string]*HostPortgroupData     // hostname -> Portgroup.Spec.Name -> HostPortgroupData
+	// DistributedVirtualPortgroups: Portgroup.key -> PortgroupData
+	DistributedVirtualPortgroups map[string]*DistributedPortgroupData
+	// Vid2Name is a Helper map, for quickly obtaining name of the vid
+	Vid2Name map[int]string
+	// HostVirtualSwitches: hostName -> VSwitchName-> VSwitchData
+	HostVirtualSwitches map[string]map[string]*HostVirtualSwitchData
+	// HostProxySwitches: hostName -> PSwitchName -> HostProxySwitchData
+	HostProxySwitches map[string]map[string]*HostProxySwitchData
+	// HostPortgroups: hostname -> Portgroup.Spec.Name -> HostPortgroupData
+	HostPortgroups map[string]map[string]*HostPortgroupData
 }
 
 type DistributedPortgroupData struct {
@@ -89,7 +94,14 @@ func (vc *VmwareSource) Init() error {
 	escapedUsername := url.PathEscape(vc.SourceConfig.Username)
 	escapedPassword := url.PathEscape(vc.SourceConfig.Password)
 
-	vcURL := fmt.Sprintf("%s://%s:%s@%s:%d/sdk", vc.SourceConfig.HTTPScheme, escapedUsername, escapedPassword, vc.SourceConfig.Hostname, vc.SourceConfig.Port)
+	vcURL := fmt.Sprintf(
+		"%s://%s:%s@%s:%d/sdk",
+		vc.SourceConfig.HTTPScheme,
+		escapedUsername,
+		escapedPassword,
+		vc.SourceConfig.Hostname,
+		vc.SourceConfig.Port,
+	)
 
 	url, err := url.Parse(vcURL)
 	if err != nil {
@@ -129,12 +141,22 @@ func (vc *VmwareSource) Init() error {
 
 	// A container view is a subset of the vSphere inventory, focusing on the specified
 	// object types, making it easier to manage and retrieve data for these objects.
-	containerView, err := viewManager.CreateContainerView(ctx, vim25Client.ServiceContent.RootFolder, viewType, true)
+	containerView, err := viewManager.CreateContainerView(
+		ctx,
+		vim25Client.ServiceContent.RootFolder,
+		viewType,
+		true,
+	)
 	if err != nil {
 		return fmt.Errorf("failed creating containerView: %s", err)
 	}
 
-	vc.Logger.Debug(vc.Ctx, "Connection to vmware source ", vc.SourceConfig.Hostname, " established successfully")
+	vc.Logger.Debug(
+		vc.Ctx,
+		"Connection to vmware source ",
+		vc.SourceConfig.Hostname,
+		" established successfully",
+	)
 
 	// Create CustomFieldManager to map custom field ids to their names
 	// This is required to determine which custom field key is used for
@@ -172,7 +194,12 @@ func (vc *VmwareSource) Init() error {
 			return fmt.Errorf("vmware initialization failure: %v", err)
 		}
 		duration := time.Since(startTime)
-		vc.Logger.Infof(vc.Ctx, "Successfully initialized %s in %f seconds", utils.ExtractFunctionNameWithTrimPrefix(initFunc, "init"), duration.Seconds())
+		vc.Logger.Infof(
+			vc.Ctx,
+			"Successfully initialized %s in %f seconds",
+			utils.ExtractFunctionNameWithTrimPrefix(initFunc, "init"),
+			duration.Seconds(),
+		)
 	}
 
 	// Ensure the containerView is destroyed after we are done with it
@@ -183,10 +210,18 @@ func (vc *VmwareSource) Init() error {
 
 	err = sessionManager.Logout(ctx)
 	if err != nil {
-		return fmt.Errorf("error occurred when ending vmware connection to host %s: %s", vc.SourceConfig.Hostname, err)
+		return fmt.Errorf(
+			"error occurred when ending vmware connection to host %s: %s",
+			vc.SourceConfig.Hostname,
+			err,
+		)
 	}
 
-	vc.Logger.Debug(vc.Ctx, "Successfully closed connection to vmware host: ", vc.SourceConfig.Hostname)
+	vc.Logger.Debug(
+		vc.Ctx,
+		"Successfully closed connection to vmware host: ",
+		vc.SourceConfig.Hostname,
+	)
 
 	return nil
 }
@@ -208,14 +243,22 @@ func (vc *VmwareSource) Sync(nbi *inventory.NetboxInventory) error {
 			return err
 		}
 		duration := time.Since(startTime)
-		vc.Logger.Infof(vc.Ctx, "Successfully synced %s in %f seconds", utils.ExtractFunctionNameWithTrimPrefix(syncFunc, "sync"), duration.Seconds())
+		vc.Logger.Infof(
+			vc.Ctx,
+			"Successfully synced %s in %f seconds",
+			utils.ExtractFunctionNameWithTrimPrefix(syncFunc, "sync"),
+			duration.Seconds(),
+		)
 	}
 	return nil
 }
 
 // Currently we have to traverse the vsphere tree to get datacenter to cluster relation
 // For other objects relations are available in with containerView.
-func (vc *VmwareSource) CreateClusterDataCenterRelation(ctx context.Context, client *vim25.Client) error {
+func (vc *VmwareSource) CreateClusterDataCenterRelation(
+	ctx context.Context,
+	client *vim25.Client,
+) error {
 	finder := find.NewFinder(client, true)
 	datacenters, err := finder.DatacenterList(ctx, "*")
 	if err != nil {
@@ -226,7 +269,11 @@ func (vc *VmwareSource) CreateClusterDataCenterRelation(ctx context.Context, cli
 		finder.SetDatacenter(dc)
 		clusters, err := finder.ClusterComputeResourceList(ctx, "*")
 		if err != nil {
-			return fmt.Errorf("finder failed finding clusters for datacenter %s: %s", dc.InventoryPath, err)
+			return fmt.Errorf(
+				"finder failed finding clusters for datacenter %s: %s",
+				dc.InventoryPath,
+				err,
+			)
 		}
 		for _, cluster := range clusters {
 			vc.Cluster2Datacenter[cluster.Reference().Value] = dc.Reference().Value
@@ -256,7 +303,11 @@ func (vc *VmwareSource) CreateCustomFieldRelation(ctx context.Context, client *v
 
 // Creates a map of object ids to their tags. This uses the rest api since tags
 // are not available in the containerView (see https://github.com/vmware/govmomi/issues/1825).
-func (vc *VmwareSource) CreateObjectTagsRelation(ctx context.Context, vim25client *vim25.Client, userInfo *url.Userinfo) error {
+func (vc *VmwareSource) CreateObjectTagsRelation(
+	ctx context.Context,
+	vim25client *vim25.Client,
+	userInfo *url.Userinfo,
+) error {
 	restClient := rest.NewClient(vim25client)
 
 	_, err := restClient.Session(ctx)
@@ -292,7 +343,10 @@ func (vc *VmwareSource) CreateObjectTagsRelation(ctx context.Context, vim25clien
 				return fmt.Errorf("failed getting tag %+v info: %s", tag, err)
 			}
 			for _, elem := range objs[0].ObjectIDs {
-				objectNames2tags[elem.Reference().Value] = append(objectNames2tags[elem.Reference().Value], tagInfo)
+				objectNames2tags[elem.Reference().Value] = append(
+					objectNames2tags[elem.Reference().Value],
+					tagInfo,
+				)
 			}
 		}
 	}

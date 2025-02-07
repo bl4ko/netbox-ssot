@@ -25,7 +25,11 @@ func TestNetboxInventory_AddContainerDeviceRole(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.nbi.AddContainerDeviceRole(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.AddContainerDeviceRole() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.AddContainerDeviceRole() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -52,7 +56,11 @@ func TestNetboxInventory_AddFirewallDeviceRole(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.nbi.AddFirewallDeviceRole(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.AddFirewallDeviceRole() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.AddFirewallDeviceRole() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -79,7 +87,11 @@ func TestNetboxInventory_AddSwitchDeviceRole(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.nbi.AddSwitchDeviceRole(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.AddSwitchDeviceRole() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.AddSwitchDeviceRole() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -106,7 +118,11 @@ func TestNetboxInventory_AddServerDeviceRole(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.nbi.AddServerDeviceRole(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.AddServerDeviceRole() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.AddServerDeviceRole() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -133,7 +149,11 @@ func TestNetboxInventory_AddVMDeviceRole(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.nbi.AddVMDeviceRole(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.AddVMDeviceRole() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.AddVMDeviceRole() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -160,7 +180,11 @@ func TestNetboxInventory_AddVMTemplateDeviceRole(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.nbi.AddVMTemplateDeviceRole(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NetboxInventory.AddVMTemplateDeviceRole() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NetboxInventory.AddVMTemplateDeviceRole() error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {

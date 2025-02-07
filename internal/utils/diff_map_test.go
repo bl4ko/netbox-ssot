@@ -1036,7 +1036,12 @@ func Test_addSliceDiff(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := addSliceDiff(tt.args.newSlice, tt.args.existingSlice, tt.args.jsonTag, tt.args.hasPriority, tt.args.diffMap); (err != nil) != tt.wantErr {
+			if err := addSliceDiff(
+				tt.args.newSlice,
+				tt.args.existingSlice,
+				tt.args.jsonTag,
+				tt.args.hasPriority,
+				tt.args.diffMap); (err != nil) != tt.wantErr {
 				t.Errorf("addSliceDiff() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if tt.wantErr == false {
@@ -1139,7 +1144,12 @@ func Test_addStructDiff(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := addStructDiff(tt.args.newObj, tt.args.existingObj, tt.args.jsonTag, tt.args.hasPriority, tt.args.diffMap); (err != nil) != tt.wantErr {
+			if err := addStructDiff(
+				tt.args.newObj,
+				tt.args.existingObj,
+				tt.args.jsonTag,
+				tt.args.hasPriority,
+				tt.args.diffMap); (err != nil) != tt.wantErr {
 				t.Errorf("addStructDiff() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -1216,7 +1226,12 @@ func Test_addMapDiff(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := addMapDiff(tt.args.newMap, tt.args.existingMap, tt.args.jsonTag, tt.args.hasPriority, tt.args.diffMap); (err != nil) != tt.wantErr {
+			if err := addMapDiff(
+				tt.args.newMap,
+				tt.args.existingMap,
+				tt.args.jsonTag,
+				tt.args.hasPriority,
+				tt.args.diffMap); (err != nil) != tt.wantErr {
 				t.Errorf("addMapDiff() error = %v, wantErr %v", err, tt.wantErr)
 			}
 

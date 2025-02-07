@@ -230,7 +230,11 @@ func (ds *DnacSource) syncDevice(
 			return nil
 		}
 	} else {
-		ds.Logger.Errorf(ds.Ctx, "DeviceSite is not existing for device %s, this should not happen. This device will be skipped", device.ID)
+		ds.Logger.Errorf(
+			ds.Ctx,
+			"DeviceSite is not existing for device %s, this should not happen. This device will be skipped",
+			device.ID,
+		)
 		return nil
 	}
 

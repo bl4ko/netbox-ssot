@@ -23,8 +23,10 @@ type DnacSource struct {
 	Vlans                           map[int]dnac.ResponseDevicesGetDeviceInterfaceVLANsResponse // VlanID -> Vlan
 	WirelessLANInterfaceName2VlanID map[string]int                                              // InterfaceName -> VlanID
 	SSID2WirelessProfileDetails     map[string]dnac.ResponseItemWirelessGetWirelessProfileProfileDetailsSSIDDetails
-	SSID2WlanGroupName              map[string]string                                                // SSID -> WirelessLANGroup name
-	SSID2SecurityDetails            map[string]dnac.ResponseItemWirelessGetEnterpriseSSIDSSIDDetails // WirelessLANName -> SSIDDetails
+	// SSID2WlanGroupName SSID -> WirelessLANGroup name
+	SSID2WlanGroupName map[string]string
+	// SSID2SecurityDetails WirelessLANName -> SSIDDetails
+	SSID2SecurityDetails map[string]dnac.ResponseItemWirelessGetEnterpriseSSIDSSIDDetails
 
 	// Relations between dnac data. Initialized in init functions.
 	Site2Parent           map[string]string          // Site ID -> Parent Site ID
@@ -33,11 +35,14 @@ type DnacSource struct {
 	DeviceID2InterfaceIDs map[string][]string        // DeviceID -> []InterfaceID
 
 	// Netbox related data for easier access. Initialized in sync functions.
-	DeviceID2isMissingPrimaryIP sync.Map // Variable for storing devices without primary IP. See ds.syncMissingDevicePrimaryIPs
-	VID2nbVlan                  sync.Map // VlanID -> nbVlan
-	SiteID2nbSite               sync.Map // SiteID -> nbSite
-	DeviceID2nbDevice           sync.Map // DeviceID -> nbDevice
-	InterfaceID2nbInterface     sync.Map // InterfaceID -> nbInterface
+	// DeviceID2isMissingPrimaryIP stores devices without primary IP. See ds.syncMissingDevicePrimaryIPs
+	DeviceID2isMissingPrimaryIP sync.Map
+	// VID2nbVlan: VlanID -> nbVlan
+	VID2nbVlan sync.Map
+	// SiteID2nbSite: SiteID -> nbSite
+	SiteID2nbSite           sync.Map
+	DeviceID2nbDevice       sync.Map // DeviceID -> nbDevice
+	InterfaceID2nbInterface sync.Map // InterfaceID -> nbInterface
 }
 
 func (ds *DnacSource) Init() error {
