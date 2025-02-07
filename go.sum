@@ -10,6 +10,8 @@ github.com/bl4ko/go-devicetype-library v0.1.42 h1:oWRXPI8+VGbdlQM7bqEW1Z0ng0OrOW
 github.com/bl4ko/go-devicetype-library v0.1.42/go.mod h1:Pzm1BlRyR4uECezsRINDA6ZieFPumdFL+6yySpXM6t8=
 github.com/bl4ko/go-devicetype-library v0.1.43 h1:WUJDxXo01fxuk6EEtkLQB/giXNGxK9JO7REqf0ntv7o=
 github.com/bl4ko/go-devicetype-library v0.1.43/go.mod h1:Pzm1BlRyR4uECezsRINDA6ZieFPumdFL+6yySpXM6t8=
+github.com/bl4ko/go-devicetype-library v0.1.45 h1:UsxWYNHBrpNAcp8OA6PQzzCk2OqtWuarh6OEb0JHirQ=
+github.com/bl4ko/go-devicetype-library v0.1.45/go.mod h1:Pzm1BlRyR4uECezsRINDA6ZieFPumdFL+6yySpXM6t8=
 github.com/buger/goterm v1.0.4 h1:Z9YvGmOih81P0FbVtEYTFF6YsSgxSUKEhf/f9bTMXbY=
 github.com/buger/goterm v1.0.4/go.mod h1:HiFWV3xnkolgrBV3mY8m0X0Pumt4zg4QhbdOzQtB8tE=
 github.com/cisco-en-programmability/dnacenter-go-sdk/v6 v6.0.0 h1:UAkph9VReeOVkE3pX6G12IuJOWFg41Q7PL4er3zD3Sc=
