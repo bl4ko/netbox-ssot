@@ -9,7 +9,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
-	dnac "github.com/cisco-en-programmability/dnacenter-go-sdk/v6/sdk"
+	dnac "github.com/cisco-en-programmability/dnacenter-go-sdk/v7/sdk"
 )
 
 //nolint:revive

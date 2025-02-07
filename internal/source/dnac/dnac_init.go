@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	dnac "github.com/cisco-en-programmability/dnacenter-go-sdk/v6/sdk"
+	dnac "github.com/cisco-en-programmability/dnacenter-go-sdk/v7/sdk"
 )
 
 // Collects all sites from DNAC API and stores them in the

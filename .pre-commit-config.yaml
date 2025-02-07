@@ -21,7 +21,8 @@ repos:
       - id: golines
         name: golines
         description: A golang formatter that fixes long lines.
-        entry: golines -w
+        entry: golines -w ./internal
+        pass_filenames: true
         types: [go]
         language: golang
 
@@ -32,17 +33,17 @@ repos:
       - id: go-mod-tidy
 
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.23.1
+    rev: v8.23.3
     hooks:
       - id: gitleaks
 
   - repo: https://github.com/streetsidesoftware/cspell-cli
-    rev: v8.17.1
+    rev: v8.17.2
     hooks:
       - id: cspell
 
   - repo: https://github.com/google/osv-scanner/
-    rev: v1.9.2
+    rev: v2.0.0-beta1
     hooks:
       - id: osv-scanner
         args: ["-r", "."]
