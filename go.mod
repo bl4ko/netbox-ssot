@@ -4,12 +4,12 @@ go 1.23.6
 
 require (
 	github.com/PaloAltoNetworks/pango v0.10.2
-	github.com/bl4ko/go-devicetype-library v0.1.48
+	github.com/bl4ko/go-devicetype-library v0.1.49
 	github.com/cisco-en-programmability/dnacenter-go-sdk/v7 v7.0.0
 	github.com/luthermonson/go-proxmox v0.2.1
 	github.com/ovirt/go-ovirt v4.3.4+incompatible
 	github.com/scrapli/scrapligo v1.3.3
-	github.com/vmware/govmomi v0.48.0
+	github.com/vmware/govmomi v0.48.1
 	golang.org/x/text v0.22.0
 	gopkg.in/yaml.v3 v3.0.1
 )
