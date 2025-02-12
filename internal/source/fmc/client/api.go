@@ -200,6 +200,15 @@ func (fmcc *FMCClient) MakeRequest(
 		}
 		defer resp.Body.Close()
 
+		if resp.StatusCode == http.StatusTooManyRequests {
+			fmcc.Logger.Info(
+				fmcc.Ctx,
+				"Too many requests performed. FMC allows only 120 requests per miniute. Sleeping for a minute",
+			)
+			time.Sleep(1 * time.Minute)
+			continue
+		}
+
 		// Process the response if it's not a 401
 		if resp.StatusCode != http.StatusOK {
 			// Extract and include the response body in the error message

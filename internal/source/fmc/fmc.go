@@ -58,6 +58,8 @@ func (fmcs *FMCSource) Init() error {
 		return fmt.Errorf("create FMC client: %s", err)
 	}
 
+	fmcs.Name2NBInterface = make(map[string]*objects.Interface)
+
 	initFunctions := []func(*client.FMCClient) error{
 		fmcs.initObjects,
 	}
