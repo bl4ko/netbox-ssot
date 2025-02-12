@@ -26,8 +26,22 @@ type VlanInterface struct {
 	Name string `json:"name"`
 }
 
+// EtherChannelInterface represents a EtherChannel interface.
+type EtherChannelInterface struct {
+	ID   string `json:"id"`
+	Type string `json:"type"`
+	Name string `json:"name"`
+}
+
 // PhysicalInterface represents a physical interface.
 type PhysicalInterface struct {
+	ID   string `json:"id"`
+	Type string `json:"type"`
+	Name string `json:"name"`
+}
+
+// SubInterface represents a sub interface.
+type SubInterface struct {
 	ID   string `json:"id"`
 	Type string `json:"type"`
 	Name string `json:"name"`
@@ -111,6 +125,54 @@ type VLANInterfaceInfo struct {
 	Name        string `json:"name"`
 	ID          string `json:"id"`
 	Description string `json:"description"`
+	Hardware    *struct {
+		Speed  string `json:"speed"`
+		Duplex string `json:"duplex"`
+	} `json:"hardware"`
+	SecurityZone *struct {
+		ID   string `json:"id"`
+		Type string `json:"type"`
+	} `json:"securityZone"`
+	IPv4 *InterfaceIPv4 `json:"ipv4"`
+	IPv6 *struct {
+		EnableIPv6 bool `json:"enableIPV6"`
+	} `json:"ipv6"`
+}
+
+// EtherChannelInterfaceInfo represents information about a EtherChannel interface.
+type EtherChannelInterfaceInfo struct {
+	Type        string `json:"type"`
+	Mode        string `json:"mode"`
+	MTU         int    `json:"MTU"`
+	Enabled     bool   `json:"enabled"`
+	Name        string `json:"name"`
+	ID          string `json:"id"`
+	Description string `json:"description"`
+	Hardware    *struct {
+		Speed  string `json:"speed"`
+		Duplex string `json:"duplex"`
+	} `json:"hardware"`
+	SecurityZone *struct {
+		ID   string `json:"id"`
+		Type string `json:"type"`
+	} `json:"securityZone"`
+	IPv4 *InterfaceIPv4 `json:"ipv4"`
+	IPv6 *struct {
+		EnableIPv6 bool `json:"enableIPV6"`
+	} `json:"ipv6"`
+}
+
+type SubInterfaceInfo struct {
+	Type        string `json:"type"`
+	Mode        string `json:"mode"`
+	MTU         int    `json:"MTU"`
+	Enabled     bool   `json:"enabled"`
+	Name        string `json:"ifname"`
+	ParentName  string `json:"name"`
+	ID          string `json:"id"`
+	Description string `json:"description"`
+	VlanID      int    `json:"vlanId"`
+	SubIntfID   int    `json:"subIntfId"`
 	Hardware    *struct {
 		Speed  string `json:"speed"`
 		Duplex string `json:"duplex"`

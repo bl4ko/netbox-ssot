@@ -378,6 +378,95 @@ func (fmcc *FMCClient) GetDeviceVLANInterfaces(
 	return vlanIfaces, nil
 }
 
+func (fmcc *FMCClient) GetDeviceEtherChannelInterfaces(
+	domainUUID string,
+	deviceID string,
+) ([]EtherChannelInterface, error) {
+	offset := 0
+	limit := 25
+	etherChannelIfaces := []EtherChannelInterface{}
+	ctx := context.Background()
+
+	for {
+		vInterfacesURL := fmt.Sprintf(
+			"fmc_config/v1/domain/%s/devices/devicerecords/%s/vlaninterfaces?offset=%d&limit=%d",
+			domainUUID,
+			deviceID,
+			offset,
+			limit,
+		)
+		var marshaledResponse APIResponse[EtherChannelInterface]
+		err := fmcc.MakeRequest(ctx, http.MethodGet, vInterfacesURL, nil, &marshaledResponse)
+		if err != nil {
+			if strings.Contains(
+				err.Error(),
+				"VLAN Interface type is not supported on this device model",
+			) {
+				fmcc.Logger.Debugf(
+					fmcc.Ctx,
+					"VLAN Interface type is not supported on this device model",
+				)
+				return nil, nil
+			}
+			return nil, fmt.Errorf(
+				"make request for VLAN interfaces with (%s): %w",
+				vInterfacesURL,
+				err,
+			)
+		}
+
+		if len(marshaledResponse.Items) > 0 {
+			etherChannelIfaces = append(etherChannelIfaces, marshaledResponse.Items...)
+		}
+
+		if len(marshaledResponse.Items) < limit {
+			break
+		}
+		offset += limit
+	}
+
+	return etherChannelIfaces, nil
+}
+
+func (fmcc *FMCClient) GetDeviceSubInterfaces(
+	domainUUID string,
+	deviceID string,
+) ([]SubInterface, error) {
+	offset := 0
+	limit := 25
+	subIfaces := []SubInterface{}
+	ctx := context.Background()
+
+	for {
+		subInterfacesURL := fmt.Sprintf(
+			"fmc_config/v1/domain/%s/devices/devicerecords/%s/subinterfaces?offset=%d&limit=%d",
+			domainUUID,
+			deviceID,
+			offset,
+			limit,
+		)
+		var marshaledResponse APIResponse[SubInterface]
+		err := fmcc.MakeRequest(ctx, http.MethodGet, subInterfacesURL, nil, &marshaledResponse)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"make request for sub interfaces with (%s): %w",
+				subInterfacesURL,
+				err,
+			)
+		}
+
+		if len(marshaledResponse.Items) > 0 {
+			subIfaces = append(subIfaces, marshaledResponse.Items...)
+		}
+
+		if len(marshaledResponse.Items) < limit {
+			break
+		}
+		offset += limit
+	}
+	return subIfaces, nil
+}
+
 func (fmcc *FMCClient) GetPhysicalInterfaceInfo(
 	domainUUID string,
 	deviceID string,
@@ -424,6 +513,52 @@ func (fmcc *FMCClient) GetVLANInterfaceInfo(
 	}
 
 	return &vlanInterfaceInfo, nil
+}
+
+func (fmcc *FMCClient) GetEtherChannelInterfaceInfo(
+	domainUUID string,
+	deviceID string,
+	interfaceID string,
+) (*EtherChannelInterfaceInfo, error) {
+	var etherChannelInterfaceInfo EtherChannelInterfaceInfo
+	ctx := context.Background()
+
+	devicesURL := fmt.Sprintf(
+		"fmc_config/v1/domain/%s/devices/devicerecords/%s/etherchannelinterfaces/%s",
+		domainUUID,
+		deviceID,
+		interfaceID,
+	)
+	err := fmcc.MakeRequest(ctx, http.MethodGet, devicesURL, nil, &etherChannelInterfaceInfo)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"make request for EtherChannel interface info with (%s): %w",
+			devicesURL,
+			err,
+		)
+	}
+	return &etherChannelInterfaceInfo, nil
+}
+
+func (fmcc *FMCClient) GetSubInterfaceInfo(
+	domainUUID string,
+	deviceID string,
+	interfaceID string,
+) (*SubInterfaceInfo, error) {
+	var subInterfaceInfo SubInterfaceInfo
+	ctx := context.Background()
+
+	devicesURL := fmt.Sprintf(
+		"fmc_config/v1/domain/%s/devices/devicerecords/%s/subinterfaces/%s",
+		domainUUID,
+		deviceID,
+		interfaceID,
+	)
+	err := fmcc.MakeRequest(ctx, http.MethodGet, devicesURL, nil, &subInterfaceInfo)
+	if err != nil {
+		return nil, fmt.Errorf("make request for sub interface info with (%s): %w", devicesURL, err)
+	}
+	return &subInterfaceInfo, nil
 }
 
 func (fmcc *FMCClient) GetDeviceInfo(domainUUID string, deviceID string) (*DeviceInfo, error) {

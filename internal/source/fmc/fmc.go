@@ -11,20 +11,31 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
-// Source representing Cisco Firewall Management Center.
+// FMCSource represents Cisco Firewall Management Center.
 //
 //nolint:revive
 type FMCSource struct {
 	common.Config
 
 	// FMC data. Initialized in init functions.
-	Domains              map[string]client.Domain
-	Devices              map[string]*client.DeviceInfo
+	// Domains is a map of domain UUIDs to Domain objects.
+	Domains map[string]client.Domain
+	// Devices is a map of device IDs to DeviceInfo objects.
+	Devices map[string]*client.DeviceInfo
+	// DevicePhysicalIfaces is a map of device IDs to a slice of PhysicalInterfaceInfo objects.
 	DevicePhysicalIfaces map[string][]*client.PhysicalInterfaceInfo
-	DeviceVlanIfaces     map[string][]*client.VLANInterfaceInfo
+	// DeviceVlanIfaces is a map of device IDs to a slice of VLANInterfaceInfo objects.
+	DeviceVlanIfaces map[string][]*client.VLANInterfaceInfo
+	// DeviceEtherChannelIfaces is a map of device IDs to a slice of EtherChannelInterfaceInfo objects.
+	DeviceEtherChannelIfaces map[string][]*client.EtherChannelInterfaceInfo
+	// DeviceSubIfaces is a map of device IDs to a slice of SubInterfaceInfo objects.
+	DeviceSubIfaces map[string][]*client.SubInterfaceInfo
 
 	// Netbox devices representing firewalls.
 	NBDevices map[string]*objects.Device
+	// NBInterfaces represents all fmc interfaces that have been synced to netbox.
+	// It is a map of interface name to interface, so we can find parents of sub interfaces.
+	Name2NBInterface map[string]*objects.Interface
 }
 
 func (fmcs *FMCSource) Init() error {
