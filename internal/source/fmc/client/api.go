@@ -398,7 +398,7 @@ func (fmcc *FMCClient) GetDeviceEtherChannelInterfaces(
 
 	for {
 		vInterfacesURL := fmt.Sprintf(
-			"fmc_config/v1/domain/%s/devices/devicerecords/%s/vlaninterfaces?offset=%d&limit=%d",
+			"fmc_config/v1/domain/%s/devices/devicerecords/%s/etherchannelinterfaces?offset=%d&limit=%d",
 			domainUUID,
 			deviceID,
 			offset,
