@@ -11,7 +11,7 @@ repos:
       - id: check-case-conflict
 
   - repo: https://github.com/golangci/golangci-lint
-    rev: v1.63.4
+    rev: v1.64.5
     hooks:
       - id: golangci-lint
 
@@ -43,7 +43,7 @@ repos:
       - id: cspell
 
   - repo: https://github.com/google/osv-scanner/
-    rev: v2.0.0-beta1
+    rev: v2.0.0-beta2
     hooks:
       - id: osv-scanner
         args: ["-r", "."]

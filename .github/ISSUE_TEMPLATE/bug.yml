@@ -41,7 +41,16 @@ body:
   - type: input
     id: version
     attributes:
-      label: What is the version of netbox-ssot
+      label: Which version of netbox are you using
+      description: |
+        You can find version of your netbox instance in the right end of the footer of the web interface.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Which version of netbox-ssot are you running
       description: |
         Copy paste the version line at the top of your logs.
         It MUST be in the form `Running version latest built on 2020-03-13T01:30:06Z (commit d0f678c)`.
