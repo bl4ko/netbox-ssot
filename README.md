@@ -228,7 +228,7 @@ source:
 ### Via docker
 
 ```bash
-docker run -v /path/to/config.yaml:/app/config.yaml ghcr.io/bl4ko/netbox-ssot
+docker run -v /path/to/config.yaml:/app/config.yaml ghcr.io/src-doo/netbox-ssot
 ```
 
 ### Via k8s

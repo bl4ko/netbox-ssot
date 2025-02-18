@@ -1,6 +1,7 @@
 name: Deploy image to ghcr.io
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - v*
@@ -17,21 +18,15 @@ on:
 jobs:
   build_and_push:
     runs-on: ubuntu-latest
-    permissions: # Permissions for GITHUB_TOKEN
+    permissions:
       contents: read
       packages: write
     steps:
-      - name: Login to dockerhub
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3
-        with:
-          username: bl4ko
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: Login to ghcr.io
         uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3
         with:
           registry: ghcr.io
-          username: bl4ko
+          username: src-csm
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up QEMU
@@ -49,10 +44,8 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64,linux/386,linux/arm/v6,linux/arm/v7
           tags: |
-            bl4ko/netbox-ssot:latest
-            bl4ko/netbox-ssot:${{ github.ref_name }}
-            ghcr.io/bl4ko/netbox-ssot:latest
-            ghcr.io/bl4ko/netbox-ssot:${{ github.ref_name }}
+            ghcr.io/src-doo/netbox-ssot:latest
+            ghcr.io/src-doo/netbox-ssot:${{ github.ref_name }}
           push: true
           build-args: |
             VERSION=${{ github.ref_name }}

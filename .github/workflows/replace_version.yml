@@ -1,36 +1,31 @@
 name: Replace version in k8s manifests on main tag push
 on:
+  workflow_dispatch:
   push:
     tags:
       - "v*.*.*"
 jobs:
   replace_version:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
-          token: ${{ secrets.GH_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           ref: main
-
-      - name: Import GPG key
-        uses: crazy-max/ghaction-import-gpg@cb9bde2e2525e640591a934b1fd28eef1dcaf5e5 # v6
-        with:
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.GPG_PASSPHRASE }}
-          git_user_signingkey: true
-          git_commit_gpgsign: true
 
       - name: Replace image version in k8s manifests
         run: |
           for file in k8s/*.yaml; do
-             sed -i "s|ghcr.io/bl4ko/netbox-ssot:v.*.*.*|ghcr.io/bl4ko/netbox-ssot:${{ github.ref_name }}|g" "$file"
+             sed -i "s|ghcr.io/src-doo/netbox-ssot:v.*.*.*|ghcr.io/src-doo/netbox-ssot:${{ github.ref_name }}|g" "$file"
            done
 
       - name: Commit and push changes
         run: |
-          git config --global user.name "svccicd"
-          git config --global user.email "187764736+svccicd@users.noreply.github.com"
+          git config --global user.name "src-csm"
+          git config --global user.email "199741225+src-csm@users.noreply.github.com"
           git add .
           git commit -m "chore(k8s): Replace version in k8s manifests"
           git push -f
