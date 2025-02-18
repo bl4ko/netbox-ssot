@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	devices "github.com/bl4ko/go-devicetype-library/pkg"
 	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
@@ -13,26 +14,53 @@ import (
 
 // Syncs dnac sites to netbox inventory.
 func (is *IOSXESource) syncDevice(nbi *inventory.NetboxInventory) error {
+	var err error
 	deviceName := is.SystemInfo.Hostname
 	if deviceName == "" {
 		return fmt.Errorf("hostname for device is empty")
 	}
-	deviceModel := constants.DefaultModel
+
+	var deviceModel, serialNumber, description string
+	if len(is.HardwareInfo.Inventory) > 0 {
+		for _, inv := range is.HardwareInfo.Inventory {
+			if inv.Type == "hw-type-chassis" {
+				deviceModel = inv.PartNumber
+				serialNumber = inv.SerialNumber
+				description = inv.Description
+			}
+		}
+	}
+	if deviceModel == "" {
+		deviceModel = constants.DefaultModel
+	}
 	deviceManufacturer, err := nbi.AddManufacturer(is.Ctx, &objects.Manufacturer{
 		Name: "Cisco",
 		Slug: utils.Slugify("Cisco"),
 	})
-	if err != nil {
-		return fmt.Errorf("failed adding manufacturer: %s", err)
+	var deviceType *objects.DeviceType
+	if deviceData, ok := devices.DeviceTypesMap[deviceManufacturer.Name][deviceModel]; ok {
+		deviceType, err = nbi.AddDeviceType(is.Ctx, &objects.DeviceType{
+			Manufacturer: deviceManufacturer,
+			Model:        deviceModel,
+			Slug:         deviceData.Slug,
+		})
+		if err != nil {
+			return fmt.Errorf("add device type: %s", err)
+		}
+	} else {
+		if err != nil {
+			return fmt.Errorf("failed adding manufacturer: %s", err)
+		}
+		deviceType, err = nbi.AddDeviceType(is.Ctx, &objects.DeviceType{
+			Manufacturer: deviceManufacturer,
+			Model:        deviceModel,
+			Slug:         utils.GenerateDeviceTypeSlug(deviceManufacturer.Name, deviceModel),
+		})
+		if err != nil {
+			return fmt.Errorf("add device type: %s", err)
+		}
 	}
-	deviceType, err := nbi.AddDeviceType(is.Ctx, &objects.DeviceType{
-		Manufacturer: deviceManufacturer,
-		Model:        deviceModel,
-		Slug:         utils.Slugify(deviceManufacturer.Name + deviceModel),
-	})
-	if err != nil {
-		return fmt.Errorf("add device type: %s", err)
-	}
+
 	deviceTenant, err := common.MatchHostToTenant(
 		is.Ctx,
 		nbi,
@@ -85,15 +113,17 @@ func (is *IOSXESource) syncDevice(nbi *inventory.NetboxInventory) error {
 	}
 	NBDevice, err := nbi.AddDevice(is.Ctx, &objects.Device{
 		NetboxObject: objects.NetboxObject{
-			Tags: is.GetSourceTags(),
+			Tags:        is.GetSourceTags(),
+			Description: description,
 		},
-		Name:       deviceName,
-		Site:       deviceSite,
-		DeviceRole: deviceRole,
-		Status:     &objects.DeviceStatusActive,
-		DeviceType: deviceType,
-		Tenant:     deviceTenant,
-		Platform:   devicePlatform,
+		Name:         deviceName,
+		SerialNumber: serialNumber,
+		Site:         deviceSite,
+		DeviceRole:   deviceRole,
+		Status:       &objects.DeviceStatusActive,
+		DeviceType:   deviceType,
+		Tenant:       deviceTenant,
+		Platform:     devicePlatform,
 	})
 	if err != nil {
 		return fmt.Errorf("add device: %s", err)

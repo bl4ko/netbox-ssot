@@ -19,6 +19,18 @@ func (is *IOSXESource) initDeviceInfo(d *netconf.Driver) error {
 	return nil
 }
 
+func (is *IOSXESource) initDeviceHardwareInfo(d *netconf.Driver) error {
+	r, err := d.Get(hwFilter)
+	if err != nil {
+		return fmt.Errorf("error with hardware filter: %s", err)
+	}
+	err = xml.Unmarshal(r.RawResult, &is.HardwareInfo)
+	if err != nil {
+		return fmt.Errorf("error with unmarshaling hardware info: %s", err)
+	}
+	return nil
+}
+
 func (is *IOSXESource) initInterfaces(d *netconf.Driver) error {
 	var ifaceReply interfaceReply
 	r, err := d.Get(interfaceFilter)

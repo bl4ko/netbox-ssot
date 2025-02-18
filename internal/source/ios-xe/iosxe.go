@@ -1,7 +1,6 @@
 package iosxe
 
 import (
-	"encoding/xml"
 	"fmt"
 	"time"
 
@@ -18,97 +17,14 @@ type IOSXESource struct {
 	common.Config
 
 	// IOSXE fetched data. Initialized in init functions.
-	SystemInfo systemReply
-	Interfaces map[string]iface
-	ArpEntries []arpEntry
+	HardwareInfo hardwareReply
+	SystemInfo   systemReply
+	Interfaces   map[string]iface
+	ArpEntries   []arpEntry
 
 	// IOSXE synced data. Created in sync functions.
 	NBDevice     *objects.Device
 	NBInterfaces map[string]*objects.Interface // interfaceName -> netboxInterface
-}
-
-const systemFilter = `<system xmlns="http://openconfig.net/yang/system">
- <config>
- </config>
-  <state>
-	  <hostname/>
-		<domain-name/>
-  </state>
-</system>
-`
-
-type systemReply struct {
-	XMLName    xml.Name `xml:"urn:ietf:params:xml:ns:netconf:base:1.0 rpc-reply"`
-	MessageID  string   `xml:"message-id,attr"`
-	Hostname   string   `xml:"data>system>state>hostname"`
-	DomainName string   `xml:"data>system>state>domain-name"`
-}
-
-const interfaceFilter = `<interfaces xmlns="http://openconfig.net/yang/interfaces">
-    <interface>
-      <name/>
-      <state>
-        <name/>
-        <type/>
-        <enabled/>
-      </state>
-      <ethernet xmlns="http://openconfig.net/yang/interfaces/ethernet">
-        <state>
-          <mac-address/>
-          <auto-negotiate/>
-          <port-speed/>
-        </state>
-      </ethernet>
-    </interface>
-  </interfaces>`
-
-// InterfacesReply holds the entire response structure with the message ID and a slice of interfaces.
-type interfaceReply struct {
-	XMLName    xml.Name `xml:"urn:ietf:params:xml:ns:netconf:base:1.0 rpc-reply"`
-	MessageID  string   `xml:"message-id,attr"`
-	Interfaces []iface  `xml:"data>interfaces>interface"`
-}
-
-type iface struct {
-	Name     string         `xml:"name"`
-	State    interfaceState `xml:"state"`
-	Ethernet ethernetState  `xml:"ethernet>state"`
-}
-
-// InterfaceState captures the state of the interface, including its operational status.
-type interfaceState struct {
-	Name    string `xml:"name"`
-	Type    string `xml:"type,attr"`
-	Enabled bool   `xml:"enabled"`
-}
-
-// EthernetState provides details about the Ethernet settings.
-type ethernetState struct {
-	MACAddress    string `xml:"mac-address"`
-	AutoNegotiate bool   `xml:"auto-negotiate"`
-	PortSpeed     string `xml:"port-speed"`
-}
-
-const arpFilter = `<arp-data xmlns="http://cisco.com/ns/yang/Cisco-IOS-XE-arp-oper"/>`
-
-type arpReply struct {
-	XMLName   xml.Name `xml:"urn:ietf:params:xml:ns:netconf:base:1.0 rpc-reply"`
-	MessageID string   `xml:"message-id,attr"`
-	ArpVrf    []arpVrf `xml:"data>arp-data>arp-vrf"`
-}
-
-type arpVrf struct {
-	Vrf     string     `xml:"vrf"`
-	ArpOper []arpEntry `xml:"arp-oper"`
-}
-
-type arpEntry struct {
-	Address   string `xml:"address"`
-	Interface string `xml:"interface"`
-	Type      string `xml:"type"`
-	Mode      string `xml:"mode"`
-	HWType    string `xml:"hwtype"`
-	MAC       string `xml:"hardware"`
 }
 
 func (is *IOSXESource) Init() error {
@@ -131,6 +47,7 @@ func (is *IOSXESource) Init() error {
 	// Initialize items from vsphere API to local storage
 	initFunctions := []func(*netconf.Driver) error{
 		is.initDeviceInfo,
+		is.initDeviceHardwareInfo,
 		is.initInterfaces,
 		is.initArpData,
 	}
