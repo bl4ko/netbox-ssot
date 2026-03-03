@@ -899,8 +899,10 @@ func (o *OVirtSource) collectHostNicsData(
 		}
 
 		var nicTaggedVlans []*objects.Vlan
+		var nicMode *objects.InterfaceMode
 		if nicVlan != nil {
 			nicTaggedVlans = []*objects.Vlan{nicVlan}
+			nicMode = &objects.InterfaceModeTagged
 		}
 
 		var nicMAC string
@@ -925,6 +927,7 @@ func (o *OVirtSource) collectHostNicsData(
 			Status:      nicEnabled,
 			MTU:         int(nicMtu),
 			Type:        nicType,
+			Mode:        nicMode,
 			TaggedVlans: nicTaggedVlans,
 		}
 
