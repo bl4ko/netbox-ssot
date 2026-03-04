@@ -72,11 +72,14 @@ func (nbi *NetboxInventory) getIndexValuesForIPAddress(
 				ipIfaceParentName = ipIface.VM.Name
 			}
 		default:
-			return "", "", "", fmt.Errorf(
-				"unsupported assigned object type for ip address %+v: %s",
-				ipAddr,
-				ipIfaceType,
+			// Types not handled by netbox-ssot (ex: FHRP Groups, L2VPN, etc.)
+			nbi.Logger.Debugf(
+				nbi.Ctx,
+				"IP address %s has unsupported assigned object type %q, indexing as unassigned",
+				ipAddr.Address,
+				ipAddr.AssignedObjectType,
 			)
+			return "", "", "", nil
 		}
 	}
 	return ipIfaceType, ipIfaceName, ipIfaceParentName, nil
