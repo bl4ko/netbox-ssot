@@ -171,3 +171,12 @@ func (nbi *NetboxInventory) verifyMACAddressIndexExists(
 		)
 	}
 }
+
+// ipAddressIndexKey returns the index key for an IPAddress,
+// incorporating the VRF ID to avoid collisions across VRFs.
+func ipAddressIndexKey(ipAddress *objects.IPAddress) string {
+	if ipAddress.VRF != nil {
+		return fmt.Sprintf("vrf%d/%s", ipAddress.VRF.ID, ipAddress.Address)
+	}
+	return ipAddress.Address
+}

@@ -241,6 +241,7 @@ const (
 	ContentTypeIpamVlanGroup ContentType = "ipam.vlangroup"
 	ContentTypeIpamVlan      ContentType = "ipam.vlan"
 	ContentTypeIpamPrefix    ContentType = "ipam.prefix"
+	ContentTypeIpamVRF 		 ContentType = "ipam.vrf"
 
 	// Tenancy object types.
 	ContentTypeTenancyTenantGroup       ContentType = "tenancy.tenantgroup"
@@ -282,6 +283,7 @@ const (
 	VlanGroupsAPIPath  APIPath = "/api/ipam/vlan-groups/"
 	VlansAPIPath       APIPath = "/api/ipam/vlans/"
 	IPAddressesAPIPath APIPath = "/api/ipam/ip-addresses/"
+	VRFsAPIPath 	   APIPath = "/api/ipam/vrfs/"
 
 	// Virtualization paths.
 	ClusterTypesAPIPath    APIPath = "/api/virtualization/cluster-types/"

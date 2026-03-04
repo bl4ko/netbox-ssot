@@ -64,6 +64,7 @@ func NewOrphanManager(logger *logger.Logger) *OrphanManager {
 		19: constants.WirelessLANsAPIPath,
 		20: constants.WirelessLANGroupsAPIPath,
 		21: constants.MACAddressesAPIPath,
+		22: constants.VRFsAPIPath,
 	}
 	orphanCtx := context.WithValue(context.Background(), constants.CtxSourceKey, "orphanManager")
 

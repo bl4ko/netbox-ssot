@@ -1269,20 +1269,19 @@ func (nbi *NetboxInventory) AddIPAddress(
 	addSourceNameCustomField(ctx, &newIPAddress.NetboxObject)
 	newIPAddress.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
 
-	// Get index values with helper function.
 	objType, objName, ifaceName, err := nbi.getIndexValuesForIPAddress(newIPAddress)
 	if err != nil {
 		return nil, fmt.Errorf("get index values for ip address %+v: %s", newIPAddress, err)
 	}
-	// Ensure index is not nil.
 	nbi.verifyIPAddressIndexExists(objType, objName, ifaceName)
+
+	indexKey := ipAddressIndexKey(newIPAddress) // ← clé composite
 
 	nbi.ipAddressesLock.Lock()
 	defer nbi.ipAddressesLock.Unlock()
-	if _, ok := nbi.ipAddressesIndex[objType][objName][ifaceName][newIPAddress.Address]; ok {
-		oldIPAddress := nbi.ipAddressesIndex[objType][objName][ifaceName][newIPAddress.Address]
+	if _, ok := nbi.ipAddressesIndex[objType][objName][ifaceName][indexKey]; ok {
+		oldIPAddress := nbi.ipAddressesIndex[objType][objName][ifaceName][indexKey]
 		nbi.OrphanManager.RemoveItem(oldIPAddress)
-
 		diffMap, err := utils.JSONDiffMapExceptID(
 			newIPAddress,
 			oldIPAddress,
@@ -1307,7 +1306,7 @@ func (nbi *NetboxInventory) AddIPAddress(
 			if err != nil {
 				return nil, err
 			}
-			nbi.ipAddressesIndex[objType][objName][ifaceName][newIPAddress.Address] = patchedIPAddress
+			nbi.ipAddressesIndex[objType][objName][ifaceName][indexKey] = patchedIPAddress
 			return patchedIPAddress, nil
 		}
 		nbi.Logger.Debugf(
@@ -1321,10 +1320,10 @@ func (nbi *NetboxInventory) AddIPAddress(
 		if err != nil {
 			return nil, err
 		}
-		nbi.ipAddressesIndex[objType][objName][ifaceName][newIPAddress.Address] = newIPAddress
+		nbi.ipAddressesIndex[objType][objName][ifaceName][indexKey] = newIPAddress
 		return newIPAddress, nil
 	}
-	return nbi.ipAddressesIndex[objType][objName][ifaceName][newIPAddress.Address], nil
+	return nbi.ipAddressesIndex[objType][objName][ifaceName][indexKey], nil
 }
 
 // AddMACAddress adds a new MAC address to the Netbox inventory.
@@ -1413,16 +1412,27 @@ func (nbi *NetboxInventory) AddPrefix(
 ) (*objects.Prefix, error) {
 	newPrefix.NetboxObject.AddTag(nbi.SsotTag)
 	newPrefix.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
-	nbi.prefixesLock.Lock()
-	newPrefix.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
 	if newPrefix.NetboxObject.CustomFields == nil {
 		newPrefix.NetboxObject.CustomFields = make(map[string]interface{})
 	}
 	//nolint:forcetypeassert
 	newPrefix.NetboxObject.CustomFields[constants.CustomFieldSourceName] = ctx.Value(constants.CtxSourceKey).(string)
+
+	// Determine VRF ID for index key (0 = global table)
+	vrfID := 0
+	if newPrefix.VRF != nil {
+		vrfID = newPrefix.VRF.ID
+	}
+
+	nbi.prefixesLock.Lock()
 	defer nbi.prefixesLock.Unlock()
-	if _, ok := nbi.prefixesIndexByPrefix[newPrefix.Prefix]; ok {
-		oldPrefix := nbi.prefixesIndexByPrefix[newPrefix.Prefix]
+
+	if nbi.prefixesIndexByPrefix[newPrefix.Prefix] == nil {
+		nbi.prefixesIndexByPrefix[newPrefix.Prefix] = make(map[int]*objects.Prefix)
+	}
+
+	if _, ok := nbi.prefixesIndexByPrefix[newPrefix.Prefix][vrfID]; ok {
+		oldPrefix := nbi.prefixesIndexByPrefix[newPrefix.Prefix][vrfID]
 		nbi.OrphanManager.RemoveItem(oldPrefix)
 		diffMap, err := utils.JSONDiffMapExceptID(newPrefix, oldPrefix, false, nbi.SourcePriority)
 		if err != nil {
@@ -1443,20 +1453,20 @@ func (nbi *NetboxInventory) AddPrefix(
 			if err != nil {
 				return nil, err
 			}
-			nbi.prefixesIndexByPrefix[newPrefix.Prefix] = patchedPrefix
+			nbi.prefixesIndexByPrefix[newPrefix.Prefix][vrfID] = patchedPrefix
 		} else {
-			nbi.Logger.Debugf(ctx, "IP address %s already exists in Netbox and is up to date...", newPrefix.Prefix)
+			nbi.Logger.Debugf(ctx, "Prefix %s already exists in Netbox and is up to date...", newPrefix.Prefix)
 		}
 	} else {
-		nbi.Logger.Debugf(ctx, "IP address %s does not exist in Netbox. Creating it...", newPrefix.Prefix)
+		nbi.Logger.Debugf(ctx, "Prefix %s does not exist in Netbox. Creating it...", newPrefix.Prefix)
 		newPrefix, err := service.Create(ctx, nbi.NetboxAPI, newPrefix)
 		if err != nil {
 			return nil, err
 		}
-		nbi.prefixesIndexByPrefix[newPrefix.Prefix] = newPrefix
+		nbi.prefixesIndexByPrefix[newPrefix.Prefix][vrfID] = newPrefix
 		return newPrefix, nil
 	}
-	return nbi.prefixesIndexByPrefix[newPrefix.Prefix], nil
+	return nbi.prefixesIndexByPrefix[newPrefix.Prefix][vrfID], nil
 }
 
 // AddWirelessLAN adds a new wireless LAN to the Netbox inventory.

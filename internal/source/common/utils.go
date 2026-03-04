@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/src-doo/netbox-ssot/internal/constants"
 	"github.com/src-doo/netbox-ssot/internal/netbox/inventory"
@@ -432,4 +433,39 @@ func SetPrimaryMACForInterface(
 		}
 	}
 	return nil
+}
+
+// MatchIPToVRF matches an IP address to a VRF using ipVrfRelations regex map.
+// The IP can be in CIDR format ("10.0.0.1/24") or plain ("10.0.0.1").
+//
+// In case there is no match or ipVrfRelations is nil, it returns nil (global routing table).
+func MatchIPToVRF(
+	ctx context.Context,
+	nbi *inventory.NetboxInventory,
+	ipAddress string,
+	ipVrfRelations map[string]string,
+) (*objects.VRF, error) {
+	if ipVrfRelations == nil {
+		return nil, nil
+	}
+	// Strip mask if present: "10.0.0.1/24" -> "10.0.0.1"
+	ip := ipAddress
+	if idx := strings.Index(ipAddress, "/"); idx != -1 {
+		ip = ipAddress[:idx]
+	}
+	vrfName, err := utils.MatchStringToValue(ip, ipVrfRelations)
+	if err != nil {
+		return nil, fmt.Errorf("matching ip to vrf: %s", err)
+	}
+	if vrfName != "" {
+		vrf, ok := nbi.GetVRF(vrfName)
+		if !ok {
+			return nil, fmt.Errorf(
+				"VRF %q not found in NetBox: create it manually before syncing",
+				vrfName,
+			)
+		}
+		return vrf, nil
+	}
+	return nil, nil
 }

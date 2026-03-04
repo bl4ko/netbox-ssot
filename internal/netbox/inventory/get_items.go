@@ -264,3 +264,16 @@ func (nbi *NetboxInventory) GetVMByID(vmID int) *objects.VM {
 	defer nbi.vmsLock.Unlock()
 	return nbi.vmsIndexByID[vmID]
 }
+
+// GetVRF returns the VRF for the given vrfName.
+// It returns nil if the VRF is not found.
+// This function is thread-safe.
+func (nbi *NetboxInventory) GetVRF(vrfName string) (*objects.VRF, bool) {
+	nbi.vrfsLock.Lock()
+	defer nbi.vrfsLock.Unlock()
+	vrf, vrfExists := nbi.vrfsIndexByName[vrfName]
+	if !vrfExists {
+		return nil, false
+	}
+	return vrf, true
+}
