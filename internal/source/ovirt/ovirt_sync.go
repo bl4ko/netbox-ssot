@@ -1101,7 +1101,9 @@ func (o *OVirtSource) extractVMData(
 	if host, exists := vm.Host(); exists {
 		if oHost, ok := o.Hosts[host.MustId()]; ok {
 			if oHostName, ok := oHost.Name(); ok {
-				vmHostDevice, _ = nbi.GetDevice(oHostName, vmSite.ID)
+				if vmSite != nil {
+					vmHostDevice, _ = nbi.GetDevice(oHostName, vmSite.ID)
+				}
 			}
 		}
 	}
