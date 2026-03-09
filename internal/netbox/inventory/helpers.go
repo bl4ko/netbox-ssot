@@ -183,3 +183,27 @@ func ipAddressIndexKey(ipAddress *objects.IPAddress) string {
 	}
 	return ipAddress.Address
 }
+
+// findIPAddressAcrossVRFs searches for an IP address across all VRFs in the index.
+// Used when a source doesn't specify a VRF (VRF=nil) to find existing objects
+// that may have been manually assigned to a VRF in NetBox.
+// Returns the index key and the found IP address, or empty string and nil if not found.
+func findIPAddressAcrossVRFs(index map[string]*objects.IPAddress, address string) (string, *objects.IPAddress) {
+	for key, ip := range index {
+		if ip.Address == address {
+			return key, ip
+		}
+	}
+	return "", nil
+}
+
+// findPrefixAcrossVRFs searches for a prefix across all VRFs in the index.
+// Used when a source doesn't specify a VRF (VRF=nil) to find existing prefixes
+// that may have been manually assigned to a VRF in NetBox.
+// Returns the VRF ID and the found prefix, or 0 and nil if not found.
+func findPrefixAcrossVRFs(vrfMap map[int]*objects.Prefix) (int, *objects.Prefix) {
+	for vrfID, prefix := range vrfMap {
+		return vrfID, prefix
+	}
+	return 0, nil
+}
