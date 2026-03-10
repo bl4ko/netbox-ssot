@@ -941,6 +941,8 @@ func (o *OVirtSource) collectHostNicsData(
 					if err != nil {
 						return fmt.Errorf("mask to bits: %s", err)
 					}
+				} else if o.SourceConfig.DefaultIPv4MaskBits > 0 {
+					mask = o.SourceConfig.DefaultIPv4MaskBits
 				}
 				ipv4Address := fmt.Sprintf("%s/%d", nicAddress, mask)
 				nicID2IPv4[nicID] = ipv4Address
@@ -954,6 +956,8 @@ func (o *OVirtSource) collectHostNicsData(
 					if err != nil {
 						return fmt.Errorf("mask to bits: %s", err)
 					}
+				} else if o.SourceConfig.DefaultIPv6MaskBits > 0 {
+					mask = o.SourceConfig.DefaultIPv6MaskBits
 				}
 				ipv6Address := fmt.Sprintf("%s/%d", nicAddress, mask)
 				nicID2IPv6[nicID] = ipv6Address
@@ -1350,9 +1354,17 @@ func (o *OVirtSource) processVMInterfaceIPs(
 					} else {
 						switch ipVersion {
 						case "v4":
-							ipMask = "/32"
+							if o.SourceConfig.DefaultIPv4MaskBits > 0 {
+								ipMask = fmt.Sprintf("/%d", o.SourceConfig.DefaultIPv4MaskBits)
+							} else {
+								ipMask = "/32"
+							}
 						case "v6":
-							ipMask = "/128"
+							if o.SourceConfig.DefaultIPv6MaskBits > 0 {
+								ipMask = fmt.Sprintf("/%d", o.SourceConfig.DefaultIPv6MaskBits)
+							} else {
+								ipMask = "/128"
+							}
 						}
 					}
 
