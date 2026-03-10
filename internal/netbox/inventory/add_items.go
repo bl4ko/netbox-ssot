@@ -1275,10 +1275,22 @@ func (nbi *NetboxInventory) AddIPAddress(
 	}
 	nbi.verifyIPAddressIndexExists(objType, objName, ifaceName)
 
-	indexKey := ipAddressIndexKey(newIPAddress) // ← clé composite
+	indexKey := ipAddressIndexKey(newIPAddress)
 
 	nbi.ipAddressesLock.Lock()
 	defer nbi.ipAddressesLock.Unlock()
+
+	// When VRF is not specified by the source (nil), try to find the IP in any VRF.
+	// This preserves manually assigned VRFs in NetBox and avoids creating duplicates.
+	if _, ok := nbi.ipAddressesIndex[objType][objName][ifaceName][indexKey]; !ok && newIPAddress.VRF == nil {
+		if foundKey, foundIP := findIPAddressAcrossVRFs(
+			nbi.ipAddressesIndex[objType][objName][ifaceName], newIPAddress.Address,
+		); foundIP != nil {
+			indexKey = foundKey
+			newIPAddress.VRF = foundIP.VRF
+		}
+	}
+
 	if _, ok := nbi.ipAddressesIndex[objType][objName][ifaceName][indexKey]; ok {
 		oldIPAddress := nbi.ipAddressesIndex[objType][objName][ifaceName][indexKey]
 		nbi.OrphanManager.RemoveItem(oldIPAddress)
@@ -1429,6 +1441,17 @@ func (nbi *NetboxInventory) AddPrefix(
 
 	if nbi.prefixesIndexByPrefix[newPrefix.Prefix] == nil {
 		nbi.prefixesIndexByPrefix[newPrefix.Prefix] = make(map[int]*objects.Prefix)
+	}
+
+	// When VRF is not specified by the source (nil), try to find the prefix in any VRF.
+	// This preserves manually assigned VRFs in NetBox and avoids creating duplicates.
+	if _, ok := nbi.prefixesIndexByPrefix[newPrefix.Prefix][vrfID]; !ok && newPrefix.VRF == nil {
+		if foundVrfID, foundPrefix := findPrefixAcrossVRFs(
+			nbi.prefixesIndexByPrefix[newPrefix.Prefix],
+		); foundPrefix != nil {
+			vrfID = foundVrfID
+			newPrefix.VRF = foundPrefix.VRF
+		}
 	}
 
 	if _, ok := nbi.prefixesIndexByPrefix[newPrefix.Prefix][vrfID]; ok {
