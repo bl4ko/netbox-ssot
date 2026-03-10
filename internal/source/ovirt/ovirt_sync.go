@@ -530,6 +530,11 @@ func (o *OVirtSource) syncHostNics(
 				o.SourceConfig.PermittedSubnets,
 				o.SourceConfig.IgnoredSubnets,
 			) {
+				// VRF
+				ipVRF, err := common.MatchIPToVRF(o.Ctx, nbi, address, o.SourceConfig.IPVrfRelations)
+				if err != nil {
+					o.Logger.Warningf(o.Ctx, "match ip to vrf for %s: %s", address, err)
+				}
 				ipAddressStruct := &objects.IPAddress{
 					NetboxObject: objects.NetboxObject{
 						Tags: o.GetSourceTags(),
@@ -542,6 +547,7 @@ func (o *OVirtSource) syncHostNics(
 					DNSName:            utils.ReverseLookup(address),
 					AssignedObjectType: constants.ContentTypeDcimInterface,
 					AssignedObjectID:   nbNic.ID,
+					VRF:                ipVRF,
 				}
 				nbIPAddress, err := nbi.AddIPAddress(o.Ctx, ipAddressStruct)
 				if err != nil {
@@ -569,6 +575,7 @@ func (o *OVirtSource) syncHostNics(
 				} else if mask != constants.MaxIPv4MaskBits {
 					_, err = nbi.AddPrefix(o.Ctx, &objects.Prefix{
 						Prefix: prefix,
+						VRF:    ipVRF,
 					})
 					if err != nil {
 						o.Logger.Warningf(o.Ctx, "adding prefix: %s", err)
@@ -584,6 +591,11 @@ func (o *OVirtSource) syncHostNics(
 				o.SourceConfig.PermittedSubnets,
 				o.SourceConfig.IgnoredSubnets,
 			) {
+				// VRF
+				ipVRF, err := common.MatchIPToVRF(o.Ctx, nbi, address, o.SourceConfig.IPVrfRelations)
+				if err != nil {
+					o.Logger.Warningf(o.Ctx, "match ip to vrf for %s: %s", address, err)
+				}
 				ipAddressStruct := &objects.IPAddress{
 					NetboxObject: objects.NetboxObject{
 						Tags: o.GetSourceTags(),
@@ -596,6 +608,7 @@ func (o *OVirtSource) syncHostNics(
 					DNSName:            utils.ReverseLookup(address),
 					AssignedObjectType: constants.ContentTypeDcimInterface,
 					AssignedObjectID:   nbNic.ID,
+					VRF:                ipVRF,
 				}
 				nbIPAddress, err := nbi.AddIPAddress(o.Ctx, ipAddressStruct)
 				if err != nil {
@@ -609,6 +622,7 @@ func (o *OVirtSource) syncHostNics(
 				} else if mask != constants.MaxIPv4MaskBits {
 					prefixStruct := &objects.Prefix{
 						Prefix: prefix,
+						VRF:    ipVRF,
 					}
 					_, err = nbi.AddPrefix(o.Ctx, prefixStruct)
 					if err != nil {
@@ -1361,6 +1375,11 @@ func (o *OVirtSource) processVMInterfaceIPs(
 						o.SourceConfig.PermittedSubnets,
 						o.SourceConfig.IgnoredSubnets,
 					) {
+						// VRF
+						ipVRF, err := common.MatchIPToVRF(o.Ctx, nbi, ipAddress, o.SourceConfig.IPVrfRelations)
+						if err != nil {
+							o.Logger.Warningf(o.Ctx, "match ip to vrf for %s: %s", ipAddress, err)
+						}
 						ipAddressStruct := &objects.IPAddress{
 							NetboxObject: objects.NetboxObject{
 								Tags: o.GetSourceTags(),
@@ -1375,6 +1394,7 @@ func (o *OVirtSource) processVMInterfaceIPs(
 							DNSName:            hostname,
 							AssignedObjectType: constants.ContentTypeVirtualizationVMInterface,
 							AssignedObjectID:   vmInterface.ID,
+							VRF:                ipVRF,
 						}
 						newIPAddress, err := nbi.AddIPAddress(
 							o.Ctx,
@@ -1418,6 +1438,7 @@ func (o *OVirtSource) processVMInterfaceIPs(
 						} else if mask != constants.MaxIPv4MaskBits {
 							_, err = nbi.AddPrefix(o.Ctx, &objects.Prefix{
 								Prefix: prefix,
+								VRF:    ipVRF,
 							})
 							if err != nil {
 								o.Logger.Errorf(o.Ctx, "add prefix %+v: %s", prefix, err)
