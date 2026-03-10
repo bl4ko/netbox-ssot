@@ -1101,7 +1101,16 @@ func (o *OVirtSource) extractVMData(
 	if host, exists := vm.Host(); exists {
 		if oHost, ok := o.Hosts[host.MustId()]; ok {
 			if oHostName, ok := oHost.Name(); ok {
-				vmHostDevice, _ = nbi.GetDevice(oHostName, vmSite.ID)
+				// If vmSite is not set from cluster, derive it from the host
+				if vmSite == nil {
+					vmSite, err = common.MatchHostToSite(o.Ctx, nbi, oHostName, o.SourceConfig.HostSiteRelations)
+					if err != nil {
+						return nil, nil, fmt.Errorf("vm's host site: %s", err)
+					}
+				}
+				if vmSite != nil {
+					vmHostDevice, _ = nbi.GetDevice(oHostName, vmSite.ID)
+				}
 			}
 		}
 	}
