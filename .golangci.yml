@@ -1,31 +1,15 @@
-linters-settings:
-  lll:
-    line-length: 120
-  misspell:
-    locale: US
-  errcheck:
-    exclude-functions:
-      - (*github.com/src-doo/netbox-ssot/internal/logger.Logger).Debug
-      - (*github.com/src-doo/netbox-ssot/internal/logger.Logger).Debugf
-      - (*github.com/src-doo/netbox-ssot/internal/logger.Logger).Info
-      - (*github.com/src-doo/netbox-ssot/internal/logger.Logger).Infof
-      - (*github.com/src-doo/netbox-ssot/internal/logger.Logger).Warning
-      - (*github.com/src-doo/netbox-ssot/internal/logger.Logger).Warningf
-      - (*github.com/src-doo/netbox-ssot/internal/logger.Logger).Error
-      - (*github.com/src-doo/netbox-ssot/internal/logger.Logger).Errorf
-      - (*github.com/src-doo/netbox-ssot/internal/logger.Logger).Output
-
-issues:
-  max-issues-per-linter: 50
-  max-same-issues: 20
-  exclude:
-    - G402
-
+version: "2"
 linters:
   enable:
-    - revive
-    - gocyclo
-    - lll
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - copyloopvar
+    - decorder
+    - dogsled
+    - dupword
+    - durationcheck
     # - dupl # TODO: enable in future
     # - errorlint # TODO: enable in future
     # - gocognit # TODO: enable in future
@@ -38,38 +22,28 @@ linters:
     # - gochecknoglobals # TODO: enable in future
     # - goerr113 # TODO: enable in future
     # - ireturn # TODO: enable in future
-    # - containedctx
-    - gosec
-    - gocritic
-    - asasalint
-    - asciicheck
-    - bidichk
-    - bodyclose
-    - decorder
-    - dogsled
-    - dupword
-    - durationcheck
     - errchkjson
     - errname
     - forcetypeassert
-    - gci
     - gocheckcompilerdirectives
     - gochecknoinits
     - goconst
+    - gocritic
+    - gocyclo
     - godot
     - goheader
-    - goimports
-    - mnd
-    - copyloopvar
     - gomoddirectives
     - goprintffuncname
+    - gosec
     - gosmopolitan
     - grouper
     - importas
     - interfacebloat
+    - lll
     - makezero
     - mirror
     - misspell
+    - mnd
     - musttag
     - nakedret
     - nilerr
@@ -80,10 +54,10 @@ linters:
     - predeclared
     - promlinter
     - reassign
+    - revive
     - rowserrcheck
     - sqlclosecheck
     - tagalign
-    - tenv
     - thelper
     - tparallel
     - unconvert
@@ -92,3 +66,46 @@ linters:
     - wastedassign
     - whitespace
     - zerologlint
+  settings:
+    errcheck:
+      exclude-functions:
+        - (*github.com/src-doo/netbox-ssot/internal/logger.Logger).Debug
+        - (*github.com/src-doo/netbox-ssot/internal/logger.Logger).Debugf
+        - (*github.com/src-doo/netbox-ssot/internal/logger.Logger).Info
+        - (*github.com/src-doo/netbox-ssot/internal/logger.Logger).Infof
+        - (*github.com/src-doo/netbox-ssot/internal/logger.Logger).Warning
+        - (*github.com/src-doo/netbox-ssot/internal/logger.Logger).Warningf
+        - (*github.com/src-doo/netbox-ssot/internal/logger.Logger).Error
+        - (*github.com/src-doo/netbox-ssot/internal/logger.Logger).Errorf
+        - (*github.com/src-doo/netbox-ssot/internal/logger.Logger).Output
+    lll:
+      line-length: 120
+    misspell:
+      locale: US
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - path: (.+)\.go$
+        text: G402
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+issues:
+  max-issues-per-linter: 50
+  max-same-issues: 20
+formatters:
+  enable:
+    - gci
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
