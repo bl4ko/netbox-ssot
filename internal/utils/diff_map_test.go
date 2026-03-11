@@ -1329,12 +1329,12 @@ func Test_sliceToSet(t *testing.T) {
 
 func TestMergeTagSlices(t *testing.T) {
 	tests := []struct {
-		name          string
-		newTags       []*objects.Tag
-		existingTags  []*objects.Tag
-		wantResult    []IDObject
-		wantChanged   bool
-		wantErr       bool
+		name         string
+		newTags      []*objects.Tag
+		existingTags []*objects.Tag
+		wantResult   []IDObject
+		wantChanged  bool
+		wantErr      bool
 	}{
 		{
 			name: "Source-managed existing tags are replaced by new tags",
