@@ -156,7 +156,7 @@ type SourceConfig struct {
 
 // UnmarshalYAML is a custom unmarshal function for SourceConfig.
 // This is needed because we map relations to the map[string]string.
-func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error { //nolint:gocyclo
 	type realSourceConfig struct {
 		Name                            string               `yaml:"name"`
 		Type                            constants.SourceType `yaml:"type"`
