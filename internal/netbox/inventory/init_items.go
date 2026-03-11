@@ -1165,9 +1165,9 @@ func (nbi *NetboxInventory) initVRFs(ctx context.Context) error {
 		nbi.OrphanManager.AddItem(vrf)
 	}
 	nbi.Logger.Debug(
-	ctx,
-	"Successfully collected VRF from Netbox: ",
-	nbi.vrfsIndexByName,
+		ctx,
+		"Successfully collected VRF from Netbox: ",
+		nbi.vrfsIndexByName,
 	)
 	return nil
 }

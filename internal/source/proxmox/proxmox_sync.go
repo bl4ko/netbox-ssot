@@ -271,7 +271,6 @@ func (ps *ProxmoxSource) syncVMs(nbi *inventory.NetboxInventory) error {
 				if err != nil {
 					errChan <- err
 				}
-
 			}(vm, nbHost)
 		}
 	}
@@ -290,7 +289,7 @@ func (ps *ProxmoxSource) syncVMs(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
-func (ps *ProxmoxSource) syncVM(
+func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 	nbi *inventory.NetboxInventory,
 	vm *proxmox.VirtualMachine,
 	nbHost *objects.Device,
@@ -568,7 +567,7 @@ func (ps *ProxmoxSource) syncVM(
 
 	// Compute final VM disk size
 	if vmTotalDiskSizeMiB == 0 {
-		vmTotalDiskSizeMiB = int((vm.MaxDisk / constants.GiB) * 1000)
+		vmTotalDiskSizeMiB = int((vm.MaxDisk / constants.GiB) * 1000) //nolint:gosec,mnd // MaxDisk/GiB fits in int
 	}
 
 	ps.Logger.Debugf(

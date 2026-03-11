@@ -45,7 +45,7 @@ type IPAddress struct {
 	// Tenancy
 	Tenant *Tenant `json:"tenant,omitempty"`
 	// VRF
-    VRF *VRF `json:"vrf,omitempty"`
+	VRF *VRF `json:"vrf,omitempty"`
 	// AssignedObjectType is either a DeviceInterface or a VMInterface.
 	AssignedObjectType constants.ContentType `json:"assigned_object_type,omitempty"`
 	// ID of the assigned object (either an ID of DeviceInterface or an ID of VMInterface).
@@ -94,7 +94,6 @@ func (v *VRF) GetID() int                           { return v.ID }
 func (v *VRF) GetObjectType() constants.ContentType { return constants.ContentTypeIpamVRF }
 func (v *VRF) GetAPIPath() constants.APIPath        { return constants.VRFsAPIPath }
 func (v *VRF) GetNetboxObject() *NetboxObject       { return &v.NetboxObject }
-
 
 type VidRange [2]int
 
@@ -214,7 +213,7 @@ type Prefix struct {
 
 	// Tenant that this prefix belongs to.
 	Tenant *Tenant `json:"tenant,omitempty"`
-	
+
 	// VRF
 	VRF *VRF `json:"vrf,omitempty"`
 
@@ -240,4 +239,3 @@ func (p *Prefix) GetAPIPath() constants.APIPath {
 func (p *Prefix) GetNetboxObject() *NetboxObject {
 	return &p.NetboxObject
 }
-

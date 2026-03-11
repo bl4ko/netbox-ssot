@@ -305,11 +305,11 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		sc.VlanSiteRelations = utils.ConvertStringsToRegexPairs(rawMarshal.VlanSiteRelations)
 	}
 	if len(rawMarshal.IPVrfRelations) > 0 {
-    	err := utils.ValidateRegexRelations(rawMarshal.IPVrfRelations)
-    	if err != nil {
-        	return fmt.Errorf("%s.ipVrfRelations: %v", rawMarshal.Name, err)
-    }
-    sc.IPVrfRelations = utils.ConvertStringsToRegexPairs(rawMarshal.IPVrfRelations)
+		err := utils.ValidateRegexRelations(rawMarshal.IPVrfRelations)
+		if err != nil {
+			return fmt.Errorf("%s.ipVrfRelations: %v", rawMarshal.Name, err)
+		}
+		sc.IPVrfRelations = utils.ConvertStringsToRegexPairs(rawMarshal.IPVrfRelations)
 	}
 	if len(rawMarshal.VlanGroupSiteRelations) > 0 {
 		err := utils.ValidateRegexRelations((rawMarshal.VlanGroupSiteRelations))
