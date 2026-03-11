@@ -1,6 +1,6 @@
 module github.com/src-doo/netbox-ssot
 
-go 1.24.13
+go 1.25.8
 
 require (
 	github.com/PaloAltoNetworks/pango v0.10.2
