@@ -259,10 +259,6 @@ func (hcs *HetznerCloudSource) syncServers(nbi *inventory.NetboxInventory) error
 			// Hetzner attaches private networks starting at eth1 and going sequentially
 			ifaceName := fmt.Sprintf("eth%d", i+1)
 			
-			macAddr := &objects.MACAddress{
-				MAC: privateNet.MACAddress,
-			}
-			
 			privInterface := &objects.VMInterface{
 				NetboxObject: objects.NetboxObject{
 					Tags: hcs.GetSourceTags(),
@@ -271,12 +267,23 @@ func (hcs *HetznerCloudSource) syncServers(nbi *inventory.NetboxInventory) error
 				VM: netboxVM,
 				Name: ifaceName,
 				Enabled: true,
-				PrimaryMACAddress: macAddr,
 			}
 			
 			netboxPrivIface, err := nbi.AddVMInterface(hcs.Ctx, privInterface)
 			if err != nil {
 				return fmt.Errorf("syncing private interface %s for server %s: %s", ifaceName, server.Name, err)
+			}
+
+			// Add MAC address and set as primary
+			if privateNet.MACAddress != "" {
+				nbMAC, err := common.CreateMACAddressForObjectType(hcs.Ctx, nbi, privateNet.MACAddress, netboxPrivIface)
+				if err != nil {
+					return fmt.Errorf("creating mac address for interface %s: %s", ifaceName, err)
+				}
+				err = common.SetPrimaryMACForInterface(hcs.Ctx, nbi, netboxPrivIface, nbMAC)
+				if err != nil {
+					return fmt.Errorf("setting primary mac for interface %s: %s", ifaceName, err)
+				}
 			}
 
 			if privateNet.IP != nil {
