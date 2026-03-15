@@ -9,8 +9,9 @@ const (
 	Proxmox   SourceType = "proxmox"
 	PaloAlto  SourceType = "paloalto"
 	Fortigate SourceType = "fortigate"
-	FMC       SourceType = "fmc"
-	IOSXE     SourceType = "ios-xe"
+	FMC          SourceType = "fmc"
+	IOSXE        SourceType = "ios-xe"
+	HetznerCloud SourceType = "hetznercloud"
 )
 
 const WildcardIP = "0.0.0.0"
@@ -87,8 +88,9 @@ var SourceTagColorMap = map[SourceType]string{
 	Dnac:      ColorLightBlue,
 	PaloAlto:  ColorDarkOrange,
 	Fortigate: ColorDarkGreen,
-	FMC:       ColorLightBlue,
-	IOSXE:     "0d294f",
+	FMC:          ColorLightBlue,
+	IOSXE:        "0d294f",
+	HetznerCloud: "d50c2d",
 }
 
 // Each source Mapping for source type tag. E.g. tag "paloalto" -> color orange.
@@ -98,8 +100,9 @@ var SourceTypeTagColorMap = map[SourceType]string{
 	Dnac:      ColorBlue,
 	PaloAlto:  ColorOrange,
 	Fortigate: ColorDarkGreen,
-	FMC:       ColorBlue,
-	IOSXE:     "0d294f",
+	FMC:          ColorBlue,
+	IOSXE:        "0d294f",
+	HetznerCloud: ColorRed,
 }
 
 const (
@@ -161,6 +164,19 @@ const (
 	CustomFieldHostMemoryName        = "host_memory"
 	CustomFieldHostMemoryLabel       = "Host memory"
 	CustomFieldHostMemoryDescription = "Amount of memory on the host"
+
+	// Custom fields for Hetzner VirtualMachines/Servers
+	CustomFieldServerCPUTypeName    = "server_cpu_type"
+	CustomFieldServerCPUTypeLabel   = "CPU Type"
+	CustomFieldServerCPUTypeDesc    = "The type of CPU the server has"
+
+	CustomFieldServerCategoryName    = "server_category"
+	CustomFieldServerCategoryLabel   = "Category"
+	CustomFieldServerCategoryDesc    = "The category of the server"
+
+	CustomFieldServerDeprecatedName    = "server_deprecated"
+	CustomFieldServerDeprecatedLabel   = "Deprecated"
+	CustomFieldServerDeprecatedDesc    = "Whether the server type is deprecated"
 
 	// Custom field for dcim.device, so we can store uuid for it.
 	CustomFieldDeviceUUIDName        = "uuid"

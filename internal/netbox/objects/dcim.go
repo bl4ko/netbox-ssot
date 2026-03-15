@@ -159,13 +159,13 @@ func (r *Region) GetAPIPath() constants.APIPath {
 type Location struct {
 	NetboxObject
 	// Site is the site to which the location belongs. This field is required.
-	Site *Site
+	Site *Site `json:"site,omitempty"`
 	// Name is the name of the location. This field is required.
-	Name string
+	Name string `json:"name,omitempty"`
 	// URL-friendly unique shorthand. This field is required.
-	Slug string
+	Slug string `json:"slug,omitempty"`
 	// Status is the status of the location. This field is required.
-	Status *SiteStatus
+	Status *SiteStatus `json:"status,omitempty"`
 }
 
 func (l Location) String() string {

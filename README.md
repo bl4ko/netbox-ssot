@@ -24,6 +24,8 @@ Currently, the supported external data sources types are:
 - [`fmc`](https://www.cisco.com/site/us/en/products/security/firewalls/firewall-management-center/index.html)
 - [`ios-xe`](https://www.cisco.com/c/en/us/products/ios-nx-os-software/ios-xe/index.html)
   - All devices with ios-xe supporting netconf
+- [`hetznercloud`](https://www.hetzner.com/cloud/)
+
 
 ## Compatability Matrix
 
@@ -77,13 +79,13 @@ Example configuration can be found [here](#example-config).
 | Parameter                                | Description                                                                                                              | Source Type                | Type     | Possible values                          | Default    | Required |
 |------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|----------------------------| -------- | ---------------------------------------- |------------| -------- |
 | `source.name`                            | Name of the data source.                                                                                                 | all                        | str      | any                                      | ""         | Yes      |
-| `source.type`                            | Type of the data source.                                                                                                 | all                        | str      | [ovirt, vmware, dnac, proxmox, paloalto] | ""         | Yes      |
+| `source.type`                            | Type of the data source.                                                                                                 | all                        | str      | [ovirt, vmware, dnac, proxmox, paloalto, hetznercloud] | ""         | Yes      |
 | `source.httpScheme`                      | Http scheme for the source                                                                                               | all                        | str      | [ http,https]                            | https      | No       |
 | `source.hostname`                        | Hostname of the data source.                                                                                             | all                        | str      | any                                      | ""         | Yes      |
 | `source.port`                            | Port of the data source.                                                                                                 | all                        | int      | 0-65536                                  | 443        | No       |
 | `source.username`                        | Username of the data source account.                                                                                     | all                        | str      | any                                      | ""         | Yes      |
 | `source.password`                        | Password of the data source account.                                                                                     | all                        | str      | any                                      | ""         | Yes      |
-| `source.apiToken`                        | API token of the data source account.                                                                                    | [**fortigate**]            | str      | any                                      | ""         | Yes      |
+| `source.apiToken`                        | API token of the data source account.                                                                                    | [**fortigate**, **hetznercloud**]            | str      | any                                      | ""         | Yes      |
 | `source.validateCert`                    | Enforce TLS certificate validation.                                                                                      | all                        | bool     | [true, false]                            | false      | No       |
 | `source.tagColor`                        | TagColor for the source tag.                                                                                             | all                        | string   | any                                      | Predefined | No       |
 | `source.ignoredSubnets`                  | List of subnets, which will be ignored (e.g. IPs won't be synced).                                                       | all                        | []string | any                                      | []         | No       |
@@ -222,6 +224,11 @@ source:
       - .* = MyTenant
     collectArpData:
       true
+      
+  - name: hcloud-prod
+    type: hetznercloud
+    apiToken: "your_hcloud_api_token_here"
+
 
 ```
 
