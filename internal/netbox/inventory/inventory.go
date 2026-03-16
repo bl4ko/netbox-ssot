@@ -8,12 +8,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/src-doo/netbox-ssot/internal/constants"
-	"github.com/src-doo/netbox-ssot/internal/logger"
-	"github.com/src-doo/netbox-ssot/internal/netbox/objects"
-	"github.com/src-doo/netbox-ssot/internal/netbox/service"
-	"github.com/src-doo/netbox-ssot/internal/parser"
-	"github.com/src-doo/netbox-ssot/internal/utils"
+	"github.com/bl4ko/netbox-ssot/internal/constants"
+	"github.com/bl4ko/netbox-ssot/internal/logger"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/service"
+	"github.com/bl4ko/netbox-ssot/internal/parser"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
 // NetboxInventory is a singleton class to manage a inventory of NetBoxObject objects.

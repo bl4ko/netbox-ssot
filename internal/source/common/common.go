@@ -4,10 +4,10 @@ import (
 	"context"
 	"crypto/x509"
 
-	"github.com/src-doo/netbox-ssot/internal/logger"
-	"github.com/src-doo/netbox-ssot/internal/netbox/inventory"
-	"github.com/src-doo/netbox-ssot/internal/netbox/objects"
-	"github.com/src-doo/netbox-ssot/internal/parser"
+	"github.com/bl4ko/netbox-ssot/internal/logger"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/parser"
 )
 
 // Source is an interface for all sources (e.g. oVirt, VMware, etc.).

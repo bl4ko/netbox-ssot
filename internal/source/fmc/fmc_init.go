@@ -3,7 +3,7 @@ package fmc
 import (
 	"fmt"
 
-	"github.com/src-doo/netbox-ssot/internal/source/fmc/client"
+	"github.com/bl4ko/netbox-ssot/internal/source/fmc/client"
 )
 
 // Init initializes the FMC source.

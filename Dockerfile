@@ -30,13 +30,13 @@ ARG CREATED
 ARG COMMIT
 
 LABEL \
-  org.opencontainers.image.authors="src-doo" \
+  org.opencontainers.image.authors="bl4ko" \
   org.opencontainers.image.created=$CREATED \
   org.opencontainers.image.version=$VERSION \
   org.opencontainers.image.revision=$COMMIT \
-  org.opencontainers.image.url="https://github.com/src-doo/netbox-ssot" \
-  org.opencontainers.image.documentation="https://github.com/src-doo/netbox-ssot/blob/main/README.md" \
-  org.opencontainers.image.source="https://github.com/src-doo/netbox-ssot" \
+  org.opencontainers.image.url="https://github.com/bl4ko/netbox-ssot" \
+  org.opencontainers.image.documentation="https://github.com/bl4ko/netbox-ssot/blob/main/README.md" \
+  org.opencontainers.image.source="https://github.com/bl4ko/netbox-ssot" \
   org.opencontainers.image.title="Netbox-ssot" \
   org.opencontainers.image.description="Microservice for syncing Netbox with multiple external sources."
 
@@ -51,7 +51,7 @@ RUN addgroup -S -g 10001 netbox && \
 USER netbox:netbox
 
 # Also allow deprecated ssh algorithims for older devices
-# See https://github.com/SRC-doo/netbox-ssot/issues/498
+# See https://github.com/bl4ko/netbox-ssot/issues/498
 RUN mkdir -p /home/netbox/.ssh/ && \
 cat <<EOF > /home/netbox/.ssh/config
 Host *

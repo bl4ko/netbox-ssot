@@ -3,7 +3,7 @@ package inventory
 import (
 	"testing"
 
-	"github.com/src-doo/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 )
 
 func TestNetboxInventory_DeleteOrphans(t *testing.T) {

@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/src-doo/netbox-ssot/internal/constants"
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 )
 
 func TestTenant_String(t *testing.T) {

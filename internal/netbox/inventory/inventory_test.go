@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/src-doo/netbox-ssot/internal/logger"
-	"github.com/src-doo/netbox-ssot/internal/parser"
+	"github.com/bl4ko/netbox-ssot/internal/logger"
+	"github.com/bl4ko/netbox-ssot/internal/parser"
 )
 
 func TestNetboxInventory_String(t *testing.T) {

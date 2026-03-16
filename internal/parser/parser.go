@@ -6,8 +6,8 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/src-doo/netbox-ssot/internal/constants"
-	"github.com/src-doo/netbox-ssot/internal/utils"
+	"github.com/bl4ko/netbox-ssot/internal/constants"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 	"gopkg.in/yaml.v3"
 )
 

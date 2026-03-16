@@ -3,7 +3,7 @@ package objects
 import (
 	"fmt"
 
-	"github.com/src-doo/netbox-ssot/internal/constants"
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 )
 
 type IPAddressStatus struct {

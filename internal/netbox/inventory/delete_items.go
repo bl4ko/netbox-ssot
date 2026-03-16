@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/src-doo/netbox-ssot/internal/constants"
-	"github.com/src-doo/netbox-ssot/internal/netbox/objects"
-	"github.com/src-doo/netbox-ssot/internal/netbox/service"
-	"github.com/src-doo/netbox-ssot/internal/utils"
+	"github.com/bl4ko/netbox-ssot/internal/constants"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/service"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
 func (nbi *NetboxInventory) DeleteOrphans(hard bool) error {
@@ -59,7 +59,7 @@ func (nbi *NetboxInventory) hardDelete(orphanItem objects.OrphanItem) error {
 	// Perform hard deletion
 	err := nbi.NetboxAPI.DeleteObject(nbi.Ctx, orphanItem)
 	if err != nil {
-		return fmt.Errorf("Failed deleting %s object: %s", orphanItem, err)
+		return fmt.Errorf("failed deleting %s object: %s", orphanItem, err)
 	}
 	return nil
 }

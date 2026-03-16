@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/src-doo/netbox-ssot/internal/constants"
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/vmware/govmomi/view"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
