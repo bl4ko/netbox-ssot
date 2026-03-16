@@ -169,9 +169,15 @@ func (ps *ProxmoxSource) syncNodes(nbi *inventory.NetboxInventory) error {
 			}
 		}
 
+		// Add IgnoreDeviceTypeTag since Proxmox API doesn't expose hardware
+		// manufacturer/model info, so we use generic defaults. This tag tells
+		// AddDevice to preserve any manually-set device type in NetBox.
+		deviceTags := ps.GetSourceTags()
+		deviceTags = append(deviceTags, nbi.IgnoreDeviceTypeTag)
+
 		nbHost, err := nbi.AddDevice(ps.Ctx, &objects.Device{
 			NetboxObject: objects.NetboxObject{
-				Tags: ps.GetSourceTags(),
+				Tags: deviceTags,
 				CustomFields: map[string]interface{}{
 					constants.CustomFieldHostCPUCoresName: fmt.Sprintf("%d", node.CPUInfo.CPUs),
 					constants.CustomFieldHostMemoryName: fmt.Sprintf(
