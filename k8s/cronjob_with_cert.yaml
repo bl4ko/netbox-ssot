@@ -10,7 +10,7 @@ spec:
         spec:
           containers:
             - name: netbox-ssot
-              image: ghcr.io/src-doo/netbox-ssot:v1.15.7
+              image: ghcr.io/src-doo/netbox-ssot:v1.16.0
               imagePullPolicy: Always
               resources:
                 limits:
