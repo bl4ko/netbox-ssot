@@ -189,7 +189,7 @@ func (fs *FortigateSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 				return fmt.Errorf("set primary mac for interface: %s", err)
 			}
 		}
-		NBIPAddress, err := syncInterfaceIPs(fs, nbi, iface, NBIface)
+		NBIPAddress, primaryVRF, err := syncInterfaceIPs(fs, nbi, iface, NBIface)
 		if err != nil {
 			return fmt.Errorf("sync interface ips: %s", err)
 		}
@@ -260,6 +260,7 @@ func (fs *FortigateSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 						Vlan:      NBVlan,
 						ScopeID:   scopeID,
 						ScopeType: scopeType,
+						VRF:       primaryVRF,
 					})
 					if err != nil {
 						return fmt.Errorf("add prefix: %s", err)
@@ -278,8 +279,9 @@ func syncInterfaceIPs(
 	nbi *inventory.NetboxInventory,
 	iface InterfaceResponse,
 	nbIface *objects.Interface,
-) (*objects.IPAddress, error) {
+) (*objects.IPAddress, *objects.VRF, error) {
 	var NBIPAddress *objects.IPAddress
+	var primaryVRF *objects.VRF
 	ipAndMask := strings.Split(iface.IP, " ")
 	if len(ipAndMask) == 2 && ipAndMask[0] != constants.WildcardIP {
 		if utils.IsPermittedIPAddress(
@@ -289,8 +291,14 @@ func syncInterfaceIPs(
 		) {
 			maskBits, err := utils.MaskToBits(ipAndMask[1])
 			if err != nil {
-				return nil, fmt.Errorf("mask to bits: %s", err)
+				return nil, nil, fmt.Errorf("mask to bits: %s", err)
 			}
+			// VRF
+			ipVRF, err := common.MatchIPToVRF(fs.Ctx, nbi, ipAndMask[0], fs.SourceConfig.IPVrfRelations)
+			if err != nil {
+				fs.Logger.Warningf(fs.Ctx, "match ip to vrf for %s: %s", ipAndMask[0], err)
+			}
+			primaryVRF = ipVRF
 			NBIPAddress, err = nbi.AddIPAddress(fs.Ctx, &objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
 					Tags: fs.GetSourceTags(),
@@ -301,9 +309,10 @@ func syncInterfaceIPs(
 				Address:            fmt.Sprintf("%s/%d", ipAndMask[0], maskBits),
 				AssignedObjectType: constants.ContentTypeDcimInterface,
 				AssignedObjectID:   nbIface.ID,
+				VRF:                ipVRF,
 			})
 			if err != nil {
-				return nil, fmt.Errorf("add ip address: %s", err)
+				return nil, nil, fmt.Errorf("add ip address: %s", err)
 			}
 		}
 	}
@@ -318,7 +327,12 @@ func syncInterfaceIPs(
 				) {
 					maskBits, err := utils.MaskToBits(ipAndMask[1])
 					if err != nil {
-						return nil, fmt.Errorf("mask to bits: %s", err)
+						return nil, nil, fmt.Errorf("mask to bits: %s", err)
+					}
+					// VRF
+					ipVRF, err := common.MatchIPToVRF(fs.Ctx, nbi, ipAndMask[0], fs.SourceConfig.IPVrfRelations)
+					if err != nil {
+						fs.Logger.Warningf(fs.Ctx, "match ip to vrf for %s: %s", ipAndMask[0], err)
 					}
 					_, err = nbi.AddIPAddress(fs.Ctx, &objects.IPAddress{
 						NetboxObject: objects.NetboxObject{
@@ -330,6 +344,7 @@ func syncInterfaceIPs(
 						Address:            fmt.Sprintf("%s/%d", ipAndMask[0], maskBits),
 						AssignedObjectType: constants.ContentTypeDcimInterface,
 						AssignedObjectID:   nbIface.ID,
+						VRF:                ipVRF,
 					})
 					if err != nil {
 						fs.Logger.Warningf(fs.Ctx, "add secondary ip address: %s", err)
@@ -350,7 +365,12 @@ func syncInterfaceIPs(
 				) {
 					maskBits, err := utils.MaskToBits(ipAndMask[1])
 					if err != nil {
-						return nil, fmt.Errorf("mask to bits: %s", err)
+						return nil, nil, fmt.Errorf("mask to bits: %s", err)
+					}
+					// VRF
+					ipVRF, err := common.MatchIPToVRF(fs.Ctx, nbi, ipAndMask[0], fs.SourceConfig.IPVrfRelations)
+					if err != nil {
+						fs.Logger.Warningf(fs.Ctx, "match ip to vrf for %s: %s", ipAndMask[0], err)
 					}
 					_, err = nbi.AddIPAddress(fs.Ctx, &objects.IPAddress{
 						NetboxObject: objects.NetboxObject{
@@ -362,6 +382,7 @@ func syncInterfaceIPs(
 						Address:            fmt.Sprintf("%s/%d", ipAndMask[0], maskBits),
 						AssignedObjectType: constants.ContentTypeDcimInterface,
 						AssignedObjectID:   nbIface.ID,
+						VRF:                ipVRF,
 						Role:               &objects.IPAddressRoleVRRP,
 					})
 					if err != nil {
@@ -371,5 +392,5 @@ func syncInterfaceIPs(
 			}
 		}
 	}
-	return NBIPAddress, nil
+	return NBIPAddress, primaryVRF, nil
 }
