@@ -6,12 +6,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/luthermonson/go-proxmox"
 	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
+	"github.com/luthermonson/go-proxmox"
 )
 
 func (ps *ProxmoxSource) syncCluster(nbi *inventory.NetboxInventory) error {
@@ -294,10 +294,7 @@ func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 	vm *proxmox.VirtualMachine,
 	nbHost *objects.Device,
 ) error {
-	isTemplate := false
-	if vm.Template {
-		isTemplate = true
-	}
+	isTemplate := bool(vm.Template)
 
 	if ps.SourceConfig.IgnoreVMTemplates && isTemplate {
 		return nil

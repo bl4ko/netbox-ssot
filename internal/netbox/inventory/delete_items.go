@@ -59,7 +59,7 @@ func (nbi *NetboxInventory) hardDelete(orphanItem objects.OrphanItem) error {
 	// Perform hard deletion
 	err := nbi.NetboxAPI.DeleteObject(nbi.Ctx, orphanItem)
 	if err != nil {
-		return fmt.Errorf("Failed deleting %s object: %s", orphanItem, err)
+		return fmt.Errorf("failed deleting %s object: %s", orphanItem, err)
 	}
 	return nil
 }

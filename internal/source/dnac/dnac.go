@@ -6,10 +6,10 @@ import (
 	"sync"
 	"time"
 
-	dnac "github.com/cisco-en-programmability/dnacenter-go-sdk/v7/sdk"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
+	dnac "github.com/cisco-en-programmability/dnacenter-go-sdk/v7/sdk"
 )
 
 //nolint:revive
@@ -48,9 +48,9 @@ type DnacSource struct {
 func (ds *DnacSource) Init() error {
 	dnacURL := fmt.Sprintf(
 		"%s://%s:%d",
-		ds.Config.SourceConfig.HTTPScheme,
-		ds.Config.SourceConfig.Hostname,
-		ds.Config.SourceConfig.Port,
+		ds.SourceConfig.HTTPScheme,
+		ds.SourceConfig.Hostname,
+		ds.SourceConfig.Port,
 	)
 	Client, err := dnac.NewClientWithOptions(
 		dnacURL,

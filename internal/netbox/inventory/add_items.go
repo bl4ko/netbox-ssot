@@ -51,7 +51,7 @@ func (nbi *NetboxInventory) AddTenant(
 	ctx context.Context,
 	newTenant *objects.Tenant,
 ) (*objects.Tenant, error) {
-	newTenant.NetboxObject.AddTag(nbi.SsotTag)
+	newTenant.AddTag(nbi.SsotTag)
 	nbi.tenantsLock.Lock()
 	defer nbi.tenantsLock.Unlock()
 	if _, ok := nbi.tenantsIndexByName[newTenant.Name]; ok {
@@ -95,7 +95,7 @@ func (nbi *NetboxInventory) AddSite(
 	ctx context.Context,
 	newSite *objects.Site,
 ) (*objects.Site, error) {
-	newSite.NetboxObject.AddTag(nbi.SsotTag)
+	newSite.AddTag(nbi.SsotTag)
 	nbi.sitesLock.Lock()
 	defer nbi.sitesLock.Unlock()
 	if _, ok := nbi.sitesIndexByName[newSite.Name]; ok {
@@ -134,7 +134,7 @@ func (nbi *NetboxInventory) AddSiteGroup(
 	ctx context.Context,
 	newSiteGroup *objects.SiteGroup,
 ) (*objects.SiteGroup, error) {
-	newSiteGroup.NetboxObject.AddTag(nbi.SsotTag)
+	newSiteGroup.AddTag(nbi.SsotTag)
 	nbi.siteGroupsLock.Lock()
 	defer nbi.sitesLock.Unlock()
 	if _, ok := nbi.siteGroupsIndexByName[newSiteGroup.Name]; ok {
@@ -183,7 +183,7 @@ func (nbi *NetboxInventory) AddContactRole(
 	ctx context.Context,
 	newContactRole *objects.ContactRole,
 ) (*objects.ContactRole, error) {
-	newContactRole.NetboxObject.AddTag(nbi.SsotTag)
+	newContactRole.AddTag(nbi.SsotTag)
 	addSourceNameCustomField(ctx, &newContactRole.NetboxObject)
 	nbi.contactRolesLock.Lock()
 	defer nbi.contactRolesLock.Unlock()
@@ -233,7 +233,7 @@ func (nbi *NetboxInventory) AddContactGroup(
 	ctx context.Context,
 	newContactGroup *objects.ContactGroup,
 ) (*objects.ContactGroup, error) {
-	newContactGroup.NetboxObject.AddTag(nbi.SsotTag)
+	newContactGroup.AddTag(nbi.SsotTag)
 	nbi.contactGroupsLock.Lock()
 	defer nbi.contactGroupsLock.Unlock()
 	if _, ok := nbi.contactGroupsIndexByName[newContactGroup.Name]; ok {
@@ -282,7 +282,7 @@ func (nbi *NetboxInventory) AddContact(
 	ctx context.Context,
 	newContact *objects.Contact,
 ) (*objects.Contact, error) {
-	newContact.NetboxObject.AddTag(nbi.SsotTag)
+	newContact.AddTag(nbi.SsotTag)
 	newContact.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
 	nbi.contactsLock.Lock()
 	defer nbi.contactsLock.Unlock()
@@ -329,7 +329,7 @@ func (nbi *NetboxInventory) AddContactAssignment(
 	ctx context.Context,
 	newCA *objects.ContactAssignment,
 ) (*objects.ContactAssignment, error) {
-	newCA.NetboxObject.AddTag(nbi.SsotTag)
+	newCA.AddTag(nbi.SsotTag)
 	newCA.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
 	nbi.contactAssignmentsLock.Lock()
 	defer nbi.contactAssignmentsLock.Unlock()
@@ -442,7 +442,7 @@ func (nbi *NetboxInventory) AddClusterGroup(
 	ctx context.Context,
 	newCg *objects.ClusterGroup,
 ) (*objects.ClusterGroup, error) {
-	newCg.NetboxObject.AddTag(nbi.SsotTag)
+	newCg.AddTag(nbi.SsotTag)
 	addSourceNameCustomField(ctx, &newCg.NetboxObject)
 	newCg.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
 	nbi.clusterGroupsLock.Lock()
@@ -495,7 +495,7 @@ func (nbi *NetboxInventory) AddClusterType(
 	ctx context.Context,
 	newClusterType *objects.ClusterType,
 ) (*objects.ClusterType, error) {
-	newClusterType.NetboxObject.AddTag(nbi.SsotTag)
+	newClusterType.AddTag(nbi.SsotTag)
 	newClusterType.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
 	nbi.clusterTypesLock.Lock()
 	defer nbi.clusterTypesLock.Unlock()
@@ -560,7 +560,7 @@ func (nbi *NetboxInventory) AddCluster(
 	ctx context.Context,
 	newCluster *objects.Cluster,
 ) (*objects.Cluster, error) {
-	newCluster.NetboxObject.AddTag(nbi.SsotTag)
+	newCluster.AddTag(nbi.SsotTag)
 	addSourceNameCustomField(ctx, &newCluster.NetboxObject)
 	newCluster.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
 	nbi.clustersLock.Lock()
@@ -612,7 +612,7 @@ func (nbi *NetboxInventory) AddDeviceRole(
 	ctx context.Context,
 	newDeviceRole *objects.DeviceRole,
 ) (*objects.DeviceRole, error) {
-	newDeviceRole.NetboxObject.AddTag(nbi.SsotTag)
+	newDeviceRole.AddTag(nbi.SsotTag)
 	newDeviceRole.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
 	nbi.deviceRolesLock.Lock()
 	defer nbi.deviceRolesLock.Unlock()
@@ -669,7 +669,7 @@ func (nbi *NetboxInventory) AddManufacturer(
 	ctx context.Context,
 	newManufacturer *objects.Manufacturer,
 ) (*objects.Manufacturer, error) {
-	newManufacturer.NetboxObject.AddTag(nbi.SsotTag)
+	newManufacturer.AddTag(nbi.SsotTag)
 	newManufacturer.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
 	nbi.manufacturersLock.Lock()
 	defer nbi.manufacturersLock.Unlock()
@@ -725,7 +725,7 @@ func (nbi *NetboxInventory) AddDeviceType(
 	ctx context.Context,
 	newDeviceType *objects.DeviceType,
 ) (*objects.DeviceType, error) {
-	newDeviceType.NetboxObject.AddTag(nbi.SsotTag)
+	newDeviceType.AddTag(nbi.SsotTag)
 	newDeviceType.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
 	nbi.deviceTypesLock.Lock()
 	defer nbi.deviceTypesLock.Unlock()
@@ -780,7 +780,7 @@ func (nbi *NetboxInventory) AddPlatform(
 	ctx context.Context,
 	newPlatform *objects.Platform,
 ) (*objects.Platform, error) {
-	newPlatform.NetboxObject.AddTag(nbi.SsotTag)
+	newPlatform.AddTag(nbi.SsotTag)
 	newPlatform.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
 	nbi.platformsLock.Lock()
 	defer nbi.platformsLock.Unlock()
@@ -836,7 +836,7 @@ func (nbi *NetboxInventory) AddDevice(
 	ctx context.Context,
 	newDevice *objects.Device,
 ) (*objects.Device, error) {
-	newDevice.NetboxObject.AddTag(nbi.SsotTag)
+	newDevice.AddTag(nbi.SsotTag)
 	addSourceNameCustomField(ctx, &newDevice.NetboxObject)
 	nbi.applyDeviceFieldLengthLimitations(newDevice)
 	newDevice.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
@@ -852,10 +852,10 @@ func (nbi *NetboxInventory) AddDevice(
 		// Allow manual override device type
 		if newDevice.DeviceType != nil && oldDevice.DeviceType != nil &&
 			newDevice.DeviceType.ID != oldDevice.DeviceType.ID &&
-			oldDevice.NetboxObject.HasTag(nbi.IgnoreDeviceTypeTag) {
+			oldDevice.HasTag(nbi.IgnoreDeviceTypeTag) {
 			// Preserve manually set device type from NetBox and keep ignore tag
 			newDevice.DeviceType = oldDevice.DeviceType
-			newDevice.NetboxObject.AddTag(nbi.IgnoreDeviceTypeTag)
+			newDevice.AddTag(nbi.IgnoreDeviceTypeTag)
 		}
 
 		diffMap, err := utils.JSONDiffMapExceptID(newDevice, oldDevice, false, nbi.SourcePriority)
@@ -906,7 +906,7 @@ func (nbi *NetboxInventory) AddVirtualDeviceContext(
 	ctx context.Context,
 	newVDC *objects.VirtualDeviceContext,
 ) (*objects.VirtualDeviceContext, error) {
-	newVDC.NetboxObject.AddTag(nbi.SsotTag)
+	newVDC.AddTag(nbi.SsotTag)
 	addSourceNameCustomField(ctx, &newVDC.NetboxObject)
 	newVDC.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
 	nbi.virtualDeviceContextsLock.Lock()
@@ -966,7 +966,7 @@ func (nbi *NetboxInventory) AddVlanGroup(
 	ctx context.Context,
 	newVlanGroup *objects.VlanGroup,
 ) (*objects.VlanGroup, error) {
-	newVlanGroup.NetboxObject.AddTag(nbi.SsotTag)
+	newVlanGroup.AddTag(nbi.SsotTag)
 	newVlanGroup.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
 	nbi.vlanGroupsLock.Lock()
 	defer nbi.vlanGroupsLock.Unlock()
@@ -1021,7 +1021,7 @@ func (nbi *NetboxInventory) AddVlan(
 	ctx context.Context,
 	newVlan *objects.Vlan,
 ) (*objects.Vlan, error) {
-	newVlan.NetboxObject.AddTag(nbi.SsotTag)
+	newVlan.AddTag(nbi.SsotTag)
 	addSourceNameCustomField(ctx, &newVlan.NetboxObject)
 	newVlan.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
 	nbi.vlansLock.Lock()
@@ -1071,7 +1071,7 @@ func (nbi *NetboxInventory) AddInterface(
 	ctx context.Context,
 	newInterface *objects.Interface,
 ) (*objects.Interface, error) {
-	newInterface.NetboxObject.AddTag(nbi.SsotTag)
+	newInterface.AddTag(nbi.SsotTag)
 	addSourceNameCustomField(ctx, &newInterface.NetboxObject)
 	newInterface.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
 	if len(newInterface.Name) > constants.MaxInterfaceNameLength {
@@ -1142,7 +1142,7 @@ func (nbi *NetboxInventory) AddInterface(
 // If the virtual machine already exists in Netbox, it checks if it is up to date and patches it if necessary.
 // If the virtual machine does not exist, it creates a new one.
 func (nbi *NetboxInventory) AddVM(ctx context.Context, newVM *objects.VM) (*objects.VM, error) {
-	newVM.NetboxObject.AddTag(nbi.SsotTag)
+	newVM.AddTag(nbi.SsotTag)
 	addSourceNameCustomField(ctx, &newVM.NetboxObject)
 	newVM.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
 	nbi.vmsLock.Lock()
@@ -1201,7 +1201,7 @@ func (nbi *NetboxInventory) AddVMInterface(
 	ctx context.Context,
 	newVMInterface *objects.VMInterface,
 ) (*objects.VMInterface, error) {
-	newVMInterface.NetboxObject.AddTag(nbi.SsotTag)
+	newVMInterface.AddTag(nbi.SsotTag)
 	addSourceNameCustomField(ctx, &newVMInterface.NetboxObject)
 	newVMInterface.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
 	nbi.vmInterfacesLock.Lock()
@@ -1265,7 +1265,7 @@ func (nbi *NetboxInventory) AddIPAddress(
 	ctx context.Context,
 	newIPAddress *objects.IPAddress,
 ) (*objects.IPAddress, error) {
-	newIPAddress.NetboxObject.AddTag(nbi.SsotTag)
+	newIPAddress.AddTag(nbi.SsotTag)
 	addSourceNameCustomField(ctx, &newIPAddress.NetboxObject)
 	newIPAddress.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
 
@@ -1347,7 +1347,7 @@ func (nbi *NetboxInventory) AddMACAddress(
 	ctx context.Context,
 	newMACAddress *objects.MACAddress,
 ) (*objects.MACAddress, error) {
-	newMACAddress.NetboxObject.AddTag(nbi.SsotTag)
+	newMACAddress.AddTag(nbi.SsotTag)
 	newMACAddress.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
 
 	// Get index values with helper function.
@@ -1422,13 +1422,13 @@ func (nbi *NetboxInventory) AddPrefix(
 	ctx context.Context,
 	newPrefix *objects.Prefix,
 ) (*objects.Prefix, error) {
-	newPrefix.NetboxObject.AddTag(nbi.SsotTag)
+	newPrefix.AddTag(nbi.SsotTag)
 	newPrefix.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
-	if newPrefix.NetboxObject.CustomFields == nil {
-		newPrefix.NetboxObject.CustomFields = make(map[string]interface{})
+	if newPrefix.CustomFields == nil {
+		newPrefix.CustomFields = make(map[string]interface{})
 	}
 	//nolint:forcetypeassert
-	newPrefix.NetboxObject.CustomFields[constants.CustomFieldSourceName] = ctx.Value(constants.CtxSourceKey).(string)
+	newPrefix.CustomFields[constants.CustomFieldSourceName] = ctx.Value(constants.CtxSourceKey).(string)
 
 	// Determine VRF ID for index key (0 = global table)
 	vrfID := 0
@@ -1501,7 +1501,7 @@ func (nbi *NetboxInventory) AddWirelessLAN(
 	ctx context.Context,
 	newWirelessLan *objects.WirelessLAN,
 ) (*objects.WirelessLAN, error) {
-	newWirelessLan.NetboxObject.AddTag(nbi.SsotTag)
+	newWirelessLan.AddTag(nbi.SsotTag)
 	newWirelessLan.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
 	nbi.wirelessLANsLock.Lock()
 	defer nbi.wirelessLANsLock.Unlock()
@@ -1557,7 +1557,7 @@ func (nbi *NetboxInventory) AddWirelessLANGroup(
 	ctx context.Context,
 	newWirelessLANGroup *objects.WirelessLANGroup,
 ) (*objects.WirelessLANGroup, error) {
-	newWirelessLANGroup.NetboxObject.AddTag(nbi.SsotTag)
+	newWirelessLANGroup.AddTag(nbi.SsotTag)
 	newWirelessLANGroup.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
 	nbi.wirelessLANGroupsLock.Lock()
 	defer nbi.wirelessLANGroupsLock.Unlock()
@@ -1613,7 +1613,7 @@ func (nbi *NetboxInventory) AddVirtualDisk(
 	ctx context.Context,
 	newVirtualDisk *objects.VirtualDisk,
 ) (*objects.VirtualDisk, error) {
-	newVirtualDisk.NetboxObject.AddTag(nbi.SsotTag)
+	newVirtualDisk.AddTag(nbi.SsotTag)
 	addSourceNameCustomField(ctx, &newVirtualDisk.NetboxObject)
 	newVirtualDisk.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
 	if len(newVirtualDisk.Name) > constants.MaxVirtualDiskNameLength {

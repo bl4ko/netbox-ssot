@@ -6,12 +6,12 @@ import (
 	"strings"
 	"sync"
 
-	dnac "github.com/cisco-en-programmability/dnacenter-go-sdk/v7/sdk"
 	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
+	dnac "github.com/cisco-en-programmability/dnacenter-go-sdk/v7/sdk"
 )
 
 // Syncs dnac sites to netbox inventory.
@@ -19,7 +19,7 @@ func (ds *DnacSource) syncSites(nbi *inventory.NetboxInventory) error {
 	for _, site := range ds.Sites {
 		dnacSite := &objects.Site{
 			NetboxObject: objects.NetboxObject{
-				Tags: ds.Config.GetSourceTags(),
+				Tags: ds.GetSourceTags(),
 				CustomFields: map[string]interface{}{
 					constants.CustomFieldSourceName: ds.SourceConfig.Name,
 				},

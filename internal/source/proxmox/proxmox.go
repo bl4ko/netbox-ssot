@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/luthermonson/go-proxmox"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
+	"github.com/luthermonson/go-proxmox"
 )
 
 //nolint:revive

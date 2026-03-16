@@ -197,7 +197,7 @@ func CreateMockServer() *httptest.Server {
 		case http.MethodDelete:
 			w.WriteHeader(http.StatusNoContent)
 		default:
-			log.Printf("Wrong http method: %v", r.Method)
+			log.Printf("Wrong http method: %q", r.Method) //nolint:gosec
 		}
 	})
 
@@ -237,7 +237,7 @@ func CreateMockServer() *httptest.Server {
 			case http.MethodDelete:
 				w.WriteHeader(http.StatusNoContent)
 			default:
-				log.Printf("Wrong http method: %v", r.Method)
+				log.Printf("Wrong http method: %q", r.Method) //nolint:gosec
 			}
 		},
 	)
@@ -278,7 +278,7 @@ func CreateMockServer() *httptest.Server {
 			case http.MethodDelete:
 				w.WriteHeader(http.StatusNoContent)
 			default:
-				log.Printf("Wrong http method: %v", r.Method)
+				log.Printf("Wrong http method: %q", r.Method) //nolint:gosec
 			}
 		},
 	)

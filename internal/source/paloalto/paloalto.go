@@ -39,8 +39,8 @@ type PaloAltoSource struct {
 func (pas *PaloAltoSource) Init() error {
 	var transport *http.Transport
 	var err error
-	if pas.Config.CAFile != "" {
-		transport, err = utils.LoadExtraCertInTransportConfig(pas.Config.CAFile)
+	if pas.CAFile != "" {
+		transport, err = utils.LoadExtraCertInTransportConfig(pas.CAFile)
 		if err != nil {
 			return fmt.Errorf("load extra cert in transport config: %s", err)
 		}

@@ -110,8 +110,8 @@ func (vc *VmwareSource) Init() error {
 
 	// How to set custom ca certificates for govmomi: https://github.com/vmware/govmomi/issues/1200#issuecomment-412950179
 	soapClient := soap.NewClient(url, !vc.SourceConfig.ValidateCert)
-	if vc.Config.CAFile != "" {
-		err = soapClient.SetRootCAs(vc.Config.CAFile)
+	if vc.CAFile != "" {
+		err = soapClient.SetRootCAs(vc.CAFile)
 		if err != nil {
 			return fmt.Errorf("set root CAs: %s", err)
 		}

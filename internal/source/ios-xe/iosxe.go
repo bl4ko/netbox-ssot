@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/scrapli/scrapligo/driver/netconf"
-	"github.com/scrapli/scrapligo/driver/options"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
+	"github.com/scrapli/scrapligo/driver/netconf"
+	"github.com/scrapli/scrapligo/driver/options"
 )
 
 //nolint:revive

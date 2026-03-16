@@ -5,13 +5,13 @@ import (
 	"strings"
 	"sync"
 
-	ovirtsdk4 "github.com/ovirt/go-ovirt"
-	devices "github.com/src-doo/go-devicetype-library/pkg"
 	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
+	ovirtsdk4 "github.com/ovirt/go-ovirt"
+	devices "github.com/src-doo/go-devicetype-library/pkg"
 )
 
 // Syncs networks received from oVirt API to the netbox.
@@ -762,6 +762,7 @@ func (o *OVirtSource) matchHostParentAndChildNics(
 	return nil
 }
 
+//nolint:gocyclo
 func (o *OVirtSource) collectHostNicsData(
 	nbHost *objects.Device,
 	nbi *inventory.NetboxInventory,
@@ -1197,7 +1198,7 @@ func (o *OVirtSource) extractVMData(
 			}
 			if cpuData, exists := vm.Cpu(); exists {
 				if cpuArch, exists := cpuData.Architecture(); exists {
-					vmCPUArch = fmt.Sprintf("%s", cpuArch) //nolint:gosimple
+					vmCPUArch = string(cpuArch)
 				}
 			}
 		}

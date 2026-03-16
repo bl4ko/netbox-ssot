@@ -34,11 +34,15 @@ func ReverseLookup(ipAddress string) string {
 // Function that receives hostname and performs a forward lookup
 // to get the IP address. If the forward lookup fails, it returns an empty string.
 func Lookup(hostname string) string {
-	ips, err := net.LookupIP(hostname)
-	if err != nil || len(ips) == 0 {
+	TIMEOUT := 2 * time.Second //nolint:mnd
+	ctx, cancel := context.WithTimeout(context.Background(), TIMEOUT)
+	defer cancel()
+	resolver := &net.Resolver{}
+	addrs, err := resolver.LookupIPAddr(ctx, hostname)
+	if err != nil || len(addrs) == 0 {
 		return ""
 	}
-	return ips[0].String()
+	return addrs[0].IP.String()
 }
 
 // SerializeMask serializes mask into a bit representation.
