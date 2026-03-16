@@ -6,8 +6,8 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/src-doo/netbox-ssot/internal/constants"
-	"github.com/src-doo/netbox-ssot/internal/utils"
+	"github.com/bl4ko/netbox-ssot/internal/constants"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 	"gopkg.in/yaml.v3"
 )
 
@@ -135,6 +135,8 @@ type SourceConfig struct {
 	AssignDomainName    string               `yaml:"assignDomainName"`
 	ContinueOnError     bool                 `yaml:"continueOnError"`
 	VlanPrefix          string               `yaml:"vlanPrefix"`
+	DefaultIPv4MaskBits int                  `yaml:"defaultIPv4MaskBits"`
+	DefaultIPv6MaskBits int                  `yaml:"defaultIPv6MaskBits"`
 
 	// Relations
 	DatacenterClusterGroupRelations map[string]string `yaml:"datacenterClusterGroupRelations"`
@@ -156,7 +158,7 @@ type SourceConfig struct {
 
 // UnmarshalYAML is a custom unmarshal function for SourceConfig.
 // This is needed because we map relations to the map[string]string.
-func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error { //nolint:gocyclo
 	type realSourceConfig struct {
 		Name                            string               `yaml:"name"`
 		Type                            constants.SourceType `yaml:"type"`
@@ -180,6 +182,8 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		IgnoreAssetTags                 bool                 `yaml:"ignoreAssetTags"`
 		IgnoreVMTemplates               bool                 `yaml:"ignoreVMTemplates"`
 		ContinueOnError                 bool                 `yaml:"continueOnError"`
+		DefaultIPv4MaskBits             int                  `yaml:"defaultIPv4MaskBits"`
+		DefaultIPv6MaskBits             int                  `yaml:"defaultIPv6MaskBits"`
 		DatacenterClusterGroupRelations []string             `yaml:"datacenterClusterGroupRelations"`
 		HostSiteRelations               []string             `yaml:"hostSiteRelations"`
 		HostRoleRelations               []string             `yaml:"hostRoleRelations"`
@@ -222,6 +226,8 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	sc.IgnoreAssetTags = rawMarshal.IgnoreAssetTags
 	sc.IgnoreVMTemplates = rawMarshal.IgnoreVMTemplates
 	sc.ContinueOnError = rawMarshal.ContinueOnError
+	sc.DefaultIPv4MaskBits = rawMarshal.DefaultIPv4MaskBits
+	sc.DefaultIPv6MaskBits = rawMarshal.DefaultIPv6MaskBits
 
 	if len(rawMarshal.DatacenterClusterGroupRelations) > 0 {
 		err := utils.ValidateRegexRelations(rawMarshal.DatacenterClusterGroupRelations)
@@ -305,11 +311,11 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		sc.VlanSiteRelations = utils.ConvertStringsToRegexPairs(rawMarshal.VlanSiteRelations)
 	}
 	if len(rawMarshal.IPVrfRelations) > 0 {
-    	err := utils.ValidateRegexRelations(rawMarshal.IPVrfRelations)
-    	if err != nil {
-        	return fmt.Errorf("%s.ipVrfRelations: %v", rawMarshal.Name, err)
-    }
-    sc.IPVrfRelations = utils.ConvertStringsToRegexPairs(rawMarshal.IPVrfRelations)
+		err := utils.ValidateRegexRelations(rawMarshal.IPVrfRelations)
+		if err != nil {
+			return fmt.Errorf("%s.ipVrfRelations: %v", rawMarshal.Name, err)
+		}
+		sc.IPVrfRelations = utils.ConvertStringsToRegexPairs(rawMarshal.IPVrfRelations)
 	}
 	if len(rawMarshal.VlanGroupSiteRelations) > 0 {
 		err := utils.ValidateRegexRelations((rawMarshal.VlanGroupSiteRelations))

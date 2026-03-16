@@ -23,7 +23,7 @@ jobs:
         uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3
         with:
           registry: ghcr.io
-          username: src-csm
+          username: bl4ko
           password: ${{ secrets.GHCR_PAT }}
 
       - name: Set up QEMU
@@ -41,8 +41,8 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64,linux/386,linux/arm/v6,linux/arm/v7
           tags: |
-            ghcr.io/src-doo/netbox-ssot:latest
-            ghcr.io/src-doo/netbox-ssot:${{ github.ref_name }}
+            ghcr.io/bl4ko/netbox-ssot:latest
+            ghcr.io/bl4ko/netbox-ssot:${{ github.ref_name }}
           push: true
           build-args: |
             VERSION=${{ github.ref_name }}

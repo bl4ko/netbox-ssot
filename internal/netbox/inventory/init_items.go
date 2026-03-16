@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/src-doo/netbox-ssot/internal/constants"
-	"github.com/src-doo/netbox-ssot/internal/netbox/objects"
-	"github.com/src-doo/netbox-ssot/internal/netbox/service"
-	"github.com/src-doo/netbox-ssot/internal/utils"
+	"github.com/bl4ko/netbox-ssot/internal/constants"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/service"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
 // Collect all tags from Netbox API and store them in the NetBoxInventory.
@@ -1165,9 +1165,9 @@ func (nbi *NetboxInventory) initVRFs(ctx context.Context) error {
 		nbi.OrphanManager.AddItem(vrf)
 	}
 	nbi.Logger.Debug(
-	ctx,
-	"Successfully collected VRF from Netbox: ",
-	nbi.vrfsIndexByName,
+		ctx,
+		"Successfully collected VRF from Netbox: ",
+		nbi.vrfsIndexByName,
 	)
 	return nil
 }

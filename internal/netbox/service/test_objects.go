@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/src-doo/netbox-ssot/internal/constants"
-	"github.com/src-doo/netbox-ssot/internal/logger"
-	"github.com/src-doo/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/constants"
+	"github.com/bl4ko/netbox-ssot/internal/logger"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 )
 
 var MockDefaultSsotTag = &objects.Tag{
@@ -197,7 +197,7 @@ func CreateMockServer() *httptest.Server {
 		case http.MethodDelete:
 			w.WriteHeader(http.StatusNoContent)
 		default:
-			log.Printf("Wrong http method: %v", r.Method)
+			log.Printf("Wrong http method: %q", r.Method) //nolint:gosec
 		}
 	})
 
@@ -237,7 +237,7 @@ func CreateMockServer() *httptest.Server {
 			case http.MethodDelete:
 				w.WriteHeader(http.StatusNoContent)
 			default:
-				log.Printf("Wrong http method: %v", r.Method)
+				log.Printf("Wrong http method: %q", r.Method) //nolint:gosec
 			}
 		},
 	)
@@ -278,7 +278,7 @@ func CreateMockServer() *httptest.Server {
 			case http.MethodDelete:
 				w.WriteHeader(http.StatusNoContent)
 			default:
-				log.Printf("Wrong http method: %v", r.Method)
+				log.Printf("Wrong http method: %q", r.Method) //nolint:gosec
 			}
 		},
 	)

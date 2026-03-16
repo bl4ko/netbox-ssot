@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/src-doo/netbox-ssot/internal/constants"
-	"github.com/src-doo/netbox-ssot/internal/netbox/objects"
-	"github.com/src-doo/netbox-ssot/internal/utils"
+	"github.com/bl4ko/netbox-ssot/internal/constants"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
 // Inits default VlanGroup, which is required to group all Vlans that are not part of other
@@ -46,7 +46,7 @@ func (nbi *NetboxInventory) CreateDefaultVlanGroupForVlan(
 // Index values are the type, name and owner name of the assigned object of the IPAddress.
 func (nbi *NetboxInventory) getIndexValuesForIPAddress(
 	ipAddr *objects.IPAddress,
-) (constants.ContentType, string, string, error) {
+) (constants.ContentType, string, string, error) { //nolint:unparam
 	var ipIfaceType constants.ContentType
 	var ipIfaceName, ipIfaceParentName string
 	if ipAddr.AssignedObjectType != "" {

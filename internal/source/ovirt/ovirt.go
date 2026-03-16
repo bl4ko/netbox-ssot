@@ -5,11 +5,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bl4ko/netbox-ssot/internal/constants"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
+	"github.com/bl4ko/netbox-ssot/internal/source/common"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 	ovirtsdk4 "github.com/ovirt/go-ovirt"
-	"github.com/src-doo/netbox-ssot/internal/constants"
-	"github.com/src-doo/netbox-ssot/internal/netbox/inventory"
-	"github.com/src-doo/netbox-ssot/internal/source/common"
-	"github.com/src-doo/netbox-ssot/internal/utils"
 )
 
 // OVirtSource represents an oVirt source.
@@ -48,10 +48,10 @@ func (o *OVirtSource) Init() error {
 		Insecure(!o.SourceConfig.ValidateCert).
 		Compress(true).
 		Timeout(time.Second * constants.DefaultAPITimeout).
-		CAFile(o.Config.CAFile)
+		CAFile(o.CAFile)
 
-	if o.Config.CAFile != "" {
-		connBuilder.CAFile(o.Config.CAFile)
+	if o.CAFile != "" {
+		connBuilder.CAFile(o.CAFile)
 	}
 
 	// Initialize the connection

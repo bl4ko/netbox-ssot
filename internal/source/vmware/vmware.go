@@ -6,10 +6,10 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/src-doo/netbox-ssot/internal/netbox/inventory"
-	"github.com/src-doo/netbox-ssot/internal/netbox/objects"
-	"github.com/src-doo/netbox-ssot/internal/source/common"
-	"github.com/src-doo/netbox-ssot/internal/utils"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/source/common"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/session"
@@ -110,8 +110,8 @@ func (vc *VmwareSource) Init() error {
 
 	// How to set custom ca certificates for govmomi: https://github.com/vmware/govmomi/issues/1200#issuecomment-412950179
 	soapClient := soap.NewClient(url, !vc.SourceConfig.ValidateCert)
-	if vc.Config.CAFile != "" {
-		err = soapClient.SetRootCAs(vc.Config.CAFile)
+	if vc.CAFile != "" {
+		err = soapClient.SetRootCAs(vc.CAFile)
 		if err != nil {
 			return fmt.Errorf("set root CAs: %s", err)
 		}

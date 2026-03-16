@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.24.13@sha256:d2d2bc1c84f7e60d7d2438a3836ae7d0c847f4888464e7ec9ba3a1339a1ee804 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.25.8@sha256:bd1e2df4e6259b2bd5b1de0e6b22ca414502cd6e7276a5dd5dd414b65063be58 AS builder
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -30,13 +30,13 @@ ARG CREATED
 ARG COMMIT
 
 LABEL \
-  org.opencontainers.image.authors="src-doo" \
+  org.opencontainers.image.authors="bl4ko" \
   org.opencontainers.image.created=$CREATED \
   org.opencontainers.image.version=$VERSION \
   org.opencontainers.image.revision=$COMMIT \
-  org.opencontainers.image.url="https://github.com/src-doo/netbox-ssot" \
-  org.opencontainers.image.documentation="https://github.com/src-doo/netbox-ssot/blob/main/README.md" \
-  org.opencontainers.image.source="https://github.com/src-doo/netbox-ssot" \
+  org.opencontainers.image.url="https://github.com/bl4ko/netbox-ssot" \
+  org.opencontainers.image.documentation="https://github.com/bl4ko/netbox-ssot/blob/main/README.md" \
+  org.opencontainers.image.source="https://github.com/bl4ko/netbox-ssot" \
   org.opencontainers.image.title="Netbox-ssot" \
   org.opencontainers.image.description="Microservice for syncing Netbox with multiple external sources."
 
@@ -51,7 +51,7 @@ RUN addgroup -S -g 10001 netbox && \
 USER netbox:netbox
 
 # Also allow deprecated ssh algorithims for older devices
-# See https://github.com/SRC-doo/netbox-ssot/issues/498
+# See https://github.com/bl4ko/netbox-ssot/issues/498
 RUN mkdir -p /home/netbox/.ssh/ && \
 cat <<EOF > /home/netbox/.ssh/config
 Host *

@@ -6,12 +6,12 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/bl4ko/netbox-ssot/internal/constants"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/source/common"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 	"github.com/luthermonson/go-proxmox"
-	"github.com/src-doo/netbox-ssot/internal/constants"
-	"github.com/src-doo/netbox-ssot/internal/netbox/inventory"
-	"github.com/src-doo/netbox-ssot/internal/netbox/objects"
-	"github.com/src-doo/netbox-ssot/internal/source/common"
-	"github.com/src-doo/netbox-ssot/internal/utils"
 )
 
 func (ps *ProxmoxSource) syncCluster(nbi *inventory.NetboxInventory) error {
@@ -271,7 +271,6 @@ func (ps *ProxmoxSource) syncVMs(nbi *inventory.NetboxInventory) error {
 				if err != nil {
 					errChan <- err
 				}
-
 			}(vm, nbHost)
 		}
 	}
@@ -290,15 +289,12 @@ func (ps *ProxmoxSource) syncVMs(nbi *inventory.NetboxInventory) error {
 	return nil
 }
 
-func (ps *ProxmoxSource) syncVM(
+func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 	nbi *inventory.NetboxInventory,
 	vm *proxmox.VirtualMachine,
 	nbHost *objects.Device,
 ) error {
-	isTemplate := false
-	if vm.Template {
-		isTemplate = true
-	}
+	isTemplate := bool(vm.Template)
 
 	if ps.SourceConfig.IgnoreVMTemplates && isTemplate {
 		return nil
@@ -568,7 +564,7 @@ func (ps *ProxmoxSource) syncVM(
 
 	// Compute final VM disk size
 	if vmTotalDiskSizeMiB == 0 {
-		vmTotalDiskSizeMiB = int((vm.MaxDisk / constants.GiB) * 1000)
+		vmTotalDiskSizeMiB = int((vm.MaxDisk / constants.GiB) * 1000) //nolint:gosec,mnd // MaxDisk/GiB fits in int
 	}
 
 	ps.Logger.Debugf(

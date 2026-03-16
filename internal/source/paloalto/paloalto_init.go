@@ -14,7 +14,7 @@ import (
 
 // Init system info collects system info from paloalto.
 func (pas *PaloAltoSource) initSystemInfo(c *pango.Firewall) error {
-	pas.SystemInfo = c.Client.SystemInfo
+	pas.SystemInfo = c.SystemInfo
 	return nil
 }
 

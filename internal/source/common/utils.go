@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/src-doo/netbox-ssot/internal/constants"
-	"github.com/src-doo/netbox-ssot/internal/netbox/inventory"
-	"github.com/src-doo/netbox-ssot/internal/netbox/objects"
-	"github.com/src-doo/netbox-ssot/internal/utils"
+	"github.com/bl4ko/netbox-ssot/internal/constants"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
 // Function that matches cluster to tenant using regexRelationsMap.
@@ -440,7 +440,7 @@ func SetPrimaryMACForInterface(
 //
 // In case there is no match or ipVrfRelations is nil, it returns nil (global routing table).
 func MatchIPToVRF(
-	ctx context.Context,
+	_ context.Context,
 	nbi *inventory.NetboxInventory,
 	ipAddress string,
 	ipVrfRelations map[string]string,

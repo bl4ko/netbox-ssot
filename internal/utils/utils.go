@@ -13,7 +13,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/src-doo/netbox-ssot/internal/logger"
+	"github.com/bl4ko/netbox-ssot/internal/logger"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"golang.org/x/text/runes"

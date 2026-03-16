@@ -5,13 +5,13 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/bl4ko/netbox-ssot/internal/constants"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/source/common"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 	ovirtsdk4 "github.com/ovirt/go-ovirt"
 	devices "github.com/src-doo/go-devicetype-library/pkg"
-	"github.com/src-doo/netbox-ssot/internal/constants"
-	"github.com/src-doo/netbox-ssot/internal/netbox/inventory"
-	"github.com/src-doo/netbox-ssot/internal/netbox/objects"
-	"github.com/src-doo/netbox-ssot/internal/source/common"
-	"github.com/src-doo/netbox-ssot/internal/utils"
 )
 
 // Syncs networks received from oVirt API to the netbox.
@@ -776,6 +776,7 @@ func (o *OVirtSource) matchHostParentAndChildNics(
 	return nil
 }
 
+//nolint:gocyclo
 func (o *OVirtSource) collectHostNicsData(
 	nbHost *objects.Device,
 	nbi *inventory.NetboxInventory,
@@ -955,6 +956,8 @@ func (o *OVirtSource) collectHostNicsData(
 					if err != nil {
 						return fmt.Errorf("mask to bits: %s", err)
 					}
+				} else if o.SourceConfig.DefaultIPv4MaskBits > 0 {
+					mask = o.SourceConfig.DefaultIPv4MaskBits
 				}
 				ipv4Address := fmt.Sprintf("%s/%d", nicAddress, mask)
 				nicID2IPv4[nicID] = ipv4Address
@@ -968,6 +971,8 @@ func (o *OVirtSource) collectHostNicsData(
 					if err != nil {
 						return fmt.Errorf("mask to bits: %s", err)
 					}
+				} else if o.SourceConfig.DefaultIPv6MaskBits > 0 {
+					mask = o.SourceConfig.DefaultIPv6MaskBits
 				}
 				ipv6Address := fmt.Sprintf("%s/%d", nicAddress, mask)
 				nicID2IPv6[nicID] = ipv6Address
@@ -1207,7 +1212,7 @@ func (o *OVirtSource) extractVMData(
 			}
 			if cpuData, exists := vm.Cpu(); exists {
 				if cpuArch, exists := cpuData.Architecture(); exists {
-					vmCPUArch = fmt.Sprintf("%s", cpuArch) //nolint:gosimple
+					vmCPUArch = string(cpuArch)
 				}
 			}
 		}
@@ -1364,9 +1369,17 @@ func (o *OVirtSource) processVMInterfaceIPs(
 					} else {
 						switch ipVersion {
 						case "v4":
-							ipMask = "/32"
+							if o.SourceConfig.DefaultIPv4MaskBits > 0 {
+								ipMask = fmt.Sprintf("/%d", o.SourceConfig.DefaultIPv4MaskBits)
+							} else {
+								ipMask = "/32"
+							}
 						case "v6":
-							ipMask = "/128"
+							if o.SourceConfig.DefaultIPv6MaskBits > 0 {
+								ipMask = fmt.Sprintf("/%d", o.SourceConfig.DefaultIPv6MaskBits)
+							} else {
+								ipMask = "/128"
+							}
 						}
 					}
 

@@ -1,9 +1,9 @@
 # Netbox-SSOT
 
-[![Go](https://github.com/src-doo/netbox-ssot/actions/workflows/ci.yml/badge.svg)](https://github.com/src-doo/netbox-ssot/actions/workflows/ci.yml)
-![GitHub last commit](https://img.shields.io/github/last-commit/src-doo/netbox-ssot)
-![GitHub Tag](https://img.shields.io/github/v/tag/src-doo/netbox-ssot)
-![GitHub License](https://img.shields.io/github/license/src-doo/netbox-ssot)
+[![Go](https://github.com/bl4ko/netbox-ssot/actions/workflows/ci.yml/badge.svg)](https://github.com/bl4ko/netbox-ssot/actions/workflows/ci.yml)
+![GitHub last commit](https://img.shields.io/github/last-commit/bl4ko/netbox-ssot)
+![GitHub Tag](https://img.shields.io/github/v/tag/bl4ko/netbox-ssot)
+![GitHub License](https://img.shields.io/github/license/bl4ko/netbox-ssot)
 
 Netbox-ssot is a small but powerful microservice designed to
 keep your Netbox instance in sync with external data sources.
@@ -110,6 +110,8 @@ Example configuration can be found [here](#example-config).
 | `source.vlanSiteRelations`               | Regex relations in format `regex = vlan`, that map each vlan that satisfies regex to site.                               | all                        | []string | any                                      | []         | No       |
 | `source.wlanTenantRelations`             | Regex relations in format `regex = tenantName`, that map each wlan that satisfies regex to tenant.                       | [dnac]                     | []string | any                                      | []         | No       |
 | `source.customFieldMappings`             | Mappings of format `customFieldName = option`. Currently, supported options are `contact`, `owner`, `description`.       | [**vmware**]               | []string | any                                      | []         | No       |
+| `source.defaultIPv4MaskBits`             | Default IPv4 subnet mask bits when not provided by the source (e.g. oVirt guest agent).                                  | [**ovirt**]                | int      | 1-32                                     | 32         | No       |
+| `source.defaultIPv6MaskBits`             | Default IPv6 subnet mask bits when not provided by the source (e.g. oVirt guest agent).                                  | [**ovirt**]                | int      | 1-128                                    | 128        | No       |
 | `source.caFile`                          | Path to a self signed certificate for the source.                                                                        | any                        | string   | Valid path                               | ""         | No       |
 
 ### Example config
@@ -230,7 +232,7 @@ source:
 ### Via docker
 
 ```bash
-docker run -v /path/to/config.yaml:/app/config.yaml ghcr.io/src-doo/netbox-ssot
+docker run -v /path/to/config.yaml:/app/config.yaml ghcr.io/bl4ko/netbox-ssot
 ```
 
 ### Via k8s

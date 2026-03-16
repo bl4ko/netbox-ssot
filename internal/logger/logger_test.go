@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/src-doo/netbox-ssot/internal/constants"
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 )
 
 func TestLoggerCreationForCustomFile(t *testing.T) {
@@ -129,7 +129,7 @@ func TestHighLoggerLevel(t *testing.T) {
 		t.Errorf("Error creating logger: %v", err)
 	}
 	buffer := new(bytes.Buffer)
-	l.Logger.SetOutput(buffer)
+	l.SetOutput(buffer)
 	l.Debug(testCtx, "Test DEBUG")
 	l.Debugf(testCtx, "Test DEBUG")
 	// we need to ensure that the buffer is empty (no output)

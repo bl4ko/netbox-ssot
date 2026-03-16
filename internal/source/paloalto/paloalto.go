@@ -11,11 +11,11 @@ import (
 	"github.com/PaloAltoNetworks/pango/netw/routing/router"
 	"github.com/PaloAltoNetworks/pango/netw/zone"
 	"github.com/PaloAltoNetworks/pango/vsys"
-	"github.com/src-doo/netbox-ssot/internal/constants"
-	"github.com/src-doo/netbox-ssot/internal/netbox/inventory"
-	"github.com/src-doo/netbox-ssot/internal/netbox/objects"
-	"github.com/src-doo/netbox-ssot/internal/source/common"
-	"github.com/src-doo/netbox-ssot/internal/utils"
+	"github.com/bl4ko/netbox-ssot/internal/constants"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/source/common"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
 //nolint:revive
@@ -39,8 +39,8 @@ type PaloAltoSource struct {
 func (pas *PaloAltoSource) Init() error {
 	var transport *http.Transport
 	var err error
-	if pas.Config.CAFile != "" {
-		transport, err = utils.LoadExtraCertInTransportConfig(pas.Config.CAFile)
+	if pas.CAFile != "" {
+		transport, err = utils.LoadExtraCertInTransportConfig(pas.CAFile)
 		if err != nil {
 			return fmt.Errorf("load extra cert in transport config: %s", err)
 		}

@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/src-doo/netbox-ssot/internal/logger"
-	"github.com/src-doo/netbox-ssot/internal/utils"
+	"github.com/bl4ko/netbox-ssot/internal/logger"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
 // NetboxClient is a service used for communicating with the Netbox API.

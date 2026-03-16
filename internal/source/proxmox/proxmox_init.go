@@ -83,7 +83,7 @@ func (ps *ProxmoxSource) initNodeVMs(ctx context.Context, node *proxmox.Node) er
 	// Fetch VM config for each VM
 	ps.Vms[node.Name] = make([]*proxmox.VirtualMachine, 0, len(vms))
 	for _, vm := range vms {
-		vmconfig, err := node.VirtualMachine(ctx, int(vm.VMID))
+		vmconfig, err := node.VirtualMachine(ctx, int(vm.VMID)) //nolint:gosec // VMID fits in int
 		if err != nil {
 			return fmt.Errorf("init nodeVms: %s", err)
 		}

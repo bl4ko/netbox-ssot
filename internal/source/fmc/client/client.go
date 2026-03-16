@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/src-doo/netbox-ssot/internal/constants"
-	"github.com/src-doo/netbox-ssot/internal/logger"
+	"github.com/bl4ko/netbox-ssot/internal/constants"
+	"github.com/bl4ko/netbox-ssot/internal/logger"
 )
 
 type FMCClient struct {

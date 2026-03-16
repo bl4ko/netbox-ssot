@@ -3,7 +3,7 @@ package utils
 import (
 	"testing"
 
-	"github.com/src-doo/netbox-ssot/internal/constants"
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 )
 
 func TestExtractCPUArch(t *testing.T) {
