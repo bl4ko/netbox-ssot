@@ -15,13 +15,13 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       # This is currently workaround for checking if gofiles have changed,
       # Because paths filter doesn't work with required checks
       - name: Get changed files
         id: changed-files
-        uses: tj-actions/changed-files@dcc7a0cba800f454d79fff4b993e8c3555bcc0a8 # v45
+        uses: tj-actions/changed-files@48d8f15b2aaa3d255ca5af3eba4870f807ce6b3c # v45
         with:
           files: |
             cmd/**
@@ -32,7 +32,7 @@ jobs:
 
       - name: Setup Go
         if: steps.changed-files.outputs.any_modified == 'true'
-        uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: ${{ matrix.go-version }}
 
@@ -53,7 +53,7 @@ jobs:
 
       - name: Upload coverage reports to Codecov
         if: steps.changed-files.outputs.any_modified == 'true'
-        uses: codecov/codecov-action@13ce06bfc6bbe3ecf90edbbf1bc32fe5978ca1d3 # v5.3.1
+        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.txt
@@ -64,11 +64,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Get changed files
         id: changed-files
-        uses: tj-actions/changed-files@dcc7a0cba800f454d79fff4b993e8c3555bcc0a8 # v45
+        uses: tj-actions/changed-files@48d8f15b2aaa3d255ca5af3eba4870f807ce6b3c # v45
         with:
           files: |
             cmd/**
