@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-yaml
       - id: check-json
@@ -16,7 +16,7 @@ repos:
       - id: golangci-lint
 
   - repo: https://github.com/segmentio/golines
-    rev: v0.12.2
+    rev: v0.13.0
     hooks:
       - id: golines
         name: golines
@@ -33,17 +33,17 @@ repos:
       - id: go-mod-tidy
 
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.23.3
+    rev: v8.30.1
     hooks:
       - id: gitleaks
 
   - repo: https://github.com/streetsidesoftware/cspell-cli
-    rev: v8.17.2
+    rev: v9.7.0
     hooks:
       - id: cspell
 
   - repo: https://github.com/google/osv-scanner/
-    rev: v2.0.0-beta2
+    rev: v2.3.3
     hooks:
       - id: osv-scanner
         args: ["-r", "."]
