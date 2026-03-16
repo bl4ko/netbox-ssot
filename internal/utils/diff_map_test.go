@@ -493,8 +493,8 @@ func TestPriorityMergeDiff(t *testing.T) {
 						constants.CustomFieldSourceName: "test2",
 					},
 					Tags: []*objects.Tag{
-						{ID: 2, Name: "Tag1"},
-						{ID: 3, Name: "Tag2"},
+						{ID: 2, Name: "Source: test2"},
+						{ID: 3, Name: "Source: test2-old"},
 					},
 				},
 			},
@@ -507,7 +507,7 @@ func TestPriorityMergeDiff(t *testing.T) {
 				"custom_fields": map[string]interface{}{
 					constants.CustomFieldSourceName: "test1",
 				},
-				"tags": []int{1, 2},
+				"tags": []IDObject{{ID: 1}, {ID: 2}},
 			},
 		},
 		{
@@ -1322,6 +1322,105 @@ func Test_sliceToSet(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := sliceToSet(tt.args.slice); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("sliceToSet() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestMergeTagSlices(t *testing.T) {
+	tests := []struct {
+		name         string
+		newTags      []*objects.Tag
+		existingTags []*objects.Tag
+		wantResult   []IDObject
+		wantChanged  bool
+		wantErr      bool
+	}{
+		{
+			name: "Source-managed existing tags are replaced by new tags",
+			newTags: []*objects.Tag{
+				{ID: 1, Name: "Source: test1"},
+				{ID: 2, Name: "Tag1"},
+			},
+			existingTags: []*objects.Tag{
+				{ID: 3, Name: "Source: old-source"},
+				{ID: 4, Name: "Source: test2"},
+			},
+			wantResult:  []IDObject{{ID: 1}, {ID: 2}},
+			wantChanged: true,
+		},
+		{
+			name: "Non source-managed existing tags are preserved",
+			newTags: []*objects.Tag{
+				{ID: 1, Name: "Source: test1"},
+			},
+			existingTags: []*objects.Tag{
+				{ID: 2, Name: "CustomUserTag"},
+				{ID: 3, Name: "AnotherManualTag"},
+			},
+			wantResult:  []IDObject{{ID: 1}, {ID: 2}, {ID: 3}},
+			wantChanged: true,
+		},
+		{
+			name: "Mixed: source-managed tags replaced, non source-managed preserved",
+			newTags: []*objects.Tag{
+				{ID: 1, Name: "Source: test1"},
+				{ID: 2, Name: "Tag1"},
+			},
+			existingTags: []*objects.Tag{
+				{ID: 1, Name: "Source: test1"},
+				{ID: 3, Name: "CustomUserTag"},
+				{ID: 4, Name: "Source: old-source"},
+			},
+			wantResult:  []IDObject{{ID: 1}, {ID: 2}, {ID: 3}},
+			wantChanged: true,
+		},
+		{
+			name: "No change when tags are identical",
+			newTags: []*objects.Tag{
+				{ID: 1, Name: "Source: test1"},
+				{ID: 2, Name: "Tag1"},
+			},
+			existingTags: []*objects.Tag{
+				{ID: 1, Name: "Source: test1"},
+				{ID: 2, Name: "Tag1"},
+			},
+			wantResult:  []IDObject{{ID: 1}, {ID: 2}},
+			wantChanged: false,
+		},
+		{
+			name:         "Empty existing tags",
+			newTags:      []*objects.Tag{{ID: 1, Name: "Source: test1"}},
+			existingTags: []*objects.Tag{},
+			wantResult:   []IDObject{{ID: 1}},
+			wantChanged:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			newSlice := reflect.ValueOf(tt.newTags)
+			existingSlice := reflect.ValueOf(tt.existingTags)
+
+			result, changed, err := mergeTagSlices(newSlice, existingSlice)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("mergeTagSlices() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if changed != tt.wantChanged {
+				t.Errorf("mergeTagSlices() changed = %v, want %v", changed, tt.wantChanged)
+			}
+			// Compare as sets since order is not guaranteed
+			resultSet := make(map[int]bool)
+			for _, r := range result {
+				resultSet[r.ID] = true
+			}
+			wantSet := make(map[int]bool)
+			for _, w := range tt.wantResult {
+				wantSet[w.ID] = true
+			}
+			if !reflect.DeepEqual(resultSet, wantSet) {
+				t.Errorf("mergeTagSlices() result = %v, want %v", result, tt.wantResult)
 			}
 		})
 	}

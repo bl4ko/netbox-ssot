@@ -759,7 +759,7 @@ func (vc *VmwareSource) syncHostVirtualNics(
 					Tenant:             nbHost.Tenant,
 					AssignedObjectType: constants.ContentTypeDcimInterface,
 					AssignedObjectID:   nbHostVnic.ID,
-					VRF: ipVRF,
+					VRF:                ipVRF,
 				})
 				if err != nil {
 					vc.Logger.Errorf(vc.Ctx, "add ipv4 address: %s", err)
@@ -1567,9 +1567,9 @@ func (vc *VmwareSource) addVMInterfaceIPs(
 		) {
 			// VRF
 			ipVRF, err := common.MatchIPToVRF(vc.Ctx, nbi, ipv4Address, vc.SourceConfig.IPVrfRelations)
-            if err != nil {
-                vc.Logger.Warningf(vc.Ctx, "match ip to vrf for %s: %s", ipv4Address, err)
-            }
+			if err != nil {
+				vc.Logger.Warningf(vc.Ctx, "match ip to vrf for %s: %s", ipv4Address, err)
+			}
 
 			ipAddressStruct := &objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
@@ -1615,10 +1615,10 @@ func (vc *VmwareSource) addVMInterfaceIPs(
 			vc.SourceConfig.IgnoredSubnets,
 		) {
 			// VRF
-            ipVRF, err := common.MatchIPToVRF(vc.Ctx, nbi, ipv6Address, vc.SourceConfig.IPVrfRelations)
-            if err != nil {
-                vc.Logger.Warningf(vc.Ctx, "match ip to vrf for %s: %s", ipv6Address, err)
-            }
+			ipVRF, err := common.MatchIPToVRF(vc.Ctx, nbi, ipv6Address, vc.SourceConfig.IPVrfRelations)
+			if err != nil {
+				vc.Logger.Warningf(vc.Ctx, "match ip to vrf for %s: %s", ipv6Address, err)
+			}
 
 			nbIPv6Address, err := nbi.AddIPAddress(vc.Ctx, &objects.IPAddress{
 				NetboxObject: objects.NetboxObject{

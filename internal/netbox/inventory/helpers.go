@@ -46,7 +46,7 @@ func (nbi *NetboxInventory) CreateDefaultVlanGroupForVlan(
 // Index values are the type, name and owner name of the assigned object of the IPAddress.
 func (nbi *NetboxInventory) getIndexValuesForIPAddress(
 	ipAddr *objects.IPAddress,
-) (constants.ContentType, string, string, error) {
+) (constants.ContentType, string, string, error) { //nolint:unparam
 	var ipIfaceType constants.ContentType
 	var ipIfaceName, ipIfaceParentName string
 	if ipAddr.AssignedObjectType != "" {

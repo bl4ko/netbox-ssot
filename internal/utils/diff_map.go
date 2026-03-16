@@ -263,7 +263,7 @@ func mergeTagSlices(
 				elem = elem.Elem()
 			}
 			var tag objects.Tag
-			switch v := existingSlice.Index(i).Interface().(type) {
+			switch v := elem.Interface().(type) {
 			case *objects.Tag:
 				tag = *v
 			case objects.Tag:

@@ -140,9 +140,13 @@ func (nbi *NetboxInventory) softDelete(orphanItem objects.OrphanItem) error {
 		}
 	} else {
 		nbi.Logger.Debugf(nbi.Ctx, "%s is already marked as orphan", orphanItem)
+		lastSeenRaw, ok := orphanItem.GetNetboxObject().GetCustomField(constants.CustomFieldOrphanLastSeenName).(string)
+		if !ok {
+			return fmt.Errorf("failed to get last seen date as string for %s", orphanItem)
+		}
 		lastSeen, err := time.Parse(
 			constants.CustomFieldOrphanLastSeenFormat,
-			orphanItem.GetNetboxObject().GetCustomField(constants.CustomFieldOrphanLastSeenName).(string),
+			lastSeenRaw,
 		)
 		if err != nil {
 			return fmt.Errorf("failed parsing last seen date: %s", err)

@@ -440,7 +440,7 @@ func SetPrimaryMACForInterface(
 //
 // In case there is no match or ipVrfRelations is nil, it returns nil (global routing table).
 func MatchIPToVRF(
-	ctx context.Context,
+	_ context.Context,
 	nbi *inventory.NetboxInventory,
 	ipAddress string,
 	ipVrfRelations map[string]string,
