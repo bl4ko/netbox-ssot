@@ -119,6 +119,13 @@ func Patch[T any](
 	if objectPath == "" {
 		return nil, fmt.Errorf("path not found for type %T", dummy)
 	}
+	if netboxClient.DryRun {
+		netboxClient.Logger.Infof(ctx, "[DRY-RUN] Would update %T (ID: %d) with: %v", dummy, objectID, body)
+		var result T
+		setFakeID(&result, objectID)
+		return &result, nil
+	}
+
 	path := fmt.Sprintf("%s%d/", objectPath, objectID)
 	netboxClient.Logger.Debugf(
 		ctx,
@@ -161,6 +168,12 @@ func Create[T any](ctx context.Context, netboxClient *NetboxClient, object *T) (
 		return nil, fmt.Errorf("path not found for type %T", dummy)
 	}
 
+	if netboxClient.DryRun {
+		netboxClient.Logger.Infof(ctx, "[DRY-RUN] Would create %T at %s", dummy, objectPath)
+		setFakeID(object, netboxClient.generateFakeID())
+		return object, nil
+	}
+
 	netboxClient.Logger.Debugf(
 		ctx,
 		"Creating %T with path %s with data: %v",
@@ -193,6 +206,29 @@ func Create[T any](ctx context.Context, netboxClient *NetboxClient, object *T) (
 	return &objectResponse, nil
 }
 
+// setFakeID assigns a fake ID to a Netbox object using reflection.
+// It handles both objects embedding NetboxObject and objects with a direct ID field.
+func setFakeID(object any, id int) {
+	v := reflect.ValueOf(object)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	if v.Kind() != reflect.Struct {
+		return
+	}
+	// Try embedded NetboxObject first
+	if nb := v.FieldByName("NetboxObject"); nb.IsValid() && nb.CanSet() {
+		if idField := nb.FieldByName("ID"); idField.IsValid() && idField.CanSet() {
+			idField.SetInt(int64(id))
+			return
+		}
+	}
+	// Fall back to direct ID field
+	if idField := v.FieldByName("ID"); idField.IsValid() && idField.CanSet() {
+		idField.SetInt(int64(id))
+	}
+}
+
 // Function that deletes object on path objectPath.
 // It deletes objects in pages of 50 so we don't stress
 // the API too much.
@@ -201,6 +237,11 @@ func (api *NetboxClient) BulkDeleteObjects(
 	objectPath constants.APIPath,
 	idSet map[int]bool,
 ) error {
+	if api.DryRun {
+		api.Logger.Infof(ctx, "[DRY-RUN] Would bulk delete %d objects at %s", len(idSet), objectPath)
+		return nil
+	}
+
 	const pageSize = 50
 
 	// Convert the map to a slice for easier slicing.
@@ -253,6 +294,11 @@ func (api *NetboxClient) BulkDeleteObjects(
 // It deletes a single object at a time. It is alternative to bulk delete
 // because if one delete fails other still go.
 func (api *NetboxClient) DeleteObject(ctx context.Context, idItem objects.IDItem) error {
+	if api.DryRun {
+		api.Logger.Infof(ctx, "[DRY-RUN] Would delete %T (ID: %d) at %s", idItem, idItem.GetID(), idItem.GetAPIPath())
+		return nil
+	}
+
 	id := idItem.GetID()
 	objectPath := idItem.GetAPIPath()
 	api.Logger.Debugf(ctx, "Deleting object with id %d on route %s", id, objectPath)

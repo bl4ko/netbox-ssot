@@ -36,7 +36,7 @@ func main() {
 	if err != nil {
 		mainLogger.Errorf(benchmarkCtx, "inventoryLogger: %s", err)
 	}
-	nbi := inventory.NewNetboxInventory(benchmarkCtx, inventoryLogger, config.Netbox)
+	nbi := inventory.NewNetboxInventory(benchmarkCtx, inventoryLogger, config.Netbox, false)
 	mainLogger.Debug(benchmarkCtx, "Netbox inventory: ", nbi)
 
 	err = nbi.Init()

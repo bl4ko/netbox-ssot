@@ -16,7 +16,10 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
 )
 
-var configPath = flag.String("config", "config.yaml", "Path to the configuration file")
+var (
+	configPath = flag.String("config", "config.yaml", "Path to the configuration file")
+	dryRun     = flag.Bool("dry-run", false, "Preview changes without writing to Netbox")
+)
 
 // Build variables provided with ldflags.
 var (
@@ -59,8 +62,12 @@ func main() {
 		ssotLogger.Errorf(mainCtx, "inventoryLogger: %s", err)
 		os.Exit(1)
 	}
+	if *dryRun {
+		ssotLogger.Info(mainCtx, "DRY-RUN MODE ENABLED: No changes will be written to Netbox")
+	}
+
 	inventoryCtx := context.WithValue(context.Background(), constants.CtxSourceKey, "inventory")
-	netboxInventory := inventory.NewNetboxInventory(inventoryCtx, inventoryLogger, config.Netbox)
+	netboxInventory := inventory.NewNetboxInventory(inventoryCtx, inventoryLogger, config.Netbox, *dryRun)
 	ssotLogger.Debug(mainCtx, "Netbox inventory: ", netboxInventory)
 
 	ssotLogger.Info(mainCtx, "Starting initializing netbox inventory")
@@ -139,6 +146,10 @@ func main() {
 	duration := time.Since(startTime)
 	minutes := int(duration.Minutes())
 	seconds := int((duration - time.Duration(minutes)*time.Minute).Seconds())
+	if *dryRun {
+		ssotLogger.Info(mainCtx, "DRY-RUN COMPLETE: Review the log above for [DRY-RUN] entries to see what would change")
+	}
+
 	if successfullRun {
 		ssotLogger.Infof(
 			mainCtx,

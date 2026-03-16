@@ -22,6 +22,8 @@ type NetboxInventory struct {
 	Logger *logger.Logger
 	// NetboxConfig is the Netbox configuration
 	NetboxConfig *parser.NetboxConfig
+	// DryRun when true prevents all writes to Netbox API
+	DryRun bool
 	// NetboxAPI is the Netbox API object, for communicating with the Netbox API
 	NetboxAPI *service.NetboxClient
 	// SourcePriority: if object is found on multiple sources, which source has
@@ -226,6 +228,7 @@ func NewNetboxInventory(
 	ctx context.Context,
 	logger *logger.Logger,
 	nbConfig *parser.NetboxConfig,
+	dryRun bool,
 ) *NetboxInventory {
 	sourcePriority := make(map[string]int, len(nbConfig.SourcePriority))
 	for i, sourceName := range nbConfig.SourcePriority {
@@ -237,6 +240,7 @@ func NewNetboxInventory(
 		Ctx:            ctx,
 		Logger:         logger,
 		NetboxConfig:   nbConfig,
+		DryRun:         dryRun,
 		SourcePriority: sourcePriority,
 		OrphanManager:  orphanManager,
 	}
@@ -261,6 +265,7 @@ func (nbi *NetboxInventory) Init() error {
 		nbi.NetboxConfig.ValidateCert,
 		nbi.NetboxConfig.Timeout,
 		nbi.NetboxConfig.CAFile,
+		nbi.DryRun,
 	)
 	if err != nil {
 		return fmt.Errorf("create new netbox client: %s", err)

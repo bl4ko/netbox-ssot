@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"net/http"
 	"reflect"
 	"testing"
 
@@ -161,6 +162,100 @@ func TestCreate(t *testing.T) {
 				t.Errorf("Patch() = %v, want %v", response, tt.want)
 			}
 		})
+	}
+}
+
+func TestCreate_DryRun(t *testing.T) {
+	ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+	dryRunClient := &NetboxClient{
+		HTTPClient: &http.Client{Transport: &FailingHTTPClient{}},
+		Logger:     MockNetboxClient.Logger,
+		DryRun:     true,
+		nextFakeID: dryRunFakeIDStart,
+		Timeout:    constants.DefaultAPITimeout,
+	}
+
+	t.Run("returns object with fake ID for Tag", func(t *testing.T) {
+		tag := &objects.Tag{Name: "dry-run-tag", Slug: "dry-run-tag"}
+		result, err := Create(ctx, dryRunClient, tag)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+		if result.ID < dryRunFakeIDStart {
+			t.Errorf("expected fake ID >= %d, got %d", dryRunFakeIDStart, result.ID)
+		}
+		if result != tag {
+			t.Error("expected same pointer returned")
+		}
+	})
+
+	t.Run("returns object with fake ID for Tenant", func(t *testing.T) {
+		tenant := &objects.Tenant{Name: "dry-run-tenant", Slug: "dry-run-tenant"}
+		result, err := Create(ctx, dryRunClient, tenant)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+		if result.ID < dryRunFakeIDStart {
+			t.Errorf("expected fake ID >= %d, got %d", dryRunFakeIDStart, result.ID)
+		}
+	})
+
+	t.Run("increments fake ID", func(t *testing.T) {
+		tag1 := &objects.Tag{Name: "t1"}
+		tag2 := &objects.Tag{Name: "t2"}
+		r1, _ := Create(ctx, dryRunClient, tag1)
+		r2, _ := Create(ctx, dryRunClient, tag2)
+		if r2.ID <= r1.ID {
+			t.Errorf("expected incrementing IDs, got %d then %d", r1.ID, r2.ID)
+		}
+	})
+}
+
+func TestPatch_DryRun(t *testing.T) {
+	ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+	dryRunClient := &NetboxClient{
+		HTTPClient: &http.Client{Transport: &FailingHTTPClient{}},
+		Logger:     MockNetboxClient.Logger,
+		DryRun:     true,
+		Timeout:    constants.DefaultAPITimeout,
+	}
+
+	result, err := Patch[objects.Tag](ctx, dryRunClient, 42, map[string]interface{}{"name": "updated"})
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if result.ID != 42 {
+		t.Errorf("expected ID 42, got %d", result.ID)
+	}
+}
+
+func TestDeleteObject_DryRun(t *testing.T) {
+	ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+	dryRunClient := &NetboxClient{
+		HTTPClient: &http.Client{Transport: &FailingHTTPClient{}},
+		Logger:     MockNetboxClient.Logger,
+		DryRun:     true,
+		Timeout:    constants.DefaultAPITimeout,
+	}
+
+	err := dryRunClient.DeleteObject(ctx, &objects.Tag{ID: 1})
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+}
+
+func TestBulkDeleteObjects_DryRun(t *testing.T) {
+	ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+	dryRunClient := &NetboxClient{
+		HTTPClient: &http.Client{Transport: &FailingHTTPClient{}},
+		Logger:     MockNetboxClient.Logger,
+		DryRun:     true,
+		Timeout:    constants.DefaultAPITimeout,
+	}
+
+	err := dryRunClient.BulkDeleteObjects(ctx, constants.TagsAPIPath, map[int]bool{1: true, 2: true})
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
 	}
 }
 
