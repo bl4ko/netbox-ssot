@@ -7,11 +7,11 @@ import (
 
 	ovirtsdk4 "github.com/ovirt/go-ovirt"
 	devices "github.com/src-doo/go-devicetype-library/pkg"
-	"github.com/src-doo/netbox-ssot/internal/constants"
-	"github.com/src-doo/netbox-ssot/internal/netbox/inventory"
-	"github.com/src-doo/netbox-ssot/internal/netbox/objects"
-	"github.com/src-doo/netbox-ssot/internal/source/common"
-	"github.com/src-doo/netbox-ssot/internal/utils"
+	"github.com/bl4ko/netbox-ssot/internal/constants"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/source/common"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
 // Syncs networks received from oVirt API to the netbox.

@@ -7,11 +7,11 @@ import (
 	"sync"
 
 	dnac "github.com/cisco-en-programmability/dnacenter-go-sdk/v7/sdk"
-	"github.com/src-doo/netbox-ssot/internal/constants"
-	"github.com/src-doo/netbox-ssot/internal/netbox/inventory"
-	"github.com/src-doo/netbox-ssot/internal/netbox/objects"
-	"github.com/src-doo/netbox-ssot/internal/source/common"
-	"github.com/src-doo/netbox-ssot/internal/utils"
+	"github.com/bl4ko/netbox-ssot/internal/constants"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/source/common"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
 // Syncs dnac sites to netbox inventory.

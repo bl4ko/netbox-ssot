@@ -8,11 +8,11 @@ import (
 	"sync"
 
 	devices "github.com/src-doo/go-devicetype-library/pkg"
-	"github.com/src-doo/netbox-ssot/internal/constants"
-	"github.com/src-doo/netbox-ssot/internal/netbox/inventory"
-	"github.com/src-doo/netbox-ssot/internal/netbox/objects"
-	"github.com/src-doo/netbox-ssot/internal/source/common"
-	"github.com/src-doo/netbox-ssot/internal/utils"
+	"github.com/bl4ko/netbox-ssot/internal/constants"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/source/common"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
 )
@@ -241,7 +241,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 
 		hostCluster, _ := nbi.GetCluster(vc.Clusters[vc.Host2Cluster[hostID]].Name)
 		if hostCluster == nil {
-			// Create a hypothetical cluster https://github.com/src-doo/netbox-ssot/issues/141
+			// Create a hypothetical cluster https://github.com/bl4ko/netbox-ssot/issues/141
 			hostCluster, err = vc.createHypotheticalCluster(nbi, hostName, hostSite, hostTenant)
 			if err != nil {
 				return fmt.Errorf("add hypothetical cluster: %s", err)
@@ -1771,7 +1771,7 @@ func (vc *VmwareSource) createVmwareClusterType(
 
 // createHypotheticalCluster creates a cluster with name clusterName. This function is needed
 // for all hosts that are not assigned to cluster so we can assign them to hypotheticalCluster.
-// for more see: https://github.com/src-doo/netbox-ssot/issues/141
+// for more see: https://github.com/bl4ko/netbox-ssot/issues/141
 func (vc *VmwareSource) createHypotheticalCluster(
 	nbi *inventory.NetboxInventory,
 	hostName string,

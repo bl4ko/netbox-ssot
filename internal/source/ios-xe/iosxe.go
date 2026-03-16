@@ -6,10 +6,10 @@ import (
 
 	"github.com/scrapli/scrapligo/driver/netconf"
 	"github.com/scrapli/scrapligo/driver/options"
-	"github.com/src-doo/netbox-ssot/internal/netbox/inventory"
-	"github.com/src-doo/netbox-ssot/internal/netbox/objects"
-	"github.com/src-doo/netbox-ssot/internal/source/common"
-	"github.com/src-doo/netbox-ssot/internal/utils"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/source/common"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
 //nolint:revive
@@ -34,7 +34,7 @@ func (is *IOSXESource) Init() error {
 		options.WithAuthPassword(is.SourceConfig.Password),
 		options.WithPort(is.SourceConfig.Port),
 		options.WithAuthNoStrictKey(),
-		// See https://github.com/SRC-doo/netbox-ssot/issues/498
+		// See https://github.com/bl4ko/netbox-ssot/issues/498
 		options.WithSSHConfigFile("~/.ssh/config"),
 	)
 	if err != nil {

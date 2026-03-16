@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/src-doo/netbox-ssot/internal/constants"
-	"github.com/src-doo/netbox-ssot/internal/netbox/objects"
-	"github.com/src-doo/netbox-ssot/internal/netbox/service"
-	"github.com/src-doo/netbox-ssot/internal/utils"
+	"github.com/bl4ko/netbox-ssot/internal/constants"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/netbox/service"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
 // AddTag adds the newTag from source sourceName to the local inventory.

@@ -1,6 +1,6 @@
 package objects
 
-import "github.com/src-doo/netbox-ssot/internal/constants"
+import "github.com/bl4ko/netbox-ssot/internal/constants"
 
 type IDItem interface {
 	GetID() int

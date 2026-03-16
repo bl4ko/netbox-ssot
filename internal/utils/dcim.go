@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/src-doo/netbox-ssot/internal/constants"
+	"github.com/bl4ko/netbox-ssot/internal/constants"
 )
 
 // extractCPUArch extracts the CPU architecture from an input string.

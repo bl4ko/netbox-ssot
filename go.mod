@@ -1,4 +1,4 @@
-module github.com/src-doo/netbox-ssot
+module github.com/bl4ko/netbox-ssot
 
 go 1.25.8
 
