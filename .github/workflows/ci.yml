@@ -35,6 +35,7 @@ jobs:
         uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6
         with:
           go-version: ${{ matrix.go-version }}
+          cache: false
 
       - name: golangci-lint
         if: steps.changed-files.outputs.any_modified == 'true'
