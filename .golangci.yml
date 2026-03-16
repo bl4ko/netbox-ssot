@@ -69,15 +69,15 @@ linters:
   settings:
     errcheck:
       exclude-functions:
-        - (*github.com/src-doo/netbox-ssot/internal/logger.Logger).Debug
-        - (*github.com/src-doo/netbox-ssot/internal/logger.Logger).Debugf
-        - (*github.com/src-doo/netbox-ssot/internal/logger.Logger).Info
-        - (*github.com/src-doo/netbox-ssot/internal/logger.Logger).Infof
-        - (*github.com/src-doo/netbox-ssot/internal/logger.Logger).Warning
-        - (*github.com/src-doo/netbox-ssot/internal/logger.Logger).Warningf
-        - (*github.com/src-doo/netbox-ssot/internal/logger.Logger).Error
-        - (*github.com/src-doo/netbox-ssot/internal/logger.Logger).Errorf
-        - (*github.com/src-doo/netbox-ssot/internal/logger.Logger).Output
+        - (*github.com/bl4ko/netbox-ssot/internal/logger.Logger).Debug
+        - (*github.com/bl4ko/netbox-ssot/internal/logger.Logger).Debugf
+        - (*github.com/bl4ko/netbox-ssot/internal/logger.Logger).Info
+        - (*github.com/bl4ko/netbox-ssot/internal/logger.Logger).Infof
+        - (*github.com/bl4ko/netbox-ssot/internal/logger.Logger).Warning
+        - (*github.com/bl4ko/netbox-ssot/internal/logger.Logger).Warningf
+        - (*github.com/bl4ko/netbox-ssot/internal/logger.Logger).Error
+        - (*github.com/bl4ko/netbox-ssot/internal/logger.Logger).Errorf
+        - (*github.com/bl4ko/netbox-ssot/internal/logger.Logger).Output
     lll:
       line-length: 120
     misspell:

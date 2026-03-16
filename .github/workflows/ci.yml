@@ -57,7 +57,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.txt
-          slug: src-doo/netbox-ssot
+          slug: bl4ko/netbox-ssot
 
   vulnerabilities:
     name: Check for vulnerabilities
