@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.25.8@sha256:bd1e2df4e6259b2bd5b1de0e6b22ca414502cd6e7276a5dd5dd414b65063be58 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.26.1@sha256:c7e98cc0fd4dfb71ee7465fee6c9a5f079163307e4bf141b336bb9dae00159a5 AS builder
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -23,7 +23,7 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
   -X 'main.date=$CREATED' \
   " -o ./cmd/netbox-ssot/main ./cmd/netbox-ssot/main.go
 
-FROM alpine:3.21.6@sha256:c3f8e73fdb79deaebaa2037150150191b9dcbfba68b4a46d70103204c53f4709
+FROM alpine:3.23.3@sha256:25109184c71bdad752c8312a8623239686a9a2071e8825f20acb8f2198c3f659
 
 ARG VERSION
 ARG CREATED
