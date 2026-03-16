@@ -16,7 +16,7 @@ repos:
       - id: golangci-lint
 
   - repo: https://github.com/segmentio/golines
-    rev: v0.12.2
+    rev: v0.13.0
     hooks:
       - id: golines
         name: golines
