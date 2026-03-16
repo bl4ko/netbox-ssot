@@ -4,23 +4,24 @@ go 1.25.8
 
 require (
 	github.com/PaloAltoNetworks/pango v0.10.2
-	github.com/cisco-en-programmability/dnacenter-go-sdk/v7 v7.0.0
-	github.com/luthermonson/go-proxmox v0.2.1
+	github.com/cisco-en-programmability/dnacenter-go-sdk/v7 v7.0.2
+	github.com/luthermonson/go-proxmox v0.4.0
 	github.com/ovirt/go-ovirt v4.3.4+incompatible
-	github.com/scrapli/scrapligo v1.3.3
+	github.com/scrapli/scrapligo v1.4.0
 	github.com/src-doo/go-devicetype-library v0.1.56
-	github.com/vmware/govmomi v0.48.1
-	golang.org/x/text v0.31.0
+	github.com/vmware/govmomi v0.53.0
+	golang.org/x/text v0.35.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
 	github.com/buger/goterm v1.0.4 // indirect
 	github.com/creack/pty v1.1.24 // indirect
-	github.com/diskfs/go-diskfs v1.4.2 // indirect
+	github.com/diskfs/go-diskfs v1.7.0 // indirect
 	github.com/djherbis/times v1.6.0 // indirect
 	github.com/go-resty/resty/v2 v2.16.5 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/jinzhu/copier v0.4.0 // indirect
 	github.com/magefile/mage v1.15.0 // indirect
