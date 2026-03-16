@@ -680,6 +680,11 @@ func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *ob
 				ps.SourceConfig.IgnoredSubnets,
 			) {
 				ipAddress.IPAddress = utils.RemoveZoneIndexFromIPAddress(ipAddress.IPAddress)
+				// VRF
+				ipVRF, err := common.MatchIPToVRF(ps.Ctx, nbi, ipAddress.IPAddress, ps.SourceConfig.IPVrfRelations)
+				if err != nil {
+					ps.Logger.Warningf(ps.Ctx, "match ip to vrf for %s: %s", ipAddress.IPAddress, err)
+				}
 				ipAddressStruct := &objects.IPAddress{
 					NetboxObject: objects.NetboxObject{
 						Tags: ps.GetSourceTags(),
@@ -693,6 +698,7 @@ func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *ob
 					AssignedObjectType: constants.ContentTypeVirtualizationVMInterface,
 					AssignedObjectID:   nbVMIface.ID,
 					Status:             &objects.IPAddressStatusActive, //TODO: this is hardcoded
+					VRF:                ipVRF,
 				}
 				nbIPAddress, err := nbi.AddIPAddress(ps.Ctx, ipAddressStruct)
 				if err != nil {
@@ -729,6 +735,7 @@ func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *ob
 					(ipAddress.IPAddressType == "ipv6" && mask != constants.MaxIPv6MaskBits) {
 					_, err = nbi.AddPrefix(ps.Ctx, &objects.Prefix{
 						Prefix: prefix,
+						VRF:    ipVRF,
 					})
 					if err != nil {
 						ps.Logger.Errorf(ps.Ctx, "adding prefix: %s", err)
@@ -886,6 +893,11 @@ func (ps *ProxmoxSource) syncContainerNetworks(
 		) {
 			// Check if IPv4 address is present
 			if containerIface.Inet != "" {
+				// VRF
+				ipVRF, err := common.MatchIPToVRF(ps.Ctx, nbi, containerIface.Inet, ps.SourceConfig.IPVrfRelations)
+				if err != nil {
+					ps.Logger.Warningf(ps.Ctx, "match ip to vrf for %s: %s", containerIface.Inet, err)
+				}
 				nbIPAddress, err := nbi.AddIPAddress(ps.Ctx, &objects.IPAddress{
 					NetboxObject: objects.NetboxObject{
 						Tags: ps.GetSourceTags(),
@@ -899,6 +911,7 @@ func (ps *ProxmoxSource) syncContainerNetworks(
 					AssignedObjectType: constants.ContentTypeVirtualizationVMInterface,
 					AssignedObjectID:   nbVMIface.ID,
 					Status:             &objects.IPAddressStatusActive, //TODO: this is hardcoded
+					VRF:                ipVRF,
 				})
 				if err != nil {
 					ps.Logger.Warningf(ps.Ctx, "add ip address: %s", err)
@@ -910,6 +923,7 @@ func (ps *ProxmoxSource) syncContainerNetworks(
 					} else if mask != constants.MaxIPv4MaskBits {
 						_, err = nbi.AddPrefix(ps.Ctx, &objects.Prefix{
 							Prefix: prefix,
+							VRF:    ipVRF,
 						})
 						if err != nil {
 							ps.Logger.Errorf(ps.Ctx, "adding prefix: %s", err)
@@ -926,6 +940,11 @@ func (ps *ProxmoxSource) syncContainerNetworks(
 		) {
 			if containerIface.Inet6 != "" {
 				containerIface.Inet6 = utils.RemoveZoneIndexFromIPAddress(containerIface.Inet6)
+				// VRF
+				ipVRF, err := common.MatchIPToVRF(ps.Ctx, nbi, containerIface.Inet6, ps.SourceConfig.IPVrfRelations)
+				if err != nil {
+					ps.Logger.Warningf(ps.Ctx, "match ip to vrf for %s: %s", containerIface.Inet6, err)
+				}
 				nbIPAddress, err := nbi.AddIPAddress(ps.Ctx, &objects.IPAddress{
 					NetboxObject: objects.NetboxObject{
 						Tags: ps.GetSourceTags(),
@@ -939,6 +958,7 @@ func (ps *ProxmoxSource) syncContainerNetworks(
 					AssignedObjectType: constants.ContentTypeVirtualizationVMInterface,
 					AssignedObjectID:   nbVMIface.ID,
 					Status:             &objects.IPAddressStatusActive, //TODO: this is hardcoded
+					VRF:                ipVRF,
 				})
 				if err != nil {
 					ps.Logger.Warningf(ps.Ctx, "add ipv6 address: %s", err)
