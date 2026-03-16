@@ -110,6 +110,8 @@ Example configuration can be found [here](#example-config).
 | `source.vlanSiteRelations`               | Regex relations in format `regex = vlan`, that map each vlan that satisfies regex to site.                               | all                        | []string | any                                      | []         | No       |
 | `source.wlanTenantRelations`             | Regex relations in format `regex = tenantName`, that map each wlan that satisfies regex to tenant.                       | [dnac]                     | []string | any                                      | []         | No       |
 | `source.customFieldMappings`             | Mappings of format `customFieldName = option`. Currently, supported options are `contact`, `owner`, `description`.       | [**vmware**]               | []string | any                                      | []         | No       |
+| `source.defaultIPv4MaskBits`             | Default IPv4 subnet mask bits when not provided by the source (e.g. oVirt guest agent).                                  | [**ovirt**]                | int      | 1-32                                     | 32         | No       |
+| `source.defaultIPv6MaskBits`             | Default IPv6 subnet mask bits when not provided by the source (e.g. oVirt guest agent).                                  | [**ovirt**]                | int      | 1-128                                    | 128        | No       |
 | `source.caFile`                          | Path to a self signed certificate for the source.                                                                        | any                        | string   | Valid path                               | ""         | No       |
 
 ### Example config

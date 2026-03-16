@@ -135,6 +135,8 @@ type SourceConfig struct {
 	AssignDomainName    string               `yaml:"assignDomainName"`
 	ContinueOnError     bool                 `yaml:"continueOnError"`
 	VlanPrefix          string               `yaml:"vlanPrefix"`
+	DefaultIPv4MaskBits int                  `yaml:"defaultIPv4MaskBits"`
+	DefaultIPv6MaskBits int                  `yaml:"defaultIPv6MaskBits"`
 
 	// Relations
 	DatacenterClusterGroupRelations map[string]string `yaml:"datacenterClusterGroupRelations"`
@@ -180,6 +182,8 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		IgnoreAssetTags                 bool                 `yaml:"ignoreAssetTags"`
 		IgnoreVMTemplates               bool                 `yaml:"ignoreVMTemplates"`
 		ContinueOnError                 bool                 `yaml:"continueOnError"`
+		DefaultIPv4MaskBits             int                  `yaml:"defaultIPv4MaskBits"`
+		DefaultIPv6MaskBits             int                  `yaml:"defaultIPv6MaskBits"`
 		DatacenterClusterGroupRelations []string             `yaml:"datacenterClusterGroupRelations"`
 		HostSiteRelations               []string             `yaml:"hostSiteRelations"`
 		HostRoleRelations               []string             `yaml:"hostRoleRelations"`
@@ -222,6 +226,8 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	sc.IgnoreAssetTags = rawMarshal.IgnoreAssetTags
 	sc.IgnoreVMTemplates = rawMarshal.IgnoreVMTemplates
 	sc.ContinueOnError = rawMarshal.ContinueOnError
+	sc.DefaultIPv4MaskBits = rawMarshal.DefaultIPv4MaskBits
+	sc.DefaultIPv6MaskBits = rawMarshal.DefaultIPv6MaskBits
 
 	if len(rawMarshal.DatacenterClusterGroupRelations) > 0 {
 		err := utils.ValidateRegexRelations(rawMarshal.DatacenterClusterGroupRelations)
