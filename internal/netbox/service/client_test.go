@@ -96,6 +96,20 @@ func TestNewNetBoxAPI(t *testing.T) {
 	}
 }
 
+func TestNewNetboxClient_InvalidCACert(t *testing.T) {
+	_, err := NewNetboxClient(
+		&logger.Logger{Logger: log.Default()},
+		"netbox.example.com",
+		"apitoken",
+		true,
+		constants.DefaultAPITimeout,
+		"/nonexistent/ca-cert.pem",
+	)
+	if err == nil {
+		t.Error("expected error for invalid CA cert path, got nil")
+	}
+}
+
 func TestNetboxAPI_doRequest(t *testing.T) {
 	type args struct {
 		method string
