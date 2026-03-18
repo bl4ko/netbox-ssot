@@ -164,6 +164,115 @@ func TestCreate(t *testing.T) {
 	}
 }
 
+func TestGetAll_Error(t *testing.T) {
+	ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+	_, err := GetAll[objects.Tag](ctx, FailingMockNetboxClient, "")
+	if err == nil {
+		t.Error("expected error from failing client, got nil")
+	}
+}
+
+func TestPatch_Error(t *testing.T) {
+	ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+	_, err := Patch[objects.Tag](ctx, FailingMockNetboxClient, 1, map[string]interface{}{"name": "x"})
+	if err == nil {
+		t.Error("expected error from failing client, got nil")
+	}
+}
+
+func TestCreate_Error(t *testing.T) {
+	ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+	tag := &objects.Tag{Name: "test"}
+	_, err := Create(ctx, FailingMockNetboxClient, tag)
+	if err == nil {
+		t.Error("expected error from failing client, got nil")
+	}
+}
+
+func TestBulkDeleteObjects_Error(t *testing.T) {
+	ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+	err := FailingMockNetboxClient.BulkDeleteObjects(ctx, constants.TagsAPIPath, map[int]bool{1: true})
+	if err == nil {
+		t.Error("expected error from failing client, got nil")
+	}
+}
+
+func TestGetAll_NotFound(t *testing.T) {
+	mockServer := CreateMockServer()
+	defer mockServer.Close()
+	MockNetboxClient.BaseURL = mockServer.URL
+	ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+	_, err := GetAll[objects.Site](ctx, MockNetboxClient, "")
+	if err != nil {
+		t.Errorf("GetAll for sites should succeed with mock server, got %v", err)
+	}
+}
+
+func TestGetVersion(t *testing.T) {
+	tests := []struct {
+		name         string
+		netboxClient *NetboxClient
+		wantErr      bool
+	}{
+		{
+			name:         "success returns version string",
+			netboxClient: MockNetboxClient,
+			wantErr:      false,
+		},
+		{
+			name:         "failing client returns error",
+			netboxClient: FailingMockNetboxClient,
+			wantErr:      true,
+		},
+	}
+	for _, tt := range tests {
+		mockServer := CreateMockServer()
+		defer mockServer.Close()
+		MockNetboxClient.BaseURL = mockServer.URL
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+			_, err := GetVersion(ctx, tt.netboxClient)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetVersion() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestDeleteObject(t *testing.T) {
+	tests := []struct {
+		name         string
+		netboxClient *NetboxClient
+		item         objects.IDItem
+		wantErr      bool
+	}{
+		{
+			name:         "success deleting a tag",
+			netboxClient: MockNetboxClient,
+			item:         &objects.Tag{ID: 1},
+			wantErr:      false,
+		},
+		{
+			name:         "failing client returns error",
+			netboxClient: FailingMockNetboxClient,
+			item:         &objects.Tag{ID: 1},
+			wantErr:      true,
+		},
+	}
+	for _, tt := range tests {
+		mockServer := CreateMockServer()
+		defer mockServer.Close()
+		MockNetboxClient.BaseURL = mockServer.URL
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+			err := tt.netboxClient.DeleteObject(ctx, tt.item)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("DeleteObject() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
 func TestBulkDeleteObjects(t *testing.T) {
 	type args struct {
 		ctx        context.Context
