@@ -27,7 +27,7 @@ type VirtualServerResponse struct {
 	Disabled    bool   `json:"disabled"`
 }
 
-func (fs *F5Source) initVirtualServers(ctx context.Context, c *F5Client) error {
+func (fs *F5Source) initVirtualServers(ctx context.Context, c *Client) error {
 	res, err := c.MakeRequest(ctx, http.MethodGet, "ltm/virtual", nil)
 	if err != nil {
 		return fmt.Errorf("request error: %s", err)

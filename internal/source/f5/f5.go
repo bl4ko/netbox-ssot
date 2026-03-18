@@ -19,7 +19,7 @@ type F5Source struct {
 	VirtualServers []VirtualServerResponse
 }
 
-type F5Client struct {
+type Client struct {
 	HTTPClient *http.Client
 	BaseURL    string
 	Username   string
@@ -30,8 +30,8 @@ type F5Client struct {
 func NewAPIClient(
 	username, password, apiToken, baseURL string,
 	httpClient *http.Client,
-) *F5Client {
-	return &F5Client{
+) *Client {
+	return &Client{
 		HTTPClient: httpClient,
 		BaseURL:    baseURL,
 		Username:   username,
@@ -40,7 +40,7 @@ func NewAPIClient(
 	}
 }
 
-func (c *F5Client) MakeRequest(
+func (c *Client) MakeRequest(
 	ctx context.Context,
 	method, path string,
 	body io.Reader,
@@ -78,7 +78,7 @@ func (fs *F5Source) Init() error {
 	ctx := context.Background()
 	defer ctx.Done()
 
-	initFunctions := []func(context.Context, *F5Client) error{
+	initFunctions := []func(context.Context, *Client) error{
 		fs.initVirtualServers,
 	}
 	for _, initFunc := range initFunctions {

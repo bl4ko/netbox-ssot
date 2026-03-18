@@ -116,11 +116,11 @@ func (fs *F5Source) resolveTarget(
 	case constants.ContentTypeDcimInterface:
 		iface := nbi.GetInterfaceByID(ipObj.AssignedObjectID)
 		if iface == nil {
-			return fmt.Errorf("Device interface ID %d for hostname IP %s not found", ipObj.AssignedObjectID, hostname)
+			return fmt.Errorf("device interface ID %d for hostname IP %s not found", ipObj.AssignedObjectID, hostname)
 		}
 		device := nbi.GetDeviceByID(iface.Device.ID)
 		if device == nil {
-			return fmt.Errorf("Device ID %d for hostname IP %s not found", iface.Device.ID, hostname)
+			return fmt.Errorf("device ID %d for hostname IP %s not found", iface.Device.ID, hostname)
 		}
 		fs.Logger.Infof(fs.Ctx, "resolved hostname %s to Device: %s (ID: %d)", hostname, device.Name, device.ID)
 		if ifaceName != "" {
