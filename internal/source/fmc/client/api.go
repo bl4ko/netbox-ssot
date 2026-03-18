@@ -21,11 +21,11 @@ const (
 
 // exponentialBackoff calculates the backoff duration based on the number of attempts.
 func exponentialBackoff(attempt int) time.Duration {
-	backoff := time.Duration(float64(initialBackoff) * math.Pow(backoffFactor, float64(attempt)))
-	if backoff > maxBackoff {
-		backoff = maxBackoff
+	backoffFloat := float64(initialBackoff) * math.Pow(backoffFactor, float64(attempt))
+	if backoffFloat > float64(maxBackoff) {
+		return maxBackoff
 	}
-	return backoff
+	return time.Duration(backoffFloat)
 }
 
 // Authenticate performs authentication on FMC API. If successful it returns access and refresh tokens.

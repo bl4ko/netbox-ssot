@@ -21,24 +21,25 @@
   ],
   "packageRules": [
     {
-      "matchManagers": ["gomod"],
-      "groupName": "go dependencies",
+      "description": "Automerge all non-major updates",
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
       "automerge": true
+    },
+    {
+      "matchManagers": ["gomod"],
+      "groupName": "go dependencies"
     },
     {
       "matchManagers": ["github-actions"],
-      "groupName": "github actions",
-      "automerge": true
+      "groupName": "github actions"
     },
     {
       "matchManagers": ["dockerfile"],
-      "groupName": "dockerfile dependencies",
-      "automerge": true
+      "groupName": "dockerfile dependencies"
     },
     {
       "matchManagers": ["regex"],
       "groupName": "semantic-release",
-      "automerge": true,
       "automergeStrategy": "rebase"
     }
   ]
