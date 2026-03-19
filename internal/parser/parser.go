@@ -137,6 +137,7 @@ type SourceConfig struct {
 	VlanPrefix          string               `yaml:"vlanPrefix"`
 	DefaultIPv4MaskBits int                  `yaml:"defaultIPv4MaskBits"`
 	DefaultIPv6MaskBits int                  `yaml:"defaultIPv6MaskBits"`
+	TargetInterface     string               `yaml:"targetInterface"`
 
 	// Relations
 	DatacenterClusterGroupRelations map[string]string `yaml:"datacenterClusterGroupRelations"`
@@ -184,6 +185,7 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		ContinueOnError                 bool                 `yaml:"continueOnError"`
 		DefaultIPv4MaskBits             int                  `yaml:"defaultIPv4MaskBits"`
 		DefaultIPv6MaskBits             int                  `yaml:"defaultIPv6MaskBits"`
+		TargetInterface                 string               `yaml:"targetInterface"`
 		DatacenterClusterGroupRelations []string             `yaml:"datacenterClusterGroupRelations"`
 		HostSiteRelations               []string             `yaml:"hostSiteRelations"`
 		HostRoleRelations               []string             `yaml:"hostRoleRelations"`
@@ -228,6 +230,7 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	sc.ContinueOnError = rawMarshal.ContinueOnError
 	sc.DefaultIPv4MaskBits = rawMarshal.DefaultIPv4MaskBits
 	sc.DefaultIPv6MaskBits = rawMarshal.DefaultIPv6MaskBits
+	sc.TargetInterface = rawMarshal.TargetInterface
 
 	if len(rawMarshal.DatacenterClusterGroupRelations) > 0 {
 		err := utils.ValidateRegexRelations(rawMarshal.DatacenterClusterGroupRelations)
@@ -502,6 +505,7 @@ func validateSourceConfig(config *Config) error {
 		case constants.Fortigate:
 		case constants.FMC:
 		case constants.IOSXE:
+		case constants.F5:
 		default:
 			return fmt.Errorf("%s.type is not valid", externalSourceStr)
 		}

@@ -11,6 +11,7 @@ const (
 	Fortigate SourceType = "fortigate"
 	FMC       SourceType = "fmc"
 	IOSXE     SourceType = "ios-xe"
+	F5        SourceType = "f5"
 )
 
 const WildcardIP = "0.0.0.0"
@@ -89,6 +90,7 @@ var SourceTagColorMap = map[SourceType]string{
 	Fortigate: ColorDarkGreen,
 	FMC:       ColorLightBlue,
 	IOSXE:     "0d294f",
+	F5:        ColorRed,
 }
 
 // Each source Mapping for source type tag. E.g. tag "paloalto" -> color orange.
@@ -100,6 +102,7 @@ var SourceTypeTagColorMap = map[SourceType]string{
 	Fortigate: ColorDarkGreen,
 	FMC:       ColorBlue,
 	IOSXE:     "0d294f",
+	F5:        ColorDarkRed,
 }
 
 const (
