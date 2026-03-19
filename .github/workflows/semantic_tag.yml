@@ -1,7 +1,5 @@
 name: Create semantic tag
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
