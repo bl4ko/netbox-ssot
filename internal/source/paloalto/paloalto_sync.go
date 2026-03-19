@@ -284,8 +284,13 @@ func (pas *PaloAltoSource) syncIPs(
 			pas.SourceConfig.PermittedSubnets,
 			pas.SourceConfig.IgnoredSubnets,
 		) {
+			// VRF
+			ipVRF, err := common.MatchIPToVRF(pas.Ctx, nbi, ipAddress, pas.SourceConfig.IPVrfRelations)
+			if err != nil {
+				pas.Logger.Warningf(pas.Ctx, "match ip to vrf for %s: %s", ipAddress, err)
+			}
 			dnsName := utils.ReverseLookup(ipAddress)
-			_, err := nbi.AddIPAddress(pas.Ctx, &objects.IPAddress{
+			_, err = nbi.AddIPAddress(pas.Ctx, &objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
 					Tags: pas.GetSourceTags(),
 					CustomFields: map[string]interface{}{
@@ -296,6 +301,7 @@ func (pas *PaloAltoSource) syncIPs(
 				AssignedObjectID:   nbIface.ID,
 				DNSName:            dnsName,
 				AssignedObjectType: constants.ContentTypeDcimInterface,
+				VRF:                ipVRF,
 			})
 			if err != nil {
 				pas.Logger.Errorf(
@@ -318,6 +324,7 @@ func (pas *PaloAltoSource) syncIPs(
 					Prefix: prefix,
 					Tenant: prefixTenant,
 					Vlan:   prefixVlan,
+					VRF:    ipVRF,
 				}
 				_, err = nbi.AddPrefix(pas.Ctx, prefixStruct)
 				if err != nil {
@@ -430,6 +437,12 @@ func (pas *PaloAltoSource) syncArpEntry(
 		defaultMask := 32
 		addressWithMask := fmt.Sprintf("%s/%d", entry.IP, defaultMask)
 
+		// VRF
+		ipVRF, err := common.MatchIPToVRF(pas.Ctx, nbi, addressWithMask, pas.SourceConfig.IPVrfRelations)
+		if err != nil {
+			pas.Logger.Warningf(pas.Ctx, "match ip to vrf for %s: %s", addressWithMask, err)
+		}
+
 		ipAddressStruct := &objects.IPAddress{
 			NetboxObject: objects.NetboxObject{
 				Tags:        newTags,
@@ -444,8 +457,9 @@ func (pas *PaloAltoSource) syncArpEntry(
 			Address: addressWithMask,
 			DNSName: dnsName,
 			Status:  &objects.IPAddressStatusActive,
+			VRF:     ipVRF,
 		}
-		_, err := nbi.AddIPAddress(pas.Ctx, ipAddressStruct)
+		_, err = nbi.AddIPAddress(pas.Ctx, ipAddressStruct)
 		if err != nil {
 			return fmt.Errorf("add arp ip address: %s", err)
 		}
