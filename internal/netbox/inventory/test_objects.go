@@ -63,15 +63,23 @@ var MockExistingSites = map[string]*objects.Site{
 	},
 }
 
+var mockLogger = &logger.Logger{Logger: log.New(os.Stdout, "", log.LstdFlags)}
+
 var MockInventory = &NetboxInventory{
-	Logger:             &logger.Logger{Logger: log.New(os.Stdout, "", log.LstdFlags)},
-	tagsIndexByName:    MockExistingTags,
-	tagsLock:           sync.Mutex{},
-	tenantsIndexByName: MockExistingTenants,
-	tenantsLock:        sync.Mutex{},
-	sitesIndexByName:   MockExistingSites,
-	sitesLock:          sync.Mutex{},
-	NetboxAPI:          service.MockNetboxClient,
+	Logger:                 mockLogger,
+	tagsIndexByName:        MockExistingTags,
+	tagsLock:               sync.Mutex{},
+	tenantsIndexByName:     MockExistingTenants,
+	tenantsLock:            sync.Mutex{},
+	sitesIndexByName:       MockExistingSites,
+	sitesLock:              sync.Mutex{},
+	deviceRolesIndexByName: map[string]*objects.DeviceRole{},
+	deviceRolesLock:        sync.Mutex{},
+	vrfsIndexByName:        map[string]*objects.VRF{},
+	vrfsLock:               sync.Mutex{},
+	NetboxAPI:              service.MockNetboxClient,
+	OrphanManager:          NewOrphanManager(mockLogger),
+	SourcePriority:         map[string]int{},
 	Ctx: context.WithValue(
 		context.Background(),
 		constants.CtxSourceKey,
