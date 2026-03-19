@@ -25,6 +25,8 @@ Currently, the supported external data sources types are:
 - [`fmc`](https://www.cisco.com/site/us/en/products/security/firewalls/firewall-management-center/index.html)
 - [`ios-xe`](https://www.cisco.com/c/en/us/products/ios-nx-os-software/ios-xe/index.html)
   - All devices with ios-xe supporting netconf
+- [`f5`](https://www.f5.com/products/big-ip-services)
+  - F5 BIG-IP LTM virtual servers (VIPs) via iControl REST API
 
 ## Compatibility Matrix
 
@@ -78,7 +80,7 @@ Example configuration can be found [here](#example-config).
 | Parameter                                | Description                                                                                                              | Source Type                | Type     | Possible values                          | Default    | Required |
 |------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|----------------------------| -------- | ---------------------------------------- |------------| -------- |
 | `source.name`                            | Name of the data source.                                                                                                 | all                        | str      | any                                      | ""         | Yes      |
-| `source.type`                            | Type of the data source.                                                                                                 | all                        | str      | [ovirt, vmware, dnac, proxmox, paloalto, fortigate, fmc, ios-xe] | ""         | Yes      |
+| `source.type`                            | Type of the data source.                                                                                                 | all                        | str      | [ovirt, vmware, dnac, proxmox, paloalto, fortigate, fmc, ios-xe, f5] | ""         | Yes      |
 | `source.httpScheme`                      | Http scheme for the source                                                                                               | all                        | str      | [ http,https]                            | https      | No       |
 | `source.hostname`                        | Hostname of the data source.                                                                                             | all                        | str      | any                                      | ""         | Yes      |
 | `source.port`                            | Port of the data source.                                                                                                 | all                        | int      | 0-65536                                  | 443        | No       |
@@ -113,6 +115,7 @@ Example configuration can be found [here](#example-config).
 | `source.customFieldMappings`             | Mappings of format `customFieldName = option`. Currently, supported options are `contact`, `owner`, `description`.       | [**vmware**]               | []string | any                                      | []         | No       |
 | `source.defaultIPv4MaskBits`             | Default IPv4 subnet mask bits when not provided by the source (e.g. oVirt guest agent).                                  | [**ovirt**]                | int      | 1-32                                     | 32         | No       |
 | `source.defaultIPv6MaskBits`             | Default IPv6 subnet mask bits when not provided by the source (e.g. oVirt guest agent).                                  | [**ovirt**]                | int      | 1-128                                    | 128        | No       |
+| `source.targetInterface`                 | Name of the interface on the target VM/Device to assign VIPs to. The target is resolved by looking up the source hostname IP in NetBox. | [**f5**]                   | string   | any                                      | ""         | No       |
 | `source.caFile`                          | Path to a self signed certificate for the source.                                                                        | any                        | string   | Valid path                               | ""         | No       |
 
 ### Example config

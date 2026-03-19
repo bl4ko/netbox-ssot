@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
@@ -281,6 +282,11 @@ func mergeTagSlices(
 			}
 		}
 	}
+
+	// Sort result by ID for deterministic output
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].ID < result[j].ID
+	})
 
 	existingIDs := make(map[int]bool)
 	if existingSlice.IsValid() {
