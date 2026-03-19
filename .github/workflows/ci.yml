@@ -58,7 +58,7 @@ jobs:
 
       - name: Go Coverage Report
         if: steps.changed-files.outputs.any_modified == 'true' && github.event_name == 'push'
-        uses: ncruces/go-coverage-report@31a3be420871f279c35249e9f5c0148c750e9585 # v0
+        uses: ncruces/go-coverage-report@dfc237255099f2d25066babde51253992175e365 # v0
         with:
           coverage-file: coverage.txt
           report: true
