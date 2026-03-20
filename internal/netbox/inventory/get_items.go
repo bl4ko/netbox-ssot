@@ -290,12 +290,14 @@ func (nbi *NetboxInventory) GetIPAddressByAddress(ip string) *objects.IPAddress 
 		for _, ifaceNames := range objNames {
 			for _, addresses := range ifaceNames {
 				for addr, ipObj := range addresses {
-					// addr format is "vrfID:10.0.0.1/24" or "0:10.0.0.1/24"
+					// addr format is "vrf<ID>/<address>" (e.g. "vrf42/10.0.0.1/24") or "10.0.0.1/24"
 					addrIP := addr
-					if idx := strings.Index(addr, ":"); idx != -1 {
-						addrIP = addr[idx+1:]
+					if strings.HasPrefix(addrIP, "vrf") {
+						if idx := strings.Index(addrIP, "/"); idx != -1 {
+							addrIP = addrIP[idx+1:]
+						}
 					}
-					if idx := strings.Index(addrIP, "/"); idx != -1 {
+					if idx := strings.LastIndex(addrIP, "/"); idx != -1 {
 						addrIP = addrIP[:idx]
 					}
 					if addrIP == ip {
