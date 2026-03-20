@@ -48,6 +48,17 @@ func (fs *F5Source) syncVirtualServers(nbi *inventory.NetboxInventory) error {
 			description = fmt.Sprintf("F5 Virtual Server: %s", vs.Name)
 		}
 
+		// Check if the IP already exists with a different mask
+		existingIP := nbi.GetIPAddressByAddress(ip)
+		if existingIP != nil && existingIP.Address != fmt.Sprintf("%s/%d", ip, maskBits) {
+			fs.Logger.Warningf(
+				fs.Ctx,
+				"virtual server %s: IP %s already exists in NetBox as %s with different mask, skipping",
+				vs.Name, ip, existingIP.Address,
+			)
+			continue
+		}
+
 		address := fmt.Sprintf("%s/%d", ip, maskBits)
 		ipAddr := &objects.IPAddress{
 			NetboxObject: objects.NetboxObject{
