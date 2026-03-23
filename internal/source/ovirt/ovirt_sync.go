@@ -1511,35 +1511,45 @@ func (o *OVirtSource) syncVMNics(
 			var nicVlans []*objects.Vlan
 			if vnicProfile, ok := nic.VnicProfile(); ok {
 				if vnicProfileID, ok := vnicProfile.Id(); ok {
-					// Get network for profile
-					vnicNetwork := o.Networks.OVirtNetworks[o.Networks.VnicProfile2Network[vnicProfileID]]
-					if vnicNetworkVlan, ok := vnicNetwork.Vlan(); ok {
-						if vlanID, ok := vnicNetworkVlan.Id(); ok {
-							vlanName := o.Networks.Vid2Name[int(vlanID)]
-							vlanSite, err := common.MatchVlanToSite(
-								o.Ctx,
-								nbi,
-								vlanName,
-								o.SourceConfig.VlanSiteRelations,
-							)
-							if err != nil {
-								return fmt.Errorf("match vlan to site: %s", err)
-							}
-							vlanGroup, err := common.MatchVlanToGroup(
-								o.Ctx,
-								nbi,
-								vlanName,
-								vlanSite,
-								o.SourceConfig.VlanGroupRelations,
-								o.SourceConfig.VlanGroupSiteRelations,
-							)
-							if err != nil {
-								o.Logger.Warningf(o.Ctx, "match vlan to group: %s", err)
-								continue
-							}
-							nicVlan, _ := nbi.GetVlan(vlanGroup.ID, int(vlanID))
-							nicVlans = []*objects.Vlan{nicVlan}
-							nicMode = &objects.VMInterfaceModeTagged
+
+					networkID, exists := o.Networks.VnicProfile2Network[vnicProfileID]
+					if !exists {
+						o.Logger.Debugf(o.Ctx, "no network mapping for vnicProfileID %s", vnicProfileID)
+						continue
+					}
+					vnicNetwork, exists := o.Networks.OVirtNetworks[networkID]
+					if !exists || vnicNetwork == nil {
+						o.Logger.Debugf(o.Ctx, "network %s not found for vnicProfileID %s", networkID, vnicProfileID)
+						continue
+					}
+
+                                        if vnicNetworkVlan, ok := vnicNetwork.Vlan(); ok {
+                                                if vlanID, ok := vnicNetworkVlan.Id(); ok {
+                                                        vlanName := o.Networks.Vid2Name[int(vlanID)]
+                                                        vlanSite, err := common.MatchVlanToSite(
+                                                                o.Ctx,
+                                                                nbi,
+                                                                vlanName,
+                                                                o.SourceConfig.VlanSiteRelations,
+                                                        )
+                                                        if err != nil {
+                                                                return fmt.Errorf("match vlan to site: %s", err)
+                                                        }
+                                                        vlanGroup, err := common.MatchVlanToGroup(
+                                                                o.Ctx,
+                                                                nbi,
+                                                                vlanName,
+                                                                vlanSite,
+                                                                o.SourceConfig.VlanGroupRelations,
+                                                                o.SourceConfig.VlanGroupSiteRelations,
+                                                        )
+                                                        if err != nil {
+                                                                o.Logger.Warningf(o.Ctx, "match vlan to group: %s", err)
+                                                                continue
+                                                        }
+                                                        nicVlan, _ := nbi.GetVlan(vlanGroup.ID, int(vlanID))
+                                                        nicVlans = []*objects.Vlan{nicVlan}
+                                                        nicMode = &objects.VMInterfaceModeTagged
 						}
 					}
 				}
