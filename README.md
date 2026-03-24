@@ -38,6 +38,46 @@ Currently, the supported external data sources types are:
 | v1.0.0-v1.8.x | >=4.0.0, < 4.2.0         |
 | v0.x.x        | >=3.7.0, < 4.0.0         |
 
+## CLI Flags
+
+| Flag       | Description                                        | Default       |
+| ---------- | -------------------------------------------------- | ------------- |
+| `--config` | Path to the configuration file                     | `config.yaml` |
+| `--dry-run`| Preview changes without writing to Netbox           | `false`       |
+
+### Dry Run
+
+Use the `--dry-run` flag to preview what changes would be made to Netbox without actually applying them.
+All read operations (fetching existing Netbox state, connecting to sources) execute normally,
+but **all write operations** (create, update, delete) are intercepted and logged instead.
+
+```bash
+# Binary
+netbox-ssot --config config.yaml --dry-run
+
+# Docker
+docker run -v /path/to/config.yaml:/app/config.yaml ghcr.io/bl4ko/netbox-ssot --dry-run
+
+# Kubernetes (one-off Job)
+kubectl create job --from=cronjob/netbox-ssot netbox-ssot-dry-run -- /app/netbox-ssot --config /app/config.yaml --dry-run
+```
+
+Look for `[DRY-RUN]` entries in the log output to see what would change:
+
+```
+INFO DRY-RUN MODE ENABLED: No changes will be written to Netbox
+...
+INFO [DRY-RUN] Would create objects.Tag at /api/extras/tags/
+INFO [DRY-RUN] Would update objects.Device (ID: 42) with: map[name:server01]
+INFO [DRY-RUN] Would delete objects.IPAddress (ID: 99) at /api/ipam/ip-addresses/
+INFO [DRY-RUN] Would bulk delete 3 objects at /api/dcim/interfaces/
+...
+INFO DRY-RUN COMPLETE: Review the log above for [DRY-RUN] entries to see what would change
+```
+
+> [!NOTE]
+> During a dry run, created objects are assigned fake IDs (starting at 100,000,000) to maintain internal index consistency. These IDs are never written to Netbox.
+
 ## Configuration
 
 Netbox-ssot is configured via a single yaml file.
