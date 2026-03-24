@@ -56,14 +56,12 @@ jobs:
         if: steps.changed-files.outputs.any_modified == 'true'
         run: go test -race -coverprofile=coverage.txt -covermode=atomic ./...
 
-      - name: Go Coverage Report
-        if: steps.changed-files.outputs.any_modified == 'true' && github.event_name == 'push'
-        uses: ncruces/go-coverage-report@dfc237255099f2d25066babde51253992175e365 # v0
+      - name: Upload coverage reports to Codecov
+        if: steps.changed-files.outputs.any_modified == 'true'
+        uses: codecov/codecov-action@13ce06bfc6bbe3ecf90edbbf1bc32fe5978ca1d3 # v5.3.1
         with:
-          coverage-file: coverage.txt
-          report: true
-          chart: true
-          amend: false
+          files: coverage.txt
+          slug: bl4ko/netbox-ssot
 
   vulnerabilities:
     name: Check for vulnerabilities
