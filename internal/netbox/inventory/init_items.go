@@ -243,7 +243,26 @@ func (nbi *NetboxInventory) initSites(ctx context.Context) error {
 	return nil
 }
 
-// Collects all sites from Netbox API and store them in the NetBoxInventory.
+// Collects all locations from Netbox API and stores them in the NetBoxInventory.
+func (nbi *NetboxInventory) initLocations(ctx context.Context) error {
+	extraArgs := fmt.Sprintf(
+		"&fields=%s",
+		utils.ExtractJSONTagsFromStructIntoString(objects.Location{}),
+	)
+	nbLocations, err := service.GetAll[objects.Location](ctx, nbi.NetboxAPI, extraArgs)
+	if err != nil {
+		return err
+	}
+	nbi.locationsIndexByName = make(map[string]*objects.Location)
+	for i := range nbLocations {
+		location := &nbLocations[i]
+		nbi.locationsIndexByName[location.Name] = location
+	}
+	nbi.Logger.Debug(ctx, "Successfully collected locations from Netbox: ", nbi.locationsIndexByName)
+	return nil
+}
+
+// Collects all site groups from Netbox API and stores them in the NetBoxInventory.
 func (nbi *NetboxInventory) initSiteGroups(ctx context.Context) error {
 	extraArgs := fmt.Sprintf(
 		"&fields=%s",
@@ -640,6 +659,52 @@ func (nbi *NetboxInventory) initSsotCustomFields(ctx context.Context) error {
 	})
 	if err != nil {
 		return fmt.Errorf("add host memory custom field: %s", err)
+	}
+	_, err = nbi.AddCustomField(ctx, &objects.CustomField{
+		Name:                  constants.CustomFieldServerCPUTypeName,
+		Label:                 constants.CustomFieldServerCPUTypeLabel,
+		Type:                  objects.CustomFieldTypeText,
+		FilterLogic:           objects.FilterLogicLoose,
+		CustomFieldUIVisible:  &objects.CustomFieldUIVisibleAlways,
+		CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
+		DisplayWeight:         objects.DisplayWeightDefault,
+		Description:           constants.CustomFieldServerCPUTypeDesc,
+		SearchWeight:          objects.SearchWeightDefault,
+		ObjectTypes:           []constants.ContentType{constants.ContentTypeVirtualizationVirtualMachine},
+	})
+	if err != nil {
+		return fmt.Errorf("add server cpu type custom field: %s", err)
+	}
+	_, err = nbi.AddCustomField(ctx, &objects.CustomField{
+		Name:                  constants.CustomFieldServerCategoryName,
+		Label:                 constants.CustomFieldServerCategoryLabel,
+		Type:                  objects.CustomFieldTypeText,
+		FilterLogic:           objects.FilterLogicLoose,
+		CustomFieldUIVisible:  &objects.CustomFieldUIVisibleAlways,
+		CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
+		DisplayWeight:         objects.DisplayWeightDefault,
+		Description:           constants.CustomFieldServerCategoryDesc,
+		SearchWeight:          objects.SearchWeightDefault,
+		ObjectTypes:           []constants.ContentType{constants.ContentTypeVirtualizationVirtualMachine},
+	})
+	if err != nil {
+		return fmt.Errorf("add server category custom field: %s", err)
+	}
+	_, err = nbi.AddCustomField(ctx, &objects.CustomField{
+		Name:                  constants.CustomFieldServerDeprecatedName,
+		Label:                 constants.CustomFieldServerDeprecatedLabel,
+		Type:                  objects.CustomFieldTypeBoolean,
+		FilterLogic:           objects.FilterLogicLoose,
+		CustomFieldUIVisible:  &objects.CustomFieldUIVisibleAlways,
+		Default:               false,
+		CustomFieldUIEditable: &objects.CustomFieldUIEditableYes,
+		DisplayWeight:         objects.DisplayWeightDefault,
+		Description:           constants.CustomFieldServerDeprecatedDesc,
+		SearchWeight:          objects.SearchWeightDefault,
+		ObjectTypes:           []constants.ContentType{constants.ContentTypeVirtualizationVirtualMachine},
+	})
+	if err != nil {
+		return fmt.Errorf("add server deprecated custom field: %s", err)
 	}
 	// custom field for storing uuid of the device.
 	_, err = nbi.AddCustomField(ctx, &objects.CustomField{

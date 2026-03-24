@@ -506,6 +506,7 @@ func validateSourceConfig(config *Config) error {
 		case constants.FMC:
 		case constants.IOSXE:
 		case constants.F5:
+		case constants.HetznerCloud:
 		default:
 			return fmt.Errorf("%s.type is not valid", externalSourceStr)
 		}
@@ -518,7 +519,7 @@ func validateSourceConfig(config *Config) error {
 				string(externalSource.HTTPScheme),
 			)
 		}
-		if externalSource.Hostname == "" {
+		if externalSource.Hostname == "" && externalSource.Type != constants.HetznerCloud {
 			return fmt.Errorf("%s.hostname: cannot be empty", externalSourceStr)
 		}
 		if externalSource.Port == 0 {
@@ -526,17 +527,19 @@ func validateSourceConfig(config *Config) error {
 		} else if externalSource.Port < 0 || externalSource.Port > 65535 {
 			return fmt.Errorf("%s.port: must be between 0 and 65535. Is %d", externalSourceStr, externalSource.Port)
 		}
-		if externalSource.APIToken == "" && externalSource.Type == constants.Fortigate {
+		tokenOnlySources := externalSource.Type == constants.Fortigate ||
+			externalSource.Type == constants.HetznerCloud
+		if externalSource.APIToken == "" && tokenOnlySources {
 			return fmt.Errorf(
 				"%s.apiToken is required for %s",
 				externalSourceStr,
-				constants.Fortigate,
+				externalSource.Type,
 			)
 		}
-		if externalSource.Username == "" && externalSource.Type != constants.Fortigate {
+		if externalSource.Username == "" && !tokenOnlySources {
 			return fmt.Errorf("%s.username: cannot be empty", externalSourceStr)
 		}
-		if externalSource.Password == "" && externalSource.Type != constants.Fortigate {
+		if externalSource.Password == "" && !tokenOnlySources {
 			return fmt.Errorf("%s.password: cannot be empty", externalSourceStr)
 		}
 		if externalSource.Tag == "" {

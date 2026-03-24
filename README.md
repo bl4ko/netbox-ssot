@@ -27,6 +27,8 @@ Currently, the supported external data sources types are:
   - All devices with ios-xe supporting netconf
 - [`f5`](https://www.f5.com/products/big-ip-services)
   - F5 BIG-IP LTM virtual servers (VIPs) via iControl REST API
+- [`hetznercloud`](https://www.hetzner.com/cloud/)
+  - Syncs locations, datacenters, servers, networks, floating IPs
 
 ## Compatibility Matrix
 
