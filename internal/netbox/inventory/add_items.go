@@ -129,6 +129,41 @@ func (nbi *NetboxInventory) AddSite(
 	return nbi.sitesIndexByName[newSite.Name], nil
 }
 
+// AddLocation adds a location to the local netbox inventory.
+func (nbi *NetboxInventory) AddLocation(
+	ctx context.Context,
+	newLocation *objects.Location,
+) (*objects.Location, error) {
+	newLocation.AddTag(nbi.SsotTag)
+	nbi.locationsLock.Lock()
+	defer nbi.locationsLock.Unlock()
+	if _, ok := nbi.locationsIndexByName[newLocation.Name]; ok {
+		oldLocation := nbi.locationsIndexByName[newLocation.Name]
+		diffMap, err := utils.JSONDiffMapExceptID(newLocation, oldLocation, false, nbi.SourcePriority)
+		if err != nil {
+			return nil, err
+		}
+		if len(diffMap) > 0 {
+			nbi.Logger.Debugf(ctx, "Location %s already exists in Netbox but is out of date. Patching it...", newLocation.Name)
+			patchedLocation, err := service.Patch[objects.Location](ctx, nbi.NetboxAPI, oldLocation.ID, diffMap)
+			if err != nil {
+				return nil, err
+			}
+			nbi.locationsIndexByName[newLocation.Name] = patchedLocation
+		} else {
+			nbi.Logger.Debugf(ctx, "Location %s already exists in Netbox and is up to date...", newLocation.Name)
+		}
+	} else {
+		nbi.Logger.Debugf(ctx, "Location %s does not exist in Netbox. Creating it...", newLocation.Name)
+		createdLocation, err := service.Create(ctx, nbi.NetboxAPI, newLocation)
+		if err != nil {
+			return nil, err
+		}
+		nbi.locationsIndexByName[newLocation.Name] = createdLocation
+	}
+	return nbi.locationsIndexByName[newLocation.Name], nil
+}
+
 // AddSiteGroup adds a SiteGroup to the local netbox inventory.
 func (nbi *NetboxInventory) AddSiteGroup(
 	ctx context.Context,
