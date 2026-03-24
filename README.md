@@ -1,7 +1,7 @@
 # Netbox-SSOT
 
 [![Go](https://github.com/bl4ko/netbox-ssot/actions/workflows/ci.yml/badge.svg)](https://github.com/bl4ko/netbox-ssot/actions/workflows/ci.yml)
-[![Coverage](https://raw.githubusercontent.com/wiki/bl4ko/netbox-ssot/coverage.svg)](https://raw.githubusercontent.com/wiki/bl4ko/netbox-ssot/coverage.svg)
+[![codecov](https://codecov.io/gh/bl4ko/netbox-ssot/graph/badge.svg)](https://codecov.io/gh/bl4ko/netbox-ssot)
 ![GitHub last commit](https://img.shields.io/github/last-commit/bl4ko/netbox-ssot)
 ![GitHub Tag](https://img.shields.io/github/v/tag/bl4ko/netbox-ssot)
 ![GitHub License](https://img.shields.io/github/license/bl4ko/netbox-ssot)
