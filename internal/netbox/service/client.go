@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/bl4ko/netbox-ssot/internal/logger"
@@ -20,7 +21,13 @@ type NetboxClient struct {
 	APIToken   string
 	Timeout    int // in seconds
 	MaxRetires int
+	DryRun     bool
+
+	nextFakeID     int64
+	nextFakeIDLock sync.Mutex
 }
+
+const dryRunFakeIDStart = 100_000_000
 
 // APIResponse is a struct that represents a response from the Netbox API.
 type APIResponse struct {
@@ -36,6 +43,7 @@ func NewNetboxClient(
 	validateCert bool,
 	timeout int,
 	caCert string,
+	dryRun bool,
 ) (*NetboxClient, error) {
 	httpClient, err := utils.NewHTTPClient(validateCert, caCert)
 	if err != nil {
@@ -47,7 +55,17 @@ func NewNetboxClient(
 		BaseURL:    baseURL,
 		APIToken:   apiToken,
 		Timeout:    timeout,
+		DryRun:     dryRun,
+		nextFakeID: dryRunFakeIDStart,
 	}, nil
+}
+
+func (api *NetboxClient) generateFakeID() int {
+	api.nextFakeIDLock.Lock()
+	defer api.nextFakeIDLock.Unlock()
+	id := api.nextFakeID
+	api.nextFakeID++
+	return int(id)
 }
 
 func (api *NetboxClient) doRequest(
