@@ -1511,9 +1511,7 @@ func (o *OVirtSource) syncVMNics(
 			var nicVlans []*objects.Vlan
 			if vnicProfile, ok := nic.VnicProfile(); ok {
 				if vnicProfileID, ok := vnicProfile.Id(); ok {
-
 					vmName, _ := ovirtVM.Name()
-
 					networkID, exists := o.Networks.VnicProfile2Network[vnicProfileID]
 					if !exists {
 						o.Logger.Warningf(
@@ -1531,7 +1529,6 @@ func (o *OVirtSource) syncVMNics(
 						o.Logger.Debugf(o.Ctx, "network %s not found for vnicProfileID %s", networkID, vnicProfileID)
 						continue
 					}
-
 					if vnicNetworkVlan, ok := vnicNetwork.Vlan(); ok {
 						if vlanID, ok := vnicNetworkVlan.Id(); ok {
 							vlanName := o.Networks.Vid2Name[int(vlanID)]
@@ -1563,7 +1560,6 @@ func (o *OVirtSource) syncVMNics(
 					}
 				}
 			}
-
 			nbVMInterface, err := nbi.AddVMInterface(o.Ctx, &objects.VMInterface{
 				NetboxObject: objects.NetboxObject{
 					Tags:        o.GetSourceTags(),
