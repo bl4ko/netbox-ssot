@@ -60,7 +60,6 @@ jobs:
         if: steps.changed-files.outputs.any_modified == 'true'
         uses: codecov/codecov-action@13ce06bfc6bbe3ecf90edbbf1bc32fe5978ca1d3 # v5.3.1
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.txt
           slug: bl4ko/netbox-ssot
 
