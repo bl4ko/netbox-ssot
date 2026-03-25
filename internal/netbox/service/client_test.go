@@ -78,6 +78,7 @@ func TestNewNetBoxAPI(t *testing.T) {
 				tt.args.validateCert,
 				tt.args.timeout,
 				tt.args.caCert,
+				false,
 			)
 			if err != nil {
 				t.Errorf("NewNetboxClient() error = %v", err)
@@ -93,6 +94,21 @@ func TestNewNetBoxAPI(t *testing.T) {
 				t.Errorf("HTTPClient was not initialized")
 			}
 		})
+	}
+}
+
+func TestNewNetboxClient_InvalidCACert(t *testing.T) {
+	_, err := NewNetboxClient(
+		&logger.Logger{Logger: log.Default()},
+		"netbox.example.com",
+		"apitoken",
+		true,
+		constants.DefaultAPITimeout,
+		"/nonexistent/ca-cert.pem",
+		false,
+	)
+	if err == nil {
+		t.Error("expected error for invalid CA cert path, got nil")
 	}
 }
 

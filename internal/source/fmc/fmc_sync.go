@@ -252,8 +252,13 @@ func (fmcs *FMCSource) syncVlanInterfaces(
 					fmcs.SourceConfig.PermittedSubnets,
 					fmcs.SourceConfig.IgnoredSubnets,
 				) {
+					// VRF
+					ipVRF, err := common.MatchIPToVRF(fmcs.Ctx, nbi, ipAddress, fmcs.SourceConfig.IPVrfRelations)
+					if err != nil {
+						fmcs.Logger.Warningf(fmcs.Ctx, "match ip to vrf for %s: %s", ipAddress, err)
+					}
 					dnsName := utils.ReverseLookup(vlanIface.IPv4.Static.Address)
-					_, err := nbi.AddIPAddress(fmcs.Ctx, &objects.IPAddress{
+					_, err = nbi.AddIPAddress(fmcs.Ctx, &objects.IPAddress{
 						NetboxObject: objects.NetboxObject{
 							Tags: fmcs.GetSourceTags(),
 							CustomFields: map[string]interface{}{
@@ -264,6 +269,7 @@ func (fmcs *FMCSource) syncVlanInterfaces(
 						DNSName:            dnsName,
 						AssignedObjectID:   NBIface.ID,
 						AssignedObjectType: constants.ContentTypeDcimInterface,
+						VRF:                ipVRF,
 					})
 					if err != nil {
 						return fmt.Errorf("add ip address")
@@ -283,6 +289,7 @@ func (fmcs *FMCSource) syncVlanInterfaces(
 							Prefix: prefix,
 							Tenant: prefixTenant,
 							Vlan:   prefixVlan,
+							VRF:    ipVRF,
 						})
 						if err != nil {
 							return fmt.Errorf("add prefix: %s", err)
@@ -331,8 +338,13 @@ func (fmcs *FMCSource) syncPhysicalInterfaces(
 					fmcs.SourceConfig.PermittedSubnets,
 					fmcs.SourceConfig.IgnoredSubnets,
 				) {
+					// VRF
+					ipVRF, err := common.MatchIPToVRF(fmcs.Ctx, nbi, ipAddr, fmcs.SourceConfig.IPVrfRelations)
+					if err != nil {
+						fmcs.Logger.Warningf(fmcs.Ctx, "match ip to vrf for %s: %s", ipAddr, err)
+					}
 					dnsName := utils.ReverseLookup(pIface.IPv4.Static.Address)
-					_, err := nbi.AddIPAddress(fmcs.Ctx, &objects.IPAddress{
+					_, err = nbi.AddIPAddress(fmcs.Ctx, &objects.IPAddress{
 						NetboxObject: objects.NetboxObject{
 							Tags: fmcs.GetSourceTags(),
 							CustomFields: map[string]interface{}{
@@ -343,6 +355,7 @@ func (fmcs *FMCSource) syncPhysicalInterfaces(
 						DNSName:            dnsName,
 						AssignedObjectID:   NBIface.ID,
 						AssignedObjectType: constants.ContentTypeDcimInterface,
+						VRF:                ipVRF,
 					})
 					if err != nil {
 						return fmt.Errorf("add ip address")
@@ -388,8 +401,13 @@ func (fmcs *FMCSource) syncEtherChannelInterfaces(
 					fmcs.SourceConfig.PermittedSubnets,
 					fmcs.SourceConfig.IgnoredSubnets,
 				) {
+					// VRF
+					ipVRF, err := common.MatchIPToVRF(fmcs.Ctx, nbi, ipAddr, fmcs.SourceConfig.IPVrfRelations)
+					if err != nil {
+						fmcs.Logger.Warningf(fmcs.Ctx, "match ip to vrf for %s: %s", ipAddr, err)
+					}
 					dnsName := utils.ReverseLookup(eIface.IPv4.Static.Address)
-					_, err := nbi.AddIPAddress(fmcs.Ctx, &objects.IPAddress{
+					_, err = nbi.AddIPAddress(fmcs.Ctx, &objects.IPAddress{
 						NetboxObject: objects.NetboxObject{
 							Tags: fmcs.GetSourceTags(),
 							CustomFields: map[string]interface{}{
@@ -400,6 +418,7 @@ func (fmcs *FMCSource) syncEtherChannelInterfaces(
 						DNSName:            dnsName,
 						AssignedObjectID:   NBIface.ID,
 						AssignedObjectType: constants.ContentTypeDcimInterface,
+						VRF:                ipVRF,
 					})
 					if err != nil {
 						return fmt.Errorf("add ip address")
@@ -502,8 +521,13 @@ func (fmcs *FMCSource) syncSubInterfaces(
 					fmcs.SourceConfig.PermittedSubnets,
 					fmcs.SourceConfig.IgnoredSubnets,
 				) {
+					// VRF
+					ipVRF, err := common.MatchIPToVRF(fmcs.Ctx, nbi, ipAddress, fmcs.SourceConfig.IPVrfRelations)
+					if err != nil {
+						fmcs.Logger.Warningf(fmcs.Ctx, "match ip to vrf for %s: %s", ipAddress, err)
+					}
 					dnsName := utils.ReverseLookup(subIface.IPv4.Static.Address)
-					_, err := nbi.AddIPAddress(fmcs.Ctx, &objects.IPAddress{
+					_, err = nbi.AddIPAddress(fmcs.Ctx, &objects.IPAddress{
 						NetboxObject: objects.NetboxObject{
 							Tags: fmcs.GetSourceTags(),
 							CustomFields: map[string]interface{}{
@@ -514,6 +538,7 @@ func (fmcs *FMCSource) syncSubInterfaces(
 						DNSName:            dnsName,
 						AssignedObjectID:   NBIface.ID,
 						AssignedObjectType: constants.ContentTypeDcimInterface,
+						VRF:                ipVRF,
 					})
 					if err != nil {
 						return fmt.Errorf("add ip address")
@@ -533,6 +558,7 @@ func (fmcs *FMCSource) syncSubInterfaces(
 							Prefix: prefix,
 							Tenant: prefixTenant,
 							Vlan:   prefixVlan,
+							VRF:    ipVRF,
 						})
 						if err != nil {
 							return fmt.Errorf("add prefix: %s", err)

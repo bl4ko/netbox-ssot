@@ -12,8 +12,10 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/parser"
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
 	"github.com/bl4ko/netbox-ssot/internal/source/dnac"
+	"github.com/bl4ko/netbox-ssot/internal/source/f5"
 	"github.com/bl4ko/netbox-ssot/internal/source/fmc"
 	"github.com/bl4ko/netbox-ssot/internal/source/fortigate"
+	"github.com/bl4ko/netbox-ssot/internal/source/hetznercloud"
 	iosxe "github.com/bl4ko/netbox-ssot/internal/source/ios-xe"
 	"github.com/bl4ko/netbox-ssot/internal/source/ovirt"
 	"github.com/bl4ko/netbox-ssot/internal/source/paloalto"
@@ -80,6 +82,10 @@ func NewSource(
 		return &fmc.FMCSource{Config: commonConfig}, nil
 	case constants.IOSXE:
 		return &iosxe.IOSXESource{Config: commonConfig}, nil
+	case constants.F5:
+		return &f5.F5Source{Config: commonConfig}, nil
+	case constants.HetznerCloud:
+		return &hetznercloud.Source{Config: commonConfig}, nil
 	default:
 		return nil, fmt.Errorf("unsupported source type: %s", config.Type)
 	}

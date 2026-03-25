@@ -1,6 +1,7 @@
 # Netbox-SSOT
 
 [![Go](https://github.com/bl4ko/netbox-ssot/actions/workflows/ci.yml/badge.svg)](https://github.com/bl4ko/netbox-ssot/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/bl4ko/netbox-ssot/graph/badge.svg)](https://codecov.io/gh/bl4ko/netbox-ssot)
 ![GitHub last commit](https://img.shields.io/github/last-commit/bl4ko/netbox-ssot)
 ![GitHub Tag](https://img.shields.io/github/v/tag/bl4ko/netbox-ssot)
 ![GitHub License](https://img.shields.io/github/license/bl4ko/netbox-ssot)
@@ -24,8 +25,12 @@ Currently, the supported external data sources types are:
 - [`fmc`](https://www.cisco.com/site/us/en/products/security/firewalls/firewall-management-center/index.html)
 - [`ios-xe`](https://www.cisco.com/c/en/us/products/ios-nx-os-software/ios-xe/index.html)
   - All devices with ios-xe supporting netconf
+- [`f5`](https://www.f5.com/products/big-ip-services)
+  - F5 BIG-IP LTM virtual servers (VIPs) via iControl REST API
+- [`hetznercloud`](https://www.hetzner.com/cloud/)
+  - Syncs locations, datacenters, servers, networks, floating IPs
 
-## Compatability Matrix
+## Compatibility Matrix
 
 > [!WARNING]
 > Since netbox introduces breaking changes in minor releases, netbox-ssot also introduces breaking changes in minor releases.
@@ -36,6 +41,46 @@ Currently, the supported external data sources types are:
 | v1.9.x        | >= 4.2.0                 |
 | v1.0.0-v1.8.x | >=4.0.0, < 4.2.0         |
 | v0.x.x        | >=3.7.0, < 4.0.0         |
+
+## CLI Flags
+
+| Flag       | Description                                        | Default       |
+| ---------- | -------------------------------------------------- | ------------- |
+| `--config` | Path to the configuration file                     | `config.yaml` |
+| `--dry-run`| Preview changes without writing to Netbox           | `false`       |
+
+### Dry Run
+
+Use the `--dry-run` flag to preview what changes would be made to Netbox without actually applying them.
+All read operations (fetching existing Netbox state, connecting to sources) execute normally,
+but **all write operations** (create, update, delete) are intercepted and logged instead.
+
+```bash
+# Binary
+netbox-ssot --config config.yaml --dry-run
+
+# Docker
+docker run -v /path/to/config.yaml:/app/config.yaml ghcr.io/bl4ko/netbox-ssot --dry-run
+
+# Kubernetes (one-off Job)
+kubectl create job --from=cronjob/netbox-ssot netbox-ssot-dry-run -- /app/netbox-ssot --config /app/config.yaml --dry-run
+```
+
+Look for `[DRY-RUN]` entries in the log output to see what would change:
+
+```
+INFO DRY-RUN MODE ENABLED: No changes will be written to Netbox
+...
+INFO [DRY-RUN] Would create objects.Tag at /api/extras/tags/
+INFO [DRY-RUN] Would update objects.Device (ID: 42) with: map[name:server01]
+INFO [DRY-RUN] Would delete objects.IPAddress (ID: 99) at /api/ipam/ip-addresses/
+INFO [DRY-RUN] Would bulk delete 3 objects at /api/dcim/interfaces/
+...
+INFO DRY-RUN COMPLETE: Review the log above for [DRY-RUN] entries to see what would change
+```
+
+> [!NOTE]
+> During a dry run, created objects are assigned fake IDs (starting at 100,000,000) to maintain internal index consistency. These IDs are never written to Netbox.
 
 ## Configuration
 
@@ -64,11 +109,11 @@ Example configuration can be found [here](#example-config).
 | `netbox.port`                   | Port of your netbox instance.                                                                                                                                                                                                                                                                                                                     | int      | 0-65536         | 443           | No       |
 | `netbox.httpScheme`             | HTTP scheme of your netbox instance.                                                                                                                                                                                                                                                                                                              | str      | [http, https]   | https         | No       |
 | `netbox.validateCert`           | Validate the TLS certificate of your netbox instance.                                                                                                                                                                                                                                                                                             | bool     | [true, false]   | false         | No       |
-| `netbox.timeout`                | Max timeout for api call of your netbox instance.                                                                                                                                                                                                                                                                                                 | int      | >=0             | 30            | No       |
+| `netbox.timeout`                | Max timeout for api call of your netbox instance.                                                                                                                                                                                                                                                                                                 | int      | >=0             | 15            | No       |
 | `netbox.removeOrphans`          | If set to **true** all objects, marked with netbox-ssot tag that were not found during this iteration are automatically deleted. If set to **false**, objects that were not found are marked with an **Orphan** tag. We can then use **netbox.removeOrphansAfterDays** to remove the orphans after n days that they were not seen on the sources. | bool     | [true, false]   | true          | No       |
 | `netbox.removeOrphansAfterDays` | Specifies the number of days to wait before automatically deleting objects marked as Orphan. This setting is only applicable if netbox.removeOrphans is set to false. A value of 5 means objects are deleted in five days after being marked as Orphan and not found since.                                                                       | int      | >0              | MaxInt        | No       |
 | `netbox.tag`                    | Tag to be applied to all objects managed by netbox-ssot.                                                                                                                                                                                                                                                                                          | string   | any             | "netbox-ssot" | No       |
-| `netbox.tagColor`               | TagColor for the netbox-ssot tag.                                                                                                                                                                                                                                                                                                                 | string   | any             | "07426b"      | No       |
+| `netbox.tagColor`               | TagColor for the netbox-ssot tag.                                                                                                                                                                                                                                                                                                                 | string   | any             | "00add8"      | No       |
 | `netbox.sourcePriority`         | Array of source names in order of priority. If an object (e.g. Vlan) is found in multiple sources, the first source in the list will be used.                                                                                                                                                                                                     | []string | any             | []            | No       |
 | `netbox.caFile`                 | Path to a self signed certificate for netbox.                                                                                                                                                                                                                                                                                                     | string   | Valid path      | ""            | No       |
 
@@ -77,7 +122,7 @@ Example configuration can be found [here](#example-config).
 | Parameter                                | Description                                                                                                              | Source Type                | Type     | Possible values                          | Default    | Required |
 |------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|----------------------------| -------- | ---------------------------------------- |------------| -------- |
 | `source.name`                            | Name of the data source.                                                                                                 | all                        | str      | any                                      | ""         | Yes      |
-| `source.type`                            | Type of the data source.                                                                                                 | all                        | str      | [ovirt, vmware, dnac, proxmox, paloalto] | ""         | Yes      |
+| `source.type`                            | Type of the data source.                                                                                                 | all                        | str      | [ovirt, vmware, dnac, proxmox, paloalto, fortigate, fmc, ios-xe, f5] | ""         | Yes      |
 | `source.httpScheme`                      | Http scheme for the source                                                                                               | all                        | str      | [ http,https]                            | https      | No       |
 | `source.hostname`                        | Hostname of the data source.                                                                                             | all                        | str      | any                                      | ""         | Yes      |
 | `source.port`                            | Port of the data source.                                                                                                 | all                        | int      | 0-65536                                  | 443        | No       |
@@ -89,10 +134,11 @@ Example configuration can be found [here](#example-config).
 | `source.ignoredSubnets`                  | List of subnets, which will be ignored (e.g. IPs won't be synced).                                                       | all                        | []string | any                                      | []         | No       |
 | `source.permittedSubnets`                | List of subnets, which will be permitted (e.g. only IPs in these subnets will be synced).                                | all                        | []string | any                                      | []         | No       |
 | `source.interfaceFilter`                 | Regex representation of interface names to be ignored (e.g. `(cali\|vxlan\|flannel\|[a-f0-9]{15})`)                      | all                        | string   | any                                      | []         | No       |
+| `source.continueOnError`                 | Continue syncing remaining objects even if one sync function fails.                                                       | all                        | bool     | [true, false]                            | false      | No       |
 | `source.collectArpData`                  | Collect data from the arp table of the device.                                                                           | [**paloalto**, **ios-xe**] | bool     | [true, false]                            | false      | No       |
 | `source.ignoreAssetTags`                 | Don't sync asset tags of devices.                                                                                        | all                        | bool     | [true, false]                            | false      | No       |
 | `source.ignoreSerialNumbers`             | Don't sync serial numbers of devices.                                                                                    | all                        | bool     | [true, false]                            | false      | No       |
-| `source.ignoreVMTemplates`               | Don't sync vm templates.                                                                                                 | [**vmware**,**Proxmox**]   | bool     | [true, false]                            | false      | No       |
+| `source.ignoreVMTemplates`               | Don't sync vm templates.                                                                                                 | [**vmware**, **proxmox**]  | bool     | [true, false]                            | false      | No       |
 | `source.AssignDomainName`                | Suffix node name with `AssignDomainName`.                                                                                | [**proxmox**]              | str      | any                                      | ""         | No       |
 | `source.vlanPrefix`                      | Prefix vlan name with `vlanPrefix`.                                                                                      | [**vmware**]               | str      | any                                      | ""         | No       |
 | `source.datacenterClusterGroupRelations` | Regex relations in format `regex = clusterGroupName`, that map each datacenter that satisfies regex to clusterGroupname. | [**vmware**, **ovirt**]    | []string | any                                      | []         | No       |
@@ -101,10 +147,9 @@ Example configuration can be found [here](#example-config).
 | `source.clusterTenantRelations`          | Regex relations in format `regex = tenantName`, that map each cluster that satisfies regex to tenant.                    | all                        | []string | any                                      | []         | No       |
 | `source.hostTenantRelations`             | Regex relations in format `regex = tenantName`, that map each host that satisfies regex to tenant.                       | all                        | []string | any                                      | []         | No       |
 | `source.hostRoleRelations`               | Regex relations in format `regex = roleName`, that map each host that satisfies regex to device role.                    | all                        | []string | any                                      | []         | No       |
-| `source.hostTenantRelations`             | Regex relations in format `regex = tenantName`, that map each host that satisfies regex to tenant.                       | all                        | []string | any                                      | []         | No       |
 | `source.vmTenantRelations`               | Regex relations in format `regex = tenantName`, that map each vm that satisfies regex to tenant.                         | all                        | []string | any                                      | []         | No       |
 | `source.vmRoleRelations`                 | Regex relations in format `regex = roleName`, that map each vm that satisfies regex to device role.                      | all                        | []string | any                                      | []         | No       |
-| `source.ipVrfRelations`                  | Regex relations in format `regex = vrfName`, that map each ip that satisfies regex to vrf.                               | [vmware, ovirt]            | []string | any                                      | []         | No       |
+| `source.ipVrfRelations`                  | Regex relations in format `regex = vrfName`, that map each ip that satisfies regex to vrf.                               | [**vmware**, **ovirt**, **proxmox**] | []string | any                                      | []         | No       |
 | `source.vlanGroupRelations`              | Regex relations in format `regex = vlanGroup`, that map each vlan that satisfies regex to vlanGroup.                     | all                        | []string | any                                      | []         | No       |
 | `source.vlanGroupSiteRelations`          | Regex relations in format `regex = vlanGroup`, that map each vlanGroup that satisfies regex to site.                     | all                        | []string | any                                      | []         | No       |
 | `source.vlanSiteRelations`               | Regex relations in format `regex = vlan`, that map each vlan that satisfies regex to site.                               | all                        | []string | any                                      | []         | No       |
@@ -112,6 +157,7 @@ Example configuration can be found [here](#example-config).
 | `source.customFieldMappings`             | Mappings of format `customFieldName = option`. Currently, supported options are `contact`, `owner`, `description`.       | [**vmware**]               | []string | any                                      | []         | No       |
 | `source.defaultIPv4MaskBits`             | Default IPv4 subnet mask bits when not provided by the source (e.g. oVirt guest agent).                                  | [**ovirt**]                | int      | 1-32                                     | 32         | No       |
 | `source.defaultIPv6MaskBits`             | Default IPv6 subnet mask bits when not provided by the source (e.g. oVirt guest agent).                                  | [**ovirt**]                | int      | 1-128                                    | 128        | No       |
+| `source.targetInterface`                 | Name of the interface on the target VM/Device to assign VIPs to. The target is resolved by looking up the source hostname IP in NetBox. | [**f5**]                   | string   | any                                      | ""         | No       |
 | `source.caFile`                          | Path to a self signed certificate for the source.                                                                        | any                        | string   | Valid path                               | ""         | No       |
 
 ### Example config

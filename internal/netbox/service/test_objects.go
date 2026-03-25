@@ -154,6 +154,35 @@ const (
 //nolint:gocyclo
 func CreateMockServer() *httptest.Server {
 	handler := http.NewServeMux()
+
+	handler.HandleFunc(
+		string(constants.DeviceRolesAPIPath),
+		func(w http.ResponseWriter, r *http.Request) {
+			switch r.Method {
+			case http.MethodPost:
+				w.WriteHeader(http.StatusCreated)
+				var role objects.DeviceRole
+				body, _ := io.ReadAll(r.Body)
+				if err := json.Unmarshal(body, &role); err != nil {
+					log.Printf("Error unmarshaling device role request: %v", err)
+				}
+				role.ID = 1
+				roleStr, err := json.Marshal(role)
+				if err != nil {
+					log.Printf("Error marshaling device role create response: %v", err)
+				}
+				_, err = w.Write(roleStr)
+				if err != nil {
+					log.Printf("Error writing response")
+				}
+			case http.MethodDelete:
+				w.WriteHeader(http.StatusNoContent)
+			default:
+				log.Printf("Wrong http method: %q", r.Method) //nolint:gosec
+			}
+		},
+	)
+
 	// Define handler for a specific path e.g., "/api/path"
 	handler.HandleFunc("/api/status/", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)

@@ -240,7 +240,12 @@ func (is *IOSXESource) syncArpTable(nbi *inventory.NetboxInventory) error {
 			dnsName := utils.ReverseLookup(arpEntry.Address)
 			defaultMask := 32
 			addressWithMask := fmt.Sprintf("%s/%d", arpEntry.Address, defaultMask)
-			_, err := nbi.AddIPAddress(is.Ctx, &objects.IPAddress{
+			// VRF
+			ipVRF, err := common.MatchIPToVRF(is.Ctx, nbi, arpEntry.Address, is.SourceConfig.IPVrfRelations)
+			if err != nil {
+				is.Logger.Warningf(is.Ctx, "match ip to vrf for %s: %s", arpEntry.Address, err)
+			}
+			_, err = nbi.AddIPAddress(is.Ctx, &objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
 					Tags: newTags,
 					Description: fmt.Sprintf(
@@ -257,6 +262,7 @@ func (is *IOSXESource) syncArpTable(nbi *inventory.NetboxInventory) error {
 				Address: addressWithMask,
 				DNSName: dnsName,
 				Status:  &objects.IPAddressStatusActive,
+				VRF:     ipVRF,
 			})
 			if err != nil {
 				is.Logger.Warningf(is.Ctx, "error creating ip address: %s", err)

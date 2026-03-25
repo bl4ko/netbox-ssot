@@ -11,7 +11,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
-	dnac "github.com/cisco-en-programmability/dnacenter-go-sdk/v7/sdk"
+	dnac "github.com/cisco-en-programmability/dnacenter-go-sdk/v8/sdk"
 )
 
 // Syncs dnac sites to netbox inventory.
@@ -102,6 +102,11 @@ func (ds *DnacSource) syncVlans(nbi *inventory.NetboxInventory) error {
 		if vlan.Prefix != "" && vlan.NetworkAddress != "" {
 			// Create prefix for this vlan
 			prefix := fmt.Sprintf("%s/%s", vlan.NetworkAddress, vlan.Prefix)
+			// VRF
+			prefixVRF, err := common.MatchIPToVRF(ds.Ctx, nbi, vlan.NetworkAddress, ds.SourceConfig.IPVrfRelations)
+			if err != nil {
+				ds.Logger.Warningf(ds.Ctx, "match ip to vrf for %s: %s", vlan.NetworkAddress, err)
+			}
 			_, err = nbi.AddPrefix(ds.Ctx, &objects.Prefix{
 				NetboxObject: objects.NetboxObject{
 					Tags: ds.GetSourceTags(),
@@ -112,6 +117,7 @@ func (ds *DnacSource) syncVlans(nbi *inventory.NetboxInventory) error {
 				Prefix: prefix,
 				Tenant: vlanTenant,
 				Vlan:   newVlan,
+				VRF:    prefixVRF,
 			})
 			if err != nil {
 				return fmt.Errorf("adding prefix: %s", err)
@@ -553,6 +559,12 @@ func (ds *DnacSource) addIPAddressToInterface(
 		defaultMask = maskBits
 	}
 
+	// VRF
+	ipVRF, err := common.MatchIPToVRF(ds.Ctx, nbi, ifaceDetails.IPv4Address, ds.SourceConfig.IPVrfRelations)
+	if err != nil {
+		ds.Logger.Warningf(ds.Ctx, "match ip to vrf for %s: %s", ifaceDetails.IPv4Address, err)
+	}
+
 	nbIPAddress, err := nbi.AddIPAddress(ds.Ctx, &objects.IPAddress{
 		NetboxObject: objects.NetboxObject{
 			Tags: ds.GetSourceTags(),
@@ -567,6 +579,7 @@ func (ds *DnacSource) addIPAddressToInterface(
 		AssignedObjectType: constants.ContentTypeDcimInterface,
 		AssignedObjectID:   iface.ID,
 		Tenant:             iface.Device.Tenant,
+		VRF:                ipVRF,
 	})
 	if err != nil {
 		return fmt.Errorf("adding IP address: %s", err)
@@ -583,6 +596,7 @@ func (ds *DnacSource) addIPAddressToInterface(
 			},
 			Prefix: prefix,
 			Tenant: iface.Device.Tenant,
+			VRF:    ipVRF,
 		})
 		if err != nil {
 			ds.Logger.Errorf(ds.Ctx, "adding prefix: %s", err)
@@ -749,6 +763,12 @@ func (ds *DnacSource) syncMissingDevicePrimaryIPs(nbi *inventory.NetboxInventory
 				return false
 			}
 
+			// VRF
+			ipVRF, err := common.MatchIPToVRF(ds.Ctx, nbi, device.ManagementIPAddress, ds.SourceConfig.IPVrfRelations)
+			if err != nil {
+				ds.Logger.Warningf(ds.Ctx, "match ip to vrf for %s: %s", device.ManagementIPAddress, err)
+			}
+
 			nbIPAddressStruct := &objects.IPAddress{
 				NetboxObject: objects.NetboxObject{
 					Tags: ds.GetSourceTags(),
@@ -763,6 +783,7 @@ func (ds *DnacSource) syncMissingDevicePrimaryIPs(nbi *inventory.NetboxInventory
 				Tenant:             nbDevice.Tenant,
 				AssignedObjectType: constants.ContentTypeDcimInterface,
 				AssignedObjectID:   nbIface.ID,
+				VRF:                ipVRF,
 			}
 			nbIPAddress, err := nbi.AddIPAddress(ds.Ctx, nbIPAddressStruct)
 			if err != nil {

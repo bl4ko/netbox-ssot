@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"net/http"
 	"reflect"
 	"testing"
 
@@ -159,6 +160,209 @@ func TestCreate(t *testing.T) {
 			}
 			if !reflect.DeepEqual(response, tt.want) {
 				t.Errorf("Patch() = %v, want %v", response, tt.want)
+			}
+		})
+	}
+}
+
+func TestCreate_DryRun(t *testing.T) {
+	ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+	dryRunClient := &NetboxClient{
+		HTTPClient: &http.Client{Transport: &FailingHTTPClient{}},
+		Logger:     MockNetboxClient.Logger,
+		DryRun:     true,
+		nextFakeID: dryRunFakeIDStart,
+		Timeout:    constants.DefaultAPITimeout,
+	}
+
+	t.Run("returns object with fake ID for Tag", func(t *testing.T) {
+		tag := &objects.Tag{Name: "dry-run-tag", Slug: "dry-run-tag"}
+		result, err := Create(ctx, dryRunClient, tag)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+		if result.ID < dryRunFakeIDStart {
+			t.Errorf("expected fake ID >= %d, got %d", dryRunFakeIDStart, result.ID)
+		}
+		if result != tag {
+			t.Error("expected same pointer returned")
+		}
+	})
+
+	t.Run("returns object with fake ID for Tenant", func(t *testing.T) {
+		tenant := &objects.Tenant{Name: "dry-run-tenant", Slug: "dry-run-tenant"}
+		result, err := Create(ctx, dryRunClient, tenant)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+		if result.ID < dryRunFakeIDStart {
+			t.Errorf("expected fake ID >= %d, got %d", dryRunFakeIDStart, result.ID)
+		}
+	})
+
+	t.Run("increments fake ID", func(t *testing.T) {
+		tag1 := &objects.Tag{Name: "t1"}
+		tag2 := &objects.Tag{Name: "t2"}
+		r1, _ := Create(ctx, dryRunClient, tag1)
+		r2, _ := Create(ctx, dryRunClient, tag2)
+		if r2.ID <= r1.ID {
+			t.Errorf("expected incrementing IDs, got %d then %d", r1.ID, r2.ID)
+		}
+	})
+}
+
+func TestPatch_DryRun(t *testing.T) {
+	ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+	dryRunClient := &NetboxClient{
+		HTTPClient: &http.Client{Transport: &FailingHTTPClient{}},
+		Logger:     MockNetboxClient.Logger,
+		DryRun:     true,
+		Timeout:    constants.DefaultAPITimeout,
+	}
+
+	result, err := Patch[objects.Tag](ctx, dryRunClient, 42, map[string]interface{}{"name": "updated"})
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if result.ID != 42 {
+		t.Errorf("expected ID 42, got %d", result.ID)
+	}
+}
+
+func TestDeleteObject_DryRun(t *testing.T) {
+	ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+	dryRunClient := &NetboxClient{
+		HTTPClient: &http.Client{Transport: &FailingHTTPClient{}},
+		Logger:     MockNetboxClient.Logger,
+		DryRun:     true,
+		Timeout:    constants.DefaultAPITimeout,
+	}
+
+	err := dryRunClient.DeleteObject(ctx, &objects.Tag{ID: 1})
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+}
+
+func TestBulkDeleteObjects_DryRun(t *testing.T) {
+	ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+	dryRunClient := &NetboxClient{
+		HTTPClient: &http.Client{Transport: &FailingHTTPClient{}},
+		Logger:     MockNetboxClient.Logger,
+		DryRun:     true,
+		Timeout:    constants.DefaultAPITimeout,
+	}
+
+	err := dryRunClient.BulkDeleteObjects(ctx, constants.TagsAPIPath, map[int]bool{1: true, 2: true})
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+}
+
+func TestGetAll_Error(t *testing.T) {
+	ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+	_, err := GetAll[objects.Tag](ctx, FailingMockNetboxClient, "")
+	if err == nil {
+		t.Error("expected error from failing client, got nil")
+	}
+}
+
+func TestPatch_Error(t *testing.T) {
+	ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+	_, err := Patch[objects.Tag](ctx, FailingMockNetboxClient, 1, map[string]interface{}{"name": "x"})
+	if err == nil {
+		t.Error("expected error from failing client, got nil")
+	}
+}
+
+func TestCreate_Error(t *testing.T) {
+	ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+	tag := &objects.Tag{Name: "test"}
+	_, err := Create(ctx, FailingMockNetboxClient, tag)
+	if err == nil {
+		t.Error("expected error from failing client, got nil")
+	}
+}
+
+func TestBulkDeleteObjects_Error(t *testing.T) {
+	ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+	err := FailingMockNetboxClient.BulkDeleteObjects(ctx, constants.TagsAPIPath, map[int]bool{1: true})
+	if err == nil {
+		t.Error("expected error from failing client, got nil")
+	}
+}
+
+func TestGetAll_NotFound(t *testing.T) {
+	mockServer := CreateMockServer()
+	defer mockServer.Close()
+	MockNetboxClient.BaseURL = mockServer.URL
+	ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+	_, err := GetAll[objects.Site](ctx, MockNetboxClient, "")
+	if err != nil {
+		t.Errorf("GetAll for sites should succeed with mock server, got %v", err)
+	}
+}
+
+func TestGetVersion(t *testing.T) {
+	tests := []struct {
+		name         string
+		netboxClient *NetboxClient
+		wantErr      bool
+	}{
+		{
+			name:         "success returns version string",
+			netboxClient: MockNetboxClient,
+			wantErr:      false,
+		},
+		{
+			name:         "failing client returns error",
+			netboxClient: FailingMockNetboxClient,
+			wantErr:      true,
+		},
+	}
+	for _, tt := range tests {
+		mockServer := CreateMockServer()
+		defer mockServer.Close()
+		MockNetboxClient.BaseURL = mockServer.URL
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+			_, err := GetVersion(ctx, tt.netboxClient)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetVersion() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestDeleteObject(t *testing.T) {
+	tests := []struct {
+		name         string
+		netboxClient *NetboxClient
+		item         objects.IDItem
+		wantErr      bool
+	}{
+		{
+			name:         "success deleting a tag",
+			netboxClient: MockNetboxClient,
+			item:         &objects.Tag{ID: 1},
+			wantErr:      false,
+		},
+		{
+			name:         "failing client returns error",
+			netboxClient: FailingMockNetboxClient,
+			item:         &objects.Tag{ID: 1},
+			wantErr:      true,
+		},
+	}
+	for _, tt := range tests {
+		mockServer := CreateMockServer()
+		defer mockServer.Close()
+		MockNetboxClient.BaseURL = mockServer.URL
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+			err := tt.netboxClient.DeleteObject(ctx, tt.item)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("DeleteObject() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

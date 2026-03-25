@@ -137,6 +137,7 @@ type SourceConfig struct {
 	VlanPrefix          string               `yaml:"vlanPrefix"`
 	DefaultIPv4MaskBits int                  `yaml:"defaultIPv4MaskBits"`
 	DefaultIPv6MaskBits int                  `yaml:"defaultIPv6MaskBits"`
+	TargetInterface     string               `yaml:"targetInterface"`
 
 	// Relations
 	DatacenterClusterGroupRelations map[string]string `yaml:"datacenterClusterGroupRelations"`
@@ -184,6 +185,7 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		ContinueOnError                 bool                 `yaml:"continueOnError"`
 		DefaultIPv4MaskBits             int                  `yaml:"defaultIPv4MaskBits"`
 		DefaultIPv6MaskBits             int                  `yaml:"defaultIPv6MaskBits"`
+		TargetInterface                 string               `yaml:"targetInterface"`
 		DatacenterClusterGroupRelations []string             `yaml:"datacenterClusterGroupRelations"`
 		HostSiteRelations               []string             `yaml:"hostSiteRelations"`
 		HostRoleRelations               []string             `yaml:"hostRoleRelations"`
@@ -228,6 +230,7 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	sc.ContinueOnError = rawMarshal.ContinueOnError
 	sc.DefaultIPv4MaskBits = rawMarshal.DefaultIPv4MaskBits
 	sc.DefaultIPv6MaskBits = rawMarshal.DefaultIPv6MaskBits
+	sc.TargetInterface = rawMarshal.TargetInterface
 
 	if len(rawMarshal.DatacenterClusterGroupRelations) > 0 {
 		err := utils.ValidateRegexRelations(rawMarshal.DatacenterClusterGroupRelations)
@@ -502,6 +505,8 @@ func validateSourceConfig(config *Config) error {
 		case constants.Fortigate:
 		case constants.FMC:
 		case constants.IOSXE:
+		case constants.F5:
+		case constants.HetznerCloud:
 		default:
 			return fmt.Errorf("%s.type is not valid", externalSourceStr)
 		}
@@ -514,7 +519,7 @@ func validateSourceConfig(config *Config) error {
 				string(externalSource.HTTPScheme),
 			)
 		}
-		if externalSource.Hostname == "" {
+		if externalSource.Hostname == "" && externalSource.Type != constants.HetznerCloud {
 			return fmt.Errorf("%s.hostname: cannot be empty", externalSourceStr)
 		}
 		if externalSource.Port == 0 {
@@ -522,17 +527,19 @@ func validateSourceConfig(config *Config) error {
 		} else if externalSource.Port < 0 || externalSource.Port > 65535 {
 			return fmt.Errorf("%s.port: must be between 0 and 65535. Is %d", externalSourceStr, externalSource.Port)
 		}
-		if externalSource.APIToken == "" && externalSource.Type == constants.Fortigate {
+		tokenOnlySources := externalSource.Type == constants.Fortigate ||
+			externalSource.Type == constants.HetznerCloud
+		if externalSource.APIToken == "" && tokenOnlySources {
 			return fmt.Errorf(
 				"%s.apiToken is required for %s",
 				externalSourceStr,
-				constants.Fortigate,
+				externalSource.Type,
 			)
 		}
-		if externalSource.Username == "" && externalSource.Type != constants.Fortigate {
+		if externalSource.Username == "" && !tokenOnlySources {
 			return fmt.Errorf("%s.username: cannot be empty", externalSourceStr)
 		}
-		if externalSource.Password == "" && externalSource.Type != constants.Fortigate {
+		if externalSource.Password == "" && !tokenOnlySources {
 			return fmt.Errorf("%s.password: cannot be empty", externalSourceStr)
 		}
 		if externalSource.Tag == "" {

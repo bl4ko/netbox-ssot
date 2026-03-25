@@ -1,6 +1,8 @@
 package inventory
 
 import (
+	"strings"
+
 	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 )
@@ -263,6 +265,49 @@ func (nbi *NetboxInventory) GetVMByID(vmID int) *objects.VM {
 	nbi.vmsLock.Lock()
 	defer nbi.vmsLock.Unlock()
 	return nbi.vmsIndexByID[vmID]
+}
+
+// GetVMInterfaceByVMIDAndName returns the VMInterface for the given VM ID and interface name.
+// It returns nil if not found.
+// This function is thread-safe.
+func (nbi *NetboxInventory) GetVMInterfaceByVMIDAndName(vmID int, ifaceName string) *objects.VMInterface {
+	nbi.vmInterfacesLock.Lock()
+	defer nbi.vmInterfacesLock.Unlock()
+	ifaces, ok := nbi.vmInterfacesIndexByVMIdAndName[vmID]
+	if !ok {
+		return nil
+	}
+	return ifaces[ifaceName]
+}
+
+// GetIPAddressByAddress searches for an IP address matching the given IP (without mask).
+// Returns the IPAddress or nil if not found.
+// This function is thread-safe.
+func (nbi *NetboxInventory) GetIPAddressByAddress(ip string) *objects.IPAddress {
+	nbi.ipAddressesLock.Lock()
+	defer nbi.ipAddressesLock.Unlock()
+	for _, objNames := range nbi.ipAddressesIndex {
+		for _, ifaceNames := range objNames {
+			for _, addresses := range ifaceNames {
+				for addr, ipObj := range addresses {
+					// addr format is "vrf<ID>/<address>" (e.g. "vrf42/10.0.0.1/24") or "10.0.0.1/24"
+					addrIP := addr
+					if strings.HasPrefix(addrIP, "vrf") {
+						if idx := strings.Index(addrIP, "/"); idx != -1 {
+							addrIP = addrIP[idx+1:]
+						}
+					}
+					if idx := strings.LastIndex(addrIP, "/"); idx != -1 {
+						addrIP = addrIP[:idx]
+					}
+					if addrIP == ip {
+						return ipObj
+					}
+				}
+			}
+		}
+	}
+	return nil
 }
 
 // GetVRF returns the VRF for the given vrfName.
