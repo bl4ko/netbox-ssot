@@ -44,7 +44,7 @@ jobs:
         if: steps.changed-files.outputs.any_modified == 'true'
         uses: golangci/golangci-lint-action@1e7e51e771db61008b38414a730f564565cf7c20 # v9.2.0
         with:
-          version: v2.11.3
+          version: v2.11.4
           args: --timeout=5m
           skip-cache: true
 
@@ -58,7 +58,7 @@ jobs:
 
       - name: Upload coverage reports to Codecov
         if: steps.changed-files.outputs.any_modified == 'true'
-        uses: codecov/codecov-action@13ce06bfc6bbe3ecf90edbbf1bc32fe5978ca1d3 # v5.3.1
+        uses: codecov/codecov-action@1af58845a975a7985b0beb0cbe6fbbb71a41dbad # v5.5.3
         with:
           files: coverage.txt
           slug: bl4ko/netbox-ssot
