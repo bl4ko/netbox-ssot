@@ -40,8 +40,8 @@ LABEL \
   org.opencontainers.image.title="Netbox-ssot" \
   org.opencontainers.image.description="Microservice for syncing Netbox with multiple external sources."
 
-# Install openssh required for netconf
-RUN apk add --no-cache openssh
+# Upgrade base packages to pick up security fixes and install openssh for netconf
+RUN apk upgrade --no-cache && apk add --no-cache openssh
 
 # Create a netbox user and group
 RUN addgroup -S -g 10001 netbox && \
