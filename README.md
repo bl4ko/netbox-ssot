@@ -16,7 +16,7 @@ to speed up the process of syncing.
 Currently, the supported external data sources types are:
 
 - [`ovirt`](https://www.ovirt.org/)
-- [`vmware`](https://www.vmware.com/products/vcenter.html)
+- [`vmware`](https://www.vmware.com/products/cloud-infrastructure/vsphere)
 - [`dnac`](https://www.cisco.com/site/us/en/products/networking/catalyst-center/index.html)
 - [`proxmox`](https://www.proxmox.com/en/)
 - [`paloalto`](https://www.paloaltonetworks.com/network-security/next-generation-firewall)
@@ -25,7 +25,7 @@ Currently, the supported external data sources types are:
 - [`fmc`](https://www.cisco.com/site/us/en/products/security/firewalls/firewall-management-center/index.html)
 - [`ios-xe`](https://www.cisco.com/c/en/us/products/ios-nx-os-software/ios-xe/index.html)
   - All devices with ios-xe supporting netconf
-- [`f5`](https://www.f5.com/products/big-ip-services)
+- [`f5`](https://www.f5.com/products/big-ip)
   - F5 BIG-IP LTM virtual servers (VIPs) via iControl REST API
 - [`hetznercloud`](https://www.hetzner.com/cloud/)
   - Syncs locations, datacenters, servers, networks, floating IPs
