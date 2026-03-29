@@ -1,7 +1,7 @@
 # Netbox-SSOT
 
 [![Go](https://github.com/bl4ko/netbox-ssot/actions/workflows/ci.yml/badge.svg)](https://github.com/bl4ko/netbox-ssot/actions/workflows/ci.yml)
-[![Coverage](https://raw.githubusercontent.com/wiki/bl4ko/netbox-ssot/coverage.svg)](https://raw.githubusercontent.com/wiki/bl4ko/netbox-ssot/coverage.svg)
+[![codecov](https://codecov.io/gh/bl4ko/netbox-ssot/graph/badge.svg)](https://codecov.io/gh/bl4ko/netbox-ssot)
 ![GitHub last commit](https://img.shields.io/github/last-commit/bl4ko/netbox-ssot)
 ![GitHub Tag](https://img.shields.io/github/v/tag/bl4ko/netbox-ssot)
 ![GitHub License](https://img.shields.io/github/license/bl4ko/netbox-ssot)
@@ -16,7 +16,7 @@ to speed up the process of syncing.
 Currently, the supported external data sources types are:
 
 - [`ovirt`](https://www.ovirt.org/)
-- [`vmware`](https://www.vmware.com/products/vcenter.html)
+- [`vmware`](https://www.vmware.com/products/cloud-infrastructure/vsphere)
 - [`dnac`](https://www.cisco.com/site/us/en/products/networking/catalyst-center/index.html)
 - [`proxmox`](https://www.proxmox.com/en/)
 - [`paloalto`](https://www.paloaltonetworks.com/network-security/next-generation-firewall)
@@ -25,8 +25,10 @@ Currently, the supported external data sources types are:
 - [`fmc`](https://www.cisco.com/site/us/en/products/security/firewalls/firewall-management-center/index.html)
 - [`ios-xe`](https://www.cisco.com/c/en/us/products/ios-nx-os-software/ios-xe/index.html)
   - All devices with ios-xe supporting netconf
-- [`f5`](https://www.f5.com/products/big-ip-services)
+- [`f5`](https://www.f5.com/products/big-ip)
   - F5 BIG-IP LTM virtual servers (VIPs) via iControl REST API
+- [`hetznercloud`](https://www.hetzner.com/cloud/)
+  - Syncs locations, datacenters, servers, networks, floating IPs
 
 ## Compatibility Matrix
 
@@ -39,6 +41,46 @@ Currently, the supported external data sources types are:
 | v1.9.x        | >= 4.2.0                 |
 | v1.0.0-v1.8.x | >=4.0.0, < 4.2.0         |
 | v0.x.x        | >=3.7.0, < 4.0.0         |
+
+## CLI Flags
+
+| Flag       | Description                                        | Default       |
+| ---------- | -------------------------------------------------- | ------------- |
+| `--config` | Path to the configuration file                     | `config.yaml` |
+| `--dry-run`| Preview changes without writing to Netbox           | `false`       |
+
+### Dry Run
+
+Use the `--dry-run` flag to preview what changes would be made to Netbox without actually applying them.
+All read operations (fetching existing Netbox state, connecting to sources) execute normally,
+but **all write operations** (create, update, delete) are intercepted and logged instead.
+
+```bash
+# Binary
+netbox-ssot --config config.yaml --dry-run
+
+# Docker
+docker run -v /path/to/config.yaml:/app/config.yaml ghcr.io/bl4ko/netbox-ssot --dry-run
+
+# Kubernetes (one-off Job)
+kubectl create job --from=cronjob/netbox-ssot netbox-ssot-dry-run -- /app/netbox-ssot --config /app/config.yaml --dry-run
+```
+
+Look for `[DRY-RUN]` entries in the log output to see what would change:
+
+```
+INFO DRY-RUN MODE ENABLED: No changes will be written to Netbox
+...
+INFO [DRY-RUN] Would create objects.Tag at /api/extras/tags/
+INFO [DRY-RUN] Would update objects.Device (ID: 42) with: map[name:server01]
+INFO [DRY-RUN] Would delete objects.IPAddress (ID: 99) at /api/ipam/ip-addresses/
+INFO [DRY-RUN] Would bulk delete 3 objects at /api/dcim/interfaces/
+...
+INFO DRY-RUN COMPLETE: Review the log above for [DRY-RUN] entries to see what would change
+```
+
+> [!NOTE]
+> During a dry run, created objects are assigned fake IDs (starting at 100,000,000) to maintain internal index consistency. These IDs are never written to Netbox.
 
 ## Configuration
 

@@ -11,19 +11,47 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
-          token: ${{ secrets.SVC_TOKEN }}
           ref: main
 
       - name: Replace image version in k8s manifests
+        env:
+          TAG: ${{ github.ref_name }}
         run: |
           for file in k8s/*.yaml; do
-             sed -i "s|ghcr.io/bl4ko/netbox-ssot:v.*.*.*|ghcr.io/bl4ko/netbox-ssot:${{ github.ref_name }}|g" "$file"
+             sed -i "s|ghcr.io/bl4ko/netbox-ssot:v.*.*.*|ghcr.io/bl4ko/netbox-ssot:${TAG}|g" "$file"
            done
 
-      - name: Commit and push changes
+      - name: Create signed commit via GitHub API
+        env:
+          GH_TOKEN: ${{ secrets.SVC_TOKEN }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
         run: |
-          git config --global user.name "bl4ko"
-          git config --global user.email "83308880+bl4ko@users.noreply.github.com"
-          git add .
-          git commit -m "chore(k8s): Replace version in k8s manifests"
-          git push -f
+          COMMIT_MSG="chore(k8s): replace version in k8s manifests to ${TAG}"
+
+          HEAD_SHA=$(gh api "repos/${REPO}/git/ref/heads/main" -q '.object.sha')
+          HEAD_TREE=$(gh api "repos/${REPO}/git/commits/${HEAD_SHA}" -q '.tree.sha')
+
+          TREE_ITEMS="[]"
+          for file in k8s/*.yaml; do
+            CONTENT=$(base64 -w 0 "$file")
+            BLOB_SHA=$(gh api "repos/${REPO}/git/blobs" \
+              -X POST \
+              -f content="${CONTENT}" \
+              -f encoding="base64" \
+              -q '.sha')
+            TREE_ITEMS=$(echo "$TREE_ITEMS" | jq --arg path "$file" --arg sha "$BLOB_SHA" \
+              '. + [{"path": $path, "mode": "100644", "type": "blob", "sha": $sha}]')
+          done
+
+          NEW_TREE=$(echo "$TREE_ITEMS" | jq --arg base "$HEAD_TREE" '{"base_tree": $base, "tree": .}' | \
+            gh api "repos/${REPO}/git/trees" -X POST --input - -q '.sha')
+
+          NEW_COMMIT=$(jq -n \
+            --arg msg "$COMMIT_MSG" \
+            --arg tree "$NEW_TREE" \
+            --arg parent "$HEAD_SHA" \
+            '{"message": $msg, "tree": $tree, "parents": [$parent]}' | \
+            gh api "repos/${REPO}/git/commits" -X POST --input - -q '.sha')
+
+          gh api "repos/${REPO}/git/refs/heads/main" -X PATCH -f sha="${NEW_COMMIT}"

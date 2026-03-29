@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.25.8@sha256:bd1e2df4e6259b2bd5b1de0e6b22ca414502cd6e7276a5dd5dd414b65063be58 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.26.1@sha256:595c7847cff97c9a9e76f015083c481d26078f961c9c8dca3923132f51fe12f1 AS builder
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -23,7 +23,7 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
   -X 'main.date=$CREATED' \
   " -o ./cmd/netbox-ssot/main ./cmd/netbox-ssot/main.go
 
-FROM alpine:3.21.6@sha256:c3f8e73fdb79deaebaa2037150150191b9dcbfba68b4a46d70103204c53f4709
+FROM alpine:3.23.3@sha256:25109184c71bdad752c8312a8623239686a9a2071e8825f20acb8f2198c3f659
 
 ARG VERSION
 ARG CREATED
@@ -40,8 +40,8 @@ LABEL \
   org.opencontainers.image.title="Netbox-ssot" \
   org.opencontainers.image.description="Microservice for syncing Netbox with multiple external sources."
 
-# Install openssh required for netconf
-RUN apk add --no-cache openssh
+# Upgrade base packages to pick up security fixes and install openssh for netconf
+RUN apk upgrade --no-cache && apk add --no-cache openssh
 
 # Create a netbox user and group
 RUN addgroup -S -g 10001 netbox && \

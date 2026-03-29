@@ -3,15 +3,16 @@ package constants
 type SourceType string
 
 const (
-	Ovirt     SourceType = "ovirt"
-	Vmware    SourceType = "vmware"
-	Dnac      SourceType = "dnac"
-	Proxmox   SourceType = "proxmox"
-	PaloAlto  SourceType = "paloalto"
-	Fortigate SourceType = "fortigate"
-	FMC       SourceType = "fmc"
-	IOSXE     SourceType = "ios-xe"
-	F5        SourceType = "f5"
+	Ovirt        SourceType = "ovirt"
+	Vmware       SourceType = "vmware"
+	Dnac         SourceType = "dnac"
+	Proxmox      SourceType = "proxmox"
+	PaloAlto     SourceType = "paloalto"
+	Fortigate    SourceType = "fortigate"
+	FMC          SourceType = "fmc"
+	IOSXE        SourceType = "ios-xe"
+	F5           SourceType = "f5"
+	HetznerCloud SourceType = "hetznercloud"
 )
 
 const WildcardIP = "0.0.0.0"
@@ -83,26 +84,28 @@ const (
 // E.g. we name a source "prodvmware", tag "Source: prodvmware" is created
 // with our color.
 var SourceTagColorMap = map[SourceType]string{
-	Ovirt:     ColorDarkRed,
-	Vmware:    ColorLightGreen,
-	Dnac:      ColorLightBlue,
-	PaloAlto:  ColorDarkOrange,
-	Fortigate: ColorDarkGreen,
-	FMC:       ColorLightBlue,
-	IOSXE:     "0d294f",
-	F5:        ColorRed,
+	Ovirt:        ColorDarkRed,
+	Vmware:       ColorLightGreen,
+	Dnac:         ColorLightBlue,
+	PaloAlto:     ColorDarkOrange,
+	Fortigate:    ColorDarkGreen,
+	FMC:          ColorLightBlue,
+	IOSXE:        "0d294f",
+	F5:           ColorRed,
+	HetznerCloud: "d50c2d",
 }
 
 // Each source Mapping for source type tag. E.g. tag "paloalto" -> color orange.
 var SourceTypeTagColorMap = map[SourceType]string{
-	Ovirt:     ColorRed,
-	Vmware:    ColorGreen,
-	Dnac:      ColorBlue,
-	PaloAlto:  ColorOrange,
-	Fortigate: ColorDarkGreen,
-	FMC:       ColorBlue,
-	IOSXE:     "0d294f",
-	F5:        ColorDarkRed,
+	Ovirt:        ColorRed,
+	Vmware:       ColorGreen,
+	Dnac:         ColorBlue,
+	PaloAlto:     ColorOrange,
+	Fortigate:    ColorDarkGreen,
+	FMC:          ColorBlue,
+	IOSXE:        "0d294f",
+	F5:           ColorDarkRed,
+	HetznerCloud: ColorRed,
 }
 
 const (
@@ -164,6 +167,17 @@ const (
 	CustomFieldHostMemoryName        = "host_memory"
 	CustomFieldHostMemoryLabel       = "Host memory"
 	CustomFieldHostMemoryDescription = "Amount of memory on the host"
+
+	// Custom fields for Hetzner Cloud Servers (VirtualMachines).
+	CustomFieldServerCPUTypeName     = "server_cpu_type"
+	CustomFieldServerCPUTypeLabel    = "CPU Type"
+	CustomFieldServerCPUTypeDesc     = "The type of CPU the server has"
+	CustomFieldServerCategoryName    = "server_category"
+	CustomFieldServerCategoryLabel   = "Category"
+	CustomFieldServerCategoryDesc    = "The category of the server"
+	CustomFieldServerDeprecatedName  = "server_deprecated"
+	CustomFieldServerDeprecatedLabel = "Deprecated"
+	CustomFieldServerDeprecatedDesc  = "Whether the server type is deprecated"
 
 	// Custom field for dcim.device, so we can store uuid for it.
 	CustomFieldDeviceUUIDName        = "uuid"

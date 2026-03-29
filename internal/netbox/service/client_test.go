@@ -78,6 +78,7 @@ func TestNewNetBoxAPI(t *testing.T) {
 				tt.args.validateCert,
 				tt.args.timeout,
 				tt.args.caCert,
+				false,
 			)
 			if err != nil {
 				t.Errorf("NewNetboxClient() error = %v", err)
@@ -104,6 +105,7 @@ func TestNewNetboxClient_InvalidCACert(t *testing.T) {
 		true,
 		constants.DefaultAPITimeout,
 		"/nonexistent/ca-cert.pem",
+		false,
 	)
 	if err == nil {
 		t.Error("expected error for invalid CA cert path, got nil")

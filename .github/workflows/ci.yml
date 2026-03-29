@@ -44,7 +44,7 @@ jobs:
         if: steps.changed-files.outputs.any_modified == 'true'
         uses: golangci/golangci-lint-action@1e7e51e771db61008b38414a730f564565cf7c20 # v9.2.0
         with:
-          version: v2.11.3
+          version: v2.11.4
           args: --timeout=5m
           skip-cache: true
 
@@ -56,14 +56,13 @@ jobs:
         if: steps.changed-files.outputs.any_modified == 'true'
         run: go test -race -coverprofile=coverage.txt -covermode=atomic ./...
 
-      - name: Go Coverage Report
-        if: steps.changed-files.outputs.any_modified == 'true' && github.event_name == 'push'
-        uses: ncruces/go-coverage-report@dfc237255099f2d25066babde51253992175e365 # v0
+      - name: Upload coverage reports to Codecov
+        if: steps.changed-files.outputs.any_modified == 'true'
+        uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6.0.0
         with:
-          coverage-file: coverage.txt
-          report: true
-          chart: true
-          amend: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.txt
+          slug: bl4ko/netbox-ssot
 
   vulnerabilities:
     name: Check for vulnerabilities

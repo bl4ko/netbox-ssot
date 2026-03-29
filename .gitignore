@@ -4,6 +4,7 @@ config.yaml
 __debug*
 sub.pem
 main
+netbox-ssot
 
 # Created by https://www.toptal.com/developers/gitignore/api/go
 # Edit at https://www.toptal.com/developers/gitignore?templates=go
