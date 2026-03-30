@@ -1681,6 +1681,11 @@ func (vc *VmwareSource) setVMPrimaryIPAddress(
 				vmIPv6PrimaryAddress = addr
 			}
 		}
+		// Don't set link-local IPv6 as primary when a routable IPv4 exists
+		if vmIPv6PrimaryAddress != nil && vmIPv4PrimaryAddress != nil &&
+			strings.HasPrefix(vmIPv6PrimaryAddress.Address, "fe80:") {
+			vmIPv6PrimaryAddress = nil
+		}
 		newNetboxVM := *netboxVM
 		newNetboxVM.PrimaryIPv4 = vmIPv4PrimaryAddress
 		newNetboxVM.PrimaryIPv6 = vmIPv6PrimaryAddress

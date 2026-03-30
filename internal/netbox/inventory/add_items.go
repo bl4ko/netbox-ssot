@@ -3,6 +3,7 @@ package inventory
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
@@ -1363,12 +1364,47 @@ func (nbi *NetboxInventory) AddIPAddress(
 		)
 	} else {
 		nbi.Logger.Debugf(ctx, "IP address %s does not exist in Netbox. Creating it...", newIPAddress.Address)
-		newIPAddress, err := service.Create(ctx, nbi.NetboxAPI, newIPAddress)
+		createdIPAddress, err := service.Create(ctx, nbi.NetboxAPI, newIPAddress)
 		if err != nil {
-			return nil, err
+			if !strings.Contains(err.Error(), "Duplicate") {
+				return nil, err
+			}
+			nbi.Logger.Infof(
+				ctx,
+				"IP address %s already exists in NetBox but not in index. Trying to find and reassign...",
+				newIPAddress.Address,
+			)
+			existingIPs, getErr := service.GetAll[objects.IPAddress](
+				ctx,
+				nbi.NetboxAPI,
+				fmt.Sprintf("&address=%s", url.QueryEscape(newIPAddress.Address)),
+			)
+			if getErr != nil || len(existingIPs) == 0 {
+				return nil, err
+			}
+			chosenIP := existingIPs[0]
+			for _, ip := range existingIPs {
+				if ip.AssignedObjectID == 0 {
+					chosenIP = ip
+					break
+				}
+			}
+			patchData := map[string]interface{}{
+				"assigned_object_type": newIPAddress.AssignedObjectType,
+				"assigned_object_id":   newIPAddress.AssignedObjectID,
+				"dns_name":             newIPAddress.DNSName,
+				"tags":                 newIPAddress.Tags,
+				"custom_fields":        newIPAddress.CustomFields,
+			}
+			patchedIP, patchErr := service.Patch[objects.IPAddress](ctx, nbi.NetboxAPI, chosenIP.ID, patchData)
+			if patchErr != nil {
+				return nil, err
+			}
+			nbi.ipAddressesIndex[objType][objName][ifaceName][indexKey] = patchedIP
+			return patchedIP, nil
 		}
-		nbi.ipAddressesIndex[objType][objName][ifaceName][indexKey] = newIPAddress
-		return newIPAddress, nil
+		nbi.ipAddressesIndex[objType][objName][ifaceName][indexKey] = createdIPAddress
+		return createdIPAddress, nil
 	}
 	return nbi.ipAddressesIndex[objType][objName][ifaceName][indexKey], nil
 }
