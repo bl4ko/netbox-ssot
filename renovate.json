@@ -1,6 +1,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "baseBranches": ["main"],
+  "baseBranches": [
+    "main"
+  ],
   "extends": [
     "config:recommended",
     "docker:pinDigests",
@@ -13,8 +15,12 @@
   "regexManagers": [
     {
       "description": "Update semantic-release version used by npx",
-      "fileMatch": ["^\\.github/workflows/[^/]+\\.ya?ml$"],
-      "matchStrings": ["\\srun: npx semantic-release@(?<currentValue>.*?)\\s"],
+      "fileMatch": [
+        "^\\.github/workflows/[^/]+\\.ya?ml$"
+      ],
+      "matchStrings": [
+        "\\srun: npx semantic-release@(?<currentValue>.*?)\\s"
+      ],
       "datasourceTemplate": "npm",
       "depNameTemplate": "semantic-release"
     }
@@ -22,25 +28,39 @@
   "packageRules": [
     {
       "description": "Automerge all non-major updates",
-      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "pin",
+        "digest"
+      ],
       "automerge": true
     },
     {
-      "matchManagers": ["gomod"],
+      "matchManagers": [
+        "gomod"
+      ],
       "groupName": "go dependencies"
     },
     {
-      "matchManagers": ["github-actions"],
+      "matchManagers": [
+        "github-actions"
+      ],
       "groupName": "github actions"
     },
     {
-      "matchManagers": ["dockerfile"],
+      "matchManagers": [
+        "dockerfile"
+      ],
       "groupName": "dockerfile dependencies"
     },
     {
-      "matchManagers": ["regex"],
+      "matchManagers": [
+        "regex"
+      ],
       "groupName": "semantic-release",
       "automergeStrategy": "rebase"
     }
-  ]
+  ],
+  "minimumReleaseAge": "3 days"
 }
