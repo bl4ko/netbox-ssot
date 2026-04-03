@@ -6,7 +6,8 @@ import (
 	ovirtsdk4 "github.com/ovirt/go-ovirt"
 )
 
-// Fetches networks from ovirt api and stores them to local object.
+// Fetches networks from ovirt api and stores them to local object, grouped by datacenter ID.
+// initDataCenters must be called before this function.
 func (o *OVirtSource) initNetworks(conn *ovirtsdk4.Connection) error {
 	networksResponse, err := conn.SystemService().
 		NetworksService().
@@ -16,25 +17,43 @@ func (o *OVirtSource) initNetworks(conn *ovirtsdk4.Connection) error {
 	if err != nil {
 		return fmt.Errorf("init oVirt networks: %v", err)
 	}
-	o.Networks = &NetworkData{
-		OVirtNetworks:       make(map[string]*ovirtsdk4.Network),
-		Vid2Name:            make(map[int]string),
-		VnicProfile2Network: make(map[string]string),
+	o.Networks = make(map[string]*NetworkData, len(o.DataCenters))
+	for dcID := range o.DataCenters {
+		o.Networks[dcID] = &NetworkData{
+			OVirtNetworks:       make(map[string]*ovirtsdk4.Network),
+			Vid2Name:            make(map[int]string),
+			VnicProfile2Network: make(map[string]string),
+		}
 	}
 	if networks, ok := networksResponse.Networks(); ok {
 		for _, network := range networks.Slice() {
-			if networkID, ok := network.Id(); ok {
-				o.Networks.OVirtNetworks[networkID] = network
-				if vlan, exists := network.Vlan(); exists {
-					if vlanID, exists := vlan.Id(); exists {
-						o.Networks.Vid2Name[int(vlanID)] = network.MustName()
-					}
+			networkID, ok := network.Id()
+			if !ok {
+				continue
+			}
+			dc, ok := network.DataCenter()
+			if !ok {
+				continue
+			}
+			dcID, ok := dc.Id()
+			if !ok {
+				continue
+			}
+			networkData, ok := o.Networks[dcID]
+			if !ok {
+				o.Logger.Warningf(o.Ctx, "network %s references unknown datacenter %s, skipping", networkID, dcID)
+				continue
+			}
+			networkData.OVirtNetworks[networkID] = network
+			if vlan, exists := network.Vlan(); exists {
+				if vlanID, exists := vlan.Id(); exists {
+					networkData.Vid2Name[int(vlanID)] = network.MustName()
 				}
-				if vnicProfiles, ok := network.VnicProfiles(); ok {
-					for _, vnicProfile := range vnicProfiles.Slice() {
-						if vnicProfileID, ok := vnicProfile.Id(); ok {
-							o.Networks.VnicProfile2Network[vnicProfileID] = networkID
-						}
+			}
+			if vnicProfiles, ok := network.VnicProfiles(); ok {
+				for _, vnicProfile := range vnicProfiles.Slice() {
+					if vnicProfileID, ok := vnicProfile.Id(); ok {
+						networkData.VnicProfile2Network[vnicProfileID] = networkID
 					}
 				}
 			}

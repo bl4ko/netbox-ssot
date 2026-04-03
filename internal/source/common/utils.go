@@ -79,7 +79,8 @@ func MatchClusterToSite(
 
 // Function that matches vlanName to vlanGroupName using regexRelationsMap.
 //
-// In case there is no match or regexRelations is nil, it will return default VlanGroup.
+// If no match is found and defaultGroupName is provided, a VLAN group with that name is created.
+// Otherwise falls back to the default site-scoped VLAN group.
 func MatchVlanToGroup(
 	ctx context.Context,
 	nbi *inventory.NetboxInventory,
@@ -87,13 +88,29 @@ func MatchVlanToGroup(
 	vlanSite *objects.Site,
 	vlanGroupRelations map[string]string,
 	vlanGroupSiteRelations map[string]string,
+	defaultGroupName ...string,
 ) (*objects.VlanGroup, error) {
-	if vlanGroupRelations == nil {
+	createFallbackGroup := func() (*objects.VlanGroup, error) {
+		if len(defaultGroupName) > 0 && defaultGroupName[0] != "" {
+			vlanGroup, err := nbi.AddVlanGroup(ctx, &objects.VlanGroup{
+				Name:      defaultGroupName[0],
+				Slug:      utils.Slugify(defaultGroupName[0]),
+				VidRanges: []objects.VidRange{{constants.DefaultVID, constants.MaxVID}},
+			})
+			if err != nil {
+				return nil, fmt.Errorf("add vlan group %s: %s", defaultGroupName[0], err)
+			}
+			return vlanGroup, nil
+		}
 		vlanGroup, err := nbi.CreateDefaultVlanGroupForVlan(ctx, vlanSite)
 		if err != nil {
 			return nil, fmt.Errorf("create default vlan group for vlan %s: %s", vlanName, err)
 		}
 		return vlanGroup, nil
+	}
+
+	if vlanGroupRelations == nil {
+		return createFallbackGroup()
 	}
 	vlanGroupName, err := utils.MatchStringToValue(vlanName, vlanGroupRelations)
 	if err != nil {
@@ -133,12 +150,7 @@ func MatchVlanToGroup(
 		return vlanGroup, nil
 	}
 
-	// No vlan group was matched create default one.
-	vlanGroup, err := nbi.CreateDefaultVlanGroupForVlan(ctx, vlanSite)
-	if err != nil {
-		return nil, fmt.Errorf("create default vlan group for vlan %s: %s", vlanName, err)
-	}
-	return vlanGroup, nil
+	return createFallbackGroup()
 }
 
 // Function that matches vlanName to tenant using vlanTenantRelations regex relations map.

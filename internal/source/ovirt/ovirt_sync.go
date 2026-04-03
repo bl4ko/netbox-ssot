@@ -15,64 +15,77 @@ import (
 )
 
 // Syncs networks received from oVirt API to the netbox.
+// Networks are grouped by datacenter; each datacenter name is used as the default
+// VLAN Group when no explicit vlanGroupRelations match is found. This ensures
+// networks with identical names or VIDs across different datacenters are correctly
+// scoped without polluting their names.
 func (o *OVirtSource) syncNetworks(nbi *inventory.NetboxInventory) error {
-	for _, network := range o.Networks.OVirtNetworks {
-		name, exists := network.Name()
-		if !exists {
-			return fmt.Errorf("network %v has no name", network)
+	for dcID, networkData := range o.Networks {
+		dc, ok := o.DataCenters[dcID]
+		if !ok {
+			continue
 		}
-		description, _ := network.Description()
-		// TODO: handle other networks
-		if networkVlan, exists := network.Vlan(); exists {
-			// Get vlanSite from relation
-			vlanSite, err := common.MatchVlanToSite(
-				o.Ctx,
-				nbi,
-				name,
-				o.SourceConfig.VlanSiteRelations,
-			)
-			if err != nil {
-				return fmt.Errorf("match vlan to site: %s", err)
+		dcName, ok := dc.Name()
+		if !ok {
+			continue
+		}
+		for _, network := range networkData.OVirtNetworks {
+			name, exists := network.Name()
+			if !exists {
+				return fmt.Errorf("network %v has no name", network)
 			}
-			// Get vlanGroup from relation
-			vlanGroup, err := common.MatchVlanToGroup(
-				o.Ctx,
-				nbi,
-				name,
-				vlanSite,
-				o.SourceConfig.VlanGroupRelations,
-				o.SourceConfig.VlanGroupSiteRelations,
-			)
-			if err != nil {
-				return err
-			}
-			// Get tenant from relation
-			vlanTenant, err := common.MatchVlanToTenant(
-				o.Ctx,
-				nbi,
-				name,
-				o.SourceConfig.VlanTenantRelations,
-			)
-			if err != nil {
-				return err
-			}
-			if networkVlanID, exists := networkVlan.Id(); exists {
-				vlanStruct := &objects.Vlan{
-					NetboxObject: objects.NetboxObject{
-						Description: description,
-						Tags:        o.GetSourceTags(),
-					},
-					Name:     name,
-					Group:    vlanGroup,
-					Vid:      int(networkVlanID),
-					Site:     vlanSite,
-					Status:   &objects.VlanStatusActive,
-					Tenant:   vlanTenant,
-					Comments: network.MustComment(),
-				}
-				_, err := nbi.AddVlan(o.Ctx, vlanStruct)
+			description, _ := network.Description()
+			// TODO: handle other networks
+			if networkVlan, exists := network.Vlan(); exists {
+				vlanSite, err := common.MatchVlanToSite(
+					o.Ctx,
+					nbi,
+					name,
+					o.SourceConfig.VlanSiteRelations,
+				)
 				if err != nil {
-					return fmt.Errorf("adding vlan %s: %v", vlanStruct, err)
+					return fmt.Errorf("match vlan to site: %s", err)
+				}
+				// Use datacenter name as default VLAN group when no explicit relation matches.
+				vlanGroup, err := common.MatchVlanToGroup(
+					o.Ctx,
+					nbi,
+					name,
+					vlanSite,
+					o.SourceConfig.VlanGroupRelations,
+					o.SourceConfig.VlanGroupSiteRelations,
+					dcName,
+				)
+				if err != nil {
+					return err
+				}
+				vlanTenant, err := common.MatchVlanToTenant(
+					o.Ctx,
+					nbi,
+					name,
+					o.SourceConfig.VlanTenantRelations,
+				)
+				if err != nil {
+					return err
+				}
+				if networkVlanID, exists := networkVlan.Id(); exists {
+					vlanStruct := &objects.Vlan{
+						NetboxObject: objects.NetboxObject{
+							Description: description,
+							Tags:        o.GetSourceTags(),
+						},
+						Name:     name,
+						Group:    vlanGroup,
+						Vid:      int(networkVlanID),
+						Site:     vlanSite,
+						Status:   &objects.VlanStatusActive,
+						Tenant:   vlanTenant,
+						Comments: network.MustComment(),
+					}
+					_, err := nbi.AddVlan(o.Ctx, vlanStruct)
+					if err != nil {
+						return fmt.Errorf("adding vlan %s: %v", vlanStruct, err)
+					}
 				}
 			}
 		}
@@ -447,12 +460,30 @@ func (o *OVirtSource) syncHostNics(
 			hostIP = utils.Lookup(hostAddress)
 		}
 
+		// Resolve the network data for this host's datacenter.
+		var hostNetworks *NetworkData
+		if cluster, ok := ovirtHost.Cluster(); ok {
+			if clusterID, ok := cluster.Id(); ok {
+				if c, ok := o.Clusters[clusterID]; ok {
+					if dc, ok := c.DataCenter(); ok {
+						if dcID, ok := dc.Id(); ok {
+							hostNetworks = o.Networks[dcID]
+						}
+					}
+				}
+			}
+		}
+		if hostNetworks == nil {
+			o.Logger.Warningf(o.Ctx, "could not resolve datacenter for host %s, skipping NIC VLAN lookup", nbHost.Name)
+		}
+
 		// Firstly we loop through all the host's nics and collect
 		// all the relevant information from ovirt API.
 		err := o.collectHostNicsData(
 			nbHost,
 			nbi,
 			nics,
+			hostNetworks,
 			parentID2childID,
 			masterID2slaveIDs,
 			nicName2nicID,
@@ -781,6 +812,7 @@ func (o *OVirtSource) collectHostNicsData(
 	nbHost *objects.Device,
 	nbi *inventory.NetboxInventory,
 	nics *ovirtsdk4.HostNicSlice,
+	networks *NetworkData,
 	parentID2childID map[string][]string,
 	master2slave map[string][]string,
 	nicName2nicID map[string]string,
@@ -882,10 +914,10 @@ func (o *OVirtSource) collectHostNicsData(
 
 		var nicVlan *objects.Vlan
 		vlan, exists := nic.Vlan()
-		if exists {
+		if exists && networks != nil {
 			vlanID, exists := vlan.Id()
 			if exists {
-				vlanName := o.Networks.Vid2Name[int(vlanID)]
+				vlanName := networks.Vid2Name[int(vlanID)]
 				// Get vlanSite from relation
 				vlanSite, err := common.MatchVlanToSite(
 					o.Ctx,
@@ -1469,6 +1501,24 @@ func (o *OVirtSource) syncVMNics(
 	ovirtVM *ovirtsdk4.Vm,
 	netboxVM *objects.VM,
 ) error {
+	// Resolve the network data for this VM's datacenter.
+	var vmNetworks *NetworkData
+	if cluster, ok := ovirtVM.Cluster(); ok {
+		if clusterID, ok := cluster.Id(); ok {
+			if c, ok := o.Clusters[clusterID]; ok {
+				if dc, ok := c.DataCenter(); ok {
+					if dcID, ok := dc.Id(); ok {
+						vmNetworks = o.Networks[dcID]
+					}
+				}
+			}
+		}
+	}
+	if vmNetworks == nil {
+		vmName, _ := ovirtVM.Name()
+		o.Logger.Warningf(o.Ctx, "could not resolve datacenter for VM %s, skipping NIC VLAN lookup", vmName)
+	}
+
 	if nics, ok := ovirtVM.Nics(); ok {
 		for _, nic := range nics.Slice() {
 			nicName, ok := nic.Name()
@@ -1509,53 +1559,55 @@ func (o *OVirtSource) syncVMNics(
 
 			var nicMode *objects.VMInterfaceMode
 			var nicVlans []*objects.Vlan
-			if vnicProfile, ok := nic.VnicProfile(); ok {
-				if vnicProfileID, ok := vnicProfile.Id(); ok {
-					vmName, _ := ovirtVM.Name()
-					networkID, exists := o.Networks.VnicProfile2Network[vnicProfileID]
-					if !exists {
-						o.Logger.Warningf(
-							o.Ctx,
-							"[VM: %s] NIC %s (id=%s): no network mapping for vnicProfileID=%s",
-							vmName,
-							nicName,
-							nicID,
-							vnicProfileID,
-						)
-						continue
-					}
-					vnicNetwork, exists := o.Networks.OVirtNetworks[networkID]
-					if !exists || vnicNetwork == nil {
-						o.Logger.Debugf(o.Ctx, "network %s not found for vnicProfileID %s", networkID, vnicProfileID)
-						continue
-					}
-					if vnicNetworkVlan, ok := vnicNetwork.Vlan(); ok {
-						if vlanID, ok := vnicNetworkVlan.Id(); ok {
-							vlanName := o.Networks.Vid2Name[int(vlanID)]
-							vlanSite, err := common.MatchVlanToSite(
+			if vmNetworks != nil {
+				if vnicProfile, ok := nic.VnicProfile(); ok {
+					if vnicProfileID, ok := vnicProfile.Id(); ok {
+						vmName, _ := ovirtVM.Name()
+						networkID, exists := vmNetworks.VnicProfile2Network[vnicProfileID]
+						if !exists {
+							o.Logger.Warningf(
 								o.Ctx,
-								nbi,
-								vlanName,
-								o.SourceConfig.VlanSiteRelations,
+								"[VM: %s] NIC %s (id=%s): no network mapping for vnicProfileID=%s",
+								vmName,
+								nicName,
+								nicID,
+								vnicProfileID,
 							)
-							if err != nil {
-								return fmt.Errorf("match vlan to site: %s", err)
+							continue
+						}
+						vnicNetwork, exists := vmNetworks.OVirtNetworks[networkID]
+						if !exists || vnicNetwork == nil {
+							o.Logger.Debugf(o.Ctx, "network %s not found for vnicProfileID %s", networkID, vnicProfileID)
+							continue
+						}
+						if vnicNetworkVlan, ok := vnicNetwork.Vlan(); ok {
+							if vlanID, ok := vnicNetworkVlan.Id(); ok {
+								vlanName := vmNetworks.Vid2Name[int(vlanID)]
+								vlanSite, err := common.MatchVlanToSite(
+									o.Ctx,
+									nbi,
+									vlanName,
+									o.SourceConfig.VlanSiteRelations,
+								)
+								if err != nil {
+									return fmt.Errorf("match vlan to site: %s", err)
+								}
+								vlanGroup, err := common.MatchVlanToGroup(
+									o.Ctx,
+									nbi,
+									vlanName,
+									vlanSite,
+									o.SourceConfig.VlanGroupRelations,
+									o.SourceConfig.VlanGroupSiteRelations,
+								)
+								if err != nil {
+									o.Logger.Warningf(o.Ctx, "match vlan to group: %s", err)
+									continue
+								}
+								nicVlan, _ := nbi.GetVlan(vlanGroup.ID, int(vlanID))
+								nicVlans = []*objects.Vlan{nicVlan}
+								nicMode = &objects.VMInterfaceModeTagged
 							}
-							vlanGroup, err := common.MatchVlanToGroup(
-								o.Ctx,
-								nbi,
-								vlanName,
-								vlanSite,
-								o.SourceConfig.VlanGroupRelations,
-								o.SourceConfig.VlanGroupSiteRelations,
-							)
-							if err != nil {
-								o.Logger.Warningf(o.Ctx, "match vlan to group: %s", err)
-								continue
-							}
-							nicVlan, _ := nbi.GetVlan(vlanGroup.ID, int(vlanID))
-							nicVlans = []*objects.Vlan{nicVlan}
-							nicMode = &objects.VMInterfaceModeTagged
 						}
 					}
 				}
