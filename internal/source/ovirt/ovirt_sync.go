@@ -16,63 +16,70 @@ import (
 
 // Syncs networks received from oVirt API to the netbox.
 func (o *OVirtSource) syncNetworks(nbi *inventory.NetboxInventory) error {
-	for _, network := range o.Networks.OVirtNetworks {
-		name, exists := network.Name()
-		if !exists {
-			return fmt.Errorf("network %v has no name", network)
-		}
-		description, _ := network.Description()
-		// TODO: handle other networks
-		if networkVlan, exists := network.Vlan(); exists {
-			// Get vlanSite from relation
-			vlanSite, err := common.MatchVlanToSite(
-				o.Ctx,
-				nbi,
-				name,
-				o.SourceConfig.VlanSiteRelations,
-			)
-			if err != nil {
-				return fmt.Errorf("match vlan to site: %s", err)
+	for datacenter, networkData := range o.Networks {
+		for _, network := range networkData.OVirtNetworks {
+			name, exists := network.Name()
+			if !exists {
+				return fmt.Errorf("network %v has no name", network)
 			}
-			// Get vlanGroup from relation
-			vlanGroup, err := common.MatchVlanToGroup(
-				o.Ctx,
-				nbi,
-				name,
-				vlanSite,
-				o.SourceConfig.VlanGroupRelations,
-				o.SourceConfig.VlanGroupSiteRelations,
-			)
-			if err != nil {
-				return err
+			description, _ := network.Description()
+			fullName := name
+			if o.SourceConfig.PrefixNetworkWithDC == "true" ||
+				(o.SourceConfig.PrefixNetworkWithDC == "" && len(o.DataCenters) > 1) {
+				fullName = fmt.Sprintf("%s/%s", datacenter, name)
 			}
-			// Get tenant from relation
-			vlanTenant, err := common.MatchVlanToTenant(
-				o.Ctx,
-				nbi,
-				name,
-				o.SourceConfig.VlanTenantRelations,
-			)
-			if err != nil {
-				return err
-			}
-			if networkVlanID, exists := networkVlan.Id(); exists {
-				vlanStruct := &objects.Vlan{
-					NetboxObject: objects.NetboxObject{
-						Description: description,
-						Tags:        o.GetSourceTags(),
-					},
-					Name:     name,
-					Group:    vlanGroup,
-					Vid:      int(networkVlanID),
-					Site:     vlanSite,
-					Status:   &objects.VlanStatusActive,
-					Tenant:   vlanTenant,
-					Comments: network.MustComment(),
-				}
-				_, err := nbi.AddVlan(o.Ctx, vlanStruct)
+			// TODO: handle other networks
+			if networkVlan, exists := network.Vlan(); exists {
+				// Get vlanSite from relation
+				vlanSite, err := common.MatchVlanToSite(
+					o.Ctx,
+					nbi,
+					fullName,
+					o.SourceConfig.VlanSiteRelations,
+				)
 				if err != nil {
-					return fmt.Errorf("adding vlan %s: %v", vlanStruct, err)
+					return fmt.Errorf("match vlan to site: %s", err)
+				}
+				// Get vlanGroup from relation
+				vlanGroup, err := common.MatchVlanToGroup(
+					o.Ctx,
+					nbi,
+					fullName,
+					vlanSite,
+					o.SourceConfig.VlanGroupRelations,
+					o.SourceConfig.VlanGroupSiteRelations,
+				)
+				if err != nil {
+					return err
+				}
+				// Get tenant from relation
+				vlanTenant, err := common.MatchVlanToTenant(
+					o.Ctx,
+					nbi,
+					fullName,
+					o.SourceConfig.VlanTenantRelations,
+				)
+				if err != nil {
+					return err
+				}
+				if networkVlanID, exists := networkVlan.Id(); exists {
+					vlanStruct := &objects.Vlan{
+						NetboxObject: objects.NetboxObject{
+							Description: description,
+							Tags:        o.GetSourceTags(),
+						},
+						Name:     name,
+						Group:    vlanGroup,
+						Vid:      int(networkVlanID),
+						Site:     vlanSite,
+						Status:   &objects.VlanStatusActive,
+						Tenant:   vlanTenant,
+						Comments: network.MustComment(),
+					}
+					_, err := nbi.AddVlan(o.Ctx, vlanStruct)
+					if err != nil {
+						return fmt.Errorf("adding vlan %s: %v", vlanStruct, err)
+					}
 				}
 			}
 		}
@@ -447,11 +454,21 @@ func (o *OVirtSource) syncHostNics(
 			hostIP = utils.Lookup(hostAddress)
 		}
 
+		var datacenterName string
+		if cluster, found := ovirtHost.Cluster(); found {
+			if datacenter, found := cluster.DataCenter(); found {
+				if datacenterName, found = datacenter.Name(); !found {
+					return fmt.Errorf("failed to get datacenter name for host %s", nbHost.Name)
+				}
+			}
+		}
+
 		// Firstly we loop through all the host's nics and collect
 		// all the relevant information from ovirt API.
 		err := o.collectHostNicsData(
 			nbHost,
 			nbi,
+			datacenterName,
 			nics,
 			parentID2childID,
 			masterID2slaveIDs,
@@ -780,6 +797,7 @@ func (o *OVirtSource) matchHostParentAndChildNics(
 func (o *OVirtSource) collectHostNicsData(
 	nbHost *objects.Device,
 	nbi *inventory.NetboxInventory,
+	datacenterName string,
 	nics *ovirtsdk4.HostNicSlice,
 	parentID2childID map[string][]string,
 	master2slave map[string][]string,
@@ -885,7 +903,7 @@ func (o *OVirtSource) collectHostNicsData(
 		if exists {
 			vlanID, exists := vlan.Id()
 			if exists {
-				vlanName := o.Networks.Vid2Name[int(vlanID)]
+				vlanName := o.Networks[datacenterName].Vid2Name[int(vlanID)]
 				// Get vlanSite from relation
 				vlanSite, err := common.MatchVlanToSite(
 					o.Ctx,
@@ -1485,6 +1503,19 @@ func (o *OVirtSource) syncVMNics(
 				)
 				continue
 			}
+
+			var datacenterName string
+			if cluster, found := ovirtVM.Cluster(); found {
+				if datacenter, found := cluster.DataCenter(); found {
+					if name, found := datacenter.Name(); found {
+						datacenterName = name
+					} else {
+						o.Logger.Warningf(o.Ctx, "datacenter name not found for vm %s nic %s", ovirtVM.MustName(), nicName)
+						continue
+					}
+				}
+			}
+
 			var nicID string
 			if id, ok := nic.Id(); ok {
 				nicID = id
@@ -1512,7 +1543,7 @@ func (o *OVirtSource) syncVMNics(
 			if vnicProfile, ok := nic.VnicProfile(); ok {
 				if vnicProfileID, ok := vnicProfile.Id(); ok {
 					vmName, _ := ovirtVM.Name()
-					networkID, exists := o.Networks.VnicProfile2Network[vnicProfileID]
+					networkID, exists := o.Networks[datacenterName].VnicProfile2Network[vnicProfileID]
 					if !exists {
 						o.Logger.Warningf(
 							o.Ctx,
@@ -1524,14 +1555,14 @@ func (o *OVirtSource) syncVMNics(
 						)
 						continue
 					}
-					vnicNetwork, exists := o.Networks.OVirtNetworks[networkID]
+					vnicNetwork, exists := o.Networks[datacenterName].OVirtNetworks[networkID]
 					if !exists || vnicNetwork == nil {
 						o.Logger.Debugf(o.Ctx, "network %s not found for vnicProfileID %s", networkID, vnicProfileID)
 						continue
 					}
 					if vnicNetworkVlan, ok := vnicNetwork.Vlan(); ok {
 						if vlanID, ok := vnicNetworkVlan.Id(); ok {
-							vlanName := o.Networks.Vid2Name[int(vlanID)]
+							vlanName := o.Networks[datacenterName].Vid2Name[int(vlanID)]
 							vlanSite, err := common.MatchVlanToSite(
 								o.Ctx,
 								nbi,

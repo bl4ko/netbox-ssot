@@ -113,6 +113,48 @@ func TestValidonfig(t *testing.T) {
 					".*": "Default",
 				},
 			},
+			{
+				Name:       "prodolvm2",
+				Type:       "ovirt",
+				Port:       80,
+				HTTPScheme: "https",
+				Hostname:   "ovirt.example.com",
+				Username:   "admin",
+				Password:   "adminpass",
+				IgnoredSubnets: []string{
+					"172.16.0.0/12",
+				},
+				ValidateCert: false,
+				Tag:          "Source: prodolvm", // Default
+				TagColor:     "aa1409",           // Default
+				ClusterSiteRelations: map[string]string{
+					"Cluster_NYC":         "New York",
+					"Cluster_FFM.*":       "Frankfurt",
+					"Datacenter_BERLIN/*": "Berlin",
+				},
+				HostSiteRelations: map[string]string{
+					".*": "Berlin",
+				},
+				ClusterTenantRelations: map[string]string{
+					".*Stark": "Stark Industries",
+					".*":      "Default",
+				},
+				HostTenantRelations: map[string]string{
+					".*Health": "Health Department",
+					".*":       "Default",
+				},
+				VMTenantRelations: map[string]string{
+					".*Health": "Health Department",
+					".*":       "Default",
+				},
+				DatacenterClusterGroupRelations: map[string]string{
+					".*": "Default",
+				},
+				PrefixNetworkWithDC: true,
+				VlanGroupRelations: map[string]string{
+					"Default\\/.*": "DefaultVlanGroup",
+				},
+			},
 		},
 	}
 	got, err := ParseConfig(filename)

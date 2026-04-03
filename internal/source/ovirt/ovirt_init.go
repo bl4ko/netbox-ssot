@@ -16,32 +16,41 @@ func (o *OVirtSource) initNetworks(conn *ovirtsdk4.Connection) error {
 	if err != nil {
 		return fmt.Errorf("init oVirt networks: %v", err)
 	}
-	o.Networks = &NetworkData{
-		OVirtNetworks:       make(map[string]*ovirtsdk4.Network),
-		Vid2Name:            make(map[int]string),
-		VnicProfile2Network: make(map[string]string),
-	}
-	if networks, ok := networksResponse.Networks(); ok {
-		for _, network := range networks.Slice() {
-			if networkID, ok := network.Id(); ok {
-				o.Networks.OVirtNetworks[networkID] = network
-				if vlan, exists := network.Vlan(); exists {
-					if vlanID, exists := vlan.Id(); exists {
-						o.Networks.Vid2Name[int(vlanID)] = network.MustName()
+
+	for _, datacenter := range o.DataCenters {
+		dcName, found := datacenter.Name()
+		if !found {
+			o.Logger.Warning(o.Ctx, "Could not resolve name for datacenter: ", datacenter.MustId())
+			continue
+		}
+
+		o.Networks[dcName] = &NetworkData{
+			OVirtNetworks:       make(map[string]*ovirtsdk4.Network),
+			Vid2Name:            make(map[int]string),
+			VnicProfile2Network: make(map[string]string),
+		}
+		if networks, ok := networksResponse.Networks(); ok {
+			for _, network := range networks.Slice() {
+				if networkID, ok := network.Id(); ok {
+					o.Networks[dcName].OVirtNetworks[networkID] = network
+					if vlan, exists := network.Vlan(); exists {
+						if vlanID, exists := vlan.Id(); exists {
+							o.Networks[dcName].Vid2Name[int(vlanID)] = network.MustName()
+						}
 					}
-				}
-				if vnicProfiles, ok := network.VnicProfiles(); ok {
-					for _, vnicProfile := range vnicProfiles.Slice() {
-						if vnicProfileID, ok := vnicProfile.Id(); ok {
-							o.Networks.VnicProfile2Network[vnicProfileID] = networkID
+					if vnicProfiles, ok := network.VnicProfiles(); ok {
+						for _, vnicProfile := range vnicProfiles.Slice() {
+							if vnicProfileID, ok := vnicProfile.Id(); ok {
+								o.Networks[dcName].VnicProfile2Network[vnicProfileID] = networkID
+							}
 						}
 					}
 				}
 			}
+			o.Logger.Debug(o.Ctx, "Successfully initialized oVirt networks: ", o.Networks)
+		} else {
+			o.Logger.Warning(o.Ctx, "Error initializing oVirt networks")
 		}
-		o.Logger.Debug(o.Ctx, "Successfully initialized oVirt networks: ", o.Networks)
-	} else {
-		o.Logger.Warning(o.Ctx, "Error initializing oVirt networks")
 	}
 	return nil
 }
