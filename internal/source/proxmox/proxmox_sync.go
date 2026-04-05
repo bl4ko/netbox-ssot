@@ -816,24 +816,24 @@ func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 				if err != nil {
 					return fmt.Errorf("match vm to tenant: %s", err)
 				}
-      
-      	// Fetch CT tags
-      	newTags := ps.GetSourceTags()
-      
-      	if container.Tags != "" && container.Tags != " " {
-      		splitTags := strings.Split(container.Tags, ";")
-      
-      		for _, tag := range splitTags {
-      			ctTag, _ := nbi.AddTag(ps.Ctx, &objects.Tag{
-      				Name:  tag,
-      				Slug:  utils.Slugify(tag),
-      				Color: constants.ColorGreen,
-      			})
-      
-      			newTags = append(newTags, ctTag)
-      		}
-      	}
-        
+
+				// Fetch CT tags
+				newTags := ps.GetSourceTags()
+
+				if container.Tags != "" && container.Tags != " " {
+					splitTags := strings.Split(container.Tags, ";")
+			
+					for _, tag := range splitTags {
+						ctTag, _ := nbi.AddTag(ps.Ctx, &objects.Tag{
+							Name:  tag,
+							Slug:  utils.Slugify(tag),
+							Color: constants.ColorGreen,
+						})
+			
+						newTags = append(newTags, ctTag)
+					}
+				}
+
 				nbContainer, err := nbi.AddVM(ps.Ctx, &objects.VM{
 					NetboxObject: objects.NetboxObject{
 						Tags: newTags,
