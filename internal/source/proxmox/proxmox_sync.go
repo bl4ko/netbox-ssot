@@ -822,14 +822,14 @@ func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 
 				if container.Tags != "" && container.Tags != " " {
 					splitTags := strings.Split(container.Tags, ";")
-			
+
 					for _, tag := range splitTags {
 						ctTag, _ := nbi.AddTag(ps.Ctx, &objects.Tag{
 							Name:  tag,
 							Slug:  utils.Slugify(tag),
 							Color: constants.ColorGreen,
 						})
-			
+
 						newTags = append(newTags, ctTag)
 					}
 				}
