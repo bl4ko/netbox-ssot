@@ -201,11 +201,13 @@ func (vc *VmwareSource) initHosts(ctx context.Context, containerView *view.Conta
 					if pgroup.Spec.Name != "" {
 						nicOrder := pgroup.ComputedPolicy.NicTeaming.NicOrder
 						pgroupNics := []string{}
-						if len(nicOrder.ActiveNic) > 0 {
-							pgroupNics = append(pgroupNics, nicOrder.ActiveNic...)
-						}
-						if len(nicOrder.StandbyNic) > 0 {
-							pgroupNics = append(pgroupNics, nicOrder.StandbyNic...)
+						if nicOrder != nil {
+							if len(nicOrder.ActiveNic) > 0 {
+								pgroupNics = append(pgroupNics, nicOrder.ActiveNic...)
+							}
+							if len(nicOrder.StandbyNic) > 0 {
+								pgroupNics = append(pgroupNics, nicOrder.StandbyNic...)
+							}
 						}
 						vc.Networks.HostPortgroups[host.Name][pgroup.Spec.Name] = &HostPortgroupData{
 							vlanID:  int(pgroup.Spec.VlanId),
