@@ -22,13 +22,13 @@ type OVirtSource struct {
 	Clusters    map[string]*ovirtsdk4.Cluster
 	Hosts       map[string]*ovirtsdk4.Host
 	Vms         map[string]*ovirtsdk4.Vm
-	Networks    *NetworkData
+	Networks    map[string]*NetworkData // key: datacenter ID
 }
 
 type NetworkData struct {
 	OVirtNetworks       map[string]*ovirtsdk4.Network
 	VnicProfile2Network map[string]string // vnicProfileId -> networkId
-	Vid2Name            map[int]string
+	Vid2Name            map[int]string    // vlanID -> network name
 }
 
 // Function that initializes state from ovirt api to local storage.
@@ -63,10 +63,10 @@ func (o *OVirtSource) Init() error {
 
 	// Initialize items to local storage
 	initFunctions := []func(*ovirtsdk4.Connection) error{
-		o.initNetworks,
 		o.initDisks,
 		o.initDataCenters,
 		o.initClusters,
+		o.initNetworks,
 		o.initHosts,
 		o.initVms,
 	}

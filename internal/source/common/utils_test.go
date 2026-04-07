@@ -661,3 +661,69 @@ func TestMatchIPToVRF_VRFNotInInventory(t *testing.T) {
 		Name:         "test-vrf",
 	}
 }
+
+// --- MatchVlanToGroup tests ---
+
+func TestMatchVlanToGroup_DefaultGroupName_NilRelations(t *testing.T) {
+	setupMockServer(t)
+	nbi := inventory.MockInventory
+	vlanGroup, err := MatchVlanToGroup(testCtx(), nbi, "ovirtmgmt", nil, nil, nil, "DC1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if vlanGroup == nil {
+		t.Fatal("expected non-nil vlan group")
+	}
+	if vlanGroup.Name != "DC1" {
+		t.Errorf("expected vlan group name 'DC1', got %q", vlanGroup.Name)
+	}
+}
+
+func TestMatchVlanToGroup_DefaultGroupName_NoRelationMatch(t *testing.T) {
+	setupMockServer(t)
+	nbi := inventory.MockInventory
+	relations := map[string]string{
+		"^prod-.*$": "prod-group",
+	}
+	vlanGroup, err := MatchVlanToGroup(testCtx(), nbi, "ovirtmgmt", nil, relations, nil, "DC1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if vlanGroup == nil {
+		t.Fatal("expected non-nil vlan group")
+	}
+	if vlanGroup.Name != "DC1" {
+		t.Errorf("expected vlan group name 'DC1', got %q", vlanGroup.Name)
+	}
+}
+
+func TestMatchVlanToGroup_RelationMatchOverridesDefault(t *testing.T) {
+	setupMockServer(t)
+	nbi := inventory.MockInventory
+	relations := map[string]string{
+		"^ovirt.*$": "explicit-group",
+	}
+	vlanGroup, err := MatchVlanToGroup(testCtx(), nbi, "ovirtmgmt", nil, relations, nil, "DC1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if vlanGroup == nil {
+		t.Fatal("expected non-nil vlan group")
+	}
+	if vlanGroup.Name != "explicit-group" {
+		t.Errorf("expected vlan group name 'explicit-group', got %q", vlanGroup.Name)
+	}
+}
+
+func TestMatchVlanToGroup_EmptyDefault_NilRelations(t *testing.T) {
+	setupMockServer(t)
+	nbi := inventory.MockInventory
+	// empty defaultGroupName → falls back to site-scoped default group
+	vlanGroup, err := MatchVlanToGroup(testCtx(), nbi, "ovirtmgmt", nil, nil, nil, "")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if vlanGroup == nil {
+		t.Fatal("expected non-nil vlan group (default site group)")
+	}
+}

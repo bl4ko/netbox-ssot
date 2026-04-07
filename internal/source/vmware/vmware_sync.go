@@ -63,6 +63,7 @@ func (vc *VmwareSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 			vlanSite,
 			vc.SourceConfig.VlanGroupRelations,
 			vc.SourceConfig.VlanGroupSiteRelations,
+			"",
 		)
 		if err != nil {
 			return fmt.Errorf("match vlan to group: %s", err)
@@ -576,6 +577,7 @@ func (vc *VmwareSource) collectHostPhysicalNicData(
 					vlanSite,
 					vc.SourceConfig.VlanGroupRelations,
 					vc.SourceConfig.VlanGroupSiteRelations,
+					"",
 				)
 				if err != nil {
 					return nil, "", fmt.Errorf("match vlan to group: %s", err)
@@ -600,6 +602,7 @@ func (vc *VmwareSource) collectHostPhysicalNicData(
 					vlanSite,
 					vc.SourceConfig.VlanGroupRelations,
 					vc.SourceConfig.VlanGroupSiteRelations,
+					"",
 				)
 				if err != nil {
 					return nil, "", fmt.Errorf("match vlan to group: %s", err)
@@ -920,6 +923,7 @@ func (vc *VmwareSource) collectHostVirtualNicData(
 			vnicUntaggedVlanSite,
 			vc.SourceConfig.VlanGroupRelations,
 			vc.SourceConfig.VlanGroupSiteRelations,
+			"",
 		)
 		if err != nil {
 			return nil, "", fmt.Errorf("vlan group: %s", err)
@@ -955,6 +959,7 @@ func (vc *VmwareSource) collectHostVirtualNicData(
 				vnicTaggedVlanSite,
 				vc.SourceConfig.VlanGroupRelations,
 				vc.SourceConfig.VlanGroupSiteRelations,
+				"",
 			)
 			if err != nil {
 				return nil, "", fmt.Errorf("match vlan to vlan group: %s", err)
@@ -1513,6 +1518,7 @@ func (vc *VmwareSource) collectVMInterfaceData(
 				nicUntaggedVlanSite,
 				vc.SourceConfig.VlanGroupRelations,
 				vc.SourceConfig.VlanGroupSiteRelations,
+				"",
 			)
 			if err != nil {
 				return nicIPv4Addresses, nicIPv6Addresses, nil, "", fmt.Errorf(
