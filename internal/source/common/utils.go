@@ -79,7 +79,7 @@ func MatchClusterToSite(
 
 // Function that matches vlanName to vlanGroupName using regexRelationsMap.
 //
-// If no match is found and defaultGroupName is provided, a VLAN group with that name is created.
+// If no match is found and defaultGroupName is non-empty, a VLAN group with that name is created.
 // Otherwise falls back to the default site-scoped VLAN group.
 func MatchVlanToGroup(
 	ctx context.Context,
@@ -88,17 +88,17 @@ func MatchVlanToGroup(
 	vlanSite *objects.Site,
 	vlanGroupRelations map[string]string,
 	vlanGroupSiteRelations map[string]string,
-	defaultGroupName ...string,
+	defaultGroupName string,
 ) (*objects.VlanGroup, error) {
 	createFallbackGroup := func() (*objects.VlanGroup, error) {
-		if len(defaultGroupName) > 0 && defaultGroupName[0] != "" {
+		if defaultGroupName != "" {
 			vlanGroup, err := nbi.AddVlanGroup(ctx, &objects.VlanGroup{
-				Name:      defaultGroupName[0],
-				Slug:      utils.Slugify(defaultGroupName[0]),
+				Name:      defaultGroupName,
+				Slug:      utils.Slugify(defaultGroupName),
 				VidRanges: []objects.VidRange{{constants.DefaultVID, constants.MaxVID}},
 			})
 			if err != nil {
-				return nil, fmt.Errorf("add vlan group %s: %s", defaultGroupName[0], err)
+				return nil, fmt.Errorf("add vlan group %s: %s", defaultGroupName, err)
 			}
 			return vlanGroup, nil
 		}

@@ -208,6 +208,7 @@ func (pas *PaloAltoSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 					vlanSite,
 					pas.SourceConfig.VlanGroupRelations,
 					pas.SourceConfig.VlanGroupSiteRelations,
+					"",
 				)
 				if err != nil {
 					return fmt.Errorf("match vlan to group: %s", err)

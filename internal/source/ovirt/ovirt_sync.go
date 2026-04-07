@@ -460,14 +460,18 @@ func (o *OVirtSource) syncHostNics(
 			hostIP = utils.Lookup(hostAddress)
 		}
 
-		// Resolve the network data for this host's datacenter.
+		// Resolve the network data and datacenter name for this host.
 		var hostNetworks *NetworkData
+		var hostDCName string
 		if cluster, ok := ovirtHost.Cluster(); ok {
 			if clusterID, ok := cluster.Id(); ok {
 				if c, ok := o.Clusters[clusterID]; ok {
 					if dc, ok := c.DataCenter(); ok {
 						if dcID, ok := dc.Id(); ok {
 							hostNetworks = o.Networks[dcID]
+							if d, ok := o.DataCenters[dcID]; ok {
+								hostDCName, _ = d.Name()
+							}
 						}
 					}
 				}
@@ -484,6 +488,7 @@ func (o *OVirtSource) syncHostNics(
 			nbi,
 			nics,
 			hostNetworks,
+			hostDCName,
 			parentID2childID,
 			masterID2slaveIDs,
 			nicName2nicID,
@@ -813,6 +818,7 @@ func (o *OVirtSource) collectHostNicsData(
 	nbi *inventory.NetboxInventory,
 	nics *ovirtsdk4.HostNicSlice,
 	networks *NetworkData,
+	dcName string,
 	parentID2childID map[string][]string,
 	master2slave map[string][]string,
 	nicName2nicID map[string]string,
@@ -936,6 +942,7 @@ func (o *OVirtSource) collectHostNicsData(
 					vlanSite,
 					o.SourceConfig.VlanGroupRelations,
 					o.SourceConfig.VlanGroupSiteRelations,
+					dcName,
 				)
 				if err != nil {
 					return err
@@ -1501,14 +1508,18 @@ func (o *OVirtSource) syncVMNics(
 	ovirtVM *ovirtsdk4.Vm,
 	netboxVM *objects.VM,
 ) error {
-	// Resolve the network data for this VM's datacenter.
+	// Resolve the network data and datacenter name for this VM.
 	var vmNetworks *NetworkData
+	var vmDCName string
 	if cluster, ok := ovirtVM.Cluster(); ok {
 		if clusterID, ok := cluster.Id(); ok {
 			if c, ok := o.Clusters[clusterID]; ok {
 				if dc, ok := c.DataCenter(); ok {
 					if dcID, ok := dc.Id(); ok {
 						vmNetworks = o.Networks[dcID]
+						if d, ok := o.DataCenters[dcID]; ok {
+							vmDCName, _ = d.Name()
+						}
 					}
 				}
 			}
@@ -1599,6 +1610,7 @@ func (o *OVirtSource) syncVMNics(
 									vlanSite,
 									o.SourceConfig.VlanGroupRelations,
 									o.SourceConfig.VlanGroupSiteRelations,
+									vmDCName,
 								)
 								if err != nil {
 									o.Logger.Warningf(o.Ctx, "match vlan to group: %s", err)
