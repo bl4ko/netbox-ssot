@@ -431,6 +431,27 @@ func extractHostData(
 	}, nil
 }
 
+// networkDataForClusterID resolves the NetworkData and datacenter name for a given cluster ID.
+func (o *OVirtSource) networkDataForClusterID(clusterID string) (*NetworkData, string) {
+	c, ok := o.Clusters[clusterID]
+	if !ok {
+		return nil, ""
+	}
+	dc, ok := c.DataCenter()
+	if !ok {
+		return nil, ""
+	}
+	dcID, ok := dc.Id()
+	if !ok {
+		return nil, ""
+	}
+	dcName := ""
+	if d, ok := o.DataCenters[dcID]; ok {
+		dcName, _ = d.Name()
+	}
+	return o.Networks[dcID], dcName
+}
+
 // syncHostNics syncs collected host nics from ovirt api to netbox inventory.
 func (o *OVirtSource) syncHostNics(
 	nbi *inventory.NetboxInventory,
@@ -465,16 +486,7 @@ func (o *OVirtSource) syncHostNics(
 		var hostDCName string
 		if cluster, ok := ovirtHost.Cluster(); ok {
 			if clusterID, ok := cluster.Id(); ok {
-				if c, ok := o.Clusters[clusterID]; ok {
-					if dc, ok := c.DataCenter(); ok {
-						if dcID, ok := dc.Id(); ok {
-							hostNetworks = o.Networks[dcID]
-							if d, ok := o.DataCenters[dcID]; ok {
-								hostDCName, _ = d.Name()
-							}
-						}
-					}
-				}
+				hostNetworks, hostDCName = o.networkDataForClusterID(clusterID)
 			}
 		}
 		if hostNetworks == nil {
@@ -1513,16 +1525,7 @@ func (o *OVirtSource) syncVMNics(
 	var vmDCName string
 	if cluster, ok := ovirtVM.Cluster(); ok {
 		if clusterID, ok := cluster.Id(); ok {
-			if c, ok := o.Clusters[clusterID]; ok {
-				if dc, ok := c.DataCenter(); ok {
-					if dcID, ok := dc.Id(); ok {
-						vmNetworks = o.Networks[dcID]
-						if d, ok := o.DataCenters[dcID]; ok {
-							vmDCName, _ = d.Name()
-						}
-					}
-				}
-			}
+			vmNetworks, vmDCName = o.networkDataForClusterID(clusterID)
 		}
 	}
 	if vmNetworks == nil {
