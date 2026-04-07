@@ -820,16 +820,20 @@ func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 				// Fetch CT tags
 				newTags := ps.GetSourceTags()
 
-				if container.Tags != "" && container.Tags != " " {
-					splitTags := strings.Split(container.Tags, ";")
-
-					for _, tag := range splitTags {
-						ctTag, _ := nbi.AddTag(ps.Ctx, &objects.Tag{
+				if rawTags := strings.TrimSpace(container.Tags); rawTags != "" {
+					for _, tag := range strings.Split(rawTags, ";") {
+						tag = strings.TrimSpace(tag)
+						if tag == "" {
+							continue
+						}
+						ctTag, err := nbi.AddTag(ps.Ctx, &objects.Tag{
 							Name:  tag,
 							Slug:  utils.Slugify(tag),
 							Color: constants.ColorGreen,
 						})
-
+						if err != nil {
+							return fmt.Errorf("add container tag %q: %w", tag, err)
+						}
 						newTags = append(newTags, ctTag)
 					}
 				}
