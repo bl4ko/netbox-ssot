@@ -135,6 +135,7 @@ type SourceConfig struct {
 	AssignDomainName    string               `yaml:"assignDomainName"`
 	ContinueOnError     bool                 `yaml:"continueOnError"`
 	VlanPrefix          string               `yaml:"vlanPrefix"`
+	PrefixNetworkWithDC string               `yaml:"prefixNetworkWithDC"`
 	DefaultIPv4MaskBits int                  `yaml:"defaultIPv4MaskBits"`
 	DefaultIPv6MaskBits int                  `yaml:"defaultIPv6MaskBits"`
 	TargetInterface     string               `yaml:"targetInterface"`
@@ -174,6 +175,7 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		TagColor                        string               `yaml:"tagColor"`
 		AssignDomainName                string               `yaml:"assignDomainName"`
 		VlanPrefix                      string               `yaml:"vlanPrefix"`
+		PrefixNetworkWithDC             string               `yaml:"prefixNetworkWithDC"`
 		IgnoredSubnets                  []string             `yaml:"ignoredSubnets"`
 		PermittedSubnets                []string             `yaml:"permittedSubnets"`
 		InterfaceFilter                 string               `yaml:"interfaceFilter"`
@@ -219,6 +221,7 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	sc.TagColor = rawMarshal.TagColor
 	sc.AssignDomainName = rawMarshal.AssignDomainName
 	sc.VlanPrefix = rawMarshal.VlanPrefix
+	sc.PrefixNetworkWithDC = rawMarshal.PrefixNetworkWithDC
 	sc.IgnoredSubnets = rawMarshal.IgnoredSubnets
 	sc.PermittedSubnets = rawMarshal.PermittedSubnets
 	sc.InterfaceFilter = rawMarshal.InterfaceFilter
@@ -350,7 +353,8 @@ func (sc SourceConfig) String() string {
 	return fmt.Sprintf(
 		"SourceConfig{Name: %s, Type: %s, HTTPScheme: %s, Hostname: %s, Port: %d, "+
 			"Username: %s, Password: %s, PermittedSubnets: %v, ValidateCert: %t, "+
-			"Tag: %s, TagColor: %s, AssignDomainName: %s, VlanPrefix: %s, DatacenterClusterGroupRelations: %s, "+
+			"Tag: %s, TagColor: %s, AssignDomainName: %s, VlanPrefix: %s, "+
+			"prefixNetworkWithDC: %s, DatacenterClusterGroupRelations: %s, "+
 			"HostSiteRelations: %v, ClusterSiteRelations: %v, ClusterTenantRelations: %v, "+
 			"HostTenantRelations: %v, VmTenantRelations: %v, VlanGroupRelations: %v, "+
 			"VlanTenantRelations: %v, WlanTenantRelations: %v}",
@@ -367,6 +371,7 @@ func (sc SourceConfig) String() string {
 		sc.TagColor,
 		sc.AssignDomainName,
 		sc.VlanPrefix,
+		sc.PrefixNetworkWithDC,
 		sc.DatacenterClusterGroupRelations,
 		sc.HostSiteRelations,
 		sc.ClusterSiteRelations,
