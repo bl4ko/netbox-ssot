@@ -69,3 +69,32 @@ source:
     vmTenantRelations:
       - .*Health = Health Department
       - .* = Default
+
+  - name: prodolvm2
+    type: ovirt
+    hostname: ovirt.example.com
+    username: admin
+    port: 80
+    password: adminpass
+    ignoredSubnets:
+      - 172.16.0.0/12
+    datacenterClusterGroupRelations:
+      - .* = Default
+    clusterSiteRelations:
+      - Cluster_NYC = New York
+      - Cluster_FFM.* = Frankfurt
+      - Datacenter_BERLIN/* = Berlin
+    hostSiteRelations:
+      - .* = Berlin
+    clusterTenantRelations:
+      - .*Stark = Stark Industries
+      - .* = Default
+    hostTenantRelations:
+      - .*Health = Health Department
+      - .* = Default
+    vmTenantRelations:
+      - .*Health = Health Department
+      - .* = Default
+    prefixNetworkWithDC: true
+    vlanGroupRelations:
+      - Default\/.* = DefaultVlanGroup
