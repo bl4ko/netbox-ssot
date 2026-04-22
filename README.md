@@ -29,6 +29,7 @@ Currently, the supported external data sources types are:
   - F5 BIG-IP LTM virtual servers (VIPs) via iControl REST API
 - [`hetznercloud`](https://www.hetzner.com/cloud/)
   - Syncs locations, datacenters, servers, networks, floating IPs
+- [`openstack`](https://www.openstack.org/)
 
 ## Compatibility Matrix
 
@@ -270,6 +271,16 @@ source:
       - .* = MyTenant
     collectArpData:
       true
+
+  - name: "My Cloud"
+    type: openstack
+    hostname: "https://openstack.example:5000/v3"
+    username: "user"
+    password: "password"
+    projectName: "My Project"
+    domainName: "Project"
+    clusterName: "OS1"
+    clusterType: "OpenStack"
 
 ```
 

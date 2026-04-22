@@ -13,6 +13,7 @@ const (
 	IOSXE        SourceType = "ios-xe"
 	F5           SourceType = "f5"
 	HetznerCloud SourceType = "hetznercloud"
+	OpenStack    SourceType = "openstack"
 )
 
 const WildcardIP = "0.0.0.0"

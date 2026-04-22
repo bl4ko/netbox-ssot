@@ -122,6 +122,16 @@ var (
 	VMStatusOffline = VMStatus{Choice{Value: "offline", Label: "Offline"}}
 )
 
+type VMStartOnBoot struct {
+	Choice
+}
+
+var (
+	VMStartOnBootAlways    = VMStartOnBoot{Choice{Value: "on", Label: "Always"}}
+	VMStartOnBootNever     = VMStartOnBoot{Choice{Value: "off", Label: "Never"}}
+	VMStartOnBootLastState = VMStartOnBoot{Choice{Value: "laststate", Label: "Last State"}}
+)
+
 // VM represents a netbox's virtual machine.
 type VM struct {
 	NetboxObject
@@ -129,6 +139,8 @@ type VM struct {
 	Name string `json:"name,omitempty"`
 	// Status is the status of the virtual machine. This field is required.
 	Status *VMStatus `json:"status,omitempty"`
+	// StartOnBoot indicates if the virtual machine should start on boot.
+	StartOnBoot *VMStartOnBoot `json:"start_on_boot,omitempty"`
 	// Site is the site to which this virtual machine belongs.
 	Site *Site `json:"site,omitempty"`
 	// Cluster is the cluster to which this virtual machine belongs.
