@@ -145,12 +145,74 @@ var (
 		Name: "MockSitePatched",
 		Slug: "mock-site-patched",
 	}
+)
+
+// Hardcoded mock api return values for VlanGroup endpoint.
+var (
+	MockVlanGroupsGetResponse = Response[objects.VlanGroup]{
+		Count:    1,
+		Next:     nil,
+		Previous: nil,
+		Results: []objects.VlanGroup{
+			{
+				NetboxObject: objects.NetboxObject{
+					ID:   1,
+					Tags: []*objects.Tag{MockDefaultSsotTag},
+				},
+				Name: "MockVlanGroup1",
+				Slug: "mock-vlan-group-1",
+			},
+		},
+	}
 	MockVlanGroupCreateResponse = objects.VlanGroup{
 		NetboxObject: objects.NetboxObject{
 			ID: 1,
 		},
 		Name: "MockVlanGroup1",
 		Slug: "mock-vlan-group-1",
+	}
+	MockVlanGroupPatchResponse = objects.VlanGroup{
+		NetboxObject: objects.NetboxObject{
+			ID: 1,
+		},
+		Name: "MockVlanGroupPatched",
+		Slug: "mock-vlan-group-patched",
+	}
+)
+
+// Hardcoded mock api return values for DeviceRole endpoint.
+var (
+	MockDeviceRolesGetResponse = Response[objects.DeviceRole]{
+		Count:    1,
+		Next:     nil,
+		Previous: nil,
+		Results: []objects.DeviceRole{
+			{
+				NetboxObject: objects.NetboxObject{
+					ID:   1,
+					Tags: []*objects.Tag{MockDefaultSsotTag},
+				},
+				Name:  "MockDeviceRole1",
+				Slug:  "mock-device-role-1",
+				Color: constants.Color(constants.DeviceRoleServerColor),
+			},
+		},
+	}
+	MockDeviceRoleCreateResponse = objects.DeviceRole{
+		NetboxObject: objects.NetboxObject{
+			ID: 2, //nolint:mnd
+		},
+		Name:  "MockDeviceRole2",
+		Slug:  "mock-device-role-2",
+		Color: constants.Color(constants.DeviceRoleServerColor),
+	}
+	MockDeviceRolePatchResponse = objects.DeviceRole{
+		NetboxObject: objects.NetboxObject{
+			ID: 1,
+		},
+		Name:  "MockDeviceRolePatched",
+		Slug:  "mock-device-role-patched",
+		Color: constants.Color(constants.DeviceRoleServerColor),
 	}
 )
 
@@ -207,257 +269,686 @@ var (
 	}
 )
 
+// Mock responses for ContactRole endpoint.
+var (
+	MockContactRolesGetResponse = Response[objects.ContactRole]{
+		Count: 1, Next: nil, Previous: nil,
+		Results: []objects.ContactRole{
+			{
+				NetboxObject: objects.NetboxObject{ID: 1, Tags: []*objects.Tag{MockDefaultSsotTag}},
+				Name:         "MockContactRole1",
+				Slug:         "mock-contact-role-1",
+			},
+		},
+	}
+	MockContactRoleCreateResponse = objects.ContactRole{
+		NetboxObject: objects.NetboxObject{ID: 3}, //nolint:mnd
+		Name:         "MockContactRole3",
+		Slug:         "mock-contact-role-3",
+	}
+	MockContactRolePatchResponse = objects.ContactRole{
+		NetboxObject: objects.NetboxObject{ID: 1},
+		Name:         "MockContactRolePatched",
+		Slug:         "mock-contact-role-patched",
+	}
+)
+
+// Mock responses for ContactGroup endpoint.
+var (
+	MockContactGroupsGetResponse = Response[objects.ContactGroup]{
+		Count: 1, Next: nil, Previous: nil,
+		Results: []objects.ContactGroup{
+			{
+				NetboxObject: objects.NetboxObject{ID: 1, Tags: []*objects.Tag{MockDefaultSsotTag}},
+				Name:         "MockContactGroup1",
+				Slug:         "mock-contact-group-1",
+			},
+		},
+	}
+	MockContactGroupCreateResponse = objects.ContactGroup{
+		NetboxObject: objects.NetboxObject{ID: 3}, //nolint:mnd
+		Name:         "MockContactGroup3",
+		Slug:         "mock-contact-group-3",
+	}
+	MockContactGroupPatchResponse = objects.ContactGroup{
+		NetboxObject: objects.NetboxObject{ID: 1},
+		Name:         "MockContactGroupPatched",
+		Slug:         "mock-contact-group-patched",
+	}
+)
+
+// Mock responses for Contact endpoint.
+var (
+	MockContactsGetResponse = Response[objects.Contact]{
+		Count: 1, Next: nil, Previous: nil,
+		Results: []objects.Contact{
+			{
+				NetboxObject: objects.NetboxObject{ID: 1, Tags: []*objects.Tag{MockDefaultSsotTag}},
+				Name:         "MockContact1",
+			},
+		},
+	}
+	MockContactCreateResponse = objects.Contact{
+		NetboxObject: objects.NetboxObject{ID: 3}, //nolint:mnd
+		Name:         "MockContact3",
+	}
+	MockContactPatchResponse = objects.Contact{
+		NetboxObject: objects.NetboxObject{ID: 1},
+		Name:         "MockContactPatched",
+	}
+)
+
+// Mock responses for ContactAssignment endpoint.
+var (
+	MockContactAssignmentsGetResponse = Response[objects.ContactAssignment]{
+		Count: 1, Next: nil, Previous: nil,
+		Results: []objects.ContactAssignment{
+			{
+				NetboxObject: objects.NetboxObject{ID: 1, Tags: []*objects.Tag{MockDefaultSsotTag}},
+				ModelType:    constants.ContentTypeDcimDevice,
+				ObjectID:     1,
+			},
+		},
+	}
+	MockContactAssignmentCreateResponse = objects.ContactAssignment{
+		NetboxObject: objects.NetboxObject{ID: 3}, //nolint:mnd
+		ModelType:    constants.ContentTypeDcimDevice,
+		ObjectID:     2, //nolint:mnd
+	}
+	MockContactAssignmentPatchResponse = objects.ContactAssignment{
+		NetboxObject: objects.NetboxObject{ID: 1},
+		ModelType:    constants.ContentTypeDcimDevice,
+		ObjectID:     1,
+	}
+)
+
+// Mock responses for CustomField endpoint.
+var (
+	MockCustomFieldsGetResponse = Response[objects.CustomField]{
+		Count: 1, Next: nil, Previous: nil,
+		Results: []objects.CustomField{
+			{
+				ID:   1,
+				Name: "mock_custom_field",
+				Type: objects.CustomFieldTypeText,
+			},
+		},
+	}
+	MockCustomFieldCreateResponse = objects.CustomField{
+		ID:   3, //nolint:mnd
+		Name: "mock_custom_field_new",
+		Type: objects.CustomFieldTypeText,
+	}
+	MockCustomFieldPatchResponse = objects.CustomField{
+		ID:   1,
+		Name: "mock_custom_field_patched",
+		Type: objects.CustomFieldTypeText,
+	}
+)
+
+// Mock responses for Location endpoint.
+var (
+	MockLocationsGetResponse = Response[objects.Location]{
+		Count: 1, Next: nil, Previous: nil,
+		Results: []objects.Location{
+			{
+				NetboxObject: objects.NetboxObject{ID: 1, Tags: []*objects.Tag{MockDefaultSsotTag}},
+				Name:         "MockLocation1",
+				Slug:         "mock-location-1",
+			},
+		},
+	}
+	MockLocationCreateResponse = objects.Location{
+		NetboxObject: objects.NetboxObject{ID: 3}, //nolint:mnd
+		Name:         "MockLocation3",
+		Slug:         "mock-location-3",
+	}
+	MockLocationPatchResponse = objects.Location{
+		NetboxObject: objects.NetboxObject{ID: 1},
+		Name:         "MockLocationPatched",
+		Slug:         "mock-location-patched",
+	}
+)
+
+// Mock responses for SiteGroup endpoint.
+var (
+	MockSiteGroupsGetResponse = Response[objects.SiteGroup]{
+		Count: 1, Next: nil, Previous: nil,
+		Results: []objects.SiteGroup{
+			{
+				NetboxObject: objects.NetboxObject{ID: 1, Tags: []*objects.Tag{MockDefaultSsotTag}},
+				Name:         "MockSiteGroup1",
+				Slug:         "mock-site-group-1",
+			},
+		},
+	}
+	MockSiteGroupCreateResponse = objects.SiteGroup{
+		NetboxObject: objects.NetboxObject{ID: 3}, //nolint:mnd
+		Name:         "MockSiteGroup3",
+		Slug:         "mock-site-group-3",
+	}
+	MockSiteGroupPatchResponse = objects.SiteGroup{
+		NetboxObject: objects.NetboxObject{ID: 1},
+		Name:         "MockSiteGroupPatched",
+		Slug:         "mock-site-group-patched",
+	}
+)
+
+// Mock responses for Manufacturer endpoint.
+var (
+	MockManufacturersGetResponse = Response[objects.Manufacturer]{
+		Count: 1, Next: nil, Previous: nil,
+		Results: []objects.Manufacturer{
+			{
+				NetboxObject: objects.NetboxObject{ID: 1, Tags: []*objects.Tag{MockDefaultSsotTag}},
+				Name:         "MockManufacturer1",
+				Slug:         "mock-manufacturer-1",
+			},
+		},
+	}
+	MockManufacturerCreateResponse = objects.Manufacturer{
+		NetboxObject: objects.NetboxObject{ID: 3}, //nolint:mnd
+		Name:         "MockManufacturer3",
+		Slug:         "mock-manufacturer-3",
+	}
+	MockManufacturerPatchResponse = objects.Manufacturer{
+		NetboxObject: objects.NetboxObject{ID: 1},
+		Name:         "MockManufacturerPatched",
+		Slug:         "mock-manufacturer-patched",
+	}
+)
+
+// Mock responses for DeviceType endpoint.
+var (
+	MockDeviceTypesGetResponse = Response[objects.DeviceType]{
+		Count: 1, Next: nil, Previous: nil,
+		Results: []objects.DeviceType{
+			{
+				NetboxObject: objects.NetboxObject{ID: 1, Tags: []*objects.Tag{MockDefaultSsotTag}},
+				Model:        "MockDeviceType1",
+				Slug:         "mock-device-type-1",
+			},
+		},
+	}
+	MockDeviceTypeCreateResponse = objects.DeviceType{
+		NetboxObject: objects.NetboxObject{ID: 3}, //nolint:mnd
+		Model:        "MockDeviceType3",
+		Slug:         "mock-device-type-3",
+	}
+	MockDeviceTypePatchResponse = objects.DeviceType{
+		NetboxObject: objects.NetboxObject{ID: 1},
+		Model:        "MockDeviceTypePatched",
+		Slug:         "mock-device-type-patched",
+	}
+)
+
+// Mock responses for Platform endpoint.
+var (
+	MockPlatformsGetResponse = Response[objects.Platform]{
+		Count: 1, Next: nil, Previous: nil,
+		Results: []objects.Platform{
+			{
+				NetboxObject: objects.NetboxObject{ID: 1, Tags: []*objects.Tag{MockDefaultSsotTag}},
+				Name:         "MockPlatform1",
+				Slug:         "mock-platform-1",
+			},
+		},
+	}
+	MockPlatformCreateResponse = objects.Platform{
+		NetboxObject: objects.NetboxObject{ID: 3}, //nolint:mnd
+		Name:         "MockPlatform3",
+		Slug:         "mock-platform-3",
+	}
+	MockPlatformPatchResponse = objects.Platform{
+		NetboxObject: objects.NetboxObject{ID: 1},
+		Name:         "MockPlatformPatched",
+		Slug:         "mock-platform-patched",
+	}
+)
+
+// Mock responses for Device endpoint.
+var (
+	MockDevicesGetResponse = Response[objects.Device]{
+		Count: 1, Next: nil, Previous: nil,
+		Results: []objects.Device{
+			{
+				NetboxObject: objects.NetboxObject{ID: 1, Tags: []*objects.Tag{MockDefaultSsotTag}},
+				Name:         "MockDevice1",
+			},
+		},
+	}
+	MockDeviceCreateResponse = objects.Device{
+		NetboxObject: objects.NetboxObject{ID: 3}, //nolint:mnd
+		Name:         "MockDevice3",
+	}
+	MockDevicePatchResponse = objects.Device{
+		NetboxObject: objects.NetboxObject{ID: 1},
+		Name:         "MockDevicePatched",
+	}
+)
+
+// Mock responses for Interface endpoint.
+var (
+	MockInterfacesGetResponse = Response[objects.Interface]{
+		Count: 1, Next: nil, Previous: nil,
+		Results: []objects.Interface{
+			{
+				NetboxObject: objects.NetboxObject{ID: 1, Tags: []*objects.Tag{MockDefaultSsotTag}},
+				Name:         "MockInterface1",
+			},
+		},
+	}
+	MockInterfaceCreateResponse = objects.Interface{
+		NetboxObject: objects.NetboxObject{ID: 3}, //nolint:mnd
+		Name:         "MockInterface3",
+	}
+	MockInterfacePatchResponse = objects.Interface{
+		NetboxObject: objects.NetboxObject{ID: 1},
+		Name:         "MockInterfacePatched",
+	}
+)
+
+// Mock responses for VirtualDeviceContext endpoint.
+var (
+	MockVirtualDeviceContextsGetResponse = Response[objects.VirtualDeviceContext]{
+		Count: 1, Next: nil, Previous: nil,
+		Results: []objects.VirtualDeviceContext{
+			{
+				NetboxObject: objects.NetboxObject{ID: 1, Tags: []*objects.Tag{MockDefaultSsotTag}},
+				Name:         "MockVDC1",
+			},
+		},
+	}
+	MockVirtualDeviceContextCreateResponse = objects.VirtualDeviceContext{
+		NetboxObject: objects.NetboxObject{ID: 3}, //nolint:mnd
+		Name:         "MockVDC3",
+	}
+	MockVirtualDeviceContextPatchResponse = objects.VirtualDeviceContext{
+		NetboxObject: objects.NetboxObject{ID: 1},
+		Name:         "MockVDCPatched",
+	}
+)
+
+// Mock responses for MACAddress endpoint.
+var (
+	MockMACAddressesGetResponse = Response[objects.MACAddress]{
+		Count: 1, Next: nil, Previous: nil,
+		Results: []objects.MACAddress{
+			{
+				NetboxObject: objects.NetboxObject{ID: 1, Tags: []*objects.Tag{MockDefaultSsotTag}},
+				MAC:          "00:11:22:33:44:55",
+			},
+		},
+	}
+	MockMACAddressCreateResponse = objects.MACAddress{
+		NetboxObject: objects.NetboxObject{ID: 3}, //nolint:mnd
+		MAC:          "00:11:22:33:44:66",
+	}
+	MockMACAddressPatchResponse = objects.MACAddress{
+		NetboxObject: objects.NetboxObject{ID: 1},
+		MAC:          "00:11:22:33:44:77",
+	}
+)
+
+// Mock responses for Vlan endpoint.
+var (
+	MockVlansGetResponse = Response[objects.Vlan]{
+		Count: 1, Next: nil, Previous: nil,
+		Results: []objects.Vlan{
+			{
+				NetboxObject: objects.NetboxObject{ID: 1, Tags: []*objects.Tag{MockDefaultSsotTag}},
+				Name:         "MockVlan1",
+				Vid:          100, //nolint:mnd
+			},
+		},
+	}
+	MockVlanCreateResponse = objects.Vlan{
+		NetboxObject: objects.NetboxObject{ID: 3}, //nolint:mnd
+		Name:         "MockVlan3",
+		Vid:          300, //nolint:mnd
+	}
+	MockVlanPatchResponse = objects.Vlan{
+		NetboxObject: objects.NetboxObject{ID: 1},
+		Name:         "MockVlanPatched",
+		Vid:          100, //nolint:mnd
+	}
+)
+
+// Mock responses for IPAddress endpoint.
+var (
+	MockIPAddressesGetResponse = Response[objects.IPAddress]{
+		Count: 1, Next: nil, Previous: nil,
+		Results: []objects.IPAddress{
+			{
+				NetboxObject: objects.NetboxObject{ID: 1, Tags: []*objects.Tag{MockDefaultSsotTag}},
+				Address:      "10.0.0.1/24",
+			},
+		},
+	}
+	MockIPAddressCreateResponse = objects.IPAddress{
+		NetboxObject: objects.NetboxObject{ID: 3}, //nolint:mnd
+		Address:      "10.0.0.3/24",
+	}
+	MockIPAddressPatchResponse = objects.IPAddress{
+		NetboxObject: objects.NetboxObject{ID: 1},
+		Address:      "10.0.0.1/24",
+	}
+)
+
+// Mock responses for ClusterType endpoint.
+var (
+	MockClusterTypesGetResponse = Response[objects.ClusterType]{
+		Count: 1, Next: nil, Previous: nil,
+		Results: []objects.ClusterType{
+			{
+				NetboxObject: objects.NetboxObject{ID: 1, Tags: []*objects.Tag{MockDefaultSsotTag}},
+				Name:         "MockClusterType1",
+				Slug:         "mock-cluster-type-1",
+			},
+		},
+	}
+	MockClusterTypeCreateResponse = objects.ClusterType{
+		NetboxObject: objects.NetboxObject{ID: 3}, //nolint:mnd
+		Name:         "MockClusterType3",
+		Slug:         "mock-cluster-type-3",
+	}
+	MockClusterTypePatchResponse = objects.ClusterType{
+		NetboxObject: objects.NetboxObject{ID: 1},
+		Name:         "MockClusterTypePatched",
+		Slug:         "mock-cluster-type-patched",
+	}
+)
+
+// Mock responses for ClusterGroup endpoint.
+var (
+	MockClusterGroupsGetResponse = Response[objects.ClusterGroup]{
+		Count: 1, Next: nil, Previous: nil,
+		Results: []objects.ClusterGroup{
+			{
+				NetboxObject: objects.NetboxObject{ID: 1, Tags: []*objects.Tag{MockDefaultSsotTag}},
+				Name:         "MockClusterGroup1",
+				Slug:         "mock-cluster-group-1",
+			},
+		},
+	}
+	MockClusterGroupCreateResponse = objects.ClusterGroup{
+		NetboxObject: objects.NetboxObject{ID: 3}, //nolint:mnd
+		Name:         "MockClusterGroup3",
+		Slug:         "mock-cluster-group-3",
+	}
+	MockClusterGroupPatchResponse = objects.ClusterGroup{
+		NetboxObject: objects.NetboxObject{ID: 1},
+		Name:         "MockClusterGroupPatched",
+		Slug:         "mock-cluster-group-patched",
+	}
+)
+
+// Mock responses for Cluster endpoint.
+var (
+	MockClustersGetResponse = Response[objects.Cluster]{
+		Count: 1, Next: nil, Previous: nil,
+		Results: []objects.Cluster{
+			{
+				NetboxObject: objects.NetboxObject{ID: 1, Tags: []*objects.Tag{MockDefaultSsotTag}},
+				Name:         "MockCluster1",
+			},
+		},
+	}
+	MockClusterCreateResponse = objects.Cluster{
+		NetboxObject: objects.NetboxObject{ID: 3}, //nolint:mnd
+		Name:         "MockCluster3",
+	}
+	MockClusterPatchResponse = objects.Cluster{
+		NetboxObject: objects.NetboxObject{ID: 1},
+		Name:         "MockClusterPatched",
+	}
+)
+
+// Mock responses for VM endpoint.
+var (
+	MockVMsGetResponse = Response[objects.VM]{
+		Count: 1, Next: nil, Previous: nil,
+		Results: []objects.VM{
+			{
+				NetboxObject: objects.NetboxObject{ID: 1, Tags: []*objects.Tag{MockDefaultSsotTag}},
+				Name:         "MockVM1",
+			},
+		},
+	}
+	MockVMCreateResponse = objects.VM{
+		NetboxObject: objects.NetboxObject{ID: 3}, //nolint:mnd
+		Name:         "MockVM3",
+	}
+	MockVMPatchResponse = objects.VM{
+		NetboxObject: objects.NetboxObject{ID: 1},
+		Name:         "MockVMPatched",
+	}
+)
+
+// Mock responses for VMInterface endpoint.
+var (
+	MockVMInterfacesGetResponse = Response[objects.VMInterface]{
+		Count: 1, Next: nil, Previous: nil,
+		Results: []objects.VMInterface{
+			{
+				NetboxObject: objects.NetboxObject{ID: 1, Tags: []*objects.Tag{MockDefaultSsotTag}},
+				Name:         "MockVMInterface1",
+			},
+		},
+	}
+	MockVMInterfaceCreateResponse = objects.VMInterface{
+		NetboxObject: objects.NetboxObject{ID: 3}, //nolint:mnd
+		Name:         "MockVMInterface3",
+	}
+	MockVMInterfacePatchResponse = objects.VMInterface{
+		NetboxObject: objects.NetboxObject{ID: 1},
+		Name:         "MockVMInterfacePatched",
+	}
+)
+
+// Mock responses for VirtualDisk endpoint.
+var (
+	MockVirtualDisksGetResponse = Response[objects.VirtualDisk]{
+		Count: 1, Next: nil, Previous: nil,
+		Results: []objects.VirtualDisk{
+			{
+				NetboxObject: objects.NetboxObject{ID: 1, Tags: []*objects.Tag{MockDefaultSsotTag}},
+				Name:         "MockVirtualDisk1",
+				Size:         100, //nolint:mnd
+			},
+		},
+	}
+	MockVirtualDiskCreateResponse = objects.VirtualDisk{
+		NetboxObject: objects.NetboxObject{ID: 3}, //nolint:mnd
+		Name:         "MockVirtualDisk3",
+		Size:         300, //nolint:mnd
+	}
+	MockVirtualDiskPatchResponse = objects.VirtualDisk{
+		NetboxObject: objects.NetboxObject{ID: 1},
+		Name:         "MockVirtualDiskPatched",
+		Size:         100, //nolint:mnd
+	}
+)
+
+// Mock responses for WirelessLAN endpoint.
+var (
+	MockWirelessLANsGetResponse = Response[objects.WirelessLAN]{
+		Count: 1, Next: nil, Previous: nil,
+		Results: []objects.WirelessLAN{
+			{
+				NetboxObject: objects.NetboxObject{ID: 1, Tags: []*objects.Tag{MockDefaultSsotTag}},
+				SSID:         "MockWirelessLAN1",
+			},
+		},
+	}
+	MockWirelessLANCreateResponse = objects.WirelessLAN{
+		NetboxObject: objects.NetboxObject{ID: 3}, //nolint:mnd
+		SSID:         "MockWirelessLAN3",
+	}
+	MockWirelessLANPatchResponse = objects.WirelessLAN{
+		NetboxObject: objects.NetboxObject{ID: 1},
+		SSID:         "MockWirelessLANPatched",
+	}
+)
+
+// Mock responses for WirelessLANGroup endpoint.
+var (
+	MockWirelessLANGroupsGetResponse = Response[objects.WirelessLANGroup]{
+		Count: 1, Next: nil, Previous: nil,
+		Results: []objects.WirelessLANGroup{
+			{
+				NetboxObject: objects.NetboxObject{ID: 1, Tags: []*objects.Tag{MockDefaultSsotTag}},
+				Name:         "MockWirelessLANGroup1",
+				Slug:         "mock-wireless-lan-group-1",
+			},
+		},
+	}
+	MockWirelessLANGroupCreateResponse = objects.WirelessLANGroup{
+		NetboxObject: objects.NetboxObject{ID: 3}, //nolint:mnd
+		Name:         "MockWirelessLANGroup3",
+		Slug:         "mock-wireless-lan-group-3",
+	}
+	MockWirelessLANGroupPatchResponse = objects.WirelessLANGroup{
+		NetboxObject: objects.NetboxObject{ID: 1},
+		Name:         "MockWirelessLANGroupPatched",
+		Slug:         "mock-wireless-lan-group-patched",
+	}
+)
+
 const (
 	MockVersionResponseJSON = "{\"django-version\": \"4.2.10\"}"
 )
 
-//nolint:gocyclo
-func CreateMockServer() *httptest.Server {
-	handler := http.NewServeMux()
-
-	handler.HandleFunc(
-		string(constants.DeviceRolesAPIPath),
-		func(w http.ResponseWriter, r *http.Request) {
-			switch r.Method {
-			case http.MethodPost:
-				w.WriteHeader(http.StatusCreated)
-				var role objects.DeviceRole
-				body, _ := io.ReadAll(r.Body)
-				if err := json.Unmarshal(body, &role); err != nil {
-					log.Printf("Error unmarshaling device role request: %v", err)
-				}
-				role.ID = 1
-				roleStr, err := json.Marshal(role)
-				if err != nil {
-					log.Printf("Error marshaling device role create response: %v", err)
-				}
-				_, err = w.Write(roleStr)
-				if err != nil {
-					log.Printf("Error writing response")
-				}
-			case http.MethodDelete:
-				w.WriteHeader(http.StatusNoContent)
-			default:
-				log.Printf("Wrong http method: %q", r.Method) //nolint:gosec
-			}
-		},
-	)
-
-	// Define handler for a specific path e.g., "/api/path"
-	handler.HandleFunc("/api/status/", func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, err := io.WriteString(w, MockVersionResponseJSON) // Mock JSON Response
-		if err != nil {
-			log.Printf("Error writing response: %v", err)
-		}
-	})
-
-	handler.HandleFunc(string(constants.TagsAPIPath), func(w http.ResponseWriter, r *http.Request) {
+// mockEndpointHandler creates a generic HTTP handler for a mock NetBox API endpoint.
+// It supports GET (returns getResp), POST (echoes request body with injected createID, 201),
+// PATCH (validates custom_fields, returns patchResp), and DELETE (204 no content).
+// POST echoes the request body back with the create response's ID injected, so callers
+// see their own field values (matching the real NetBox API behavior).
+func mockEndpointHandler(getResp interface{}, createID int, patchResp interface{}) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
-		case http.MethodPatch:
-			tagStr, err := json.Marshal(MockTagPatchResponse)
-			if err != nil {
-				log.Printf("Error marshaling tag patch response: %v", err)
-			}
-			_, err = w.Write(tagStr)
-			if err != nil {
-				log.Printf("Error writing response: %v", err)
-			}
 		case http.MethodGet:
 			w.WriteHeader(http.StatusOK)
-			tagsResponseStr, err := json.Marshal(MockTagsGetResponse)
+			resp, err := json.Marshal(getResp)
 			if err != nil {
-				log.Printf("Error marshaling tags response: %v", err)
+				log.Printf("Error marshaling GET response: %v", err)
 			}
-			_, err = w.Write(tagsResponseStr)
-			if err != nil {
-				log.Printf("Error writing response")
-			}
+			_, _ = w.Write(resp)
 		case http.MethodPost:
+			body, _ := io.ReadAll(r.Body)
+			if err := validateCustomFieldsPayload(body); err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				errResp := map[string][]string{"custom_fields": {err.Error()}}
+				resp, _ := json.Marshal(errResp)
+				_, _ = w.Write(resp)
+				return
+			}
+			// Echo request body with injected ID (mimics real NetBox behavior).
+			var obj map[string]interface{}
+			if err := json.Unmarshal(body, &obj); err == nil {
+				obj["id"] = createID
+			}
 			w.WriteHeader(http.StatusCreated)
-			tagStr, err := json.Marshal(MockTagCreateResponse)
+			resp, err := json.Marshal(obj)
 			if err != nil {
-				log.Printf("Error marshaling tag create response: %v", err)
+				log.Printf("Error marshaling POST response: %v", err)
 			}
-			_, err = w.Write(tagStr)
+			_, _ = w.Write(resp)
+		case http.MethodPatch:
+			body, _ := io.ReadAll(r.Body)
+			if err := validateCustomFieldsPayload(body); err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				errResp := map[string][]string{"custom_fields": {err.Error()}}
+				resp, _ := json.Marshal(errResp)
+				_, _ = w.Write(resp)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
+			resp, err := json.Marshal(patchResp)
 			if err != nil {
-				log.Printf("Error writing response")
+				log.Printf("Error marshaling PATCH response: %v", err)
 			}
+			_, _ = w.Write(resp)
 		case http.MethodDelete:
 			w.WriteHeader(http.StatusNoContent)
 		default:
 			log.Printf("Wrong http method: %q", r.Method) //nolint:gosec
 		}
+	}
+}
+
+// mockEndpoint groups mock response data for a single API endpoint.
+type mockEndpoint struct {
+	path     constants.APIPath
+	get      interface{}
+	createID int
+	patch    interface{}
+}
+
+func CreateMockServer() *httptest.Server {
+	handler := http.NewServeMux()
+
+	endpoints := []mockEndpoint{
+		// Extras
+		{constants.TagsAPIPath, MockTagsGetResponse, 1, MockTagPatchResponse},
+		{constants.CustomFieldsAPIPath, MockCustomFieldsGetResponse, 3, MockCustomFieldPatchResponse},
+		// Tenancy
+		{constants.TenantsAPIPath, MockTenantsGetResponse, 3, MockTenantPatchResponse},
+		{constants.ContactRolesAPIPath, MockContactRolesGetResponse, 3, MockContactRolePatchResponse},
+		{constants.ContactGroupsAPIPath, MockContactGroupsGetResponse, 3, MockContactGroupPatchResponse},
+		{constants.ContactsAPIPath, MockContactsGetResponse, 3, MockContactPatchResponse},
+		{constants.ContactAssignmentsAPIPath, MockContactAssignmentsGetResponse, 3, MockContactAssignmentPatchResponse},
+		// DCIM
+		{constants.SitesAPIPath, MockSitesGetResponse, 3, MockSitePatchResponse},
+		{constants.SiteGroupsAPIPath, MockSiteGroupsGetResponse, 3, MockSiteGroupPatchResponse},
+		{constants.LocationsAPIPath, MockLocationsGetResponse, 3, MockLocationPatchResponse},
+		{constants.ManufacturersAPIPath, MockManufacturersGetResponse, 3, MockManufacturerPatchResponse},
+		{constants.DeviceTypesAPIPath, MockDeviceTypesGetResponse, 3, MockDeviceTypePatchResponse},
+		{constants.DeviceRolesAPIPath, MockDeviceRolesGetResponse, 2, MockDeviceRolePatchResponse},
+		{constants.PlatformsAPIPath, MockPlatformsGetResponse, 3, MockPlatformPatchResponse},
+		{constants.DevicesAPIPath, MockDevicesGetResponse, 3, MockDevicePatchResponse},
+		{constants.InterfacesAPIPath, MockInterfacesGetResponse, 3, MockInterfacePatchResponse},
+		{
+			constants.VirtualDeviceContextsAPIPath,
+			MockVirtualDeviceContextsGetResponse, 3, MockVirtualDeviceContextPatchResponse,
+		},
+		{constants.MACAddressesAPIPath, MockMACAddressesGetResponse, 3, MockMACAddressPatchResponse},
+		// IPAM
+		{constants.VlanGroupsAPIPath, MockVlanGroupsGetResponse, 1, MockVlanGroupPatchResponse},
+		{constants.VlansAPIPath, MockVlansGetResponse, 3, MockVlanPatchResponse},
+		{constants.IPAddressesAPIPath, MockIPAddressesGetResponse, 3, MockIPAddressPatchResponse},
+		{constants.PrefixesAPIPath, MockPrefixGetResponse, 2, MockPrefixPatchResponse},
+		// Virtualization
+		{constants.ClusterTypesAPIPath, MockClusterTypesGetResponse, 3, MockClusterTypePatchResponse},
+		{constants.ClusterGroupsAPIPath, MockClusterGroupsGetResponse, 3, MockClusterGroupPatchResponse},
+		{constants.ClustersAPIPath, MockClustersGetResponse, 3, MockClusterPatchResponse},
+		{constants.VirtualMachinesAPIPath, MockVMsGetResponse, 3, MockVMPatchResponse},
+		{constants.VMInterfacesAPIPath, MockVMInterfacesGetResponse, 3, MockVMInterfacePatchResponse},
+		{constants.VirtualDisksAPIPath, MockVirtualDisksGetResponse, 3, MockVirtualDiskPatchResponse},
+		// Wireless
+		{constants.WirelessLANsAPIPath, MockWirelessLANsGetResponse, 3, MockWirelessLANPatchResponse},
+		{constants.WirelessLANGroupsAPIPath, MockWirelessLANGroupsGetResponse, 3, MockWirelessLANGroupPatchResponse},
+	}
+
+	for _, ep := range endpoints {
+		handler.HandleFunc(string(ep.path), mockEndpointHandler(ep.get, ep.createID, ep.patch))
+	}
+
+	// Special handlers
+	handler.HandleFunc("/api/status/", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, err := io.WriteString(w, MockVersionResponseJSON)
+		if err != nil {
+			log.Printf("Error writing response: %v", err)
+		}
 	})
-
-	handler.HandleFunc(
-		string(constants.TenantsAPIPath),
-		func(w http.ResponseWriter, r *http.Request) {
-			switch r.Method {
-			case http.MethodPatch:
-				tenantStr, err := json.Marshal(MockTenantPatchResponse)
-				if err != nil {
-					log.Printf("Error marshaling tenant patch response: %v", err)
-				}
-				_, err = w.Write(tenantStr)
-				if err != nil {
-					log.Printf("Error writing response: %v", err)
-				}
-			case http.MethodGet:
-				w.WriteHeader(http.StatusOK)
-				tenantsResponseStr, err := json.Marshal(MockTenantsGetResponse)
-				if err != nil {
-					log.Printf("Error marshaling tenants response: %v", err)
-				}
-				_, err = w.Write(tenantsResponseStr)
-				if err != nil {
-					log.Printf("Error writing response")
-				}
-			case http.MethodPost:
-				w.WriteHeader(http.StatusCreated)
-				tenantStr, err := json.Marshal(MockTenantCreateResponse)
-				if err != nil {
-					log.Printf("Error marshaling tenant create response: %v", err)
-				}
-				_, err = w.Write(tenantStr)
-				if err != nil {
-					log.Printf("Error writing response")
-				}
-			case http.MethodDelete:
-				w.WriteHeader(http.StatusNoContent)
-			default:
-				log.Printf("Wrong http method: %q", r.Method) //nolint:gosec
-			}
-		},
-	)
-
-	handler.HandleFunc(
-		string(constants.SitesAPIPath),
-		func(w http.ResponseWriter, r *http.Request) {
-			switch r.Method {
-			case http.MethodPatch:
-				siteStr, err := json.Marshal(MockSitePatchResponse)
-				if err != nil {
-					log.Printf("Error marshaling site patch response: %v", err)
-				}
-				_, err = w.Write(siteStr)
-				if err != nil {
-					log.Printf("Error writing response: %v", err)
-				}
-			case http.MethodGet:
-				w.WriteHeader(http.StatusOK)
-				siteResponseStr, err := json.Marshal(MockSitesGetResponse)
-				if err != nil {
-					log.Printf("Error marshaling sites response: %v", err)
-				}
-				_, err = w.Write(siteResponseStr)
-				if err != nil {
-					log.Printf("Error writing response")
-				}
-			case http.MethodPost:
-				w.WriteHeader(http.StatusCreated)
-				siteStr, err := json.Marshal(MockSiteCreateResponse)
-				if err != nil {
-					log.Printf("Error marshaling site create response: %v", err)
-				}
-				_, err = w.Write(siteStr)
-				if err != nil {
-					log.Printf("Error writing response")
-				}
-			case http.MethodDelete:
-				w.WriteHeader(http.StatusNoContent)
-			default:
-				log.Printf("Wrong http method: %q", r.Method) //nolint:gosec
-			}
-		},
-	)
-
-	handler.HandleFunc(
-		string(constants.VlanGroupsAPIPath),
-		func(w http.ResponseWriter, r *http.Request) {
-			switch r.Method {
-			case http.MethodPost:
-				w.WriteHeader(http.StatusCreated)
-				var vlanGroup objects.VlanGroup
-				body, _ := io.ReadAll(r.Body)
-				if err := json.Unmarshal(body, &vlanGroup); err != nil {
-					log.Printf("Error unmarshaling vlan group request: %v", err)
-				}
-				vlanGroup.ID = MockVlanGroupCreateResponse.ID
-				vlanGroupStr, err := json.Marshal(vlanGroup)
-				if err != nil {
-					log.Printf("Error marshaling vlan group create response: %v", err)
-				}
-				_, err = w.Write(vlanGroupStr)
-				if err != nil {
-					log.Printf("Error writing response")
-				}
-			case http.MethodDelete:
-				w.WriteHeader(http.StatusNoContent)
-			default:
-				log.Printf("Wrong http method: %q", r.Method) //nolint:gosec
-			}
-		},
-	)
-
-	// Prefix endpoint — mimics NetBox 4.2.x REST API behavior:
-	// - GET returns prefixes with object-type custom fields as nested objects
-	// - PATCH/POST validates that custom_fields don't contain nested objects with "display"
-	handler.HandleFunc(
-		string(constants.PrefixesAPIPath),
-		func(w http.ResponseWriter, r *http.Request) {
-			switch r.Method {
-			case http.MethodGet:
-				w.WriteHeader(http.StatusOK)
-				resp, err := json.Marshal(MockPrefixGetResponse)
-				if err != nil {
-					log.Printf("Error marshaling prefix GET response: %v", err)
-				}
-				_, _ = w.Write(resp)
-			case http.MethodPost:
-				body, _ := io.ReadAll(r.Body)
-				if err := validateCustomFieldsPayload(body); err != nil {
-					w.WriteHeader(http.StatusBadRequest)
-					errResp := map[string][]string{"custom_fields": {err.Error()}}
-					resp, _ := json.Marshal(errResp)
-					_, _ = w.Write(resp)
-					return
-				}
-				w.WriteHeader(http.StatusCreated)
-				resp, err := json.Marshal(MockPrefixCreateResponse)
-				if err != nil {
-					log.Printf("Error marshaling prefix create response: %v", err)
-				}
-				_, _ = w.Write(resp)
-			case http.MethodPatch:
-				body, _ := io.ReadAll(r.Body)
-				if err := validateCustomFieldsPayload(body); err != nil {
-					w.WriteHeader(http.StatusBadRequest)
-					errResp := map[string][]string{"custom_fields": {err.Error()}}
-					resp, _ := json.Marshal(errResp)
-					_, _ = w.Write(resp)
-					return
-				}
-				w.WriteHeader(http.StatusOK)
-				resp, err := json.Marshal(MockPrefixPatchResponse)
-				if err != nil {
-					log.Printf("Error marshaling prefix patch response: %v", err)
-				}
-				_, _ = w.Write(resp)
-			case http.MethodDelete:
-				w.WriteHeader(http.StatusNoContent)
-			default:
-				log.Printf("Wrong http method: %q", r.Method) //nolint:gosec
-			}
-		},
-	)
 
 	handler.HandleFunc("/api/read-error", func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError) // or any relevant status
+		w.WriteHeader(http.StatusInternalServerError)
 		//nolint:all
-		w.(http.Flusher).Flush() // Flush the headers to client
-		// Do not write any body, let the client read from the FaultyReader
+		w.(http.Flusher).Flush()
 	})
+
 	// Wildcard handler for all other paths
 	handler.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
@@ -466,7 +957,7 @@ func CreateMockServer() *httptest.Server {
 			log.Printf("Error writing response: %v", err)
 		}
 	})
-	// More handlers can be added here for different paths or methods
+
 	return httptest.NewServer(handler)
 }
 

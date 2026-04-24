@@ -34,7 +34,14 @@ func TestNetboxInventory_AddTag(t *testing.T) {
 					Slug:        "new_tag",
 				},
 			},
-			want: &service.MockTagCreateResponse,
+			// Mock echoes request body with injected ID.
+			want: &objects.Tag{
+				ID:          1,
+				Name:        "new tag",
+				Description: "New Tag",
+				Color:       constants.ColorBlack,
+				Slug:        "new_tag",
+			},
 		},
 		{
 			name: "Test update existing tag",
@@ -101,7 +108,15 @@ func TestNetboxInventory_AddTenant(t *testing.T) {
 				ctx:       context.WithValue(context.Background(), constants.CtxSourceKey, "test"),
 				newTenant: &objects.Tenant{Name: "new tenant", Slug: "new_tenant"},
 			},
-			want: &service.MockTenantCreateResponse,
+			// Mock echoes request body with injected ID. AddTenant adds SsotTag before create.
+			want: &objects.Tenant{
+				NetboxObject: objects.NetboxObject{
+					ID:   3,
+					Tags: []*objects.Tag{MockInventory.SsotTag},
+				},
+				Name: "new tenant",
+				Slug: "new_tenant",
+			},
 		},
 		{
 			name: "Test update existing tenant",
@@ -159,7 +174,15 @@ func TestNetboxInventory_AddSite(t *testing.T) {
 				ctx:     context.WithValue(context.Background(), constants.CtxSourceKey, "test"),
 				newSite: &objects.Site{Name: "new site", Slug: "new_site"},
 			},
-			want: &service.MockSiteCreateResponse,
+			// Mock echoes request body with injected ID. AddSite adds SsotTag before create.
+			want: &objects.Site{
+				NetboxObject: objects.NetboxObject{
+					ID:   3,
+					Tags: []*objects.Tag{MockInventory.SsotTag},
+				},
+				Name: "new site",
+				Slug: "new_site",
+			},
 		},
 		{
 			name: "Test update existing site",
