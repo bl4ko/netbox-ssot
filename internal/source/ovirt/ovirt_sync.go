@@ -1086,9 +1086,11 @@ func (o *OVirtSource) syncVM(
 		return fmt.Errorf("failed to sync oVirt vm %s: %v", collectedVM.Name, err)
 	}
 
-	err = o.syncVMDisks(nbi, collectedVMDisks, nbVM)
-	if err != nil {
-		return fmt.Errorf("failed to sync oVirt vm %s's disks: %v", collectedVM.Name, err)
+	if !o.SourceConfig.IgnoreVMDisks {
+		err = o.syncVMDisks(nbi, collectedVMDisks, nbVM)
+		if err != nil {
+			return fmt.Errorf("failed to sync oVirt vm %s's disks: %v", collectedVM.Name, err)
+		}
 	}
 
 	err = o.syncVMInterfaces(nbi, ovirtVM, nbVM)

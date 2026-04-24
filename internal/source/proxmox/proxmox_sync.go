@@ -631,9 +631,11 @@ func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 	}
 
 	// Sync VM disks
-	err = ps.syncVMDisks(nbi, nbVM, vmDisks)
-	if err != nil {
-		return fmt.Errorf("failed to sync vm's %+v disks: %s", nbVM, err)
+	if !ps.SourceConfig.IgnoreVMDisks {
+		err = ps.syncVMDisks(nbi, nbVM, vmDisks)
+		if err != nil {
+			return fmt.Errorf("failed to sync vm's %+v disks: %s", nbVM, err)
+		}
 	}
 
 	return nil

@@ -1238,9 +1238,11 @@ func (vc *VmwareSource) syncVM(
 		}
 
 		// Sync vm disks
-		err := vc.syncVMDisks(nbi, newVM, vmDisks)
-		if err != nil {
-			return fmt.Errorf("failed to sync vm's %+v disks: %s", newVM, err)
+		if !vc.SourceConfig.IgnoreVMDisks {
+			err := vc.syncVMDisks(nbi, newVM, vmDisks)
+			if err != nil {
+				return fmt.Errorf("failed to sync vm's %+v disks: %s", newVM, err)
+			}
 		}
 	}
 	return nil
