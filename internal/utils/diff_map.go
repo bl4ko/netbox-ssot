@@ -501,7 +501,7 @@ func addMapDiff(
 			if keyValue, ok := key.Interface().(string); ok {
 				if !newMap.MapIndex(key).IsValid() {
 					if !existingMap.MapIndex(key).IsNil() {
-						mapsDiff[keyValue] = existingMap.MapIndex(key).Interface()
+						mapsDiff[keyValue] = sanitizeCustomFieldValue(existingMap.MapIndex(key).Interface())
 					}
 				}
 			}
@@ -509,6 +509,20 @@ func addMapDiff(
 		diffMap[jsonTag] = mapsDiff
 	}
 	return nil
+}
+
+// sanitizeCustomFieldValue converts NetBox API read-format custom field values
+// to write-format. Object-type custom fields come back from the API as nested
+// objects (map with "id", "display", "url", etc.) but must be sent as just the
+// ID integer on write. Without this conversion, PATCH requests fail with:
+// "Cannot resolve keyword 'display' into field".
+func sanitizeCustomFieldValue(val interface{}) interface{} {
+	if m, ok := val.(map[string]interface{}); ok {
+		if id, hasID := m["id"]; hasID {
+			return id
+		}
+	}
+	return val
 }
 
 func addPrimaryDiff(
