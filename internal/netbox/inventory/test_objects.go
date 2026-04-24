@@ -75,6 +75,8 @@ var MockInventory = &NetboxInventory{
 	sitesLock:              sync.Mutex{},
 	deviceRolesIndexByName: map[string]*objects.DeviceRole{},
 	deviceRolesLock:        sync.Mutex{},
+	vlanGroupsIndexByName:  map[string]*objects.VlanGroup{},
+	vlanGroupsLock:         sync.Mutex{},
 	vrfsIndexByName:        map[string]*objects.VRF{},
 	vrfsLock:               sync.Mutex{},
 	NetboxAPI:              service.MockNetboxClient,

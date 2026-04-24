@@ -196,6 +196,7 @@ func (fmcs *FMCSource) syncVlanInterfaces(
 					vlanSite,
 					fmcs.SourceConfig.VlanGroupRelations,
 					fmcs.SourceConfig.VlanGroupSiteRelations,
+					"",
 				)
 				if err != nil {
 					return fmt.Errorf("match vlan to group: %s", err)
@@ -462,6 +463,7 @@ func (fmcs *FMCSource) syncSubInterfaces(
 					vlanSite,
 					fmcs.SourceConfig.VlanGroupRelations,
 					fmcs.SourceConfig.VlanGroupSiteRelations,
+					"",
 				)
 				if err != nil {
 					return fmt.Errorf("match subiface vlan to group: %s", err)

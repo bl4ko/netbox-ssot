@@ -214,6 +214,7 @@ func (fs *FortigateSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 				vlanSite,
 				fs.SourceConfig.VlanGroupRelations,
 				fs.SourceConfig.VlanGroupSiteRelations,
+				"",
 			)
 			if err != nil {
 				return fmt.Errorf("match vlan to group: %s", err)

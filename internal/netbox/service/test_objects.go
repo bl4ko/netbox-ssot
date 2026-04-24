@@ -145,6 +145,13 @@ var (
 		Name: "MockSitePatched",
 		Slug: "mock-site-patched",
 	}
+	MockVlanGroupCreateResponse = objects.VlanGroup{
+		NetboxObject: objects.NetboxObject{
+			ID: 1,
+		},
+		Name: "MockVlanGroup1",
+		Slug: "mock-vlan-group-1",
+	}
 )
 
 const (
@@ -301,6 +308,34 @@ func CreateMockServer() *httptest.Server {
 					log.Printf("Error marshaling site create response: %v", err)
 				}
 				_, err = w.Write(siteStr)
+				if err != nil {
+					log.Printf("Error writing response")
+				}
+			case http.MethodDelete:
+				w.WriteHeader(http.StatusNoContent)
+			default:
+				log.Printf("Wrong http method: %q", r.Method) //nolint:gosec
+			}
+		},
+	)
+
+	handler.HandleFunc(
+		string(constants.VlanGroupsAPIPath),
+		func(w http.ResponseWriter, r *http.Request) {
+			switch r.Method {
+			case http.MethodPost:
+				w.WriteHeader(http.StatusCreated)
+				var vlanGroup objects.VlanGroup
+				body, _ := io.ReadAll(r.Body)
+				if err := json.Unmarshal(body, &vlanGroup); err != nil {
+					log.Printf("Error unmarshaling vlan group request: %v", err)
+				}
+				vlanGroup.ID = MockVlanGroupCreateResponse.ID
+				vlanGroupStr, err := json.Marshal(vlanGroup)
+				if err != nil {
+					log.Printf("Error marshaling vlan group create response: %v", err)
+				}
+				_, err = w.Write(vlanGroupStr)
 				if err != nil {
 					log.Printf("Error writing response")
 				}
