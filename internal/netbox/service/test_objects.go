@@ -154,6 +154,59 @@ var (
 	}
 )
 
+// Hardcoded mock api return values for prefix endpoint.
+// MockPrefixGetResponse simulates NetBox returning prefixes with object-type
+// custom fields as nested objects (the read format from the NetBox REST API).
+var (
+	MockPrefixGetResponse = Response[objects.Prefix]{
+		Count:    1,
+		Next:     nil,
+		Previous: nil,
+		Results: []objects.Prefix{
+			{
+				NetboxObject: objects.NetboxObject{
+					ID:   1,
+					Tags: []*objects.Tag{MockDefaultSsotTag},
+					// NetBox returns object-type custom fields as nested objects.
+					// This is the read format — write format expects just the ID.
+					CustomFields: map[string]interface{}{
+						"source":           "test",
+						"orphan_last_seen": nil,
+						"site_ref": map[string]interface{}{
+							"id":      float64(1),
+							"display": "LCL",
+							"url":     "https://netbox/api/dcim/sites/1/",
+							"name":    "LCL",
+							"slug":    "lcl",
+						},
+					},
+				},
+				Prefix: "10.0.0.0/24",
+			},
+		},
+	}
+	MockPrefixCreateResponse = objects.Prefix{
+		NetboxObject: objects.NetboxObject{
+			ID: 2, //nolint:mnd
+		},
+		Prefix: "192.168.1.0/24",
+	}
+	MockPrefixPatchResponse = objects.Prefix{
+		NetboxObject: objects.NetboxObject{
+			ID: 1,
+			Tags: []*objects.Tag{
+				MockDefaultSsotTag,
+			},
+			CustomFields: map[string]interface{}{
+				"source":           "test",
+				"orphan_last_seen": nil,
+				"site_ref":         float64(1),
+			},
+		},
+		Prefix: "10.0.0.0/24",
+	}
+)
+
 const (
 	MockVersionResponseJSON = "{\"django-version\": \"4.2.10\"}"
 )
@@ -347,6 +400,58 @@ func CreateMockServer() *httptest.Server {
 		},
 	)
 
+	// Prefix endpoint — mimics NetBox 4.2.x REST API behavior:
+	// - GET returns prefixes with object-type custom fields as nested objects
+	// - PATCH/POST validates that custom_fields don't contain nested objects with "display"
+	handler.HandleFunc(
+		string(constants.PrefixesAPIPath),
+		func(w http.ResponseWriter, r *http.Request) {
+			switch r.Method {
+			case http.MethodGet:
+				w.WriteHeader(http.StatusOK)
+				resp, err := json.Marshal(MockPrefixGetResponse)
+				if err != nil {
+					log.Printf("Error marshaling prefix GET response: %v", err)
+				}
+				_, _ = w.Write(resp)
+			case http.MethodPost:
+				body, _ := io.ReadAll(r.Body)
+				if err := validateCustomFieldsPayload(body); err != nil {
+					w.WriteHeader(http.StatusBadRequest)
+					errResp := map[string][]string{"custom_fields": {err.Error()}}
+					resp, _ := json.Marshal(errResp)
+					_, _ = w.Write(resp)
+					return
+				}
+				w.WriteHeader(http.StatusCreated)
+				resp, err := json.Marshal(MockPrefixCreateResponse)
+				if err != nil {
+					log.Printf("Error marshaling prefix create response: %v", err)
+				}
+				_, _ = w.Write(resp)
+			case http.MethodPatch:
+				body, _ := io.ReadAll(r.Body)
+				if err := validateCustomFieldsPayload(body); err != nil {
+					w.WriteHeader(http.StatusBadRequest)
+					errResp := map[string][]string{"custom_fields": {err.Error()}}
+					resp, _ := json.Marshal(errResp)
+					_, _ = w.Write(resp)
+					return
+				}
+				w.WriteHeader(http.StatusOK)
+				resp, err := json.Marshal(MockPrefixPatchResponse)
+				if err != nil {
+					log.Printf("Error marshaling prefix patch response: %v", err)
+				}
+				_, _ = w.Write(resp)
+			case http.MethodDelete:
+				w.WriteHeader(http.StatusNoContent)
+			default:
+				log.Printf("Wrong http method: %q", r.Method) //nolint:gosec
+			}
+		},
+	)
+
 	handler.HandleFunc("/api/read-error", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError) // or any relevant status
 		//nolint:all
@@ -405,6 +510,35 @@ func (m *FailingHTTPClientRead) RoundTrip(_ *http.Request) (*http.Response, erro
 		Body:       io.NopCloser(&FaultyReader{}),
 		Header:     make(http.Header),
 	}, nil
+}
+
+// validateCustomFieldsPayload mimics NetBox 4.2.x REST API validation:
+// object-type custom field values must be sent as scalar IDs, not as nested
+// objects. If a custom_fields value is a map containing "display", NetBox
+// returns 400: "Cannot resolve keyword 'display' into field".
+func validateCustomFieldsPayload(body []byte) error {
+	var payload map[string]interface{}
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return nil //nolint:nilerr
+	}
+	cf, ok := payload["custom_fields"]
+	if !ok {
+		return nil
+	}
+	cfMap, ok := cf.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	for key, val := range cfMap {
+		if nested, isMap := val.(map[string]interface{}); isMap {
+			if _, hasDisplay := nested["display"]; hasDisplay {
+				return fmt.Errorf(
+					"cannot resolve keyword 'display' into field for custom_field '%s'", key, //nolint:perfsprint
+				)
+			}
+		}
+	}
+	return nil
 }
 
 type FaultyReader struct{}

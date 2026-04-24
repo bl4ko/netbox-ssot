@@ -747,6 +747,12 @@ func TestNetboxInventory_AddIPAddress(t *testing.T) {
 }
 
 func TestNetboxInventory_AddPrefix(t *testing.T) {
+	// Start mock NetBox server that validates custom_fields payloads
+	// (rejects nested objects with "display" — mimics NetBox 4.2.x behavior)
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
 	type args struct {
 		ctx       context.Context
 		newPrefix *objects.Prefix
@@ -755,10 +761,46 @@ func TestNetboxInventory_AddPrefix(t *testing.T) {
 		name    string
 		nbi     *NetboxInventory
 		args    args
-		want    *objects.Prefix
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Create new prefix succeeds",
+			nbi:  MockInventory,
+			args: args{
+				ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "test"),
+				newPrefix: &objects.Prefix{
+					Prefix: "192.168.1.0/24",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Patch existing prefix with object-type custom fields succeeds (sanitized)",
+			nbi:  MockInventory,
+			args: args{
+				ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "new-source"),
+				// This prefix already exists in MockExistingPrefixes with a site_ref
+				// custom field that is a nested object (as returned by the NetBox API).
+				// The source field differs ("new-source" vs "test") which triggers a PATCH.
+				// Without sanitization, the PATCH payload would include the nested site_ref
+				// object with "display", causing NetBox to return 400.
+				newPrefix: &objects.Prefix{
+					Prefix: "10.0.0.0/24",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Same prefix no changes - no PATCH needed",
+			nbi:  MockInventory,
+			args: args{
+				ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "test"),
+				newPrefix: &objects.Prefix{
+					Prefix: "10.0.0.0/24",
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -767,8 +809,8 @@ func TestNetboxInventory_AddPrefix(t *testing.T) {
 				t.Errorf("NetboxInventory.AddPrefix() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NetboxInventory.AddPrefix() = %v, want %v", got, tt.want)
+			if got == nil {
+				t.Errorf("NetboxInventory.AddPrefix() returned nil")
 			}
 		})
 	}

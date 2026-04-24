@@ -63,6 +63,32 @@ var MockExistingSites = map[string]*objects.Site{
 	},
 }
 
+// MockExistingPrefixes simulates prefixes fetched from the NetBox API.
+// The "10.0.0.0/24" prefix has an object-type custom field (site_ref)
+// returned as a nested object — this is the read format from the API.
+var MockExistingPrefixes = map[string]map[int]*objects.Prefix{
+	"10.0.0.0/24": {
+		0: {
+			NetboxObject: objects.NetboxObject{
+				ID:   1,
+				Tags: []*objects.Tag{service.MockDefaultSsotTag},
+				CustomFields: map[string]interface{}{
+					"source":           "test",
+					"orphan_last_seen": nil,
+					"site_ref": map[string]interface{}{
+						"id":      float64(1),
+						"display": "LCL",
+						"url":     "https://netbox/api/dcim/sites/1/",
+						"name":    "LCL",
+						"slug":    "lcl",
+					},
+				},
+			},
+			Prefix: "10.0.0.0/24",
+		},
+	},
+}
+
 var mockLogger = &logger.Logger{Logger: log.New(os.Stdout, "", log.LstdFlags)}
 
 var MockInventory = &NetboxInventory{
@@ -73,6 +99,8 @@ var MockInventory = &NetboxInventory{
 	tenantsLock:            sync.Mutex{},
 	sitesIndexByName:       MockExistingSites,
 	sitesLock:              sync.Mutex{},
+	prefixesIndexByPrefix:  MockExistingPrefixes,
+	prefixesLock:           sync.Mutex{},
 	deviceRolesIndexByName: map[string]*objects.DeviceRole{},
 	deviceRolesLock:        sync.Mutex{},
 	vlanGroupsIndexByName:  map[string]*objects.VlanGroup{},
