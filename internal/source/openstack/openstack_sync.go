@@ -120,7 +120,6 @@ func (oss *Source) syncServers(nbi *inventory.NetboxInventory) error {
 			Name:        server.Name,
 			Cluster:     cluster,
 			Status:      vmStatus,
-			StartOnBoot: &objects.VMStartOnBootLastState,
 			VCPUs:       vcpus,
 			Memory:      memory,
 			Disk:        disk,
