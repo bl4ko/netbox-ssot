@@ -30,6 +30,7 @@ Currently, the supported external data sources types are:
 - [`hetznercloud`](https://www.hetzner.com/cloud/)
   - Syncs locations, datacenters, servers, networks, floating IPs
 - [`openstack`](https://www.openstack.org/)
+  - Syncs clusters, virtual machines, virtual disks, interfaces, and IP addresses
 
 ## Compatibility Matrix
 
