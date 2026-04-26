@@ -20,24 +20,13 @@ import (
 	"github.com/gophercloud/gophercloud/v2/openstack/networking/v2/networks"
 )
 
-type Server struct {
-	ID              string                   `json:"id"`
-	Name            string                   `json:"name"`
-	Status          string                   `json:"status"`
-	VMState         string                   `json:"OS-EXT-STS:vm_state"`
-	Flavor          any                      `json:"flavor"`
-	Addresses       any                      `json:"addresses"`
-	Metadata        any                      `json:"metadata"`
-	Image           any                      `json:"image"`
-	ImageMetadata   any                      `json:"image_metadata"`
-	AttachedVolumes []servers.AttachedVolume `json:"os-extended-volumes:volumes_attached"`
-}
+
 
 type Source struct {
 	common.Config
 
 	// OpenStack API data
-	Servers  []Server
+	Servers  []servers.Server
 	Flavors  []flavors.Flavor
 	Networks []networks.Network
 	Volumes  []volumes.Volume
