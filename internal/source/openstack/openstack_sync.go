@@ -67,6 +67,12 @@ func (oss *Source) syncServers(nbi *inventory.NetboxInventory) error {
 		return fmt.Errorf("error adding cluster: %s", err)
 	}
 
+	// Determine VM Role
+	vmRole, err := nbi.AddVMDeviceRole(oss.Ctx)
+	if err != nil {
+		return fmt.Errorf("error adding vm device role: %s", err)
+	}
+
 	// 2. Iterate through servers and sync them as VirtualMachines
 	for _, server := range oss.Servers {
 		// Find flavor for resources
@@ -84,12 +90,6 @@ func (oss *Source) syncServers(nbi *inventory.NetboxInventory) error {
 					break
 				}
 			}
-		}
-
-		// Determine VM Role
-		vmRole, err := nbi.AddVMDeviceRole(oss.Ctx)
-		if err != nil {
-			return fmt.Errorf("error adding vm device role: %s", err)
 		}
 
 		// Determine Platform
