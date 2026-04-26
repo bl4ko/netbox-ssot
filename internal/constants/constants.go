@@ -94,6 +94,7 @@ var SourceTagColorMap = map[SourceType]string{
 	IOSXE:        "0d294f",
 	F5:           ColorRed,
 	HetznerCloud: "d50c2d",
+	OpenStack:    ColorRed,
 }
 
 // Each source Mapping for source type tag. E.g. tag "paloalto" -> color orange.
@@ -107,6 +108,7 @@ var SourceTypeTagColorMap = map[SourceType]string{
 	IOSXE:        "0d294f",
 	F5:           ColorDarkRed,
 	HetznerCloud: ColorRed,
+	OpenStack:    ColorRed,
 }
 
 const (
