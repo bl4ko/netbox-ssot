@@ -1,0 +1,18 @@
+logger:
+  level: 1
+  dest: ""
+
+netbox:
+  apiToken: "netbox-token"
+  hostname: netbox.example.com
+
+source:
+  - name: vcenter-test
+    type: vmware
+    hostname: vcenter.example.com
+    username: admin
+    password: adminpass
+    ignoreTags: true
+    ignoreVMDisks: true
+    ignoreVMTemplates: true
+    ignoreAssetTags: true

@@ -34,7 +34,14 @@ func TestNetboxInventory_AddTag(t *testing.T) {
 					Slug:        "new_tag",
 				},
 			},
-			want: &service.MockTagCreateResponse,
+			// Mock echoes request body with injected ID.
+			want: &objects.Tag{
+				ID:          1,
+				Name:        "new tag",
+				Description: "New Tag",
+				Color:       constants.ColorBlack,
+				Slug:        "new_tag",
+			},
 		},
 		{
 			name: "Test update existing tag",
@@ -101,7 +108,15 @@ func TestNetboxInventory_AddTenant(t *testing.T) {
 				ctx:       context.WithValue(context.Background(), constants.CtxSourceKey, "test"),
 				newTenant: &objects.Tenant{Name: "new tenant", Slug: "new_tenant"},
 			},
-			want: &service.MockTenantCreateResponse,
+			// Mock echoes request body with injected ID. AddTenant adds SsotTag before create.
+			want: &objects.Tenant{
+				NetboxObject: objects.NetboxObject{
+					ID:   3,
+					Tags: []*objects.Tag{MockInventory.SsotTag},
+				},
+				Name: "new tenant",
+				Slug: "new_tenant",
+			},
 		},
 		{
 			name: "Test update existing tenant",
@@ -159,7 +174,15 @@ func TestNetboxInventory_AddSite(t *testing.T) {
 				ctx:     context.WithValue(context.Background(), constants.CtxSourceKey, "test"),
 				newSite: &objects.Site{Name: "new site", Slug: "new_site"},
 			},
-			want: &service.MockSiteCreateResponse,
+			// Mock echoes request body with injected ID. AddSite adds SsotTag before create.
+			want: &objects.Site{
+				NetboxObject: objects.NetboxObject{
+					ID:   3,
+					Tags: []*objects.Tag{MockInventory.SsotTag},
+				},
+				Name: "new site",
+				Slug: "new_site",
+			},
 		},
 		{
 			name: "Test update existing site",
@@ -199,110 +222,148 @@ func TestNetboxInventory_AddSite(t *testing.T) {
 }
 
 func TestNetboxInventory_AddContactRole(t *testing.T) {
-	type args struct {
-		ctx            context.Context
-		newContactRole *objects.ContactRole
-	}
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
 	tests := []struct {
 		name    string
-		nbi     *NetboxInventory
-		args    args
-		want    *objects.ContactRole
+		args    *objects.ContactRole
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:    "Create new contact role",
+			args:    &objects.ContactRole{Name: "new_contact_role", Slug: "new_contact_role"},
+			wantErr: false,
+		},
+		{
+			name:    "Update existing contact role",
+			args:    &objects.ContactRole{Name: "existing_contact_role1", Slug: "updated_slug"},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.nbi.AddContactRole(tt.args.ctx, tt.args.newContactRole)
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+			got, err := MockInventory.AddContactRole(ctx, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NetboxInventory.AddContactRole() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NetboxInventory.AddContactRole() = %v, want %v", got, tt.want)
+			if got == nil {
+				t.Errorf("NetboxInventory.AddContactRole() returned nil")
 			}
 		})
 	}
 }
 
 func TestNetboxInventory_AddContactGroup(t *testing.T) {
-	type args struct {
-		ctx             context.Context
-		newContactGroup *objects.ContactGroup
-	}
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
 	tests := []struct {
 		name    string
-		nbi     *NetboxInventory
-		args    args
-		want    *objects.ContactGroup
+		args    *objects.ContactGroup
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:    "Create new contact group",
+			args:    &objects.ContactGroup{Name: "new_contact_group", Slug: "new_contact_group"},
+			wantErr: false,
+		},
+		{
+			name:    "Update existing contact group",
+			args:    &objects.ContactGroup{Name: "existing_contact_group1", Slug: "updated_slug"},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.nbi.AddContactGroup(tt.args.ctx, tt.args.newContactGroup)
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+			got, err := MockInventory.AddContactGroup(ctx, tt.args)
 			if (err != nil) != tt.wantErr {
-				t.Errorf(
-					"NetboxInventory.AddContactGroup() error = %v, wantErr %v",
-					err,
-					tt.wantErr,
-				)
+				t.Errorf("NetboxInventory.AddContactGroup() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NetboxInventory.AddContactGroup() = %v, want %v", got, tt.want)
+			if got == nil {
+				t.Errorf("NetboxInventory.AddContactGroup() returned nil")
 			}
 		})
 	}
 }
 
 func TestNetboxInventory_AddContact(t *testing.T) {
-	type args struct {
-		ctx        context.Context
-		newContact *objects.Contact
-	}
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
 	tests := []struct {
 		name    string
-		nbi     *NetboxInventory
-		args    args
-		want    *objects.Contact
+		args    *objects.Contact
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:    "Create new contact",
+			args:    &objects.Contact{Name: "new_contact"},
+			wantErr: false,
+		},
+		{
+			name:    "Update existing contact",
+			args:    &objects.Contact{Name: "existing_contact1", Email: "new@email.com"},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.nbi.AddContact(tt.args.ctx, tt.args.newContact)
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+			got, err := MockInventory.AddContact(ctx, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NetboxInventory.AddContact() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NetboxInventory.AddContact() = %v, want %v", got, tt.want)
+			if got == nil {
+				t.Errorf("NetboxInventory.AddContact() returned nil")
 			}
 		})
 	}
 }
 
 func TestNetboxInventory_AddContactAssignment(t *testing.T) {
-	type args struct {
-		ctx   context.Context
-		newCA *objects.ContactAssignment
-	}
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
 	tests := []struct {
 		name    string
-		nbi     *NetboxInventory
-		args    args
-		want    *objects.ContactAssignment
+		args    *objects.ContactAssignment
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Existing contact assignment triggers patch",
+			args: &objects.ContactAssignment{
+				ModelType: constants.ContentTypeDcimDevice,
+				ObjectID:  1,
+				Contact:   &objects.Contact{NetboxObject: objects.NetboxObject{ID: 1}, Name: "existing_contact1"},
+				Role:      &objects.ContactRole{NetboxObject: objects.NetboxObject{ID: 1}, Name: "existing_contact_role1"},
+			},
+			wantErr: false,
+		},
+		{
+			name: "New content type creates new assignment index path",
+			args: &objects.ContactAssignment{
+				ModelType: constants.ContentTypeVirtualizationVirtualMachine,
+				ObjectID:  1,
+				Contact:   &objects.Contact{NetboxObject: objects.NetboxObject{ID: 1}, Name: "existing_contact1"},
+				Role:      &objects.ContactRole{NetboxObject: objects.NetboxObject{ID: 1}, Name: "existing_contact_role1"},
+			},
+			wantErr: true, // Echo-based mock can't unmarshal nested Contact back
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.nbi.AddContactAssignment(tt.args.ctx, tt.args.newCA)
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+			got, err := MockInventory.AddContactAssignment(ctx, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf(
 					"NetboxInventory.AddContactAssignment() error = %v, wantErr %v",
@@ -311,30 +372,46 @@ func TestNetboxInventory_AddContactAssignment(t *testing.T) {
 				)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NetboxInventory.AddContactAssignment() = %v, want %v", got, tt.want)
+			if !tt.wantErr && got == nil {
+				t.Errorf("NetboxInventory.AddContactAssignment() returned nil")
 			}
 		})
 	}
 }
 
 func TestNetboxInventory_AddCustomField(t *testing.T) {
-	type args struct {
-		ctx   context.Context
-		newCf *objects.CustomField
-	}
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
 	tests := []struct {
 		name    string
-		nbi     *NetboxInventory
-		args    args
+		args    *objects.CustomField
 		want    *objects.CustomField
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Update existing custom field",
+			args: &objects.CustomField{
+				Name:        "existing_cf1",
+				Type:        objects.CustomFieldTypeText,
+				Description: "updated",
+			},
+			want: &service.MockCustomFieldPatchResponse,
+		},
+		{
+			name: "Same custom field no-op",
+			args: &objects.CustomField{
+				Name: "existing_cf2",
+				Type: objects.CustomFieldTypeText,
+			},
+			want: MockExistingCustomFields["existing_cf2"],
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.nbi.AddCustomField(tt.args.ctx, tt.args.newCf)
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+			got, err := MockInventory.AddCustomField(ctx, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NetboxInventory.AddCustomField() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -347,406 +424,570 @@ func TestNetboxInventory_AddCustomField(t *testing.T) {
 }
 
 func TestNetboxInventory_AddClusterGroup(t *testing.T) {
-	type args struct {
-		ctx   context.Context
-		newCg *objects.ClusterGroup
-	}
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
 	tests := []struct {
 		name    string
-		nbi     *NetboxInventory
-		args    args
-		want    *objects.ClusterGroup
+		args    *objects.ClusterGroup
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:    "Create new cluster group",
+			args:    &objects.ClusterGroup{Name: "new_cluster_group", Slug: "new_cluster_group"},
+			wantErr: false,
+		},
+		{
+			name:    "Update existing cluster group",
+			args:    &objects.ClusterGroup{Name: "existing_cluster_group1", Slug: "updated_slug"},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.nbi.AddClusterGroup(tt.args.ctx, tt.args.newCg)
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+			got, err := MockInventory.AddClusterGroup(ctx, tt.args)
 			if (err != nil) != tt.wantErr {
-				t.Errorf(
-					"NetboxInventory.AddClusterGroup() error = %v, wantErr %v",
-					err,
-					tt.wantErr,
-				)
+				t.Errorf("NetboxInventory.AddClusterGroup() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NetboxInventory.AddClusterGroup() = %v, want %v", got, tt.want)
+			if got == nil {
+				t.Errorf("NetboxInventory.AddClusterGroup() returned nil")
 			}
 		})
 	}
 }
 
 func TestNetboxInventory_AddClusterType(t *testing.T) {
-	type args struct {
-		ctx            context.Context
-		newClusterType *objects.ClusterType
-	}
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
 	tests := []struct {
 		name    string
-		nbi     *NetboxInventory
-		args    args
-		want    *objects.ClusterType
+		args    *objects.ClusterType
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:    "Create new cluster type",
+			args:    &objects.ClusterType{Name: "new_cluster_type", Slug: "new_cluster_type"},
+			wantErr: false,
+		},
+		{
+			name:    "Update existing cluster type",
+			args:    &objects.ClusterType{Name: "existing_cluster_type1", Slug: "updated_slug"},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.nbi.AddClusterType(tt.args.ctx, tt.args.newClusterType)
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+			got, err := MockInventory.AddClusterType(ctx, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NetboxInventory.AddClusterType() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NetboxInventory.AddClusterType() = %v, want %v", got, tt.want)
+			if got == nil {
+				t.Errorf("NetboxInventory.AddClusterType() returned nil")
 			}
 		})
 	}
 }
 
 func TestNetboxInventory_AddCluster(t *testing.T) {
-	type args struct {
-		ctx        context.Context
-		newCluster *objects.Cluster
-	}
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
 	tests := []struct {
 		name    string
-		nbi     *NetboxInventory
-		args    args
-		want    *objects.Cluster
+		args    *objects.Cluster
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:    "Create new cluster",
+			args:    &objects.Cluster{Name: "new_cluster"},
+			wantErr: false,
+		},
+		{
+			name:    "Update existing cluster",
+			args:    &objects.Cluster{Name: "existing_cluster1", Status: objects.ClusterStatusOffline},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.nbi.AddCluster(tt.args.ctx, tt.args.newCluster)
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+			got, err := MockInventory.AddCluster(ctx, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NetboxInventory.AddCluster() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NetboxInventory.AddCluster() = %v, want %v", got, tt.want)
+			if got == nil {
+				t.Errorf("NetboxInventory.AddCluster() returned nil")
 			}
 		})
 	}
 }
 
 func TestNetboxInventory_AddDeviceRole(t *testing.T) {
-	type args struct {
-		ctx           context.Context
-		newDeviceRole *objects.DeviceRole
-	}
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
 	tests := []struct {
 		name    string
-		nbi     *NetboxInventory
-		args    args
-		want    *objects.DeviceRole
+		args    *objects.DeviceRole
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:    "Create new device role",
+			args:    &objects.DeviceRole{Name: "new_device_role", Slug: "new_device_role", Color: "aa1409"},
+			wantErr: false,
+		},
+		{
+			name: "Update existing device role",
+			args: &objects.DeviceRole{
+				Name:  "existing_device_role1",
+				Slug:  "updated_slug",
+				Color: constants.Color(constants.DeviceRoleServerColor),
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.nbi.AddDeviceRole(tt.args.ctx, tt.args.newDeviceRole)
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+			got, err := MockInventory.AddDeviceRole(ctx, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NetboxInventory.AddDeviceRole() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NetboxInventory.AddDeviceRole() = %v, want %v", got, tt.want)
+			if got == nil {
+				t.Errorf("NetboxInventory.AddDeviceRole() returned nil")
 			}
 		})
 	}
 }
 
 func TestNetboxInventory_AddManufacturer(t *testing.T) {
-	type args struct {
-		ctx             context.Context
-		newManufacturer *objects.Manufacturer
-	}
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
 	tests := []struct {
 		name    string
-		nbi     *NetboxInventory
-		args    args
-		want    *objects.Manufacturer
+		args    *objects.Manufacturer
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:    "Create new manufacturer",
+			args:    &objects.Manufacturer{Name: "new_manufacturer", Slug: "new_manufacturer"},
+			wantErr: false,
+		},
+		{
+			name:    "Update existing manufacturer",
+			args:    &objects.Manufacturer{Name: "existing_manufacturer1", Slug: "updated_slug"},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.nbi.AddManufacturer(tt.args.ctx, tt.args.newManufacturer)
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+			got, err := MockInventory.AddManufacturer(ctx, tt.args)
 			if (err != nil) != tt.wantErr {
-				t.Errorf(
-					"NetboxInventory.AddManufacturer() error = %v, wantErr %v",
-					err,
-					tt.wantErr,
-				)
+				t.Errorf("NetboxInventory.AddManufacturer() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NetboxInventory.AddManufacturer() = %v, want %v", got, tt.want)
+			if got == nil {
+				t.Errorf("NetboxInventory.AddManufacturer() returned nil")
 			}
 		})
 	}
 }
 
 func TestNetboxInventory_AddDeviceType(t *testing.T) {
-	type args struct {
-		ctx           context.Context
-		newDeviceType *objects.DeviceType
-	}
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
 	tests := []struct {
 		name    string
-		nbi     *NetboxInventory
-		args    args
-		want    *objects.DeviceType
+		args    *objects.DeviceType
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:    "Create new device type",
+			args:    &objects.DeviceType{Model: "new_device_type", Slug: "new_device_type"},
+			wantErr: false,
+		},
+		{
+			name:    "Update existing device type",
+			args:    &objects.DeviceType{Model: "existing_device_type1", Slug: "updated_slug"},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.nbi.AddDeviceType(tt.args.ctx, tt.args.newDeviceType)
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+			got, err := MockInventory.AddDeviceType(ctx, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NetboxInventory.AddDeviceType() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NetboxInventory.AddDeviceType() = %v, want %v", got, tt.want)
+			if got == nil {
+				t.Errorf("NetboxInventory.AddDeviceType() returned nil")
 			}
 		})
 	}
 }
 
 func TestNetboxInventory_AddPlatform(t *testing.T) {
-	type args struct {
-		ctx         context.Context
-		newPlatform *objects.Platform
-	}
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
 	tests := []struct {
 		name    string
-		nbi     *NetboxInventory
-		args    args
-		want    *objects.Platform
+		args    *objects.Platform
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:    "Create new platform",
+			args:    &objects.Platform{Name: "new_platform", Slug: "new_platform"},
+			wantErr: false,
+		},
+		{
+			name:    "Update existing platform",
+			args:    &objects.Platform{Name: "existing_platform1", Slug: "updated_slug"},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.nbi.AddPlatform(tt.args.ctx, tt.args.newPlatform)
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+			got, err := MockInventory.AddPlatform(ctx, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NetboxInventory.AddPlatform() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NetboxInventory.AddPlatform() = %v, want %v", got, tt.want)
+			if got == nil {
+				t.Errorf("NetboxInventory.AddPlatform() returned nil")
 			}
 		})
 	}
 }
 
 func TestNetboxInventory_AddDevice(t *testing.T) {
-	type args struct {
-		ctx       context.Context
-		newDevice *objects.Device
-	}
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
 	tests := []struct {
 		name    string
-		nbi     *NetboxInventory
-		args    args
-		want    *objects.Device
+		args    *objects.Device
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:    "Device without site returns error",
+			args:    &objects.Device{Name: "no_site_device"},
+			wantErr: true,
+		},
+		{
+			name: "Existing device triggers diff",
+			args: &objects.Device{
+				Name:       "existing_device1",
+				Site:       mockSite1,
+				DeviceRole: mockDeviceRole1,
+				DeviceType: mockDeviceType1,
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.nbi.AddDevice(tt.args.ctx, tt.args.newDevice)
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+			got, err := MockInventory.AddDevice(ctx, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NetboxInventory.AddDevice() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NetboxInventory.AddDevice() = %v, want %v", got, tt.want)
+			if !tt.wantErr && got == nil {
+				t.Errorf("NetboxInventory.AddDevice() returned nil")
 			}
 		})
 	}
 }
 
 func TestNetboxInventory_AddVlanGroup(t *testing.T) {
-	type args struct {
-		ctx          context.Context
-		newVlanGroup *objects.VlanGroup
-	}
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
 	tests := []struct {
 		name    string
-		nbi     *NetboxInventory
-		args    args
-		want    *objects.VlanGroup
+		args    *objects.VlanGroup
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:    "Create new vlan group",
+			args:    &objects.VlanGroup{Name: "new_vlan_group", Slug: "new_vlan_group"},
+			wantErr: false,
+		},
+		{
+			name:    "Update existing vlan group",
+			args:    &objects.VlanGroup{Name: "existing_vlan_group1", Slug: "updated_slug"},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.nbi.AddVlanGroup(tt.args.ctx, tt.args.newVlanGroup)
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+			got, err := MockInventory.AddVlanGroup(ctx, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NetboxInventory.AddVlanGroup() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NetboxInventory.AddVlanGroup() = %v, want %v", got, tt.want)
+			if got == nil {
+				t.Errorf("NetboxInventory.AddVlanGroup() returned nil")
 			}
 		})
 	}
 }
 
 func TestNetboxInventory_AddVlan(t *testing.T) {
-	type args struct {
-		ctx     context.Context
-		newVlan *objects.Vlan
-	}
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
 	tests := []struct {
 		name    string
-		nbi     *NetboxInventory
-		args    args
-		want    *objects.Vlan
+		args    *objects.Vlan
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Existing vlan triggers diff",
+			args: &objects.Vlan{
+				Name:  "existing_vlan100",
+				Vid:   100,
+				Group: mockVlanGroup1,
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.nbi.AddVlan(tt.args.ctx, tt.args.newVlan)
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+			got, err := MockInventory.AddVlan(ctx, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NetboxInventory.AddVlan() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NetboxInventory.AddVlan() = %v, want %v", got, tt.want)
+			if got == nil {
+				t.Errorf("NetboxInventory.AddVlan() returned nil")
 			}
 		})
 	}
 }
 
 func TestNetboxInventory_AddInterface(t *testing.T) {
-	type args struct {
-		ctx          context.Context
-		newInterface *objects.Interface
-	}
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
 	tests := []struct {
 		name    string
-		nbi     *NetboxInventory
-		args    args
-		want    *objects.Interface
+		args    *objects.Interface
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Existing interface triggers diff",
+			args: &objects.Interface{
+				Name:   "eth0",
+				Device: mockDevice1,
+				Type:   &objects.VirtualInterfaceType,
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.nbi.AddInterface(tt.args.ctx, tt.args.newInterface)
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+			got, err := MockInventory.AddInterface(ctx, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NetboxInventory.AddInterface() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NetboxInventory.AddInterface() = %v, want %v", got, tt.want)
+			if got == nil {
+				t.Errorf("NetboxInventory.AddInterface() returned nil")
 			}
 		})
 	}
 }
 
 func TestNetboxInventory_AddVM(t *testing.T) {
-	type args struct {
-		ctx   context.Context
-		newVM *objects.VM
-	}
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
 	tests := []struct {
 		name    string
-		nbi     *NetboxInventory
-		args    args
-		want    *objects.VM
+		args    *objects.VM
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:    "Create VM without cluster",
+			args:    &objects.VM{Name: "new_vm_no_cluster"},
+			wantErr: false,
+		},
+		{
+			name:    "Existing VM triggers diff",
+			args:    &objects.VM{Name: "existing_vm1", Cluster: mockCluster1},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.nbi.AddVM(tt.args.ctx, tt.args.newVM)
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+			got, err := MockInventory.AddVM(ctx, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NetboxInventory.AddVM() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NetboxInventory.AddVM() = %v, want %v", got, tt.want)
+			if got == nil {
+				t.Errorf("NetboxInventory.AddVM() returned nil")
 			}
 		})
 	}
 }
 
 func TestNetboxInventory_AddVMInterface(t *testing.T) {
-	type args struct {
-		ctx            context.Context
-		newVMInterface *objects.VMInterface
-	}
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
 	tests := []struct {
 		name    string
-		nbi     *NetboxInventory
-		args    args
-		want    *objects.VMInterface
+		args    *objects.VMInterface
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:    "Existing VM interface triggers diff",
+			args:    &objects.VMInterface{Name: "vmeth0", VM: mockVM1},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.nbi.AddVMInterface(tt.args.ctx, tt.args.newVMInterface)
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+			got, err := MockInventory.AddVMInterface(ctx, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NetboxInventory.AddVMInterface() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NetboxInventory.AddVMInterface() = %v, want %v", got, tt.want)
+			if got == nil {
+				t.Errorf("NetboxInventory.AddVMInterface() returned nil")
 			}
 		})
 	}
 }
 
 func TestNetboxInventory_AddIPAddress(t *testing.T) {
-	type args struct {
-		ctx          context.Context
-		newIPAddress *objects.IPAddress
-	}
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
 	tests := []struct {
 		name    string
-		nbi     *NetboxInventory
-		args    args
-		want    *objects.IPAddress
+		args    *objects.IPAddress
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Create new IP address",
+			args: &objects.IPAddress{
+				Address:            "10.0.0.2/24",
+				AssignedObjectType: constants.ContentTypeDcimInterface,
+				AssignedObjectID:   1,
+			},
+			wantErr: false,
+		},
+		{
+			name: "Existing IP address triggers diff",
+			args: &objects.IPAddress{
+				Address:            "10.0.0.1/24",
+				AssignedObjectType: constants.ContentTypeDcimInterface,
+				AssignedObjectID:   1,
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.nbi.AddIPAddress(tt.args.ctx, tt.args.newIPAddress)
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+			got, err := MockInventory.AddIPAddress(ctx, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NetboxInventory.AddIPAddress() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NetboxInventory.AddIPAddress() = %v, want %v", got, tt.want)
+			if got == nil {
+				t.Errorf("NetboxInventory.AddIPAddress() returned nil")
+			}
+		})
+	}
+}
+
+func TestNetboxInventory_AddMACAddress(t *testing.T) {
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
+	tests := []struct {
+		name    string
+		args    *objects.MACAddress
+		wantErr bool
+	}{
+		{
+			name: "Create new MAC address",
+			args: &objects.MACAddress{
+				MAC:                "11:22:33:44:55:66",
+				AssignedObjectType: constants.ContentTypeDcimInterface,
+				AssignedObjectID:   1,
+			},
+			wantErr: false,
+		},
+		{
+			name: "Existing MAC address triggers diff",
+			args: &objects.MACAddress{
+				MAC:                "AA:BB:CC:DD:EE:FF",
+				AssignedObjectType: constants.ContentTypeDcimInterface,
+				AssignedObjectID:   1,
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+			got, err := MockInventory.AddMACAddress(ctx, tt.args)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NetboxInventory.AddMACAddress() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got == nil {
+				t.Errorf("NetboxInventory.AddMACAddress() returned nil")
 			}
 		})
 	}
 }
 
 func TestNetboxInventory_AddPrefix(t *testing.T) {
+	// Start mock NetBox server that validates custom_fields payloads
+	// (rejects nested objects with "display" — mimics NetBox 4.2.x behavior)
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
 	type args struct {
 		ctx       context.Context
 		newPrefix *objects.Prefix
@@ -755,10 +996,46 @@ func TestNetboxInventory_AddPrefix(t *testing.T) {
 		name    string
 		nbi     *NetboxInventory
 		args    args
-		want    *objects.Prefix
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "Create new prefix succeeds",
+			nbi:  MockInventory,
+			args: args{
+				ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "test"),
+				newPrefix: &objects.Prefix{
+					Prefix: "192.168.1.0/24",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Patch existing prefix with object-type custom fields succeeds (sanitized)",
+			nbi:  MockInventory,
+			args: args{
+				ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "new-source"),
+				// This prefix already exists in MockExistingPrefixes with a site_ref
+				// custom field that is a nested object (as returned by the NetBox API).
+				// The source field differs ("new-source" vs "test") which triggers a PATCH.
+				// Without sanitization, the PATCH payload would include the nested site_ref
+				// object with "display", causing NetBox to return 400.
+				newPrefix: &objects.Prefix{
+					Prefix: "10.0.0.0/24",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Same prefix no changes - no PATCH needed",
+			nbi:  MockInventory,
+			args: args{
+				ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "test"),
+				newPrefix: &objects.Prefix{
+					Prefix: "10.0.0.0/24",
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -767,30 +1044,44 @@ func TestNetboxInventory_AddPrefix(t *testing.T) {
 				t.Errorf("NetboxInventory.AddPrefix() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NetboxInventory.AddPrefix() = %v, want %v", got, tt.want)
+			if got == nil {
+				t.Errorf("NetboxInventory.AddPrefix() returned nil")
 			}
 		})
 	}
 }
 
 func TestNetboxInventory_AddVirtualDeviceContext(t *testing.T) {
-	type args struct {
-		ctx    context.Context
-		newVDC *objects.VirtualDeviceContext
-	}
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
 	tests := []struct {
 		name    string
-		nbi     *NetboxInventory
-		args    args
-		want    *objects.VirtualDeviceContext
+		args    *objects.VirtualDeviceContext
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "VDC without device returns error",
+			args: &objects.VirtualDeviceContext{
+				Name:   "no_device_vdc",
+				Status: &objects.VDCStatusActive,
+			},
+			wantErr: true,
+		},
+		{
+			name: "Existing VDC triggers diff",
+			args: &objects.VirtualDeviceContext{
+				Name:   "existing_vdc1",
+				Device: mockDevice1,
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.nbi.AddVirtualDeviceContext(tt.args.ctx, tt.args.newVDC)
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+			got, err := MockInventory.AddVirtualDeviceContext(ctx, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf(
 					"NetboxInventory.AddVirtualDeviceContext() error = %v, wantErr %v",
@@ -799,58 +1090,74 @@ func TestNetboxInventory_AddVirtualDeviceContext(t *testing.T) {
 				)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NetboxInventory.AddVirtualDeviceContext() = %v, want %v", got, tt.want)
+			if !tt.wantErr && got == nil {
+				t.Errorf("NetboxInventory.AddVirtualDeviceContext() returned nil")
 			}
 		})
 	}
 }
 
 func TestNetboxInventory_AddWirelessLAN(t *testing.T) {
-	type args struct {
-		ctx            context.Context
-		newWirelessLan *objects.WirelessLAN
-	}
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
 	tests := []struct {
 		name    string
-		nbi     *NetboxInventory
-		args    args
-		want    *objects.WirelessLAN
+		args    *objects.WirelessLAN
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:    "Create new wireless LAN",
+			args:    &objects.WirelessLAN{SSID: "new_wlan"},
+			wantErr: false,
+		},
+		{
+			name:    "Update existing wireless LAN",
+			args:    &objects.WirelessLAN{SSID: "existing_wlan1", AuthPsk: "new_psk"},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.nbi.AddWirelessLAN(tt.args.ctx, tt.args.newWirelessLan)
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+			got, err := MockInventory.AddWirelessLAN(ctx, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NetboxInventory.AddWirelessLAN() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NetboxInventory.AddWirelessLAN() = %v, want %v", got, tt.want)
+			if got == nil {
+				t.Errorf("NetboxInventory.AddWirelessLAN() returned nil")
 			}
 		})
 	}
 }
 
 func TestNetboxInventory_AddWirelessLANGroup(t *testing.T) {
-	type args struct {
-		ctx                 context.Context
-		newWirelessLANGroup *objects.WirelessLANGroup
-	}
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
 	tests := []struct {
 		name    string
-		nbi     *NetboxInventory
-		args    args
-		want    *objects.WirelessLANGroup
+		args    *objects.WirelessLANGroup
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:    "Create new wireless LAN group",
+			args:    &objects.WirelessLANGroup{Name: "new_wlan_group", Slug: "new_wlan_group"},
+			wantErr: false,
+		},
+		{
+			name:    "Update existing wireless LAN group",
+			args:    &objects.WirelessLANGroup{Name: "existing_wlan_group1", Slug: "updated_slug"},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.nbi.AddWirelessLANGroup(tt.args.ctx, tt.args.newWirelessLANGroup)
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+			got, err := MockInventory.AddWirelessLANGroup(ctx, tt.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf(
 					"NetboxInventory.AddWirelessLANGroup() error = %v, wantErr %v",
@@ -859,8 +1166,43 @@ func TestNetboxInventory_AddWirelessLANGroup(t *testing.T) {
 				)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NetboxInventory.AddWirelessLANGroup() = %v, want %v", got, tt.want)
+			if got == nil {
+				t.Errorf("NetboxInventory.AddWirelessLANGroup() returned nil")
+			}
+		})
+	}
+}
+
+func TestNetboxInventory_AddVirtualDisk(t *testing.T) {
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
+	tests := []struct {
+		name    string
+		args    *objects.VirtualDisk
+		wantErr bool
+	}{
+		{
+			name: "Existing virtual disk triggers diff",
+			args: &objects.VirtualDisk{
+				Name: "existing_disk1",
+				Size: 100,
+				VM:   mockVM1,
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+			got, err := MockInventory.AddVirtualDisk(ctx, tt.args)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NetboxInventory.AddVirtualDisk() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got == nil {
+				t.Errorf("NetboxInventory.AddVirtualDisk() returned nil")
 			}
 		})
 	}

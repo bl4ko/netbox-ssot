@@ -1475,3 +1475,99 @@ func TestExtractFieldsFromDiffMap(t *testing.T) {
 		})
 	}
 }
+
+func TestSanitizeCustomFieldValue(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name string
+		val  interface{}
+		want interface{}
+	}{
+		{
+			name: "nil value passes through",
+			val:  nil,
+			want: nil,
+		},
+		{
+			name: "string value passes through",
+			val:  "hello",
+			want: "hello",
+		},
+		{
+			name: "int value passes through",
+			val:  42,
+			want: 42,
+		},
+		{
+			name: "bool value passes through",
+			val:  true,
+			want: true,
+		},
+		{
+			name: "nested object with id extracts id",
+			val: map[string]interface{}{
+				"id":      float64(5),
+				"display": "SiteName",
+				"url":     "https://netbox/api/dcim/sites/5/",
+				"name":    "SiteName",
+			},
+			want: float64(5),
+		},
+		{
+			name: "map without id passes through",
+			val: map[string]interface{}{
+				"key": "value",
+			},
+			want: map[string]interface{}{
+				"key": "value",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got := sanitizeCustomFieldValue(tt.val)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("sanitizeCustomFieldValue() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestAddMapDiffSanitizesExistingObjectTypeCustomFields(t *testing.T) {
+	t.Parallel()
+	newMap := reflect.ValueOf(map[string]interface{}{
+		"source": "vcenter007",
+	})
+	existingMap := reflect.ValueOf(map[string]interface{}{
+		"source": "vcenter007",
+		"site_ref": map[string]interface{}{
+			"id":      float64(1),
+			"display": "LCL",
+			"url":     "https://netbox/api/dcim/sites/1/",
+		},
+	})
+	diffMap := make(map[string]interface{})
+
+	// Force a diff by changing source value
+	newMapWithDiff := reflect.ValueOf(map[string]interface{}{
+		"source": "vcenter008",
+	})
+	err := addMapDiff(newMapWithDiff, existingMap, "custom_fields", true, diffMap)
+	if err != nil {
+		t.Fatalf("addMapDiff() error = %v", err)
+	}
+	cf, ok := diffMap["custom_fields"].(map[string]interface{})
+	if !ok {
+		t.Fatal("expected custom_fields in diffMap")
+	}
+	// site_ref should be sanitized to just the ID, not the full nested object
+	siteRef := cf["site_ref"]
+	if siteRefMap, isMap := siteRef.(map[string]interface{}); isMap {
+		t.Errorf("site_ref should be sanitized to ID, got nested object: %v", siteRefMap)
+	}
+	if siteRef != float64(1) {
+		t.Errorf("site_ref should be float64(1), got %v (%T)", siteRef, siteRef)
+	}
+	_ = newMap
+}

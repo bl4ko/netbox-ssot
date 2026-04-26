@@ -228,14 +228,17 @@ func (vc *VmwareSource) Init() error {
 
 // Function that syncs all data from oVirt to Netbox.
 func (vc *VmwareSource) Sync(nbi *inventory.NetboxInventory) error {
-	syncFunctions := []func(*inventory.NetboxInventory) error{
-		vc.syncTags,
+	syncFunctions := []func(*inventory.NetboxInventory) error{}
+	if !vc.SourceConfig.IgnoreTags {
+		syncFunctions = append(syncFunctions, vc.syncTags)
+	}
+	syncFunctions = append(syncFunctions,
 		vc.syncNetworks,
 		vc.syncDatacenters,
 		vc.syncClusters,
 		vc.syncHosts,
 		vc.syncVMs,
-	}
+	)
 	var encounteredErrors []error
 	for _, syncFunc := range syncFunctions {
 		startTime := time.Now()

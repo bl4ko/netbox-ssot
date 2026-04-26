@@ -153,6 +153,9 @@ func TestParseValidConfigs(t *testing.T) {
 		{
 			filename: "valid_config7.yaml",
 		},
+		{
+			filename: "valid_config8.yaml",
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.filename, func(t *testing.T) {
@@ -164,6 +167,53 @@ func TestParseValidConfigs(t *testing.T) {
 			// Verify that logger config String() method works correctly
 			fmt.Println(config.Logger)
 		})
+	}
+}
+
+func TestIgnoreFlags(t *testing.T) {
+	filename := filepath.Join("../../testdata/parser", "valid_config8.yaml")
+	config, err := ParseConfig(filename)
+	if err != nil {
+		t.Fatalf("ParseConfig() error = %v", err)
+	}
+	if len(config.Sources) != 1 {
+		t.Fatalf("expected 1 source, got %d", len(config.Sources))
+	}
+	src := config.Sources[0]
+
+	tests := []struct {
+		name string
+		got  bool
+		want bool
+	}{
+		{"ignoreTags", src.IgnoreTags, true},
+		{"ignoreVMDisks", src.IgnoreVMDisks, true},
+		{"ignoreVMTemplates", src.IgnoreVMTemplates, true},
+		{"ignoreAssetTags", src.IgnoreAssetTags, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.got != tt.want {
+				t.Errorf("%s = %v, want %v", tt.name, tt.got, tt.want)
+			}
+		})
+	}
+}
+
+func TestIgnoreFlagsDefaultFalse(t *testing.T) {
+	// valid_config2 has no ignore flags — verify they default to false
+	filename := filepath.Join("../../testdata/parser", "valid_config2.yaml")
+	config, err := ParseConfig(filename)
+	if err != nil {
+		t.Fatalf("ParseConfig() error = %v", err)
+	}
+	for _, src := range config.Sources {
+		if src.IgnoreTags {
+			t.Errorf("source %s: ignoreTags should default to false", src.Name)
+		}
+		if src.IgnoreVMDisks {
+			t.Errorf("source %s: ignoreVMDisks should default to false", src.Name)
+		}
 	}
 }
 

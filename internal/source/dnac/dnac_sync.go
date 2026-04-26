@@ -68,6 +68,7 @@ func (ds *DnacSource) syncVlans(nbi *inventory.NetboxInventory) error {
 			vlanSite,
 			ds.SourceConfig.VlanGroupRelations,
 			ds.SourceConfig.VlanGroupSiteRelations,
+			"",
 		)
 		if err != nil {
 			return fmt.Errorf("vlanGroup: %s", err)
@@ -649,6 +650,7 @@ func (ds *DnacSource) syncWirelessLANs(nbi *inventory.NetboxInventory) error {
 			vlanSite,
 			ds.SourceConfig.VlanGroupRelations,
 			ds.SourceConfig.VlanGroupSiteRelations,
+			"",
 		)
 		if err != nil {
 			return err
