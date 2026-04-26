@@ -28,6 +28,9 @@ func (oss *Source) syncServers(nbi *inventory.NetboxInventory) error {
 		clusterTypeName = "OpenStack"
 	}
 	clusterType, err := nbi.AddClusterType(oss.Ctx, &objects.ClusterType{
+		NetboxObject: objects.NetboxObject{
+			Tags: oss.GetSourceTags(),
+		},
 		Name: clusterTypeName,
 		Slug: utils.Slugify(clusterTypeName),
 	})
@@ -36,6 +39,9 @@ func (oss *Source) syncServers(nbi *inventory.NetboxInventory) error {
 	}
 
 	clusterGroup, err := nbi.AddClusterGroup(oss.Ctx, &objects.ClusterGroup{
+		NetboxObject: objects.NetboxObject{
+			Tags: oss.GetSourceTags(),
+		},
 		Name: "Cloud",
 		Slug: "cloud",
 	})
@@ -48,6 +54,10 @@ func (oss *Source) syncServers(nbi *inventory.NetboxInventory) error {
 		clusterName = "OpenStack Cloud"
 	}
 	cluster, err := nbi.AddCluster(oss.Ctx, &objects.Cluster{
+		NetboxObject: objects.NetboxObject{
+			Tags:        oss.GetSourceTags(),
+			Description: fmt.Sprintf("OpenStack Cluster for %s", oss.SourceConfig.Name),
+		},
 		Name:   clusterName,
 		Type:   clusterType,
 		Group:  clusterGroup,
