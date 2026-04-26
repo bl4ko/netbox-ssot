@@ -535,6 +535,12 @@ func validateSourceConfig(config *Config) error {
 		case constants.F5:
 		case constants.HetznerCloud:
 		case constants.OpenStack:
+			if externalSource.ProjectName == "" && externalSource.TenantName == "" && externalSource.ProjectID == "" && externalSource.TenantID == "" {
+				return fmt.Errorf("%s: at least one of projectName, tenantName, projectID, or tenantID is required for OpenStack", externalSourceStr)
+			}
+			if externalSource.DomainName == "" && externalSource.DomainID == "" {
+				return fmt.Errorf("%s: at least one of domainName or domainID is required for OpenStack", externalSourceStr)
+			}
 		default:
 			return fmt.Errorf("%s.type is not valid", externalSourceStr)
 		}
