@@ -332,7 +332,7 @@ func (oss *Source) syncVMInterfaces(
 			}
 
 			prefix := "32"
-			if version == IPv6Version {
+			if int(version) == IPv6Version {
 				prefix = "64"
 			}
 
@@ -351,9 +351,9 @@ func (oss *Source) syncVMInterfaces(
 			}
 
 			// Set primary if not already set
-			if version == 4 && primaryIPv4 == nil {
+			if int(version) == 4 && primaryIPv4 == nil {
 				primaryIPv4 = nbIP
-			} else if version == 6 && primaryIPv6 == nil {
+			} else if int(version) == 6 && primaryIPv6 == nil {
 				primaryIPv6 = nbIP
 			}
 		}
