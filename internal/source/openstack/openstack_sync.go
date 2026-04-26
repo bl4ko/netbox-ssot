@@ -321,6 +321,8 @@ func (oss *Source) syncVMInterfaces(
 				continue
 			}
 
+			// TODO: OpenStack API exposes subnet and prefix info available on the Network endpoint.
+			// Currently, this is a known limitation where we hardcode /32 for IPv4 and /64 for IPv6.
 			prefix := "32"
 			if int(version) == IPv6Version {
 				prefix = "64"
