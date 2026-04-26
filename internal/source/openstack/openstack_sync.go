@@ -11,6 +11,8 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
+
+	"github.com/gophercloud/gophercloud/v2/openstack/compute/v2/servers"
 )
 
 const (
@@ -178,7 +180,7 @@ func (oss *Source) getPlatformName(server *servers.Server) string {
 }
 
 func (oss *Source) getPlatformFromImageMap(server *servers.Server) string {
-	if imgMap, ok := server.Image.(map[string]interface{}); ok {
+	if imgMap := server.Image; imgMap != nil {
 		if imageID, ok := imgMap["id"].(string); ok && imageID != "" {
 			return oss.findImageNameByID(imageID)
 		}
@@ -187,7 +189,7 @@ func (oss *Source) getPlatformFromImageMap(server *servers.Server) string {
 }
 
 func (oss *Source) getPlatformFromImageMetadataNested(server *servers.Server) string {
-	if imgMap, ok := server.Image.(map[string]interface{}); ok {
+	if imgMap := server.Image; imgMap != nil {
 		if imgMetadata, ok := imgMap["metadata"].(map[string]interface{}); ok {
 			if val, ok := imgMetadata["base_image_ref"].(string); ok && val != "" {
 				return oss.findImageNameByID(val)
