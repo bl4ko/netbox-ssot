@@ -171,6 +171,7 @@ Example configuration can be found [here](#example-config).
 | `source.domainID`                        | ID of the OpenStack domain. Overrides `domainName` if provided.                                                          | [**openstack**]            | string   | any                                      | ""         | No       |
 | `source.clusterName`                     | Name to use when creating the NetBox cluster representation.                                                             | [**openstack**]            | string   | any                                      | "OpenStack Cloud" | No       |
 | `source.clusterType`                     | Type categorization string of the cluster to use/create in NetBox.                                                       | [**openstack**]            | string   | any                                      | "OpenStack"| No       |
+| `source.clusterGroupName`                | Name to use when creating the NetBox cluster group.                                                                      | [**openstack**]            | string   | any                                      | "OpenStack"| No       |
 
 ### Example config
 

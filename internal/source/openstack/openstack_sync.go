@@ -40,7 +40,10 @@ func (oss *Source) syncServers(nbi *inventory.NetboxInventory) error {
 		return fmt.Errorf("error adding cluster type: %s", err)
 	}
 
-	cgName := fmt.Sprintf("OpenStack - %s", oss.SourceConfig.Name)
+	cgName := oss.SourceConfig.ClusterGroupName
+	if cgName == "" {
+		cgName = "OpenStack"
+	}
 	clusterGroup, err := nbi.AddClusterGroup(oss.Ctx, &objects.ClusterGroup{
 		NetboxObject: objects.NetboxObject{
 			Tags: oss.GetSourceTags(),

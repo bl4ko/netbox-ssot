@@ -149,6 +149,7 @@ type SourceConfig struct {
 	TenantID            string               `yaml:"tenantID"`
 	ClusterName         string               `yaml:"clusterName"`
 	ClusterType         string               `yaml:"clusterType"`
+	ClusterGroupName    string               `yaml:"clusterGroupName"`
 
 	// Relations
 	DatacenterClusterGroupRelations map[string]string `yaml:"datacenterClusterGroupRelations"`
@@ -223,6 +224,7 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		TenantID                        string               `yaml:"tenantID"`
 		ClusterName                     string               `yaml:"clusterName"`
 		ClusterType                     string               `yaml:"clusterType"`
+		ClusterGroupName                string               `yaml:"clusterGroupName"`
 	}
 	rawMarshal := realSourceConfig{}
 	if err := unmarshal(&rawMarshal); err != nil {
@@ -264,6 +266,7 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	sc.TenantID = rawMarshal.TenantID
 	sc.ClusterName = rawMarshal.ClusterName
 	sc.ClusterType = rawMarshal.ClusterType
+	sc.ClusterGroupName = rawMarshal.ClusterGroupName
 
 	if len(rawMarshal.DatacenterClusterGroupRelations) > 0 {
 		err := utils.ValidateRegexRelations(rawMarshal.DatacenterClusterGroupRelations)
@@ -383,7 +386,7 @@ func (sc SourceConfig) String() string {
 	return fmt.Sprintf(
 		"SourceConfig{Name: %s, Type: %s, HTTPScheme: %s, Hostname: %s, Port: %d, "+
 			"Username: %s, Password: %s, PermittedSubnets: %v, ValidateCert: %t, "+
-			"Tag: %s, TagColor: %s, AssignDomainName: %s, VlanPrefix: %s, DatacenterClusterGroupRelations: %s, "+
+			"Tag: %s, TagColor: %s, AssignDomainName: %s, VlanPrefix: %s, clusterGroupName: %s, DatacenterClusterGroupRelations: %s, "+
 			"HostSiteRelations: %v, ClusterSiteRelations: %v, ClusterTenantRelations: %v, "+
 			"HostTenantRelations: %v, VmTenantRelations: %v, VlanGroupRelations: %v, "+
 			"VlanTenantRelations: %v, WlanTenantRelations: %v}",
@@ -400,6 +403,7 @@ func (sc SourceConfig) String() string {
 		sc.TagColor,
 		sc.AssignDomainName,
 		sc.VlanPrefix,
+		sc.ClusterGroupName,
 		sc.DatacenterClusterGroupRelations,
 		sc.HostSiteRelations,
 		sc.ClusterSiteRelations,
