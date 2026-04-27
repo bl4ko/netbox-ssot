@@ -122,7 +122,6 @@ var (
 	VMStatusOffline = VMStatus{Choice{Value: "offline", Label: "Offline"}}
 )
 
-
 // VM represents a netbox's virtual machine.
 type VM struct {
 	NetboxObject

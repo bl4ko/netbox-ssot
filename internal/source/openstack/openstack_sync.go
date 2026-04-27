@@ -108,7 +108,7 @@ func (oss *Source) syncServers(nbi *inventory.NetboxInventory) error {
 
 		// Determine VM Status
 		vmStatus := &objects.VMStatusActive
-		if server.Status != "ACTIVE" && server.VmState != "active" {
+		if server.Status != "ACTIVE" && server.VMState != "active" {
 			vmStatus = &objects.VMStatusOffline
 		}
 
@@ -121,14 +121,14 @@ func (oss *Source) syncServers(nbi *inventory.NetboxInventory) error {
 					constants.CustomFieldSourceIDName: server.ID,
 				},
 			},
-			Name:        server.Name,
-			Cluster:     cluster,
-			Status:      vmStatus,
-			VCPUs:       vcpus,
-			Memory:      memory,
-			Disk:        disk,
-			Role:        vmRole,
-			Platform:    platform,
+			Name:     server.Name,
+			Cluster:  cluster,
+			Status:   vmStatus,
+			VCPUs:    vcpus,
+			Memory:   memory,
+			Disk:     disk,
+			Role:     vmRole,
+			Platform: platform,
 		}
 
 		nbVM, err := nbi.AddVM(oss.Ctx, vm)

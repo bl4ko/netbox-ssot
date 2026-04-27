@@ -386,7 +386,8 @@ func (sc SourceConfig) String() string {
 	return fmt.Sprintf(
 		"SourceConfig{Name: %s, Type: %s, HTTPScheme: %s, Hostname: %s, Port: %d, "+
 			"Username: %s, Password: %s, PermittedSubnets: %v, ValidateCert: %t, "+
-			"Tag: %s, TagColor: %s, AssignDomainName: %s, VlanPrefix: %s, clusterGroupName: %s, DatacenterClusterGroupRelations: %s, "+
+			"Tag: %s, TagColor: %s, AssignDomainName: %s, VlanPrefix: %s, "+
+			"clusterGroupName: %s, DatacenterClusterGroupRelations: %s, "+
 			"HostSiteRelations: %v, ClusterSiteRelations: %v, ClusterTenantRelations: %v, "+
 			"HostTenantRelations: %v, VmTenantRelations: %v, VlanGroupRelations: %v, "+
 			"VlanTenantRelations: %v, WlanTenantRelations: %v}",
@@ -545,8 +546,12 @@ func validateSourceConfig(config *Config) error {
 		case constants.F5:
 		case constants.HetznerCloud:
 		case constants.OpenStack:
-			if externalSource.ProjectName == "" && externalSource.TenantName == "" && externalSource.ProjectID == "" && externalSource.TenantID == "" {
-				return fmt.Errorf("%s: at least one of projectName, tenantName, projectID, or tenantID is required for OpenStack", externalSourceStr)
+			if externalSource.ProjectName == "" && externalSource.TenantName == "" &&
+				externalSource.ProjectID == "" && externalSource.TenantID == "" {
+				return fmt.Errorf(
+					"%s: at least one of projectName, tenantName, projectID, or tenantID is required for OpenStack",
+					externalSourceStr,
+				)
 			}
 			if externalSource.DomainName == "" && externalSource.DomainID == "" {
 				return fmt.Errorf("%s: at least one of domainName or domainID is required for OpenStack", externalSourceStr)

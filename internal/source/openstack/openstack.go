@@ -20,13 +20,11 @@ import (
 	"github.com/gophercloud/gophercloud/v2/openstack/networking/v2/networks"
 )
 
-
-
 type Server struct {
 	ID              string                   `json:"id"`
 	Name            string                   `json:"name"`
 	Status          string                   `json:"status"`
-	VmState         string                   `json:"OS-EXT-STS:vm_state"`
+	VMState         string                   `json:"OS-EXT-STS:vm_state"`
 	Flavor          any                      `json:"flavor"`
 	Addresses       map[string]interface{}   `json:"addresses"`
 	Metadata        any                      `json:"metadata"`
