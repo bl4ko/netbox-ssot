@@ -22,11 +22,24 @@ import (
 
 
 
+type Server struct {
+	ID              string                   `json:"id"`
+	Name            string                   `json:"name"`
+	Status          string                   `json:"status"`
+	VmState         string                   `json:"OS-EXT-STS:vm_state"`
+	Flavor          any                      `json:"flavor"`
+	Addresses       map[string]interface{}   `json:"addresses"`
+	Metadata        any                      `json:"metadata"`
+	Image           any                      `json:"image"`
+	ImageMetadata   any                      `json:"image_metadata"`
+	AttachedVolumes []servers.AttachedVolume `json:"os-extended-volumes:volumes_attached"`
+}
+
 type Source struct {
 	common.Config
 
 	// OpenStack API data
-	Servers  []servers.Server
+	Servers  []Server
 	Flavors  []flavors.Flavor
 	Networks []networks.Network
 	Volumes  []volumes.Volume

@@ -11,8 +11,6 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
-
-	"github.com/gophercloud/gophercloud/v2/openstack/compute/v2/servers"
 )
 
 const (
@@ -87,8 +85,8 @@ func (oss *Source) syncServers(nbi *inventory.NetboxInventory) error {
 		var disk int
 		var flavorName string
 		for _, flavor := range oss.Flavors {
-			if server.Flavor != nil {
-				if flavor.ID == server.Flavor["id"] {
+			if fMap, ok := server.Flavor.(map[string]interface{}); ok {
+				if flavor.ID == fMap["id"] {
 					vcpus = float32(flavor.VCPUs)
 					memory = flavor.RAM
 					disk = flavor.Disk // GB
@@ -163,9 +161,10 @@ func (oss *Source) findImageNameByID(imageID string) string {
 	return ""
 }
 
-func (oss *Source) getPlatformName(server *servers.Server) string {
+func (oss *Source) getPlatformName(server *Server) string {
 	// Define a list of functions to try for getting platform name
-	platformGetters := []func(*servers.Server) string{
+	platformGetters := []func(*Server) string{
+		oss.getPlatformFromImageMetadata,
 		oss.getPlatformFromImageMap,
 		oss.getPlatformFromImageMetadataNested,
 		oss.getPlatformFromServerMetadata,
@@ -182,8 +181,23 @@ func (oss *Source) getPlatformName(server *servers.Server) string {
 	return "Unknown"
 }
 
-func (oss *Source) getPlatformFromImageMap(server *servers.Server) string {
-	if imgMap := server.Image; imgMap != nil {
+func (oss *Source) getPlatformFromImageMetadata(server *Server) string {
+	if imgMeta, ok := server.ImageMetadata.(map[string]interface{}); ok {
+		if val, ok := imgMeta["image_name"].(string); ok && val != "" {
+			return val
+		}
+		if val, ok := imgMeta["os_distro"].(string); ok && val != "" {
+			return oss.cleanPlatformName(val)
+		}
+		if val, ok := imgMeta["base_image_ref"].(string); ok && val != "" {
+			return oss.findImageNameByID(val)
+		}
+	}
+	return ""
+}
+
+func (oss *Source) getPlatformFromImageMap(server *Server) string {
+	if imgMap, ok := server.Image.(map[string]interface{}); ok {
 		if imageID, ok := imgMap["id"].(string); ok && imageID != "" {
 			return oss.findImageNameByID(imageID)
 		}
@@ -191,9 +205,15 @@ func (oss *Source) getPlatformFromImageMap(server *servers.Server) string {
 	return ""
 }
 
-func (oss *Source) getPlatformFromImageMetadataNested(server *servers.Server) string {
-	if imgMap := server.Image; imgMap != nil {
+func (oss *Source) getPlatformFromImageMetadataNested(server *Server) string {
+	if imgMap, ok := server.Image.(map[string]interface{}); ok {
 		if imgMetadata, ok := imgMap["metadata"].(map[string]interface{}); ok {
+			if val, ok := imgMetadata["image_name"].(string); ok && val != "" {
+				return val
+			}
+			if val, ok := imgMetadata["os_distro"].(string); ok && val != "" {
+				return oss.cleanPlatformName(val)
+			}
 			if val, ok := imgMetadata["base_image_ref"].(string); ok && val != "" {
 				return oss.findImageNameByID(val)
 			}
@@ -202,25 +222,25 @@ func (oss *Source) getPlatformFromImageMetadataNested(server *servers.Server) st
 	return ""
 }
 
-func (oss *Source) getPlatformFromServerMetadata(server *servers.Server) string {
-	if sMeta := server.Metadata; sMeta != nil {
-		if val, ok := sMeta["image_name"]; ok && val != "" {
+func (oss *Source) getPlatformFromServerMetadata(server *Server) string {
+	if sMeta, ok := server.Metadata.(map[string]interface{}); ok {
+		if val, ok := sMeta["image_name"].(string); ok && val != "" {
 			return val
 		}
-		if val, ok := sMeta["image_id"]; ok && val != "" {
+		if val, ok := sMeta["image_id"].(string); ok && val != "" {
 			return oss.findImageNameByID(val)
 		}
-		if val, ok := sMeta["base_image_ref"]; ok && val != "" {
+		if val, ok := sMeta["base_image_ref"].(string); ok && val != "" {
 			return oss.findImageNameByID(val)
 		}
-		if val, ok := sMeta["image_metadata.base_image_ref"]; ok && val != "" {
+		if val, ok := sMeta["image_metadata.base_image_ref"].(string); ok && val != "" {
 			return oss.findImageNameByID(val)
 		}
 	}
 	return ""
 }
 
-func (oss *Source) getPlatformFromVolumeMetadata(server *servers.Server) string {
+func (oss *Source) getPlatformFromVolumeMetadata(server *Server) string {
 	for _, attachment := range server.AttachedVolumes {
 		for _, vol := range oss.Volumes {
 			if vol.ID == attachment.ID {
@@ -239,9 +259,14 @@ func (oss *Source) getPlatformFromVolumeMetadata(server *servers.Server) string 
 	return ""
 }
 
-func (oss *Source) getPlatformFromOSDistro(server *servers.Server) string {
-	if sMeta := server.Metadata; sMeta != nil {
-		if distro, ok := sMeta["os_distro"]; ok && distro != "" {
+func (oss *Source) getPlatformFromOSDistro(server *Server) string {
+	if sMeta, ok := server.Metadata.(map[string]interface{}); ok {
+		if distro, ok := sMeta["os_distro"].(string); ok && distro != "" {
+			return oss.cleanPlatformName(distro)
+		}
+	}
+	if imgMeta, ok := server.ImageMetadata.(map[string]interface{}); ok {
+		if distro, ok := imgMeta["os_distro"].(string); ok && distro != "" {
 			return oss.cleanPlatformName(distro)
 		}
 	}
@@ -261,7 +286,7 @@ func (oss *Source) cleanPlatformName(name string) string {
 func (oss *Source) syncVMVolumes(
 	nbi *inventory.NetboxInventory,
 	nbVM *objects.VM,
-	server *servers.Server,
+	server *Server,
 ) error {
 	for _, attached := range server.AttachedVolumes {
 		for _, vol := range oss.Volumes {
@@ -286,7 +311,7 @@ func (oss *Source) syncVMVolumes(
 func (oss *Source) syncVMInterfaces(
 	nbi *inventory.NetboxInventory,
 	nbVM *objects.VM,
-	server *servers.Server,
+	server *Server,
 ) error {
 	var primaryIPv4 *objects.IPAddress
 	var primaryIPv6 *objects.IPAddress
