@@ -17,6 +17,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/source/fortigate"
 	"github.com/bl4ko/netbox-ssot/internal/source/hetznercloud"
 	iosxe "github.com/bl4ko/netbox-ssot/internal/source/ios-xe"
+	"github.com/bl4ko/netbox-ssot/internal/source/openstack"
 	"github.com/bl4ko/netbox-ssot/internal/source/ovirt"
 	"github.com/bl4ko/netbox-ssot/internal/source/paloalto"
 	"github.com/bl4ko/netbox-ssot/internal/source/proxmox"
@@ -86,6 +87,8 @@ func NewSource(
 		return &f5.F5Source{Config: commonConfig}, nil
 	case constants.HetznerCloud:
 		return &hetznercloud.Source{Config: commonConfig}, nil
+	case constants.OpenStack:
+		return &openstack.Source{Config: commonConfig}, nil
 	default:
 		return nil, fmt.Errorf("unsupported source type: %s", config.Type)
 	}

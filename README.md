@@ -29,6 +29,8 @@ Currently, the supported external data sources types are:
   - F5 BIG-IP LTM virtual servers (VIPs) via iControl REST API
 - [`hetznercloud`](https://www.hetzner.com/cloud/)
   - Syncs locations, datacenters, servers, networks, floating IPs
+- [`openstack`](https://www.openstack.org/)
+  - Syncs clusters, virtual machines, virtual disks, interfaces, and IP addresses
 
 ## Compatibility Matrix
 
@@ -161,6 +163,15 @@ Example configuration can be found [here](#example-config).
 | `source.defaultIPv6MaskBits`             | Default IPv6 subnet mask bits when not provided by the source (e.g. oVirt guest agent).                                  | [**ovirt**]                | int      | 1-128                                    | 128        | No       |
 | `source.targetInterface`                 | Name of the interface on the target VM/Device to assign VIPs to. The target is resolved by looking up the source hostname IP in NetBox. | [**f5**]                   | string   | any                                      | ""         | No       |
 | `source.caFile`                          | Path to a self signed certificate for the source.                                                                        | any                        | string   | Valid path                               | ""         | No       |
+| `source.projectName`                     | Name of the OpenStack project to scope the authentication ticket to.                                                     | [**openstack**]            | string   | any                                      | ""         | No       |
+| `source.projectID`                       | ID of the OpenStack project. Overrides `projectName` if provided.                                                        | [**openstack**]            | string   | any                                      | ""         | No       |
+| `source.tenantName`                      | Alias for `projectName`.                                                                                                 | [**openstack**]            | string   | any                                      | ""         | No       |
+| `source.tenantID`                        | Alias for `projectID`.                                                                                                   | [**openstack**]            | string   | any                                      | ""         | No       |
+| `source.domainName`                      | Domain context for the OpenStack user/project. If prefixed with `id|`, it acts as `domainID` directly.                   | [**openstack**]            | string   | any                                      | "Default"  | No       |
+| `source.domainID`                        | ID of the OpenStack domain. Overrides `domainName` if provided.                                                          | [**openstack**]            | string   | any                                      | ""         | No       |
+| `source.clusterName`                     | Name to use when creating the NetBox cluster representation.                                                             | [**openstack**]            | string   | any                                      | "OpenStack Cloud" | No       |
+| `source.clusterType`                     | Type categorization string of the cluster to use/create in NetBox.                                                       | [**openstack**]            | string   | any                                      | "OpenStack"| No       |
+| `source.clusterGroupName`                | Name to use when creating the NetBox cluster group.                                                                      | [**openstack**]            | string   | any                                      | "OpenStack"| No       |
 
 ### Example config
 
@@ -272,6 +283,16 @@ source:
       - .* = MyTenant
     collectArpData:
       true
+
+  - name: "My Cloud"
+    type: openstack
+    hostname: "https://openstack.example:5000/v3"
+    username: "user"
+    password: "password"
+    projectName: "My Project"
+    domainName: "Project"
+    clusterName: "OS1"
+    clusterType: "OpenStack"
 
 ```
 

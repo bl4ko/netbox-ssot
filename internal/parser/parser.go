@@ -140,6 +140,16 @@ type SourceConfig struct {
 	DefaultIPv4MaskBits int                  `yaml:"defaultIPv4MaskBits"`
 	DefaultIPv6MaskBits int                  `yaml:"defaultIPv6MaskBits"`
 	TargetInterface     string               `yaml:"targetInterface"`
+	TenantName          string               `yaml:"tenantName"`
+	DomainName          string               `yaml:"domainName"`
+	ProjectName         string               `yaml:"projectName"`
+	Region              string               `yaml:"region"`
+	ProjectID           string               `yaml:"projectID"`
+	DomainID            string               `yaml:"domainID"`
+	TenantID            string               `yaml:"tenantID"`
+	ClusterName         string               `yaml:"clusterName"`
+	ClusterType         string               `yaml:"clusterType"`
+	ClusterGroupName    string               `yaml:"clusterGroupName"`
 
 	// Relations
 	DatacenterClusterGroupRelations map[string]string `yaml:"datacenterClusterGroupRelations"`
@@ -205,6 +215,16 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		IPVrfRelations                  []string             `yaml:"ipVrfRelations"`
 		WlanTenantRelations             []string             `yaml:"wlanTenantRelations"`
 		CustomFieldMappings             []string             `yaml:"customFieldMappings"`
+		TenantName                      string               `yaml:"tenantName"`
+		DomainName                      string               `yaml:"domainName"`
+		ProjectName                     string               `yaml:"projectName"`
+		Region                          string               `yaml:"region"`
+		ProjectID                       string               `yaml:"projectID"`
+		DomainID                        string               `yaml:"domainID"`
+		TenantID                        string               `yaml:"tenantID"`
+		ClusterName                     string               `yaml:"clusterName"`
+		ClusterType                     string               `yaml:"clusterType"`
+		ClusterGroupName                string               `yaml:"clusterGroupName"`
 	}
 	rawMarshal := realSourceConfig{}
 	if err := unmarshal(&rawMarshal); err != nil {
@@ -237,6 +257,16 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	sc.DefaultIPv4MaskBits = rawMarshal.DefaultIPv4MaskBits
 	sc.DefaultIPv6MaskBits = rawMarshal.DefaultIPv6MaskBits
 	sc.TargetInterface = rawMarshal.TargetInterface
+	sc.TenantName = rawMarshal.TenantName
+	sc.DomainName = rawMarshal.DomainName
+	sc.ProjectName = rawMarshal.ProjectName
+	sc.Region = rawMarshal.Region
+	sc.ProjectID = rawMarshal.ProjectID
+	sc.DomainID = rawMarshal.DomainID
+	sc.TenantID = rawMarshal.TenantID
+	sc.ClusterName = rawMarshal.ClusterName
+	sc.ClusterType = rawMarshal.ClusterType
+	sc.ClusterGroupName = rawMarshal.ClusterGroupName
 
 	if len(rawMarshal.DatacenterClusterGroupRelations) > 0 {
 		err := utils.ValidateRegexRelations(rawMarshal.DatacenterClusterGroupRelations)
@@ -356,7 +386,8 @@ func (sc SourceConfig) String() string {
 	return fmt.Sprintf(
 		"SourceConfig{Name: %s, Type: %s, HTTPScheme: %s, Hostname: %s, Port: %d, "+
 			"Username: %s, Password: %s, PermittedSubnets: %v, ValidateCert: %t, "+
-			"Tag: %s, TagColor: %s, AssignDomainName: %s, VlanPrefix: %s, DatacenterClusterGroupRelations: %s, "+
+			"Tag: %s, TagColor: %s, AssignDomainName: %s, VlanPrefix: %s, "+
+			"clusterGroupName: %s, DatacenterClusterGroupRelations: %s, "+
 			"HostSiteRelations: %v, ClusterSiteRelations: %v, ClusterTenantRelations: %v, "+
 			"HostTenantRelations: %v, VmTenantRelations: %v, VlanGroupRelations: %v, "+
 			"VlanTenantRelations: %v, WlanTenantRelations: %v}",
@@ -373,6 +404,7 @@ func (sc SourceConfig) String() string {
 		sc.TagColor,
 		sc.AssignDomainName,
 		sc.VlanPrefix,
+		sc.ClusterGroupName,
 		sc.DatacenterClusterGroupRelations,
 		sc.HostSiteRelations,
 		sc.ClusterSiteRelations,
@@ -513,6 +545,17 @@ func validateSourceConfig(config *Config) error {
 		case constants.IOSXE:
 		case constants.F5:
 		case constants.HetznerCloud:
+		case constants.OpenStack:
+			if externalSource.ProjectName == "" && externalSource.TenantName == "" &&
+				externalSource.ProjectID == "" && externalSource.TenantID == "" {
+				return fmt.Errorf(
+					"%s: at least one of projectName, tenantName, projectID, or tenantID is required for OpenStack",
+					externalSourceStr,
+				)
+			}
+			if externalSource.DomainName == "" && externalSource.DomainID == "" {
+				return fmt.Errorf("%s: at least one of domainName or domainID is required for OpenStack", externalSourceStr)
+			}
 		default:
 			return fmt.Errorf("%s.type is not valid", externalSourceStr)
 		}

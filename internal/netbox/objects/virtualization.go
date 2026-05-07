@@ -129,6 +129,7 @@ type VM struct {
 	Name string `json:"name,omitempty"`
 	// Status is the status of the virtual machine. This field is required.
 	Status *VMStatus `json:"status,omitempty"`
+
 	// Site is the site to which this virtual machine belongs.
 	Site *Site `json:"site,omitempty"`
 	// Cluster is the cluster to which this virtual machine belongs.
