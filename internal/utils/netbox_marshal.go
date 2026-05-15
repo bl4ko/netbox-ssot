@@ -22,7 +22,7 @@ func NetboxJSONMarshal(obj interface{}) ([]byte, error) {
 // for POST requests.
 func StructToNetboxJSONMap(obj interface{}) map[string]interface{} {
 	v := reflect.ValueOf(obj)
-	if v.Kind() == reflect.Ptr {
+	if v.Kind() == reflect.Pointer {
 		v = v.Elem()
 	}
 
@@ -47,7 +47,7 @@ func StructToNetboxJSONMap(obj interface{}) map[string]interface{} {
 		}
 
 		// If field is a pointer, we need to get the element it points to
-		if fieldValue.Kind() == reflect.Ptr {
+		if fieldValue.Kind() == reflect.Pointer {
 			// Filter out nil pointers
 			if fieldValue.IsNil() {
 				continue
@@ -68,7 +68,7 @@ func StructToNetboxJSONMap(obj interface{}) map[string]interface{} {
 			sliceItems := make([]interface{}, 0)
 			for j := 0; j < fieldValue.Len(); j++ {
 				attribute := fieldValue.Index(j)
-				if attribute.Kind() == reflect.Ptr {
+				if attribute.Kind() == reflect.Pointer {
 					// Filter out nil pointers
 					if attribute.IsNil() {
 						continue

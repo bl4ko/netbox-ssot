@@ -102,7 +102,7 @@ func JSONDiffMapExceptID(
 	}
 
 	// Check if the values are pointers and get the element they point to
-	if newObject.Kind() == reflect.Ptr {
+	if newObject.Kind() == reflect.Pointer {
 		newObject = newObject.Elem()
 		existingObject = existingObject.Elem()
 	}
@@ -158,7 +158,7 @@ func JSONDiffMapExceptID(
 		// Check if elements are pointers, in that case get the elements they are pointing to
 		newObjectField := newObject.Field(i)
 		existingObjectField := existingObject.Field(i)
-		if newObjectField.Kind() == reflect.Ptr {
+		if newObjectField.Kind() == reflect.Pointer {
 			newObjectField = newObjectField.Elem()
 			existingObjectField = existingObjectField.Elem()
 		}
@@ -225,7 +225,7 @@ func mergeTagSlices(
 	newTagsByID := make(map[int]*objects.Tag)
 	for i := 0; i < newSlice.Len(); i++ {
 		elem := newSlice.Index(i)
-		if elem.Kind() == reflect.Ptr {
+		if elem.Kind() == reflect.Pointer {
 			elem = elem.Elem()
 		}
 		tag, ok := newSlice.Index(i).Interface().(*objects.Tag)
@@ -260,7 +260,7 @@ func mergeTagSlices(
 	if existingSlice.IsValid() {
 		for i := 0; i < existingSlice.Len(); i++ {
 			elem := existingSlice.Index(i)
-			if elem.Kind() == reflect.Ptr {
+			if elem.Kind() == reflect.Pointer {
 				elem = elem.Elem()
 			}
 			var tag objects.Tag
@@ -292,7 +292,7 @@ func mergeTagSlices(
 	if existingSlice.IsValid() {
 		for i := 0; i < existingSlice.Len(); i++ {
 			elem := existingSlice.Index(i)
-			if elem.Kind() == reflect.Ptr {
+			if elem.Kind() == reflect.Pointer {
 				elem = elem.Elem()
 			}
 			idField := elem.FieldByName("ID")
@@ -383,7 +383,7 @@ func convertSliceToComparableSlice(slice reflect.Value) (reflect.Value, error) {
 		idSlice := make([]int, 0)
 		for i := 0; i < slice.Len(); i++ {
 			element := slice.Index(i)
-			if element.Kind() == reflect.Ptr {
+			if element.Kind() == reflect.Pointer {
 				element = element.Elem()
 			}
 			idField := element.FieldByName("ID").Interface()
@@ -405,7 +405,7 @@ func sliceToSet(slice reflect.Value) map[interface{}]bool {
 	set := make(map[interface{}]bool)
 	for i := 0; i < slice.Len(); i++ {
 		element := slice.Index(i)
-		if element.Kind() == reflect.Ptr {
+		if element.Kind() == reflect.Pointer {
 			element = element.Elem()
 		}
 		set[element.Interface()] = true

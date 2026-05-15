@@ -17,7 +17,7 @@ func ExtractJSONTagsFromStruct(inputStruct interface{}) []string {
 	var extractFields func(reflect.Type)
 	extractFields = func(t reflect.Type) {
 		// If the type is a pointer, dereference it
-		if t.Kind() == reflect.Ptr {
+		if t.Kind() == reflect.Pointer {
 			t = t.Elem()
 		}
 		// Ensure the type is a struct

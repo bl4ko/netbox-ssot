@@ -27,7 +27,7 @@ linters:
     - forcetypeassert
     - gocheckcompilerdirectives
     - gochecknoinits
-    - goconst
+    # - goconst # Disabled: too noisy for test data and type-specific status labels
     - gocritic
     - gocyclo
     - godot
