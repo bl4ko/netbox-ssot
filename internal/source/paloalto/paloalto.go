@@ -51,7 +51,7 @@ func (pas *PaloAltoSource) Init() error {
 		Password:          pas.SourceConfig.Password,
 		Logging:           pango.LogAction | pango.LogOp,
 		VerifyCertificate: pas.SourceConfig.ValidateCert,
-		Port:              uint(pas.SourceConfig.Port), //nolint:gosec
+		Port:              uint(pas.SourceConfig.Port),
 		Timeout:           constants.DefaultAPITimeout,
 		Protocol:          string(pas.SourceConfig.HTTPScheme),
 		Transport:         transport,

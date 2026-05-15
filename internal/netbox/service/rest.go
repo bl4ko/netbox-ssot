@@ -210,7 +210,7 @@ func Create[T any](ctx context.Context, netboxClient *NetboxClient, object *T) (
 // It handles both objects embedding NetboxObject and objects with a direct ID field.
 func setFakeID(object any, id int) {
 	v := reflect.ValueOf(object)
-	if v.Kind() == reflect.Ptr {
+	if v.Kind() == reflect.Pointer {
 		v = v.Elem()
 	}
 	if v.Kind() != reflect.Struct {
