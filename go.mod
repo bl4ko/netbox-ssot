@@ -7,7 +7,7 @@ require (
 	github.com/cisco-en-programmability/dnacenter-go-sdk/v8 v8.0.0
 	github.com/gophercloud/gophercloud/v2 v2.12.0
 	github.com/hetznercloud/hcloud-go/v2 v2.40.0
-	github.com/luthermonson/go-proxmox v0.5.0
+	github.com/luthermonson/go-proxmox v0.5.1
 	github.com/ovirt/go-ovirt v4.3.4+incompatible
 	github.com/scrapli/scrapligo v1.4.0
 	github.com/src-doo/go-devicetype-library v0.1.56
@@ -21,7 +21,7 @@ require (
 	github.com/buger/goterm v1.0.4 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/creack/pty v1.1.24 // indirect
-	github.com/diskfs/go-diskfs v1.9.2 // indirect
+	github.com/diskfs/go-diskfs v1.9.3 // indirect
 	github.com/djherbis/times v1.6.0 // indirect
 	github.com/go-resty/resty/v2 v2.16.5 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
