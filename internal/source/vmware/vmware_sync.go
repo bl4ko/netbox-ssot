@@ -1046,7 +1046,12 @@ func (vc *VmwareSource) syncVM(
 	}
 
 	vmName := vm.Name
-	vmHostName := vc.Hosts[vc.VM2Host[vmKey]].Name
+	hostKey, ok := vc.VM2Host[vmKey]
+	if !ok || hostKey == "" {
+		vc.Logger.Warningf(vc.Ctx, "VM %q has no associated host, skipping", vmName)
+		return nil
+	}
+	vmHostName := vc.Hosts[hostKey].Name
 
 	// Map to a vm role
 	var vmRole *objects.DeviceRole
