@@ -75,6 +75,8 @@ github.com/luthermonson/go-proxmox v0.5.0 h1:15/ZaoNXeBtpE31ZZ5kSY5XnlMNcCJmbTte
 github.com/luthermonson/go-proxmox v0.5.0/go.mod h1:/mrMokmcU1lcWiWJFCPDO5nzcxpo8h0PEfcmY/ERZmA=
 github.com/luthermonson/go-proxmox v0.5.1 h1:MO/Ir+daqtHh8XyRTcwbIwOe/FfPZev8uxhfUg/ipwo=
 github.com/luthermonson/go-proxmox v0.5.1/go.mod h1:Q6ByFv9Zak9NvJwZJ36HMN5qwIZVj0isxf8u4YIk6lE=
+github.com/luthermonson/go-proxmox v0.6.0 h1:VWvQKUCxIOnxcy1cHd7jlL83OlTEBRnX2pG/YiKC/+8=
+github.com/luthermonson/go-proxmox v0.6.0/go.mod h1:Q6ByFv9Zak9NvJwZJ36HMN5qwIZVj0isxf8u4YIk6lE=
 github.com/magefile/mage v1.15.0 h1:BvGheCMAsG3bWUDbZ8AyXXpCNwU9u5CB6sM+HNb9HYg=
 github.com/magefile/mage v1.15.0/go.mod h1:z5UZb/iS3GoOSn0JgWuiw7dxlurVYTu+/jHXqQg881A=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq1c1nUAm88MOHcQC9l5mIlSMApZMrHA=
