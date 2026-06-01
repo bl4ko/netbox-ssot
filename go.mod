@@ -11,7 +11,7 @@ require (
 	github.com/ovirt/go-ovirt v4.3.4+incompatible
 	github.com/scrapli/scrapligo v1.4.0
 	github.com/src-doo/go-devicetype-library v0.1.56
-	github.com/vmware/govmomi v0.54.0
+	github.com/vmware/govmomi v0.54.1
 	golang.org/x/text v0.37.0
 	gopkg.in/yaml.v3 v3.0.1
 )
