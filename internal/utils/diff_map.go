@@ -522,6 +522,13 @@ func sanitizeCustomFieldValue(val interface{}) interface{} {
 			return id
 		}
 	}
+	if s, ok := val.([]interface{}); ok {
+		sanitized := make([]interface{}, len(s))
+		for i, item := range s {
+			sanitized[i] = sanitizeCustomFieldValue(item)
+		}
+		return sanitized
+	}
 	return val
 }
 

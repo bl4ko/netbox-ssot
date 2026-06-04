@@ -1522,6 +1522,41 @@ func TestSanitizeCustomFieldValue(t *testing.T) {
 				"key": "value",
 			},
 		},
+		{
+			name: "multiobject array extracts ids",
+			val: []interface{}{
+				map[string]interface{}{
+					"id":      float64(4),
+					"display": "InterXion",
+					"url":     "https://netbox/api/dcim/sites/4/",
+					"name":    "InterXion",
+				},
+				map[string]interface{}{
+					"id":      float64(2),
+					"display": "LCL",
+					"url":     "https://netbox/api/dcim/sites/2/",
+					"name":    "LCL",
+				},
+			},
+			want: []interface{}{float64(4), float64(2)},
+		},
+		{
+			name: "empty array passes through",
+			val:  []interface{}{},
+			want: []interface{}{},
+		},
+		{
+			name: "mixed array sanitizes only objects with id",
+			val: []interface{}{
+				map[string]interface{}{
+					"id":      float64(1),
+					"display": "Site1",
+				},
+				"plain-string",
+				float64(42),
+			},
+			want: []interface{}{float64(1), "plain-string", float64(42)},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1570,4 +1605,43 @@ func TestAddMapDiffSanitizesExistingObjectTypeCustomFields(t *testing.T) {
 		t.Errorf("site_ref should be float64(1), got %v (%T)", siteRef, siteRef)
 	}
 	_ = newMap
+}
+
+func TestAddMapDiffSanitizesExistingMultiobjectCustomFields(t *testing.T) {
+	t.Parallel()
+	newMapWithDiff := reflect.ValueOf(map[string]interface{}{
+		"source": "vcenter008",
+	})
+	existingMap := reflect.ValueOf(map[string]interface{}{
+		"source": "vcenter007",
+		"mdc_vlan": []interface{}{
+			map[string]interface{}{
+				"id":      float64(4),
+				"display": "InterXion",
+				"url":     "https://netbox/api/dcim/sites/4/",
+				"name":    "InterXion",
+			},
+			map[string]interface{}{
+				"id":      float64(2),
+				"display": "LCL",
+				"url":     "https://netbox/api/dcim/sites/2/",
+				"name":    "LCL",
+			},
+		},
+	})
+	diffMap := make(map[string]interface{})
+
+	err := addMapDiff(newMapWithDiff, existingMap, "custom_fields", true, diffMap)
+	if err != nil {
+		t.Fatalf("addMapDiff() error = %v", err)
+	}
+	cf, ok := diffMap["custom_fields"].(map[string]interface{})
+	if !ok {
+		t.Fatal("expected custom_fields in diffMap")
+	}
+	mdcVlan := cf["mdc_vlan"]
+	wantIDs := []interface{}{float64(4), float64(2)}
+	if !reflect.DeepEqual(mdcVlan, wantIDs) {
+		t.Errorf("mdc_vlan should be sanitized to IDs %v, got %v (%T)", wantIDs, mdcVlan, mdcVlan)
+	}
 }
