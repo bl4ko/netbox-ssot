@@ -1321,15 +1321,26 @@ func (o *OVirtSource) extractVMData(
 }
 
 // syncVMInterfaces is a helper function for syncVMS. It syncs all interfaces from a VM to netbox.
+// Guest-agent reported devices are matched to oVirt NICs by MAC address so a single netbox
+// interface is created per NIC (named after the guest interface, carrying the NIC's VLAN data).
+// NICs not reported by the guest agent are created with their oVirt name.
 func (o *OVirtSource) syncVMInterfaces(
 	nbi *inventory.NetboxInventory,
 	ovirtVM *ovirtsdk4.Vm,
 	netboxVM *objects.VM,
 ) error {
-	err := o.syncVMNics(nbi, ovirtVM, netboxVM)
+	nicsData, err := o.collectVMNicData(nbi, ovirtVM)
 	if err != nil {
-		return fmt.Errorf("sync VMNics %s", err)
+		return fmt.Errorf("collect VM nic data: %s", err)
 	}
+	mac2NicData := make(map[string]*vmNicData, len(nicsData))
+	for _, nicData := range nicsData {
+		if nicData.mac != "" {
+			mac2NicData[nicData.mac] = nicData
+		}
+	}
+	processedNics := make(map[*vmNicData]bool)
+
 	if reportedDevices, exist := ovirtVM.ReportedDevices(); exist {
 		for _, reportedDevice := range reportedDevices.Slice() {
 			if reportedDeviceType, exist := reportedDevice.Type(); exist {
@@ -1340,7 +1351,7 @@ func (o *OVirtSource) syncVMInterfaces(
 					vmInterfaceMac := ""
 					if macAddressObj, exists := reportedDevice.Mac(); exists {
 						if macAddress, exists := macAddressObj.Address(); exists {
-							vmInterfaceMac = macAddress
+							vmInterfaceMac = strings.ToUpper(macAddress)
 						}
 					}
 					if reportedDeviceName, exists := reportedDevice.Name(); exists {
@@ -1364,6 +1375,17 @@ func (o *OVirtSource) syncVMInterfaces(
 							VM:      netboxVM,
 							Name:    reportedDeviceName,
 							Enabled: true, // TODO
+						}
+						if nicData, ok := mac2NicData[vmInterfaceMac]; ok {
+							processedNics[nicData] = true
+							if vmInterfaceStruct.Description == "" {
+								vmInterfaceStruct.Description = nicData.description
+							}
+							vmInterfaceStruct.Mode = nicData.mode
+							vmInterfaceStruct.TaggedVlans = nicData.vlans
+							vmInterfaceStruct.CustomFields = map[string]interface{}{
+								constants.CustomFieldSourceIDName: nicData.id,
+							}
 						}
 						vmInterface, err = nbi.AddVMInterface(o.Ctx, vmInterfaceStruct)
 						if err != nil {
@@ -1395,6 +1417,17 @@ func (o *OVirtSource) syncVMInterfaces(
 					o.processVMInterfaceIPs(nbi, reportedDevice, netboxVM, vmInterface)
 				}
 			}
+		}
+	}
+
+	// Create interfaces for NICs that weren't matched to any guest-agent reported
+	// device (e.g. guest agent not installed).
+	for _, nicData := range nicsData {
+		if processedNics[nicData] {
+			continue
+		}
+		if err := o.addVMNicInterface(nbi, netboxVM, nicData); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -1517,11 +1550,24 @@ func (o *OVirtSource) processVMInterfaceIPs(
 	}
 }
 
-func (o *OVirtSource) syncVMNics(
+// vmNicData holds data collected from an oVirt VM NIC. It is used to enrich
+// guest-agent reported interfaces (matched by MAC address) or to create the
+// interface directly when the guest agent doesn't report it.
+type vmNicData struct {
+	name        string
+	id          string
+	description string
+	mac         string // uppercase
+	mode        *objects.VMInterfaceMode
+	vlans       []*objects.Vlan
+}
+
+// collectVMNicData collects interface data (name, MAC, VLANs, ...) from the
+// VM's oVirt NICs without creating netbox objects.
+func (o *OVirtSource) collectVMNicData(
 	nbi *inventory.NetboxInventory,
 	ovirtVM *ovirtsdk4.Vm,
-	netboxVM *objects.VM,
-) error {
+) ([]*vmNicData, error) {
 	// Resolve the network data and datacenter name for this VM.
 	var vmNetworks *NetworkData
 	var vmDCName string
@@ -1535,6 +1581,7 @@ func (o *OVirtSource) syncVMNics(
 		o.Logger.Warningf(o.Ctx, "could not resolve datacenter for VM %s, skipping NIC VLAN lookup", vmName)
 	}
 
+	var nicsData []*vmNicData
 	if nics, ok := ovirtVM.Nics(); ok {
 		for _, nic := range nics.Slice() {
 			nicName, ok := nic.Name()
@@ -1606,7 +1653,7 @@ func (o *OVirtSource) syncVMNics(
 									o.SourceConfig.VlanSiteRelations,
 								)
 								if err != nil {
-									return fmt.Errorf("match vlan to site: %s", err)
+									return nil, fmt.Errorf("match vlan to site: %s", err)
 								}
 								vlanGroup, err := common.MatchVlanToGroup(
 									o.Ctx,
@@ -1629,45 +1676,62 @@ func (o *OVirtSource) syncVMNics(
 					}
 				}
 			}
-			nbVMInterface, err := nbi.AddVMInterface(o.Ctx, &objects.VMInterface{
-				NetboxObject: objects.NetboxObject{
-					Tags:        o.GetSourceTags(),
-					Description: nicDescription,
-					CustomFields: map[string]interface{}{
-						constants.CustomFieldSourceIDName: nicID,
-					},
-				},
-				VM:          netboxVM,
-				Name:        nicName,
-				Mode:        nicMode,
-				Enabled:     true,
-				TaggedVlans: nicVlans,
+			nicsData = append(nicsData, &vmNicData{
+				name:        nicName,
+				id:          nicID,
+				description: nicDescription,
+				mac:         nicMAC,
+				mode:        nicMode,
+				vlans:       nicVlans,
 			})
-			if err != nil {
-				return fmt.Errorf("add vm interface: %s", err)
-			}
-			if nicMAC != "" {
-				nbMACAddress, err := common.CreateMACAddressForObjectType(
-					o.Ctx,
-					nbi,
-					nicMAC,
-					nbVMInterface,
-				)
-				if err != nil {
-					return fmt.Errorf(
-						"create mac address for vm interface %+v: %s",
-						nbVMInterface,
-						err,
-					)
-				}
-				if err = common.SetPrimaryMACForInterface(o.Ctx, nbi, nbVMInterface, nbMACAddress); err != nil {
-					return fmt.Errorf(
-						"set primary mac for vm interface %+v: %s",
-						nbVMInterface,
-						err,
-					)
-				}
-			}
+		}
+	}
+	return nicsData, nil
+}
+
+// addVMNicInterface creates a netbox interface (with MAC address) from oVirt NIC data.
+func (o *OVirtSource) addVMNicInterface(
+	nbi *inventory.NetboxInventory,
+	netboxVM *objects.VM,
+	nicData *vmNicData,
+) error {
+	nbVMInterface, err := nbi.AddVMInterface(o.Ctx, &objects.VMInterface{
+		NetboxObject: objects.NetboxObject{
+			Tags:        o.GetSourceTags(),
+			Description: nicData.description,
+			CustomFields: map[string]interface{}{
+				constants.CustomFieldSourceIDName: nicData.id,
+			},
+		},
+		VM:          netboxVM,
+		Name:        nicData.name,
+		Mode:        nicData.mode,
+		Enabled:     true,
+		TaggedVlans: nicData.vlans,
+	})
+	if err != nil {
+		return fmt.Errorf("add vm interface: %s", err)
+	}
+	if nicData.mac != "" {
+		nbMACAddress, err := common.CreateMACAddressForObjectType(
+			o.Ctx,
+			nbi,
+			nicData.mac,
+			nbVMInterface,
+		)
+		if err != nil {
+			return fmt.Errorf(
+				"create mac address for vm interface %+v: %s",
+				nbVMInterface,
+				err,
+			)
+		}
+		if err = common.SetPrimaryMACForInterface(o.Ctx, nbi, nbVMInterface, nbMACAddress); err != nil {
+			return fmt.Errorf(
+				"set primary mac for vm interface %+v: %s",
+				nbVMInterface,
+				err,
+			)
 		}
 	}
 	return nil
