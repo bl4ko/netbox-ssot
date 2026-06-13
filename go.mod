@@ -6,13 +6,13 @@ require (
 	github.com/PaloAltoNetworks/pango v0.10.2
 	github.com/cisco-en-programmability/dnacenter-go-sdk/v8 v8.0.0
 	github.com/gophercloud/gophercloud/v2 v2.12.0
-	github.com/hetznercloud/hcloud-go/v2 v2.41.2
-	github.com/luthermonson/go-proxmox v0.6.0
+	github.com/hetznercloud/hcloud-go/v2 v2.42.0
+	github.com/luthermonson/go-proxmox v0.7.1
 	github.com/ovirt/go-ovirt v4.3.4+incompatible
 	github.com/scrapli/scrapligo v1.4.0
 	github.com/src-doo/go-devicetype-library v0.1.56
 	github.com/vmware/govmomi v0.54.1
-	golang.org/x/text v0.37.0
+	golang.org/x/text v0.38.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
