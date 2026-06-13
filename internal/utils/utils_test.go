@@ -379,47 +379,6 @@ func TestExtractFunctionName(t *testing.T) {
 	}
 }
 
-func Test_mnSet_Contains(t *testing.T) {
-	type args struct {
-		r rune
-	}
-	tests := []struct {
-		name string
-		m    mnSet
-		args args
-		want bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.m.Contains(tt.args.r); got != tt.want {
-				t.Errorf("mnSet.Contains() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_removeDiacritics(t *testing.T) {
-	type args struct {
-		s string
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := removeDiacritics(tt.args.s); got != tt.want {
-				t.Errorf("removeDiacritics() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestMatchNamesWithEmails(t *testing.T) {
 	type args struct {
 		ctx    context.Context
@@ -709,22 +668,3 @@ func TestSerializeOwners(t *testing.T) {
 	}
 }
 
-func TestSerializeOwner(t *testing.T) {
-	type args struct {
-		owner string
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := SerializeOwner(tt.args.owner); got != tt.want {
-				t.Errorf("SerializeOwner() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
