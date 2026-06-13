@@ -21,11 +21,10 @@ func parseDiskSizeMiB(item string) int {
 	if !strings.Contains(item, "size") {
 		return 0
 	}
-	sizeData := strings.Split(item, "=")
-	if len(sizeData) < 2 {
+	_, value, ok := strings.Cut(item, "=")
+	if !ok {
 		return 0
 	}
-	value := sizeData[1]
 	switch {
 	case strings.HasSuffix(value, "G"):
 		size, _ := strconv.Atoi(strings.TrimSuffix(value, "G"))
