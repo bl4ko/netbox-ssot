@@ -568,46 +568,6 @@ func TestPriorityMergeDiff(t *testing.T) {
 	}
 }
 
-func Test_isChoiceEmbedded(t *testing.T) {
-	type args struct {
-		v reflect.Value
-	}
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := isChoiceEmbedded(tt.args.v); got != tt.want {
-				t.Errorf("isChoiceEmbedded() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_choiceValue(t *testing.T) {
-	type args struct {
-		v reflect.Value
-	}
-	tests := []struct {
-		name string
-		args args
-		want interface{}
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := choiceValue(tt.args.v); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("choiceValue() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func Test_hasPriorityOver(t *testing.T) {
 	type args struct {
 		newObj          reflect.Value
@@ -1237,59 +1197,6 @@ func Test_addMapDiff(t *testing.T) {
 
 			if !reflect.DeepEqual(tt.args.diffMap, tt.wantDiffMap) {
 				t.Errorf("diffMap: %s, wantDiffMap: %s", tt.args.diffMap, tt.wantDiffMap)
-			}
-		})
-	}
-}
-
-func Test_addPrimaryDiff(t *testing.T) {
-	type args struct {
-		newField      reflect.Value
-		existingField reflect.Value
-		jsonTag       string
-		hasPriority   bool
-		diffMap       map[string]interface{}
-	}
-	tests := []struct {
-		name string
-		args args
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(_ *testing.T) {
-			addPrimaryDiff(
-				tt.args.newField,
-				tt.args.existingField,
-				tt.args.jsonTag,
-				tt.args.hasPriority,
-				tt.args.diffMap,
-			)
-		})
-	}
-}
-
-func Test_convertSliceToComparableSlice(t *testing.T) {
-	type args struct {
-		slice reflect.Value
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    reflect.Value
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := convertSliceToComparableSlice(tt.args.slice)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("convertSliceToComparableSlice() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("convertSliceToComparableSlice() = %v, want %v", got, tt.want)
 			}
 		})
 	}
