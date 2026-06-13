@@ -667,4 +667,3 @@ func TestSerializeOwners(t *testing.T) {
 		})
 	}
 }
-
