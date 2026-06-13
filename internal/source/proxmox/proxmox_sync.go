@@ -323,8 +323,8 @@ func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 		platformName = vmAgentOsInfo.PrettyName
 	}
 
-	if platformName == "Unknown" {
-		switch osType := vm.VirtualMachineConfig.OSType; osType {
+	if platformName == "Unknown" && vm.VirtualMachineConfig.OSType != nil {
+		switch *vm.VirtualMachineConfig.OSType {
 		case "l26":
 			platformName = "Other 2.6.x Linux (64-bit)"
 		case "win11":
