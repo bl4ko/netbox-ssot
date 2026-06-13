@@ -41,6 +41,8 @@ github.com/h2non/parth v0.0.0-20190131123155-b4df798d6542 h1:2VTzZjLZBgl62/EtslC
 github.com/h2non/parth v0.0.0-20190131123155-b4df798d6542/go.mod h1:Ow0tF8D4Kplbc8s8sSb3V2oUCygFHVp8gC3Dn6U4MNI=
 github.com/hetznercloud/hcloud-go/v2 v2.41.2 h1:fO5zsMgp5oejrtnFj8mYuqlp+iMuirpaKv4b5FYNRdQ=
 github.com/hetznercloud/hcloud-go/v2 v2.41.2/go.mod h1:9OGvC//jbHE4sv2Oyo0bQ2vEWuUMKYoNMyj9Qxz2qcc=
+github.com/hetznercloud/hcloud-go/v2 v2.42.0 h1:srRqdDCsMaxQvqiYhXP0nzf5yz16TEfGqfHkiWrkMso=
+github.com/hetznercloud/hcloud-go/v2 v2.42.0/go.mod h1:9OGvC//jbHE4sv2Oyo0bQ2vEWuUMKYoNMyj9Qxz2qcc=
 github.com/jinzhu/copier v0.4.0 h1:w3ciUoD19shMCRargcpm0cm91ytaBhDvuRpz1ODO/U8=
 github.com/jinzhu/copier v0.4.0/go.mod h1:DfbEm0FYsaqBcKcFuvmOZb218JkPGtvSHsKg8S8hyyg=
 github.com/klauspost/compress v1.18.5 h1:/h1gH5Ce+VWNLSWqPzOVn6XBO+vJbCNGvjoaGBFW2IE=
@@ -53,6 +55,8 @@ github.com/kylelemons/godebug v1.1.0 h1:RPNrshWIDI6G2gRW9EHilWtl7Z6Sb1BR0xunSBf0
 github.com/kylelemons/godebug v1.1.0/go.mod h1:9/0rRGxNHcop5bhtWyNeEfOS8JIWk580+fNqagV/RAw=
 github.com/luthermonson/go-proxmox v0.6.0 h1:VWvQKUCxIOnxcy1cHd7jlL83OlTEBRnX2pG/YiKC/+8=
 github.com/luthermonson/go-proxmox v0.6.0/go.mod h1:Q6ByFv9Zak9NvJwZJ36HMN5qwIZVj0isxf8u4YIk6lE=
+github.com/luthermonson/go-proxmox v0.7.1 h1:uglHM+x8rTKaIxM3C42z5i+Nt/X6E93l/BitqmH7zUs=
+github.com/luthermonson/go-proxmox v0.7.1/go.mod h1:Q6ByFv9Zak9NvJwZJ36HMN5qwIZVj0isxf8u4YIk6lE=
 github.com/magefile/mage v1.15.0 h1:BvGheCMAsG3bWUDbZ8AyXXpCNwU9u5CB6sM+HNb9HYg=
 github.com/magefile/mage v1.15.0/go.mod h1:z5UZb/iS3GoOSn0JgWuiw7dxlurVYTu+/jHXqQg881A=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq1c1nUAm88MOHcQC9l5mIlSMApZMrHA=
@@ -105,6 +109,8 @@ golang.org/x/term v0.43.0 h1:S4RLU2sB31O/NCl+zFN9Aru9A/Cq2aqKpTZJ6B+DwT4=
 golang.org/x/term v0.43.0/go.mod h1:lrhlHNdQJHO+1qVYiHfFKVuVioJIheAc3fBSMFYEIsk=
 golang.org/x/text v0.37.0 h1:Cqjiwd9eSg8e0QAkyCaQTNHFIIzWtidPahFWR83rTrc=
 golang.org/x/text v0.37.0/go.mod h1:a5sjxXGs9hsn/AJVwuElvCAo9v8QYLzvavO5z2PiM38=
+golang.org/x/text v0.38.0 h1:sXmwo9DwP3OK9EZ7PqAdaooSGozfl/3a6/xJcbzPRhE=
+golang.org/x/text v0.38.0/go.mod h1:YXZt3QhHUKYT53r2lLKFIVi6Ao1jdzrTR/KQ09qyxF4=
 golang.org/x/time v0.6.0 h1:eTDhh4ZXt5Qf0augr54TN6suAUudPcawVZeIAPU7D4U=
 golang.org/x/time v0.6.0/go.mod h1:3BpzKBy/shNhVucY/MWOyx10tF3SFh9QdLuxbVysPQM=
 golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
