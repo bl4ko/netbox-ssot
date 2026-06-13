@@ -893,14 +893,6 @@ func (o *OVirtSource) collectHostNicsData(
 			}
 		}
 
-		// bridged, exists := nic.Bridged() // TODO: bridged interface
-		// if exists {
-		// 	if bridged {
-		// 		// This interface is bridged
-		// 		fmt.Printf("nic[%s] is bridged\n", nicName)
-		// 	}
-		// }
-
 		// Determine nic type (virtual, physical, bond...)
 		var nicType *objects.InterfaceType
 		nicBaseInterface, exists := nic.BaseInterface()

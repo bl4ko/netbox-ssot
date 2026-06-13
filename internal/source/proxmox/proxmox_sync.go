@@ -14,6 +14,28 @@ import (
 	"github.com/luthermonson/go-proxmox"
 )
 
+// parseDiskSizeMiB parses a proxmox disk config token (e.g. "size=32G") and
+// returns the size in MiB. It returns 0 when item is not a size token or the
+// value cannot be parsed.
+func parseDiskSizeMiB(item string) int {
+	if !strings.Contains(item, "size") {
+		return 0
+	}
+	_, value, ok := strings.Cut(item, "=")
+	if !ok {
+		return 0
+	}
+	switch {
+	case strings.HasSuffix(value, "G"):
+		size, _ := strconv.Atoi(strings.TrimSuffix(value, "G"))
+		return size * constants.KB
+	case strings.HasSuffix(value, "T"):
+		size, _ := strconv.Atoi(strings.TrimSuffix(value, "T"))
+		return size * constants.MB
+	}
+	return 0
+}
+
 func (ps *ProxmoxSource) syncCluster(nbi *inventory.NetboxInventory) error {
 	var clusterScopeType constants.ContentType
 	var clusterScopeID int
@@ -210,8 +232,6 @@ func (ps *ProxmoxSource) syncNodeNetworks(
 	nbi *inventory.NetboxInventory,
 	node *proxmox.Node,
 ) error {
-	// hostIPv4Addresses := []*objects.IPAddress TODO
-	// hostIPv6Addresses := []*objects.IPAddress TODO
 	for _, nodeNetwork := range ps.NodeIfaces[node.Name] {
 		active := false
 		if nodeNetwork.Active == 1 {
@@ -381,17 +401,9 @@ func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 					continue
 				}
 
-				if strings.Contains(item, "size") {
-					sizeData := strings.Split(item, "=")
-					if strings.HasSuffix(sizeData[1], "G") {
-						diskSize, _ = strconv.Atoi(strings.TrimSuffix(sizeData[1], "G"))
-						diskSize *= constants.KB
-					}
-					if strings.HasSuffix(sizeData[1], "T") {
-						diskSize, _ = strconv.Atoi(strings.TrimSuffix(sizeData[1], "T"))
-						diskSize *= constants.MB
-					}
-					vmTotalDiskSizeMiB += diskSize
+				if sz := parseDiskSizeMiB(item); sz > 0 {
+					diskSize = sz
+					vmTotalDiskSizeMiB += sz
 				}
 			}
 
@@ -431,17 +443,9 @@ func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 					continue
 				}
 
-				if strings.Contains(item, "size") {
-					sizeData := strings.Split(item, "=")
-					if strings.HasSuffix(sizeData[1], "G") {
-						diskSize, _ = strconv.Atoi(strings.TrimSuffix(sizeData[1], "G"))
-						diskSize *= constants.KB
-					}
-					if strings.HasSuffix(sizeData[1], "T") {
-						diskSize, _ = strconv.Atoi(strings.TrimSuffix(sizeData[1], "T"))
-						diskSize *= constants.MB
-					}
-					vmTotalDiskSizeMiB += diskSize
+				if sz := parseDiskSizeMiB(item); sz > 0 {
+					diskSize = sz
+					vmTotalDiskSizeMiB += sz
 				}
 			}
 
@@ -481,17 +485,9 @@ func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 					continue
 				}
 
-				if strings.Contains(item, "size") {
-					sizeData := strings.Split(item, "=")
-					if strings.HasSuffix(sizeData[1], "G") {
-						diskSize, _ = strconv.Atoi(strings.TrimSuffix(sizeData[1], "G"))
-						diskSize *= constants.KB
-					}
-					if strings.HasSuffix(sizeData[1], "T") {
-						diskSize, _ = strconv.Atoi(strings.TrimSuffix(sizeData[1], "T"))
-						diskSize *= constants.MB
-					}
-					vmTotalDiskSizeMiB += diskSize
+				if sz := parseDiskSizeMiB(item); sz > 0 {
+					diskSize = sz
+					vmTotalDiskSizeMiB += sz
 				}
 			}
 
@@ -531,17 +527,9 @@ func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 					continue
 				}
 
-				if strings.Contains(item, "size") {
-					sizeData := strings.Split(item, "=")
-					if strings.HasSuffix(sizeData[1], "G") {
-						diskSize, _ = strconv.Atoi(strings.TrimSuffix(sizeData[1], "G"))
-						diskSize *= constants.KB
-					}
-					if strings.HasSuffix(sizeData[1], "T") {
-						diskSize, _ = strconv.Atoi(strings.TrimSuffix(sizeData[1], "T"))
-						diskSize *= constants.MB
-					}
-					vmTotalDiskSizeMiB += diskSize
+				if sz := parseDiskSizeMiB(item); sz > 0 {
+					diskSize = sz
+					vmTotalDiskSizeMiB += sz
 				}
 			}
 
