@@ -26,4 +26,4 @@ jobs:
       - name: Release
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: npx semantic-release@25.0.3
+        run: npx semantic-release@25.0.5
