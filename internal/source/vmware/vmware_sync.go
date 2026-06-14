@@ -335,13 +335,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 			}
 		}
 
-		var hostStatus *objects.DeviceStatus
-		switch host.Summary.Runtime.ConnectionState {
-		case "connected":
-			hostStatus = &objects.DeviceStatusActive
-		default:
-			hostStatus = &objects.DeviceStatusOffline
-		}
+		hostStatus := vmwareConnectionStateToDeviceStatus(host.Summary.Runtime.ConnectionState)
 
 		var hostPlatform *objects.Platform
 		osType := host.Summary.Config.Product.Name
@@ -1825,4 +1819,16 @@ func (vc *VmwareSource) createHypotheticalCluster(
 	}
 
 	return nbCluster, nil
+}
+
+// vmwareConnectionStateToDeviceStatus maps a vCenter host ConnectionState to a
+// netbox DeviceStatus. Any non-connected state (disconnected, notResponding)
+// maps to offline.
+func vmwareConnectionStateToDeviceStatus(
+	state types.HostSystemConnectionState,
+) *objects.DeviceStatus {
+	if state == "connected" {
+		return &objects.DeviceStatusActive
+	}
+	return &objects.DeviceStatusOffline
 }

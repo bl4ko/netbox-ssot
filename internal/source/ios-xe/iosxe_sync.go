@@ -139,44 +139,9 @@ func (is *IOSXESource) syncInterfaces(nbi *inventory.NetboxInventory) error {
 		ifaceEnabled := iface.State.Enabled
 		ifaceMAC := iface.Ethernet.MACAddress
 		ifaceType := &objects.OtherInterfaceType
-		var ifaceLinkSpeed objects.InterfaceSpeed
-		switch iface.Ethernet.PortSpeed {
-		case "SPEED_10MB":
-			ifaceLinkSpeed = (10 * constants.MB) / constants.KB //nolint:mnd
-			if _, ok := objects.IfaceSpeed2IfaceType[ifaceLinkSpeed]; ok {
-				ifaceType = objects.IfaceSpeed2IfaceType[ifaceLinkSpeed]
-			}
-		case "SPEED_100MB":
-			ifaceLinkSpeed = (100 * constants.MB) / constants.KB //nolint:mnd
-			if _, ok := objects.IfaceSpeed2IfaceType[ifaceLinkSpeed]; ok {
-				ifaceType = objects.IfaceSpeed2IfaceType[ifaceLinkSpeed]
-			}
-		case "SPEED_1GB":
-			ifaceLinkSpeed = (1 * constants.GB) / constants.KB
-			if _, ok := objects.IfaceSpeed2IfaceType[ifaceLinkSpeed]; ok {
-				ifaceType = objects.IfaceSpeed2IfaceType[ifaceLinkSpeed]
-			}
-		case "SPEED_10GB":
-			ifaceLinkSpeed = (10 * constants.GB) / constants.KB //nolint:mnd
-			if _, ok := objects.IfaceSpeed2IfaceType[ifaceLinkSpeed]; ok {
-				ifaceType = objects.IfaceSpeed2IfaceType[ifaceLinkSpeed]
-			}
-		case "SPEED_25GB":
-			ifaceLinkSpeed = (25 * constants.GB) / constants.KB //nolint:mnd
-			if _, ok := objects.IfaceSpeed2IfaceType[ifaceLinkSpeed]; ok {
-				ifaceType = objects.IfaceSpeed2IfaceType[ifaceLinkSpeed]
-			}
-		case "SPEED_40GB":
-			ifaceLinkSpeed = (40 * constants.GB) / constants.KB //nolint:mnd
-			if _, ok := objects.IfaceSpeed2IfaceType[ifaceLinkSpeed]; ok {
-				ifaceType = objects.IfaceSpeed2IfaceType[ifaceLinkSpeed]
-			}
-		case "SPEED_100GB":
-			ifaceLinkSpeed = (100 * constants.GB) / constants.KB //nolint:mnd
-			if _, ok := objects.IfaceSpeed2IfaceType[ifaceLinkSpeed]; ok {
-				ifaceType = objects.IfaceSpeed2IfaceType[ifaceLinkSpeed]
-			}
-		default:
+		ifaceLinkSpeed := iosxePortSpeedToLinkSpeed(iface.Ethernet.PortSpeed)
+		if t, ok := objects.IfaceSpeed2IfaceType[ifaceLinkSpeed]; ok {
+			ifaceType = t
 		}
 
 		nbIface, err := nbi.AddInterface(is.Ctx, &objects.Interface{
@@ -270,4 +235,27 @@ func (is *IOSXESource) syncArpTable(nbi *inventory.NetboxInventory) error {
 		}
 	}
 	return nil
+}
+
+// iosxePortSpeedToLinkSpeed maps a Cisco IOS-XE Ethernet PortSpeed enum to the
+// netbox interface speed in kbps. It returns 0 for unknown speeds.
+func iosxePortSpeedToLinkSpeed(portSpeed string) objects.InterfaceSpeed {
+	switch portSpeed {
+	case "SPEED_10MB":
+		return (10 * constants.MB) / constants.KB //nolint:mnd
+	case "SPEED_100MB":
+		return (100 * constants.MB) / constants.KB //nolint:mnd
+	case "SPEED_1GB":
+		return (1 * constants.GB) / constants.KB
+	case "SPEED_10GB":
+		return (10 * constants.GB) / constants.KB //nolint:mnd
+	case "SPEED_25GB":
+		return (25 * constants.GB) / constants.KB //nolint:mnd
+	case "SPEED_40GB":
+		return (40 * constants.GB) / constants.KB //nolint:mnd
+	case "SPEED_100GB":
+		return (100 * constants.GB) / constants.KB //nolint:mnd
+	default:
+		return 0
+	}
 }
