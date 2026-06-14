@@ -141,19 +141,9 @@ func (pas *PaloAltoSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 				ifaceType = objects.IfaceSpeed2IfaceType[objects.InterfaceSpeed(speed)]
 			}
 		}
-		var ifaceDuplex *objects.InterfaceDuplex
-		if iface.LinkDuplex != "" {
-			switch iface.LinkDuplex {
-			case "full":
-				ifaceDuplex = &objects.DuplexFull
-			case "auto":
-				ifaceDuplex = &objects.DuplexAuto
-			case "half":
-				ifaceDuplex = &objects.DuplexHalf
-			case "":
-			default:
-				pas.Logger.Debugf(pas.Ctx, "not implemented duplex value %s", iface.LinkDuplex)
-			}
+		ifaceDuplex := paloAltoLinkDuplexToNetbox(iface.LinkDuplex)
+		if ifaceDuplex == nil && iface.LinkDuplex != "" {
+			pas.Logger.Debugf(pas.Ctx, "not implemented duplex value %s", iface.LinkDuplex)
 		}
 
 		var ifaceVdcs []*objects.VirtualDeviceContext
@@ -466,4 +456,20 @@ func (pas *PaloAltoSource) syncArpEntry(
 		}
 	}
 	return nil
+}
+
+// paloAltoLinkDuplexToNetbox maps a Palo Alto interface LinkDuplex value to the
+// corresponding netbox InterfaceDuplex. It returns nil for empty or unknown
+// values so the caller can decide whether to log an unsupported value.
+func paloAltoLinkDuplexToNetbox(linkDuplex string) *objects.InterfaceDuplex {
+	switch linkDuplex {
+	case "full":
+		return &objects.DuplexFull
+	case "auto":
+		return &objects.DuplexAuto
+	case "half":
+		return &objects.DuplexHalf
+	default:
+		return nil
+	}
 }

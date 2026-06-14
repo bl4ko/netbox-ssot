@@ -344,11 +344,8 @@ func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 	}
 
 	if platformName == "Unknown" && vm.VirtualMachineConfig.OSType != nil {
-		switch *vm.VirtualMachineConfig.OSType {
-		case "l26":
-			platformName = "Other 2.6.x Linux (64-bit)"
-		case "win11":
-			platformName = "Windows 11"
+		if name := proxmoxOSTypeToPlatformName(*vm.VirtualMachineConfig.OSType); name != "" {
+			platformName = name
 		}
 	}
 
@@ -1003,4 +1000,18 @@ func (ps *ProxmoxSource) syncContainerNetworks(
 		}
 	}
 	return nil
+}
+
+// proxmoxOSTypeToPlatformName maps a Proxmox VM OSType identifier to a
+// human-readable platform name. It returns an empty string for unknown types,
+// letting the caller keep its existing fallback.
+func proxmoxOSTypeToPlatformName(osType string) string {
+	switch osType {
+	case "l26":
+		return "Other 2.6.x Linux (64-bit)"
+	case "win11":
+		return "Windows 11"
+	default:
+		return ""
+	}
 }
