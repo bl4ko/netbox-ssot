@@ -7,7 +7,7 @@ require (
 	github.com/cisco-en-programmability/dnacenter-go-sdk/v8 v8.0.0
 	github.com/gophercloud/gophercloud/v2 v2.12.0
 	github.com/hetznercloud/hcloud-go/v2 v2.43.0
-	github.com/luthermonson/go-proxmox v0.7.1
+	github.com/luthermonson/go-proxmox v0.8.0
 	github.com/ovirt/go-ovirt v4.3.4+incompatible
 	github.com/scrapli/scrapligo v1.4.0
 	github.com/src-doo/go-devicetype-library v0.1.56
