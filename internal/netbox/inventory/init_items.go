@@ -155,13 +155,8 @@ func (nbi *NetboxInventory) initContactAssignments(ctx context.Context) error {
 	nbi.contactAssignmentsIndex = make(
 		map[constants.ContentType]map[int]map[int]map[int]*objects.ContactAssignment,
 	)
-	debugIDs := map[int]bool{} // Netbox pagination bug duplicates
 	for i := range nbCAs {
 		cA := &nbCAs[i]
-		if _, ok := debugIDs[cA.ID]; ok {
-			fmt.Printf("Already been here: %d", cA.ID)
-		}
-		debugIDs[cA.ID] = true
 		if nbi.contactAssignmentsIndex[cA.ModelType] == nil {
 			nbi.contactAssignmentsIndex[cA.ModelType] = make(
 				map[int]map[int]map[int]*objects.ContactAssignment,
