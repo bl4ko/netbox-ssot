@@ -7,4 +7,4 @@ on:
       - main
 jobs:
   spellcheck:
-    uses: bl4ko/shared-actions/.github/workflows/spellcheck.yml@da3b3ddf3b368dbe8632604bee6a61acfd2a23e0 # main
+    uses: bl4ko/shared-actions/.github/workflows/spellcheck.yml@56499db988b3cfd70795dcfed47d27fc7e1aa121 # main
