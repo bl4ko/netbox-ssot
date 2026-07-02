@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
+	"github.com/bl4ko/netbox-ssot/internal/parser"
 	"github.com/bl4ko/netbox-ssot/internal/source/common"
 	"github.com/bl4ko/netbox-ssot/internal/utils"
 	"github.com/gophercloud/gophercloud/v2"
@@ -50,19 +51,23 @@ type Source struct {
 	ImageClient        *gophercloud.ServiceClient
 }
 
-func (oss *Source) Init() error {
-	projectName := oss.SourceConfig.ProjectName
-	if projectName == "" {
-		projectName = oss.SourceConfig.TenantName
-	}
+// domainConfig holds resolved domain configuration for OpenStack authentication.
+type domainConfig struct {
+	domainName        string
+	domainID          string
+	projectDomainName string
+	projectDomainID   string
+}
 
-	projectID := oss.SourceConfig.ProjectID
-	if projectID == "" {
-		projectID = oss.SourceConfig.TenantID
-	}
-
-	domainName := oss.SourceConfig.DomainName
-	domainID := oss.SourceConfig.DomainID
+// resolveDomainConfig resolves domain configuration with proper fallbacks and precedence.
+// It handles:
+// - id| prefix in domainName
+// - Default domain fallback
+// - ID precedence over Name
+// - ProjectDomain* fallback to Domain*
+func resolveDomainConfig(cfg *parser.SourceConfig) domainConfig {
+	domainName := cfg.DomainName
+	domainID := cfg.DomainID
 
 	// Handle id| prefix in domainName (same as MH WHMCS module)
 	if strings.HasPrefix(domainName, "id|") {
@@ -79,11 +84,11 @@ func (oss *Source) Init() error {
 		domainName = ""
 	}
 
-	projectDomainName := oss.SourceConfig.ProjectDomainName
+	projectDomainName := cfg.ProjectDomainName
 	if projectDomainName == "" {
 		projectDomainName = domainName
 	}
-	projectDomainID := oss.SourceConfig.ProjectDomainID
+	projectDomainID := cfg.ProjectDomainID
 	if projectDomainID == "" {
 		projectDomainID = domainID
 	} else {
@@ -91,12 +96,34 @@ func (oss *Source) Init() error {
 		projectDomainName = ""
 	}
 
+	return domainConfig{
+		domainName:        domainName,
+		domainID:          domainID,
+		projectDomainName: projectDomainName,
+		projectDomainID:   projectDomainID,
+	}
+}
+
+func (oss *Source) Init() error {
+	projectName := oss.SourceConfig.ProjectName
+	if projectName == "" {
+		projectName = oss.SourceConfig.TenantName
+	}
+
+	projectID := oss.SourceConfig.ProjectID
+	if projectID == "" {
+		projectID = oss.SourceConfig.TenantID
+	}
+
+	// Resolve domain configuration
+	domains := resolveDomainConfig(oss.SourceConfig)
+
 	opts := gophercloud.AuthOptions{
 		IdentityEndpoint: oss.SourceConfig.Hostname,
 		Username:         oss.SourceConfig.Username,
 		Password:         oss.SourceConfig.Password,
-		DomainName:       domainName,
-		DomainID:         domainID,
+		DomainName:       domains.domainName,
+		DomainID:         domains.domainID,
 		AllowReauth:      true,
 	}
 
@@ -111,21 +138,21 @@ func (oss *Source) Init() error {
 		// ProjectName requires domain info for disambiguation
 		opts.Scope = &gophercloud.AuthScope{
 			ProjectName: projectName,
-			DomainName:  projectDomainName,
-			DomainID:    projectDomainID,
+			DomainName:  domains.projectDomainName,
+			DomainID:    domains.projectDomainID,
 		}
-	case domainID != "":
+	case domains.domainID != "":
 		opts.Scope = &gophercloud.AuthScope{
-			DomainID: domainID,
+			DomainID: domains.domainID,
 		}
-	case domainName != "":
+	case domains.domainName != "":
 		opts.Scope = &gophercloud.AuthScope{
-			DomainName: domainName,
+			DomainName: domains.domainName,
 		}
 	}
 
 	oss.Logger.Debugf(oss.Ctx, "OpenStack AuthOptions: Endpoint=%s, Username=%s, Project=%s, Domain=%s",
-		opts.IdentityEndpoint, opts.Username, projectName, domainName)
+		opts.IdentityEndpoint, opts.Username, projectName, domains.domainName)
 
 	// Setup custom HTTP client to respect validateCert
 	tlsConfig := &tls.Config{
