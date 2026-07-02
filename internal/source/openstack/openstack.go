@@ -74,6 +74,11 @@ func (oss *Source) Init() error {
 		domainName = "Default"
 	}
 
+	// Enforce ID precedence: if ID is set, clear Name to avoid ambiguity
+	if domainID != "" {
+		domainName = ""
+	}
+
 	projectDomainName := oss.SourceConfig.ProjectDomainName
 	if projectDomainName == "" {
 		projectDomainName = domainName
@@ -81,6 +86,9 @@ func (oss *Source) Init() error {
 	projectDomainID := oss.SourceConfig.ProjectDomainID
 	if projectDomainID == "" {
 		projectDomainID = domainID
+	} else {
+		// Enforce ID precedence: if ID is set, clear Name to avoid ambiguity
+		projectDomainName = ""
 	}
 
 	opts := gophercloud.AuthOptions{
