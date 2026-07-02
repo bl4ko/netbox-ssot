@@ -74,6 +74,15 @@ func (oss *Source) Init() error {
 		domainName = "Default"
 	}
 
+	projectDomainName := oss.SourceConfig.ProjectDomainName
+	if projectDomainName == "" {
+		projectDomainName = domainName
+	}
+	projectDomainID := oss.SourceConfig.ProjectDomainID
+	if projectDomainID == "" {
+		projectDomainID = domainID
+	}
+
 	opts := gophercloud.AuthOptions{
 		IdentityEndpoint: oss.SourceConfig.Hostname,
 		Username:         oss.SourceConfig.Username,
@@ -94,8 +103,8 @@ func (oss *Source) Init() error {
 		// ProjectName requires domain info for disambiguation
 		opts.Scope = &gophercloud.AuthScope{
 			ProjectName: projectName,
-			DomainName:  domainName,
-			DomainID:    domainID,
+			DomainName:  projectDomainName,
+			DomainID:    projectDomainID,
 		}
 	case domainID != "":
 		opts.Scope = &gophercloud.AuthScope{

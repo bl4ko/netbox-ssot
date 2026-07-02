@@ -167,8 +167,10 @@ Example configuration can be found [here](#example-config).
 | `source.projectID`                       | ID of the OpenStack project. Overrides `projectName` if provided.                                                        | [**openstack**]            | string   | any                                      | ""         | No       |
 | `source.tenantName`                      | Alias for `projectName`.                                                                                                 | [**openstack**]            | string   | any                                      | ""         | No       |
 | `source.tenantID`                        | Alias for `projectID`.                                                                                                   | [**openstack**]            | string   | any                                      | ""         | No       |
-| `source.domainName`                      | Domain context for the OpenStack user/project. If prefixed with `id|`, it acts as `domainID` directly.                   | [**openstack**]            | string   | any                                      | "Default"  | No       |
-| `source.domainID`                        | ID of the OpenStack domain. Overrides `domainName` if provided.                                                          | [**openstack**]            | string   | any                                      | ""         | No       |
+| `source.domainName`                      | Domain name for user authentication. If prefixed with `id|`, it acts as `domainID` directly.                             | [**openstack**]            | string   | any                                      | "Default"  | No       |
+| `source.domainID`                        | ID of the OpenStack domain for user authentication. Overrides `domainName` if provided.                                  | [**openstack**]            | string   | any                                      | ""         | No       |
+| `source.projectDomainName`               | Domain name for project scoping. Defaults to `domainName` if not specified.                                              | [**openstack**]            | string   | any                                      | ""         | No       |
+| `source.projectDomainID`                 | ID of the project domain. Defaults to `domainID` if not specified. Overrides `projectDomainName` if provided.            | [**openstack**]            | string   | any                                      | ""         | No       |
 | `source.clusterName`                     | Name to use when creating the NetBox cluster representation.                                                             | [**openstack**]            | string   | any                                      | "OpenStack Cloud" | No       |
 | `source.clusterType`                     | Type categorization string of the cluster to use/create in NetBox.                                                       | [**openstack**]            | string   | any                                      | "OpenStack"| No       |
 | `source.clusterGroupName`                | Name to use when creating the NetBox cluster group.                                                                      | [**openstack**]            | string   | any                                      | "OpenStack"| No       |
@@ -290,7 +292,8 @@ source:
     username: "user"
     password: "password"
     projectName: "My Project"
-    domainName: "Project"
+    domainName: "Default"              # Domain for user authentication
+    projectDomainName: "Project_Domain" # Domain for project scoping (optional, defaults to domainName)
     clusterName: "OS1"
     clusterType: "OpenStack"
 
