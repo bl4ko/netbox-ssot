@@ -57,8 +57,8 @@ func TestResolveDomainConfig(t *testing.T) {
 			expectedProjectDomainID:   "xyz789",
 		},
 		{
-			name: "Neither domainName nor domainID - should default to 'Default'",
-			cfg:  &parser.SourceConfig{},
+			name:                      "Neither domainName nor domainID - should default to 'Default'",
+			cfg:                       &parser.SourceConfig{},
 			expectedDomainName:        "Default",
 			expectedDomainID:          "",
 			expectedProjectDomainName: "Default",
