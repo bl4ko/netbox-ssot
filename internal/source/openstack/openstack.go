@@ -152,8 +152,9 @@ func (oss *Source) Init() error {
 		}
 	}
 
-	oss.Logger.Debugf(oss.Ctx, "OpenStack AuthOptions: Endpoint=%s, Username=%s, Project=%s, Domain=%s",
-		opts.IdentityEndpoint, opts.Username, projectName, domains.domainName)
+	oss.Logger.Debugf(oss.Ctx, "OpenStack AuthOptions: Endpoint=%s, Username=%s, Project=%s, UserDomain(name=%s, id=%s), ProjectDomain(name=%s, id=%s)",
+		opts.IdentityEndpoint, opts.Username, projectName,
+		domains.domainName, domains.domainID, domains.projectDomainName, domains.projectDomainID)
 
 	// Setup custom HTTP client to respect validateCert
 	tlsConfig := &tls.Config{
