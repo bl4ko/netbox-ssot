@@ -89,9 +89,10 @@ func resolveDomainConfig(cfg *parser.SourceConfig) domainConfig {
 		projectDomainName = domainName
 	}
 	projectDomainID := cfg.ProjectDomainID
-	if projectDomainID == "" {
+	if projectDomainID == "" && cfg.ProjectDomainName == "" {
+		// Only inherit domainID when neither project domain field is explicitly set
 		projectDomainID = domainID
-	} else {
+	} else if projectDomainID != "" {
 		// Enforce ID precedence: if ID is set, clear Name to avoid ambiguity
 		projectDomainName = ""
 	}

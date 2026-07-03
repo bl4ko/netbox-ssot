@@ -107,7 +107,7 @@ func TestResolveDomainConfig(t *testing.T) {
 			expectedDomainName:        "",
 			expectedDomainID:          "user123",
 			expectedProjectDomainName: "ProjectDomain",
-			expectedProjectDomainID:   "user123", // Falls back to domainID
+			expectedProjectDomainID:   "", // Do not inherit user domainID when projectDomainName is explicit
 		},
 		{
 			name: "Complex: domainName set, projectDomainID explicit",
@@ -142,7 +142,7 @@ func TestResolveDomainConfig(t *testing.T) {
 			expectedDomainName:        "",
 			expectedDomainID:          "user789",
 			expectedProjectDomainName: "ProjectDomain",
-			expectedProjectDomainID:   "user789", // Falls back to domainID (converted from id| prefix)
+			expectedProjectDomainID:   "", // Do not inherit user domainID when projectDomainName is explicit
 		},
 		{
 			name: "Empty strings treated as not set",
