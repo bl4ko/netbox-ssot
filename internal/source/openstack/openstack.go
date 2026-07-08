@@ -69,8 +69,8 @@ func resolveDomainConfig(cfg *parser.SourceConfig) domainConfig {
 	domainName := cfg.DomainName
 	domainID := cfg.DomainID
 
-	// Handle id| prefix in domainName (same as MH WHMCS module)
-	if strings.HasPrefix(domainName, "id|") {
+	// Handle id| prefix in domainName (same as MH WHMCS module), but only when domainID is not explicitly set
+	if strings.HasPrefix(domainName, "id|") && domainID == "" {
 		domainID = strings.TrimPrefix(domainName, "id|")
 		domainName = ""
 	}
