@@ -279,7 +279,7 @@ func TestResolveDomainConfig_DefaultFallback(t *testing.T) {
 			cfg:  &parser.SourceConfig{},
 		},
 		{
-			name: "nil strings",
+			name: "empty strings",
 			cfg: &parser.SourceConfig{
 				DomainName: "",
 				DomainID:   "",
