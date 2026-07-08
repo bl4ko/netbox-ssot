@@ -196,6 +196,18 @@ func TestResolveDomainConfig_IDPrecedence(t *testing.T) {
 		}
 	})
 
+	t.Run("explicit domainID overrides id| in domainName", func(t *testing.T) {
+		cfg := &parser.SourceConfig{
+			DomainName: "id|fromName",
+			DomainID:   "fromField",
+		}
+		result := resolveDomainConfig(cfg)
+
+		if result.domainID != "fromField" {
+			t.Errorf("Expected domainID to prefer explicit DomainID, got %q", result.domainID)
+		}
+	})
+
 	t.Run("projectDomainID clears projectDomainName", func(t *testing.T) {
 		cfg := &parser.SourceConfig{
 			DomainName:        "UserDomain",
