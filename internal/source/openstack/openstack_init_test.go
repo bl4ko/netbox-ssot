@@ -260,7 +260,10 @@ func TestResolveDomainConfig_Fallbacks(t *testing.T) {
 
 		// Even though domainID would clear domainName, projectDomain* are explicit
 		if result.projectDomainName != "" {
-			t.Errorf("Expected projectDomainName to be cleared due to projectDomainID precedence, got %q", result.projectDomainName)
+			t.Errorf(
+				"Expected projectDomainName to be cleared due to projectDomainID precedence, got %q",
+				result.projectDomainName,
+			)
 		}
 		if result.projectDomainID != "proj456" {
 			t.Errorf("Expected projectDomainID = 'proj456', got %q", result.projectDomainID)

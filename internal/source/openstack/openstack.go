@@ -64,7 +64,7 @@ type domainConfig struct {
 // - id| prefix in domainName
 // - Default domain fallback
 // - ID precedence over Name
-// - ProjectDomain* fallback to Domain*
+// - ProjectDomain* fallback to Domain*.
 func resolveDomainConfig(cfg *parser.SourceConfig) domainConfig {
 	domainName := cfg.DomainName
 	domainID := cfg.DomainID
@@ -152,9 +152,23 @@ func (oss *Source) Init() error {
 		}
 	}
 
-	oss.Logger.Debugf(oss.Ctx, "OpenStack AuthOptions: Endpoint=%s, Username=%s, Project(name=%s, id=%s), UserDomain(name=%s, id=%s), ProjectDomain(name=%s, id=%s)",
-		opts.IdentityEndpoint, opts.Username, projectName, projectID,
-		domains.domainName, domains.domainID, domains.projectDomainName, domains.projectDomainID)
+	oss.Logger.Debugf(
+		oss.Ctx,
+		"OpenStack AuthOptions: "+
+			"Endpoint=%s, "+
+			"Username=%s, "+
+			"Project(name=%s, id=%s), "+
+			"UserDomain(name=%s, id=%s), "+
+			"ProjectDomain(name=%s, id=%s)",
+		opts.IdentityEndpoint,
+		opts.Username,
+		projectName,
+		projectID,
+		domains.domainName,
+		domains.domainID,
+		domains.projectDomainName,
+		domains.projectDomainID,
+	)
 
 	// Setup custom HTTP client to respect validateCert
 	tlsConfig := &tls.Config{
