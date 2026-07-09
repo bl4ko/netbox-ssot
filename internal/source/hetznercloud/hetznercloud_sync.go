@@ -157,7 +157,11 @@ func (hcs *Source) syncServer(
 			Name: server.Image.Description,
 			Slug: utils.Slugify(server.Image.Description),
 		}
-		netboxPlatform, _ = nbi.AddPlatform(hcs.Ctx, platform)
+		var err error
+		netboxPlatform, err = nbi.AddPlatform(hcs.Ctx, platform)
+		if err != nil {
+			return fmt.Errorf("add platform %q: %w", platform.Name, err)
+		}
 	}
 
 	status := &objects.VMStatusActive

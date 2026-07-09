@@ -572,11 +572,14 @@ func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 		splitTags := strings.Split(vm.Tags, ";")
 
 		for _, tag := range splitTags {
-			vmTag, _ := nbi.AddTag(ps.Ctx, &objects.Tag{
+			vmTag, err := nbi.AddTag(ps.Ctx, &objects.Tag{
 				Name:  tag,
 				Slug:  utils.Slugify(tag),
 				Color: constants.ColorGreen,
 			})
+			if err != nil {
+				return fmt.Errorf("add vm tag %q: %w", tag, err)
+			}
 
 			newTags = append(newTags, vmTag)
 		}
