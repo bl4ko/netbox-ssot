@@ -147,6 +147,8 @@ type SourceConfig struct {
 	ProjectID           string               `yaml:"projectID"`
 	DomainID            string               `yaml:"domainID"`
 	TenantID            string               `yaml:"tenantID"`
+	ProjectDomainName   string               `yaml:"projectDomainName"`
+	ProjectDomainID     string               `yaml:"projectDomainID"`
 	ClusterName         string               `yaml:"clusterName"`
 	ClusterType         string               `yaml:"clusterType"`
 	ClusterGroupName    string               `yaml:"clusterGroupName"`
@@ -222,6 +224,8 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		ProjectID                       string               `yaml:"projectID"`
 		DomainID                        string               `yaml:"domainID"`
 		TenantID                        string               `yaml:"tenantID"`
+		ProjectDomainName               string               `yaml:"projectDomainName"`
+		ProjectDomainID                 string               `yaml:"projectDomainID"`
 		ClusterName                     string               `yaml:"clusterName"`
 		ClusterType                     string               `yaml:"clusterType"`
 		ClusterGroupName                string               `yaml:"clusterGroupName"`
@@ -264,6 +268,8 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	sc.ProjectID = rawMarshal.ProjectID
 	sc.DomainID = rawMarshal.DomainID
 	sc.TenantID = rawMarshal.TenantID
+	sc.ProjectDomainName = rawMarshal.ProjectDomainName
+	sc.ProjectDomainID = rawMarshal.ProjectDomainID
 	sc.ClusterName = rawMarshal.ClusterName
 	sc.ClusterType = rawMarshal.ClusterType
 	sc.ClusterGroupName = rawMarshal.ClusterGroupName
