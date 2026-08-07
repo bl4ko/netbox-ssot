@@ -8,4 +8,4 @@ on:
     branches: [main]
 jobs:
   scan:
-    uses: bl4ko/shared-actions/.github/workflows/gitleaks.yml@7c2c9eaf35f71eca70d7c43bfd94523fa0ec78f1 # main
+    uses: bl4ko/shared-actions/.github/workflows/gitleaks.yml@2e0fe6fd804d614c80635dbd38c857f98d0f9b88 # main
