@@ -43,7 +43,7 @@ repos:
       - id: cspell
 
   - repo: https://github.com/google/osv-scanner/
-    rev: v2.5.0
+    rev: v2.5.1
     hooks:
       - id: osv-scanner
         args: ["-r", "."]
