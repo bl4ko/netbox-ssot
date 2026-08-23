@@ -18,7 +18,7 @@ func gbToMB(gb float32) int {
 	return int(gb * 1024) //nolint:mnd
 }
 
-func (hcs *Source) syncLocationsAndDatacenters(nbi *inventory.NetboxInventory) error {
+func (hcs *Source) syncLocations(nbi *inventory.NetboxInventory) error {
 	hcs.NetboxSites = make(map[string]*objects.Site)
 
 	for _, loc := range hcs.Locations {
@@ -46,37 +46,6 @@ func (hcs *Source) syncLocationsAndDatacenters(nbi *inventory.NetboxInventory) e
 		}
 
 		hcs.NetboxSites[loc.City] = netboxSite
-	}
-
-	hcs.NetboxLocations = make(map[string]*objects.Location)
-
-	for _, dc := range hcs.Datacenters {
-		var site *objects.Site
-		if dc.Location != nil {
-			site = hcs.NetboxSites[dc.Location.City]
-		}
-
-		location := &objects.Location{
-			NetboxObject: objects.NetboxObject{
-				Tags:        hcs.GetSourceTags(),
-				Description: dc.Description,
-				CustomFields: map[string]interface{}{
-					constants.CustomFieldSourceName:   hcs.SourceConfig.Name,
-					constants.CustomFieldSourceIDName: fmt.Sprintf("dc-%d", dc.ID),
-				},
-			},
-			Name:   dc.Name,
-			Slug:   utils.Slugify(dc.Name),
-			Status: &objects.SiteStatusActive,
-			Site:   site,
-		}
-
-		netboxLocation, err := nbi.AddLocation(hcs.Ctx, location)
-		if err != nil {
-			return fmt.Errorf("syncing datacenter location %s: %s", dc.Name, err)
-		}
-
-		hcs.NetboxLocations[dc.Name] = netboxLocation
 	}
 
 	return nil

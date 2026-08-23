@@ -80,49 +80,6 @@ func TestSourceSiteDedup(t *testing.T) {
 	}
 }
 
-func TestSourceDatacenterToLocationMapping(t *testing.T) {
-	hcs := newTestSource()
-
-	falkenstein := &objects.Site{Name: "Falkenstein"}
-	nuremberg := &objects.Site{Name: "Nuremberg"}
-	hcs.NetboxSites = map[string]*objects.Site{
-		"Falkenstein": falkenstein,
-		"Nuremberg":   nuremberg,
-	}
-
-	hcs.Datacenters = []*hcloud.Datacenter{
-		{ID: 1, Name: "fsn1-dc14", Description: "Falkenstein 1 DC14", Location: &hcloud.Location{City: "Falkenstein"}},
-		{ID: 2, Name: "nbg1-dc3", Description: "Nuremberg 1 DC3", Location: &hcloud.Location{City: "Nuremberg"}},
-		{ID: 3, Name: "fsn1-dc15", Description: "Falkenstein 1 DC15", Location: &hcloud.Location{City: "Falkenstein"}},
-	}
-
-	hcs.NetboxLocations = make(map[string]*objects.Location)
-	for _, dc := range hcs.Datacenters {
-		var site *objects.Site
-		if dc.Location != nil {
-			site = hcs.NetboxSites[dc.Location.City]
-		}
-		hcs.NetboxLocations[dc.Name] = &objects.Location{
-			Name: dc.Name,
-			Site: site,
-		}
-	}
-
-	if len(hcs.NetboxLocations) != 3 {
-		t.Errorf("expected 3 locations, got %d", len(hcs.NetboxLocations))
-	}
-
-	loc := hcs.NetboxLocations["fsn1-dc14"]
-	if loc.Site != falkenstein {
-		t.Error("fsn1-dc14 should be linked to Falkenstein site")
-	}
-
-	loc2 := hcs.NetboxLocations["nbg1-dc3"]
-	if loc2.Site != nuremberg {
-		t.Error("nbg1-dc3 should be linked to Nuremberg site")
-	}
-}
-
 func TestSourceServerStatusMapping(t *testing.T) {
 	tests := []struct {
 		name       string

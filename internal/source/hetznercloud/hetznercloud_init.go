@@ -17,16 +17,6 @@ func (hcs *Source) initLocations(ctx context.Context, client *hcloud.Client) err
 	return nil
 }
 
-func (hcs *Source) initDatacenters(ctx context.Context, client *hcloud.Client) error {
-	datacenters, err := client.Datacenter.All(ctx)
-	if err != nil {
-		return fmt.Errorf("fetching datacenters: %s", err)
-	}
-	hcs.Datacenters = datacenters
-	hcs.Logger.Debugf(hcs.Ctx, "Fetched %d datacenters", len(datacenters))
-	return nil
-}
-
 func (hcs *Source) initServers(ctx context.Context, client *hcloud.Client) error {
 	servers, err := client.Server.All(ctx)
 	if err != nil {
