@@ -1,6 +1,6 @@
 module github.com/bl4ko/netbox-ssot
 
-go 1.25.12
+go 1.26.0
 
 require (
 	github.com/PaloAltoNetworks/pango v0.10.2
@@ -12,7 +12,7 @@ require (
 	github.com/scrapli/scrapligo v1.4.1
 	github.com/src-doo/go-devicetype-library v0.1.56
 	github.com/vmware/govmomi v0.56.0
-	golang.org/x/text v0.41.0
+	golang.org/x/text v0.42.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
