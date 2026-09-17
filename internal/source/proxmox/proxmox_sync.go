@@ -25,13 +25,14 @@ func parseDiskSizeMiB(item string) int {
 	if !ok {
 		return 0
 	}
+	// Proxmox disk size suffixes are binary (GiB/TiB), so conversion to MiB must use 1024, not 1000.
 	switch {
 	case strings.HasSuffix(value, "G"):
 		size, _ := strconv.Atoi(strings.TrimSuffix(value, "G"))
-		return size * constants.KB
+		return size * constants.KiB
 	case strings.HasSuffix(value, "T"):
 		size, _ := strconv.Atoi(strings.TrimSuffix(value, "T"))
-		return size * constants.MB
+		return size * constants.KiB * constants.KiB
 	}
 	return 0
 }
@@ -272,8 +273,16 @@ func (ps *ProxmoxSource) syncVMs(nbi *inventory.NetboxInventory) error {
 	const maxGoroutines = 50
 	// Use a guard channel as semaphore to limit the number of goroutines
 	guard := make(chan struct{}, maxGoroutines)
-	// Use errChan to collect errors from goroutines
-	errChan := make(chan error, len(ps.Vms))
+	// Use errChan to collect errors from goroutines. It must be buffered for the total
+	// number of VMs, not the number of nodes (ps.Vms is keyed by node name): otherwise,
+	// once more VMs fail than there are nodes, further sends block forever because nothing
+	// drains errChan until after wg.Wait(), which itself can't return while those goroutines
+	// are stuck blocking on the send.
+	totalVMs := 0
+	for _, vms := range ps.Vms {
+		totalVMs += len(vms)
+	}
+	errChan := make(chan error, totalVMs)
 	// Use a WaitGroup to wait for all goroutines to complete
 	var wg sync.WaitGroup
 
@@ -555,7 +564,7 @@ func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 
 	// Compute final VM disk size
 	if vmTotalDiskSizeMiB == 0 {
-		vmTotalDiskSizeMiB = int((vm.MaxDisk / constants.GiB) * 1000) //nolint:gosec,mnd // MaxDisk/GiB fits in int
+		vmTotalDiskSizeMiB = int(vm.MaxDisk / constants.MiB) //nolint:gosec // MaxDisk/MiB fits in int
 	}
 
 	ps.Logger.Debugf(
