@@ -1,6 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "baseBranches": [
+  "baseBranchPatterns": [
     "main"
   ],
   "extends": [
@@ -13,11 +13,12 @@
   "pre-commit": {
     "enabled": true
   },
-  "regexManagers": [
+  "customManagers": [
     {
+      "customType": "regex",
       "description": "Update semantic-release version used by npx",
-      "fileMatch": [
-        "^\\.github/workflows/[^/]+\\.ya?ml$"
+      "managerFilePatterns": [
+        "/^\\.github/workflows/[^/]+\\.ya?ml$/"
       ],
       "matchStrings": [
         "\\srun: npx semantic-release@(?<currentValue>.*?)\\s"
@@ -33,7 +34,8 @@
         "minor",
         "patch",
         "pin",
-        "digest"
+        "digest",
+        "pinDigest"
       ],
       "automerge": true
     },
@@ -57,7 +59,7 @@
     },
     {
       "matchManagers": [
-        "regex"
+        "custom.regex"
       ],
       "groupName": "semantic-release",
       "automergeStrategy": "rebase"

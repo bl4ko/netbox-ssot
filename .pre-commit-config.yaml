@@ -11,7 +11,7 @@ repos:
       - id: check-case-conflict
 
   - repo: https://github.com/golangci/golangci-lint
-    rev: v2.13.1
+    rev: v2.13.2
     hooks:
       - id: golangci-lint
 
@@ -38,18 +38,18 @@ repos:
       - id: gitleaks
 
   - repo: https://github.com/streetsidesoftware/cspell-cli
-    rev: v10.0.1
+    rev: v10.2.0
     hooks:
       - id: cspell
 
   - repo: https://github.com/google/osv-scanner/
-    rev: v2.5.1
+    rev: v2.6.0
     hooks:
       - id: osv-scanner
         args: ["-r", "."]
 
   - repo: https://github.com/mxab/pre-commit-trivy.git
-    rev: v0.72.0
+    rev: 0.74.0
     hooks:
       - id: trivyfs-docker
         args:
