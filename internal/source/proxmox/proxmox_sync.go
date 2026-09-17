@@ -1012,6 +1012,8 @@ func proxmoxOSTypeToPlatformName(osType string) string {
 	switch osType {
 	case "l26":
 		return "Other 2.6.x Linux (64-bit)"
+	case "win10":
+		return "Windows 10"
 	case "win11":
 		return "Windows 11"
 	default:
