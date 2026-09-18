@@ -1,0 +1,14 @@
+logger:
+  level: 1
+  dest: ""
+
+netbox:
+  apiToken: "netbox-token"
+  hostname: netbox.example.com
+
+source:
+  - name: pve-test
+    type: proxmox
+    hostname: pve.example.com
+    username: "readonly@pve!netbox-ssot"
+    apiToken: "00000000-0000-0000-0000-000000000000"

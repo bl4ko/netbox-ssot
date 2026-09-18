@@ -156,6 +156,9 @@ func TestParseValidConfigs(t *testing.T) {
 		{
 			filename: "valid_config8.yaml",
 		},
+		{
+			filename: "valid_config9.yaml",
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.filename, func(t *testing.T) {
