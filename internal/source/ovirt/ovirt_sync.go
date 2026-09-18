@@ -2,6 +2,7 @@ package ovirt
 
 import (
 	"fmt"
+	"maps"
 	"strings"
 	"sync"
 
@@ -604,6 +605,12 @@ func (o *OVirtSource) syncHostNics(
 				}
 				if address == hostIP {
 					hostCopy := *nbHost
+					// CustomFields is a map, so the shallow copy above still shares it
+					// with the cached, concurrently-accessed nbHost; AddDevice mutates
+					// CustomFields in place before taking any lock, so without cloning
+					// here that write races with other goroutines reading the same
+					// cached object.
+					hostCopy.CustomFields = maps.Clone(nbHost.CustomFields)
 					hostCopy.PrimaryIPv4 = nbIPAddress
 					_, err := nbi.AddDevice(o.Ctx, &hostCopy)
 					if err != nil {
@@ -1508,6 +1515,10 @@ func (o *OVirtSource) processVMInterfaceIPs(
 							if vmIP != "" && vmIP == ipAddress ||
 								netboxVM.PrimaryIPv4 == nil {
 								vmCopy := *netboxVM
+								// See the CustomFields comment above hostCopy: this shallow
+								// copy still shares the CustomFields map with the cached
+								// original otherwise.
+								vmCopy.CustomFields = maps.Clone(netboxVM.CustomFields)
 								vmCopy.PrimaryIPv4 = newIPAddress
 								_, err := nbi.AddVM(o.Ctx, &vmCopy)
 								if err != nil {

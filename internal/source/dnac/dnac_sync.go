@@ -2,6 +2,7 @@ package dnac
 
 import (
 	"fmt"
+	"maps"
 	"strconv"
 	"strings"
 	"sync"
@@ -793,6 +794,11 @@ func (ds *DnacSource) syncMissingDevicePrimaryIPs(nbi *inventory.NetboxInventory
 				return false
 			}
 			updatedDevice := *nbDevice
+			// CustomFields is a map, so the shallow copy above still shares it with the
+			// cached, concurrently-accessed nbDevice; AddDevice mutates CustomFields in
+			// place before taking any lock, so without cloning here that write races
+			// with other goroutines reading the same cached object.
+			updatedDevice.CustomFields = maps.Clone(nbDevice.CustomFields)
 			updatedDevice.PrimaryIPv4 = nbIPAddress
 			_, err = nbi.AddDevice(ds.Ctx, &updatedDevice)
 			if err != nil {

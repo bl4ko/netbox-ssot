@@ -2,6 +2,7 @@ package proxmox
 
 import (
 	"fmt"
+	"maps"
 	"strconv"
 	"strings"
 	"sync"
@@ -752,6 +753,11 @@ func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *ob
 	// From all IPv4 addresses and IPv6 addresses determine primary ips
 	if len(vmIPv4Addresses) > 0 || len(vmIPv6Addresses) > 0 {
 		nbVMCopy := *nbVM
+		// CustomFields is a map, so the shallow copy above still shares it with the
+		// cached, concurrently-accessed nbVM; AddVM mutates CustomFields in place
+		// before taking any lock, so without cloning here that write races with
+		// other goroutines reading the same cached object.
+		nbVMCopy.CustomFields = maps.Clone(nbVM.CustomFields)
 		if len(vmIPv4Addresses) > 0 {
 			// TODO: add criteria for primary IPv4
 			nbVMCopy.PrimaryIPv4 = vmIPv4Addresses[0]
@@ -998,6 +1004,9 @@ func (ps *ProxmoxSource) syncContainerNetworks(
 	// From all IPv4 addresses and IPv6 addresses determine primary ips
 	if len(vmIPv4Addresses) > 0 || len(vmIPv6Addresses) > 0 {
 		nbContainerCopy := *nbContainer
+		// See the CustomFields comment in syncVMNetworks: this shallow copy still
+		// shares the CustomFields map with the cached original otherwise.
+		nbContainerCopy.CustomFields = maps.Clone(nbContainer.CustomFields)
 		if len(vmIPv4Addresses) > 0 {
 			// TODO: add criteria for primary IPv4
 			nbContainerCopy.PrimaryIPv4 = vmIPv4Addresses[0]

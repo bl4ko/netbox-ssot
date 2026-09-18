@@ -584,6 +584,10 @@ func validateSourceConfig(config *Config) error {
 		}
 		tokenOnlySources := externalSource.Type == constants.Fortigate ||
 			externalSource.Type == constants.HetznerCloud
+		// Proxmox accepts either username/password or an API token (username holds
+		// "user@realm!tokenid", apiToken holds the token secret): password isn't required
+		// when a token is given.
+		proxmoxTokenAuth := externalSource.Type == constants.Proxmox && externalSource.APIToken != ""
 		if externalSource.APIToken == "" && tokenOnlySources {
 			return fmt.Errorf(
 				"%s.apiToken is required for %s",
@@ -594,7 +598,7 @@ func validateSourceConfig(config *Config) error {
 		if externalSource.Username == "" && !tokenOnlySources {
 			return fmt.Errorf("%s.username: cannot be empty", externalSourceStr)
 		}
-		if externalSource.Password == "" && !tokenOnlySources {
+		if externalSource.Password == "" && !tokenOnlySources && !proxmoxTokenAuth {
 			return fmt.Errorf("%s.password: cannot be empty", externalSourceStr)
 		}
 		if externalSource.Tag == "" {
