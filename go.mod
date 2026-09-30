@@ -9,7 +9,7 @@ require (
 	github.com/hetznercloud/hcloud-go/v2 v2.49.0
 	github.com/luthermonson/go-proxmox v0.8.1
 	github.com/ovirt/go-ovirt v4.3.4+incompatible
-	github.com/scrapli/scrapligo v1.4.1
+	github.com/scrapli/scrapligo v1.4.2
 	github.com/src-doo/go-devicetype-library v0.1.56
 	github.com/vmware/govmomi v0.56.0
 	golang.org/x/text v0.42.0
