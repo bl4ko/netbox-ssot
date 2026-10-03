@@ -32,23 +32,32 @@ type ProxmoxSource struct {
 
 // Function that collects all data from Proxmox API and stores it in ProxmoxSource struct.
 func (ps *ProxmoxSource) Init() error {
-	// Setup credentials for proxmox
-	credentials := proxmox.Credentials{
-		Username: ps.SourceConfig.Username,
-		Password: ps.SourceConfig.Password,
-	}
-
 	// Create http client depending on ssl configuration
 	HTTPClient, err := utils.NewHTTPClient(ps.SourceConfig.ValidateCert, ps.SourceConfig.CAFile)
 	if err != nil {
 		return fmt.Errorf("error creating new HTTP client: %s", err)
 	}
 
+	clientOptions := []proxmox.Option{
+		proxmox.WithHTTPClient(HTTPClient),
+	}
+	if ps.SourceConfig.APIToken != "" {
+		// API token auth: username holds "user@realm!tokenid", apiToken holds the token secret.
+		clientOptions = append(
+			clientOptions,
+			proxmox.WithAPIToken(ps.SourceConfig.Username, ps.SourceConfig.APIToken),
+		)
+	} else {
+		clientOptions = append(clientOptions, proxmox.WithCredentials(&proxmox.Credentials{
+			Username: ps.SourceConfig.Username,
+			Password: ps.SourceConfig.Password,
+		}))
+	}
+
 	// Initialize proxmox client
 	client := proxmox.NewClient(fmt.Sprintf("%s://%s:%d/api2/json",
 		ps.SourceConfig.HTTPScheme, ps.SourceConfig.Hostname, ps.SourceConfig.Port),
-		proxmox.WithCredentials(&credentials),
-		proxmox.WithHTTPClient(HTTPClient),
+		clientOptions...,
 	)
 
 	ctx, cancel := context.WithCancel(context.Background())

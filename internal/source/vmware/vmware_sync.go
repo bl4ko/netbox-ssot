@@ -2,6 +2,7 @@ package vmware
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"strconv"
 	"strings"
@@ -834,6 +835,11 @@ func (vc *VmwareSource) setHostPrimaryIPAddress(
 			}
 		}
 		newHost := *nbHost
+		// CustomFields is a map, so the shallow copy above still shares it with the
+		// cached, concurrently-accessed nbHost; AddDevice mutates CustomFields in
+		// place before taking any lock, so without cloning here that write races
+		// with other goroutines reading the same cached object.
+		newHost.CustomFields = maps.Clone(nbHost.CustomFields)
 		newHost.PrimaryIPv4 = hostPrimaryIPv4
 		newHost.PrimaryIPv6 = hostPrimaryIPv6
 		_, err := nbi.AddDevice(vc.Ctx, &newHost)
@@ -1694,6 +1700,9 @@ func (vc *VmwareSource) setVMPrimaryIPAddress(
 			vmIPv6PrimaryAddress = nil
 		}
 		newNetboxVM := *netboxVM
+		// See the CustomFields comment above newHost: this shallow copy still shares
+		// the CustomFields map with the cached original otherwise.
+		newNetboxVM.CustomFields = maps.Clone(netboxVM.CustomFields)
 		newNetboxVM.PrimaryIPv4 = vmIPv4PrimaryAddress
 		newNetboxVM.PrimaryIPv6 = vmIPv6PrimaryAddress
 		_, err := nbi.AddVM(vc.Ctx, &newNetboxVM)
