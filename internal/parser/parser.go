@@ -93,12 +93,23 @@ type NetboxConfig struct {
 	CAFile                 string     `yaml:"caFile"`
 }
 
+// redactedSecret is printed in place of a non-empty secret in String() outputs.
+const redactedSecret = "***"
+
+// redact hides a secret value while still telling whether it is set.
+func redact(secret string) string {
+	if secret == "" {
+		return ""
+	}
+	return redactedSecret
+}
+
 func (n NetboxConfig) String() string {
 	return fmt.Sprintf(
 		"NetboxConfig{ApiToken: %s, Hostname: %s, Port: %d, "+
 			"HTTPScheme: %s, ValidateCert: %t, Timeout: %d, "+
 			"Tag: %s, TagColor: %s, RemoveOrphans: %t, RemoveOrphansAfterDays: %d}",
-		n.APIToken,
+		redact(n.APIToken),
 		n.Hostname,
 		n.Port,
 		n.HTTPScheme,
@@ -391,7 +402,7 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 func (sc SourceConfig) String() string {
 	return fmt.Sprintf(
 		"SourceConfig{Name: %s, Type: %s, HTTPScheme: %s, Hostname: %s, Port: %d, "+
-			"Username: %s, Password: %s, PermittedSubnets: %v, ValidateCert: %t, "+
+			"Username: %s, Password: %s, APIToken: %s, PermittedSubnets: %v, ValidateCert: %t, "+
 			"Tag: %s, TagColor: %s, AssignDomainName: %s, VlanPrefix: %s, "+
 			"clusterGroupName: %s, DatacenterClusterGroupRelations: %s, "+
 			"HostSiteRelations: %v, ClusterSiteRelations: %v, ClusterTenantRelations: %v, "+
@@ -403,7 +414,8 @@ func (sc SourceConfig) String() string {
 		sc.Hostname,
 		sc.Port,
 		sc.Username,
-		sc.Password,
+		redact(sc.Password),
+		redact(sc.APIToken),
 		sc.IgnoredSubnets,
 		sc.ValidateCert,
 		sc.Tag,

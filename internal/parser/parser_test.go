@@ -408,3 +408,28 @@ func TestParseConfigInvalidConfigs(t *testing.T) {
 		})
 	}
 }
+
+func TestConfigStringRedactsSecrets(t *testing.T) {
+	const secret = "s3cr3t-value"
+	tests := []struct {
+		name   string
+		object fmt.Stringer
+	}{
+		{name: "netbox api token", object: NetboxConfig{APIToken: secret, Hostname: "netbox.example.com"}},
+		{name: "source password", object: SourceConfig{Name: "pve", Password: secret}},
+		{name: "source api token", object: SourceConfig{Name: "pve", APIToken: secret}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			for _, format := range []string{"%s", "%v", "%+v"} {
+				out := fmt.Sprintf(format, tt.object)
+				if strings.Contains(out, secret) {
+					t.Errorf("Sprintf(%q) leaks the secret: %s", format, out)
+				}
+				if !strings.Contains(out, "***") {
+					t.Errorf("Sprintf(%q) does not show the redaction marker: %s", format, out)
+				}
+			}
+		})
+	}
+}
