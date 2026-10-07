@@ -2,7 +2,13 @@ package inventory
 
 import (
 	"context"
+	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"reflect"
+	"strings"
+	"sync"
 	"testing"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
@@ -1310,5 +1316,96 @@ func TestAddPrefixDoesNotAdoptManualPrefix(t *testing.T) {
 	}
 	if manualPrefix.HasTagByName(constants.SsotTagName) {
 		t.Errorf("manual prefix was tagged %s", constants.SsotTagName)
+	}
+}
+
+// newDuplicateIPServer fakes a NetBox that refuses to create a duplicate IP address
+// and lists existingIPsJSON for it. It records the IDs of the patched IP addresses.
+func newDuplicateIPServer(t *testing.T, existingIPsJSON string) (*service.NetboxClient, func() []string) {
+	t.Helper()
+	var mu sync.Mutex
+	patched := []string{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = io.WriteString(w, `{"address":["Duplicate IP address found in global table: 10.0.0.5/24"]}`)
+		case http.MethodGet:
+			_, _ = io.WriteString(w, fmt.Sprintf(`{"count":1,"next":null,"previous":null,"results":%s}`, existingIPsJSON))
+		case http.MethodPatch:
+			mu.Lock()
+			patched = append(patched, strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/api/ipam/ip-addresses/"), "/"))
+			mu.Unlock()
+			_, _ = io.WriteString(w, `{"id":1,"address":"10.0.0.5/24"}`)
+		}
+	}))
+	t.Cleanup(server.Close)
+	client := &service.NetboxClient{
+		HTTPClient: &http.Client{},
+		Logger:     mockLogger,
+		BaseURL:    server.URL,
+		APIToken:   "testtoken",
+		Timeout:    constants.DefaultAPITimeout,
+	}
+	return client, func() []string {
+		mu.Lock()
+		defer mu.Unlock()
+		out := make([]string, len(patched))
+		copy(out, patched)
+		return out
+	}
+}
+
+func TestAddIPAddressDuplicateOnlyReassignsUnassignedIPOfSameVRF(t *testing.T) {
+	tests := []struct {
+		name        string
+		existingIPs string
+		wantErr     bool
+		wantPatched []string
+	}{
+		{
+			name:        "IP assigned to another object is not taken over",
+			existingIPs: `[{"id":100,"address":"10.0.0.5/24","assigned_object_type":"dcim.interface","assigned_object_id":7}]`,
+			wantErr:     true,
+			wantPatched: []string{},
+		},
+		{
+			name:        "unassigned IP of another VRF is not taken over",
+			existingIPs: `[{"id":101,"address":"10.0.0.5/24","vrf":{"id":5,"name":"mgmt"}}]`,
+			wantErr:     true,
+			wantPatched: []string{},
+		},
+		{
+			name: "unassigned IP of the same VRF is reassigned",
+			existingIPs: `[{"id":102,"address":"10.0.0.5/24","assigned_object_type":"dcim.interface","assigned_object_id":7},` +
+				`{"id":103,"address":"10.0.0.5/24"}]`,
+			wantErr:     false,
+			wantPatched: []string{"103"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client, patched := newDuplicateIPServer(t, tt.existingIPs)
+			nbi := &NetboxInventory{
+				Logger:           mockLogger,
+				OrphanManager:    NewOrphanManager(mockLogger),
+				SsotTag:          &objects.Tag{ID: 1, Name: constants.SsotTagName},
+				SourcePriority:   map[string]int{},
+				NetboxAPI:        client,
+				ipAddressesIndex: map[constants.ContentType]map[string]map[string]map[string]*objects.IPAddress{},
+			}
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "proxmox-a")
+			_, err := nbi.AddIPAddress(ctx, &objects.IPAddress{
+				Address:            "10.0.0.5/24",
+				AssignedObjectType: constants.ContentTypeVirtualizationVMInterface,
+				AssignedObjectID:   60,
+			})
+			if (err != nil) != tt.wantErr {
+				t.Errorf("AddIPAddress() error = %v, wantErr %t", err, tt.wantErr)
+			}
+			if got := patched(); !reflect.DeepEqual(got, tt.wantPatched) {
+				t.Errorf("patched IP addresses = %v, want %v", got, tt.wantPatched)
+			}
+		})
 	}
 }
