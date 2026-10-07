@@ -331,6 +331,10 @@ func (ps *ProxmoxSource) syncVMs(nbi *inventory.NetboxInventory) error {
 
 	for nodeName, vms := range ps.Vms {
 		nbHost := ps.NetboxNodes[nodeName]
+		if nbHost == nil {
+			ps.Logger.Warningf(ps.Ctx, "skipping %d vms of node %s: node is not synced to netbox", len(vms), nodeName)
+			continue
+		}
 
 		// Iterate over each VM and start a goroutine to sync it
 		for _, vm := range vms {
@@ -829,6 +833,15 @@ func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 		}
 		for nodeName, containers := range ps.Containers {
 			nbHost := ps.NetboxNodes[nodeName]
+			if nbHost == nil {
+				ps.Logger.Warningf(
+					ps.Ctx,
+					"skipping %d containers of node %s: node is not synced to netbox",
+					len(containers),
+					nodeName,
+				)
+				continue
+			}
 			for _, container := range containers {
 				// Determine Container status
 				containerStatus := &objects.VMStatusActive

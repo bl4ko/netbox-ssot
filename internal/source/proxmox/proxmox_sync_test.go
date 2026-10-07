@@ -319,3 +319,35 @@ func TestParseDiskSizeMiB(t *testing.T) {
 		})
 	}
 }
+
+func TestSyncStopsWhenClusterFailsEvenWithContinueOnError(t *testing.T) {
+	nbi := inventory.MockInventory
+	saved := nbi.NetboxAPI
+	nbi.NetboxAPI = service.FailingMockNetboxClient
+	defer func() { nbi.NetboxAPI = saved }()
+
+	ps := newTestSource(t, &parser.SourceConfig{ContinueOnError: true})
+	ps.NetboxCluster = nil
+	ps.Cluster = &proxmox.Cluster{Name: "failing-cluster-type"}
+	ps.Nodes = []*proxmox.Node{{Name: "n1"}}
+
+	if err := ps.Sync(nbi); err == nil {
+		t.Errorf("Sync() = nil, want the cluster error")
+	}
+}
+
+func TestSyncVMsAndContainersSkipGuestsWithoutHost(t *testing.T) {
+	service.MockNetboxClient.DryRun = true
+	nbi := inventory.MockInventory
+	ps := newTestSource(t, &parser.SourceConfig{})
+	ps.NetboxNodes = map[string]*objects.Device{}
+	ps.Vms = map[string][]*proxmox.VirtualMachine{"missing-node": {newTestVM("orphan-guest-vm", 301)}}
+	ps.Containers = map[string][]*proxmox.Container{"missing-node": {{Name: "orphan-guest-ct", VMID: 302}}}
+
+	if err := ps.syncVMs(nbi); err != nil {
+		t.Errorf("syncVMs() error = %v, want the VM skipped", err)
+	}
+	if err := ps.syncContainers(nbi); err != nil {
+		t.Errorf("syncContainers() error = %v, want the container skipped", err)
+	}
+}
