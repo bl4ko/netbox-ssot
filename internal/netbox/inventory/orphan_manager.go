@@ -6,6 +6,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/logger"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
 type OrphanManager struct {
@@ -79,12 +80,20 @@ func NewOrphanManager(logger *logger.Logger) *OrphanManager {
 func (orphanManager *OrphanManager) AddItem(orphanItem objects.OrphanItem) {
 	// Manage only objects created with netbox-ssot tag
 	netboxObject := orphanItem.GetNetboxObject()
-	if netboxObject.HasTagByName(constants.SsotTagName) {
-		if orphanManager.Items[orphanItem.GetAPIPath()] == nil {
-			orphanManager.Items[orphanItem.GetAPIPath()] = map[int]objects.OrphanItem{}
-		}
-		orphanManager.Items[orphanItem.GetAPIPath()][netboxObject.ID] = orphanItem
+	if !netboxObject.HasTagByName(constants.SsotTagName) {
+		return
 	}
+	// Objects that another tool also tags with its own source tag are shared:
+	// deleting them would break that tool's objects (e.g. platforms of vCenter VMs).
+	for _, tag := range netboxObject.Tags {
+		if utils.IsForeignSourceTag(tag.Name) {
+			return
+		}
+	}
+	if orphanManager.Items[orphanItem.GetAPIPath()] == nil {
+		orphanManager.Items[orphanItem.GetAPIPath()] = map[int]objects.OrphanItem{}
+	}
+	orphanManager.Items[orphanItem.GetAPIPath()][netboxObject.ID] = orphanItem
 }
 
 func (orphanManager *OrphanManager) RemoveItem(obj objects.OrphanItem) {

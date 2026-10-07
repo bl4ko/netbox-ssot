@@ -78,6 +78,13 @@ func main() {
 	}
 	ssotLogger.Debug(mainCtx, "Netbox inventory initialized: ", netboxInventory)
 
+	// Register the source tags owned by netbox-ssot, so tags of other tools are left alone
+	sourceTagNames := make([]string, 0, len(config.Sources))
+	for _, sourceConfig := range config.Sources {
+		sourceTagNames = append(sourceTagNames, sourceConfig.Tag)
+	}
+	netboxInventory.RegisterManagedSourceTags(sourceTagNames)
+
 	// Variable to store if the run was successful. If it wasn't we don't remove orphans.
 	successfullRun := true
 	// Variable to store failed sourcesFalse

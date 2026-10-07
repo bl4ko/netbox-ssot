@@ -214,8 +214,9 @@ func JSONDiffMapExceptID(
 
 // mergeTagSlices merges two slices of *objects.Tag.
 // It keeps all tags from existingSlice that are NOT managed by netbox-ssot
-// (i.e. tags whose name does not start with "Source:"),
-// and replaces/adds all tags from newSlice.
+// (i.e. tags other than its own configured source tags and internal tags),
+// and replaces/adds all tags from newSlice. Source tags of other tools, which
+// share the "Source: " prefix, are kept.
 // Returns the merged slice as []IDObject, whether it changed, and an error.
 func mergeTagSlices(
 	newSlice reflect.Value,
@@ -256,7 +257,7 @@ func mergeTagSlices(
 	}
 
 	// Add existing tags that are NOT managed by netbox-ssot source tagging
-	// A tag is considered "managed by source" if its name starts with "Source: "
+	// A tag is considered "managed by source" if it is one of the configured source tags
 	if existingSlice.IsValid() {
 		for i := 0; i < existingSlice.Len(); i++ {
 			elem := existingSlice.Index(i)
@@ -272,7 +273,7 @@ func mergeTagSlices(
 			default:
 				return nil, false, fmt.Errorf("existing tag slice contains non-Tag element")
 			}
-			isManagedBySource := strings.HasPrefix(tag.Name, "Source: ") ||
+			isManagedBySource := IsManagedSourceTag(tag.Name) ||
 				tag.Name == constants.SsotTagName ||
 				tag.Name == constants.OrphanTagName ||
 				tag.Name == constants.IgnoreDeviceTypeTagName

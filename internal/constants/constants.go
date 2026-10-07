@@ -22,6 +22,10 @@ const SsotTagColor = "00add8"
 const SsotTagName = "netbox-ssot"
 const SsotTagDescription = "Tag used by netbox-ssot to mark devices that are managed by it"
 
+// SourceTagDescriptionPrefix starts the description of every per-source tag netbox-ssot
+// creates; it tells netbox-ssot's source tags apart from other tools' ones.
+const SourceTagDescriptionPrefix = "Automatically created tag by netbox-ssot for source "
+
 const OrphanTagName = "netbox-ssot-orphan"
 const OrphanTagColor = ColorGrey
 const OrphanTagDescription = "Tag used by netbox-ssot to mark orphaned objects"

@@ -460,7 +460,34 @@ func TestMapAttributeDiff(t *testing.T) {
 	}
 }
 
+func TestMergeTagSlicesKeepsForeignSourceTags(t *testing.T) {
+	SetManagedSourceTagNames([]string{"Source: proxmox-a", "Source: proxmox-b"})
+	t.Cleanup(func() { SetManagedSourceTagNames(nil) })
+
+	newTags := []*objects.Tag{{ID: 1, Name: "Source: proxmox-a"}}
+	existingTags := []*objects.Tag{
+		{ID: 2, Name: "Source: proxmox-b"},
+		{ID: 3, Name: "Source: vcenter.example"},
+		{ID: 4, Name: "NetBox-synced"},
+		{ID: 5, Name: constants.SsotTagName},
+	}
+	merged, changed, err := mergeTagSlices(reflect.ValueOf(newTags), reflect.ValueOf(existingTags))
+	if err != nil {
+		t.Fatalf("mergeTagSlices() error = %v", err)
+	}
+	if !changed {
+		t.Errorf("mergeTagSlices() changed = false, want true")
+	}
+	want := []IDObject{{ID: 1}, {ID: 3}, {ID: 4}}
+	if !reflect.DeepEqual(merged, want) {
+		t.Errorf("mergeTagSlices() = %v, want %v", merged, want)
+	}
+}
+
 func TestPriorityMergeDiff(t *testing.T) {
+	SetManagedSourceTagNames([]string{"Source: test1", "Source: test2"})
+	t.Cleanup(func() { SetManagedSourceTagNames(nil) })
+
 	tests := []struct {
 		name           string
 		newStruct      interface{}
@@ -507,7 +534,7 @@ func TestPriorityMergeDiff(t *testing.T) {
 				"custom_fields": map[string]interface{}{
 					constants.CustomFieldSourceName: "test1",
 				},
-				"tags": []IDObject{{ID: 1}, {ID: 2}},
+				"tags": []IDObject{{ID: 1}, {ID: 2}, {ID: 3}},
 			},
 		},
 		{
@@ -1269,6 +1296,9 @@ func Test_sliceToSet(t *testing.T) {
 }
 
 func TestMergeTagSlices(t *testing.T) {
+	SetManagedSourceTagNames([]string{"Source: test1", "Source: test2", "Source: old-source"})
+	t.Cleanup(func() { SetManagedSourceTagNames(nil) })
+
 	tests := []struct {
 		name         string
 		newTags      []*objects.Tag
