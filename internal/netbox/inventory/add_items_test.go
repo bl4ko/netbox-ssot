@@ -1475,3 +1475,62 @@ func TestAddClusterIsScopedBySource(t *testing.T) {
 		t.Errorf("AddCluster(legacy-cluster) ID = %d, want the existing unowned cluster %d", adopted.ID, unownedCluster.ID)
 	}
 }
+
+func TestAddIPAddressDuplicateReturnsLookupAndPatchErrors(t *testing.T) {
+	permissionDenied := `{"detail":"You do not have permission to perform this action."}`
+	tests := []struct {
+		name      string
+		failGet   bool
+		failPatch bool
+	}{
+		{name: "lookup of the existing IP fails", failGet: true},
+		{name: "reassignment of the existing IP fails", failPatch: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testAddIPAddressDuplicateError(t, permissionDenied, tt.failGet, tt.failPatch)
+		})
+	}
+}
+
+func testAddIPAddressDuplicateError(t *testing.T, failure string, failGet, failPatch bool) {
+	t.Helper()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodPost:
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = io.WriteString(w, `{"address":["Duplicate IP address found in global table: 10.0.0.5/24"]}`)
+		case r.Method == http.MethodGet && failGet, r.Method == http.MethodPatch && failPatch:
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = io.WriteString(w, failure)
+		case r.Method == http.MethodGet:
+			_, _ = io.WriteString(w, `{"count":1,"next":null,"previous":null,"results":[{"id":103,"address":"10.0.0.5/24"}]}`)
+		case r.Method == http.MethodPatch:
+			_, _ = io.WriteString(w, `{"id":103,"address":"10.0.0.5/24"}`)
+		}
+	}))
+	defer server.Close()
+	nbi := &NetboxInventory{
+		Logger:         mockLogger,
+		OrphanManager:  NewOrphanManager(mockLogger),
+		SsotTag:        &objects.Tag{ID: 1, Name: constants.SsotTagName},
+		SourcePriority: map[string]int{},
+		NetboxAPI: &service.NetboxClient{
+			HTTPClient: &http.Client{},
+			Logger:     mockLogger,
+			BaseURL:    server.URL,
+			APIToken:   "testtoken",
+			Timeout:    constants.DefaultAPITimeout,
+		},
+		ipAddressesIndex: map[constants.ContentType]map[string]map[string]map[string]*objects.IPAddress{},
+	}
+	ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "proxmox-a")
+
+	_, err := nbi.AddIPAddress(ctx, &objects.IPAddress{Address: "10.0.0.5/24"})
+	if err == nil {
+		t.Fatalf("AddIPAddress() = nil error, want the NetBox failure")
+	}
+	if !strings.Contains(err.Error(), "permission") {
+		t.Errorf("AddIPAddress() error = %q, want the NetBox failure (permission denied)", err)
+	}
+}
