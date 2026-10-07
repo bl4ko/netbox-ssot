@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"sync"
 	"unicode"
 
 	"github.com/bl4ko/netbox-ssot/internal/logger"
@@ -102,8 +103,19 @@ func FilterInterfaceName(ifaceName string, ifaceFilter string) bool {
 	if ifaceFilter == "" {
 		return false
 	}
-	compiledFilter := regexp.MustCompile(ifaceFilter)
-	return compiledFilter.MatchString(ifaceName)
+	return compiledInterfaceFilter(ifaceFilter).MatchString(ifaceName)
+}
+
+// interfaceFilters caches compiled interface filters by pattern, so that each
+// filter is compiled once instead of once per interface.
+var interfaceFilters sync.Map
+
+func compiledInterfaceFilter(ifaceFilter string) *regexp.Regexp {
+	if compiledFilter, ok := interfaceFilters.Load(ifaceFilter); ok {
+		return compiledFilter.(*regexp.Regexp) //nolint:forcetypeassert
+	}
+	compiledFilter, _ := interfaceFilters.LoadOrStore(ifaceFilter, regexp.MustCompile(ifaceFilter))
+	return compiledFilter.(*regexp.Regexp) //nolint:forcetypeassert
 }
 
 // ExtractFunctionName attempts to extract the name of a function regardless of its signature.
