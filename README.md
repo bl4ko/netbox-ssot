@@ -17,6 +17,8 @@ Currently, the supported external data sources types are:
 
 - [`ovirt`](https://www.ovirt.org/)
 - [`vmware`](https://www.vmware.com/products/cloud-infrastructure/vsphere)
+  - Clusters are named `<cluster> (<datacenter>)` in NetBox, since a vSphere cluster name is only unique within its datacenter.
+    A cluster created as `<cluster>` by an earlier version is renamed in place, keeping its hosts and VMs
 - [`dnac`](https://www.cisco.com/site/us/en/products/networking/catalyst-center/index.html)
 - [`proxmox`](https://www.proxmox.com/en/)
 - [`paloalto`](https://www.paloaltonetworks.com/network-security/next-generation-firewall)

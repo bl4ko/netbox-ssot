@@ -585,6 +585,27 @@ func (nbi *NetboxInventory) AddClusterType(
 	return newClusterType, nil
 }
 
+// RenameCluster renames cluster in NetBox and in the inventory, keeping its ID and so
+// the devices and VMs attached to it. It returns the renamed cluster.
+func (nbi *NetboxInventory) RenameCluster(
+	ctx context.Context,
+	cluster *objects.Cluster,
+	newName string,
+) (*objects.Cluster, error) {
+	nbi.clustersLock.Lock()
+	defer nbi.clustersLock.Unlock()
+	nbi.Logger.Infof(ctx, "Renaming cluster %s to %s", cluster.Name, newName)
+	_, err := service.Patch[objects.Cluster](ctx, nbi.NetboxAPI, cluster.ID, map[string]interface{}{"name": newName})
+	if err != nil {
+		return nil, fmt.Errorf("rename cluster %s to %s: %s", cluster.Name, newName, err)
+	}
+	renamed := *cluster
+	renamed.Name = newName
+	delete(nbi.clustersIndexByName, cluster.Name)
+	nbi.clustersIndexByName[newName] = &renamed
+	return &renamed, nil
+}
+
 // AddCluster adds a new cluster to the Netbox inventory.
 // It takes a context and a pointer to a Cluster object as input.
 // It returns the newly created cluster object and an error, if any.

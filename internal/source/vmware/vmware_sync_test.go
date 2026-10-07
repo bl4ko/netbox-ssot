@@ -515,3 +515,92 @@ func BenchmarkCollectVMInterfaceDataWideTrunk(b *testing.B) {
 		}
 	}
 }
+
+func TestSyncClustersQualifiesClusterNamesWithTheirDatacenter(t *testing.T) {
+	nbi, defaultSite := newTestInventory(t)
+	vc := newTestSource(t, &parser.SourceConfig{})
+	newCluster := func(id, name string) mo.ClusterComputeResource {
+		cluster := mo.ClusterComputeResource{}
+		cluster.Self = types.ManagedObjectReference{Type: "ClusterComputeResource", Value: id}
+		cluster.Name = name
+		return cluster
+	}
+	newDatacenter := func(id, name string) mo.Datacenter {
+		datacenter := mo.Datacenter{}
+		datacenter.Self = types.ManagedObjectReference{Type: "Datacenter", Value: id}
+		datacenter.Name = name
+		return datacenter
+	}
+	vc.DataCenters = map[string]mo.Datacenter{
+		"datacenter-1": newDatacenter("datacenter-1", "dc-homonym-a"),
+		"datacenter-2": newDatacenter("datacenter-2", "dc-homonym-b"),
+	}
+	vc.Clusters = map[string]mo.ClusterComputeResource{
+		"domain-c1": newCluster("domain-c1", "Homonym01"),
+		"domain-c2": newCluster("domain-c2", "Homonym01"),
+	}
+	vc.Cluster2Datacenter = map[string]string{"domain-c1": "datacenter-1", "domain-c2": "datacenter-2"}
+	vc.Hosts = map[string]mo.HostSystem{
+		"host-81": newTestHost("host-81", "esx-homonym-a"),
+		"host-82": newTestHost("host-82", "esx-homonym-b"),
+	}
+	vc.Host2Cluster = map[string]string{"host-81": "domain-c1", "host-82": "domain-c2"}
+
+	if err := vc.syncDatacenters(nbi); err != nil {
+		t.Fatalf("syncDatacenters() error = %v", err)
+	}
+	if err := vc.syncClusters(nbi); err != nil {
+		t.Fatalf("syncClusters() error = %v", err)
+	}
+	if err := vc.syncHosts(nbi); err != nil {
+		t.Fatalf("syncHosts() error = %v", err)
+	}
+	tests := []struct{ hostName, wantCluster string }{
+		{hostName: "esx-homonym-a", wantCluster: "Homonym01 (dc-homonym-a)"},
+		{hostName: "esx-homonym-b", wantCluster: "Homonym01 (dc-homonym-b)"},
+	}
+	for _, tt := range tests {
+		host, ok := nbi.GetDevice(tt.hostName, defaultSite.ID)
+		if !ok {
+			t.Errorf("host %s not synced", tt.hostName)
+			continue
+		}
+		if host.Cluster == nil || host.Cluster.Name != tt.wantCluster {
+			t.Errorf("host %s cluster = %v, want %s", tt.hostName, host.Cluster, tt.wantCluster)
+		}
+	}
+}
+
+func TestSyncClustersRenamesClustersNamedBeforeQualification(t *testing.T) {
+	nbi, _ := newTestInventory(t)
+	vc := newTestSource(t, &parser.SourceConfig{})
+	legacy, err := nbi.AddCluster(vc.Ctx, &objects.Cluster{
+		NetboxObject: objects.NetboxObject{
+			CustomFields: map[string]interface{}{constants.CustomFieldSourceIDName: "domain-c9"},
+		},
+		Name: "Legacy01",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cluster := mo.ClusterComputeResource{}
+	cluster.Self = types.ManagedObjectReference{Type: "ClusterComputeResource", Value: "domain-c9"}
+	cluster.Name = "Legacy01"
+	datacenter := mo.Datacenter{}
+	datacenter.Self = types.ManagedObjectReference{Type: "Datacenter", Value: "datacenter-9"}
+	datacenter.Name = "dc-legacy"
+	vc.Clusters = map[string]mo.ClusterComputeResource{"domain-c9": cluster}
+	vc.DataCenters = map[string]mo.Datacenter{"datacenter-9": datacenter}
+	vc.Cluster2Datacenter = map[string]string{"domain-c9": "datacenter-9"}
+
+	if err := vc.syncClusters(nbi); err != nil {
+		t.Fatalf("syncClusters() error = %v", err)
+	}
+	renamed, ok := nbi.GetCluster("Legacy01 (dc-legacy)")
+	if !ok || renamed.ID != legacy.ID {
+		t.Errorf("cluster Legacy01 (dc-legacy) = %v, want cluster %d renamed in place", renamed, legacy.ID)
+	}
+	if _, ok := nbi.GetCluster("Legacy01"); ok {
+		t.Errorf("cluster Legacy01 still indexed under its former name")
+	}
+}

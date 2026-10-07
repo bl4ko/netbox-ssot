@@ -150,8 +150,12 @@ func (vc *VmwareSource) syncClusters(nbi *inventory.NetboxInventory) error {
 	}
 	// Then sync vmware Clusters as NetBoxClusters
 	for clusterID, cluster := range vc.Clusters {
+		// Relations match the vSphere cluster name, NetBox gets the qualified one
 		clusterName := cluster.Name
 		clusterTags := vc.Object2NBTags[clusterID]
+		if err := vc.renameUnqualifiedCluster(nbi, clusterID); err != nil {
+			return err
+		}
 
 		var clusterGroup *objects.ClusterGroup
 		datacenterID := vc.Cluster2Datacenter[clusterID]
@@ -194,7 +198,7 @@ func (vc *VmwareSource) syncClusters(nbi *inventory.NetboxInventory) error {
 					constants.CustomFieldSourceIDName: clusterID,
 				},
 			},
-			Name:      clusterName,
+			Name:      vc.netboxClusterName(clusterID),
 			Type:      clusterType,
 			Status:    objects.ClusterStatusActive,
 			Group:     clusterGroup,
@@ -236,7 +240,10 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 			return fmt.Errorf("hostTenant: %s", err)
 		}
 
-		hostCluster, _ := nbi.GetCluster(vc.Clusters[vc.Host2Cluster[hostID]].Name)
+		var hostCluster *objects.Cluster
+		if clusterID, ok := vc.Host2Cluster[hostID]; ok {
+			hostCluster, _ = nbi.GetCluster(vc.netboxClusterName(clusterID))
+		}
 		if hostCluster == nil {
 			// Create a hypothetical cluster https://github.com/bl4ko/netbox-ssot/issues/141
 			hostCluster, err = vc.createHypotheticalCluster(nbi, hostName, hostSite, hostTenant)
@@ -1804,7 +1811,44 @@ func (vc *VmwareSource) createHypotheticalCluster(
 	return nbCluster, nil
 }
 
-// getVlan returns the NetBox VLAN with the given VID, in the VLAN group matched from
+// netboxClusterName returns the NetBox name of a vSphere cluster, qualified with its
+// datacenter: a cluster name is only unique within a datacenter.
+func (vc *VmwareSource) netboxClusterName(clusterID string) string {
+	clusterName := vc.Clusters[clusterID].Name
+	datacenter, ok := vc.DataCenters[vc.Cluster2Datacenter[clusterID]]
+	if !ok || datacenter.Name == "" {
+		return clusterName
+	}
+	return fmt.Sprintf("%s (%s)", clusterName, datacenter.Name)
+}
+
+// renameUnqualifiedCluster renames the NetBox cluster of a vSphere cluster that is still
+// named without its datacenter, as before qualified names: renaming keeps its ID and so
+// its hosts and VMs, which would otherwise be created again in a new cluster.
+func (vc *VmwareSource) renameUnqualifiedCluster(nbi *inventory.NetboxInventory, clusterID string) error {
+	unqualifiedName := vc.Clusters[clusterID].Name
+	qualifiedName := vc.netboxClusterName(clusterID)
+	if qualifiedName == unqualifiedName {
+		return nil
+	}
+	if _, ok := nbi.GetCluster(qualifiedName); ok {
+		return nil
+	}
+	legacy, ok := nbi.GetCluster(unqualifiedName)
+	if !ok {
+		return nil
+	}
+	// Only the cluster this vSphere cluster created, not a homonym of another source
+	if sourceID, _ := legacy.GetCustomField(constants.CustomFieldSourceIDName).(string); sourceID != clusterID {
+		return nil
+	}
+	if _, err := nbi.RenameCluster(vc.Ctx, legacy, qualifiedName); err != nil {
+		return fmt.Errorf("rename cluster: %s", err)
+	}
+	return nil
+}
+
+// getVlan returns// getVlan returns the NetBox VLAN with the given VID, in the VLAN group matched from
 // the name of the distributed port group carrying it, or nil when it does not exist.
 // vlanGroups caches the VLAN group of each VLAN name: a wide trunk carries thousands
 // of VLANs, most of them unnamed, which all resolve to the same group.
