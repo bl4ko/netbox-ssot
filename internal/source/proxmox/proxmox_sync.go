@@ -112,10 +112,9 @@ func (ps *ProxmoxSource) syncNodes(nbi *inventory.NetboxInventory) error {
 	for _, node := range ps.Nodes {
 		var hostSite *objects.Site
 
-		// Add domain name suffix if needed
-		if ps.SourceConfig.AssignDomainName != "" {
-			node.Name += ps.SourceConfig.AssignDomainName
-		}
+		// NetBox host name, with the domain name suffix if needed. node.Name stays the
+		// Proxmox name, which keys NodeIfaces, Vms, Containers and NetboxNodes.
+		hostName := node.Name + ps.SourceConfig.AssignDomainName
 
 		if ps.NetboxCluster.ScopeType == constants.ContentTypeDcimSite {
 			hostSite = nbi.GetSiteByID(ps.NetboxCluster.ScopeID)
@@ -126,7 +125,7 @@ func (ps *ProxmoxSource) syncNodes(nbi *inventory.NetboxInventory) error {
 			hostSite, err = common.MatchHostToSite(
 				ps.Ctx,
 				nbi,
-				node.Name,
+				hostName,
 				ps.SourceConfig.HostSiteRelations,
 			)
 			if err != nil {
@@ -137,7 +136,7 @@ func (ps *ProxmoxSource) syncNodes(nbi *inventory.NetboxInventory) error {
 		hostTenant, err := common.MatchHostToTenant(
 			ps.Ctx,
 			nbi,
-			node.Name,
+			hostName,
 			ps.SourceConfig.HostTenantRelations,
 		)
 		if err != nil {
@@ -179,7 +178,7 @@ func (ps *ProxmoxSource) syncNodes(nbi *inventory.NetboxInventory) error {
 			hostRole, err = common.MatchHostToRole(
 				ps.Ctx,
 				nbi,
-				node.Name,
+				hostName,
 				ps.SourceConfig.HostRoleRelations,
 			)
 			if err != nil {
@@ -210,7 +209,7 @@ func (ps *ProxmoxSource) syncNodes(nbi *inventory.NetboxInventory) error {
 					),
 				},
 			},
-			Name:       node.Name,
+			Name:       hostName,
 			DeviceRole: hostRole,
 			Site:       hostSite,
 			Tenant:     hostTenant,
@@ -320,10 +319,6 @@ func (ps *ProxmoxSource) syncVMs(nbi *inventory.NetboxInventory) error {
 	var wg sync.WaitGroup
 
 	for nodeName, vms := range ps.Vms {
-		// Add domain name suffix if needed
-		if ps.SourceConfig.AssignDomainName != "" {
-			nodeName += ps.SourceConfig.AssignDomainName
-		}
 		nbHost := ps.NetboxNodes[nodeName]
 
 		// Iterate over each VM and start a goroutine to sync it
@@ -820,11 +815,6 @@ func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 			return fmt.Errorf("create container role: %s", err)
 		}
 		for nodeName, containers := range ps.Containers {
-			// Add domain name suffix if needed
-			if ps.SourceConfig.AssignDomainName != "" {
-				nodeName += ps.SourceConfig.AssignDomainName
-			}
-
 			nbHost := ps.NetboxNodes[nodeName]
 			for _, container := range containers {
 				// Determine Container status

@@ -27,7 +27,7 @@ type ProxmoxSource struct {
 
 	// Netbox related data for easier access. Initialized in sync functions.
 	NetboxCluster *objects.Cluster
-	NetboxNodes   map[string]*objects.Device // NodeName -> netbox device
+	NetboxNodes   map[string]*objects.Device // Proxmox node name -> netbox device
 }
 
 // Function that collects all data from Proxmox API and stores it in ProxmoxSource struct.

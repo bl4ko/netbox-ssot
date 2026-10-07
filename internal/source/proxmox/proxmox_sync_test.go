@@ -158,3 +158,36 @@ func TestSyncNodeNetworksTypesInterfacesAndAttachesBondMembers(t *testing.T) {
 		}
 	}
 }
+
+func TestSyncNodesWithDomainSuffixSyncsHostInterfaces(t *testing.T) {
+	service.MockNetboxClient.DryRun = true
+	nbi := inventory.MockInventory
+	nbi.IgnoreDeviceTypeTag = &objects.Tag{ID: 9003, Name: constants.IgnoreDeviceTypeTagName, Slug: "ignore"}
+	tests := []struct {
+		node, suffix, wantHostName string
+	}{
+		{node: "suffix-node-a", suffix: "", wantHostName: "suffix-node-a"},
+		{node: "suffix-node-b", suffix: ".lab01", wantHostName: "suffix-node-b.lab01"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.wantHostName, func(t *testing.T) {
+			ps := newTestSource(t, &parser.SourceConfig{AssignDomainName: tt.suffix})
+			ps.Nodes = []*proxmox.Node{{Name: tt.node}}
+			ps.NodeIfaces = map[string][]*proxmox.NodeNetwork{tt.node: {{Iface: "eno1", Type: "eth"}}}
+			if err := ps.syncNodes(nbi); err != nil {
+				t.Fatalf("syncNodes() error = %v", err)
+			}
+			// syncVMs and syncContainers look hosts up by their Proxmox node name.
+			host := ps.NetboxNodes[tt.node]
+			if host == nil {
+				t.Fatalf("no NetBox host for Proxmox node %s", tt.node)
+			}
+			if host.Name != tt.wantHostName {
+				t.Errorf("host name = %q, want %q", host.Name, tt.wantHostName)
+			}
+			if _, ok := nbi.GetInterface("eno1", host.ID); !ok {
+				t.Errorf("host %s has no interface eno1", host.Name)
+			}
+		})
+	}
+}
