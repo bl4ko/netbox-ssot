@@ -32,6 +32,18 @@ func NewSource(
 	logger *logger.Logger,
 	netboxInventory *inventory.NetboxInventory,
 ) (common.Source, error) {
+	// VRFs are created manually in NetBox: a relation to a missing VRF would silently
+	// put the matching IP addresses in the global table, so it fails the run instead.
+	for _, vrfName := range config.IPVrfRelations {
+		if _, ok := netboxInventory.GetVRF(vrfName); !ok {
+			return nil, fmt.Errorf(
+				"%s.ipVrfRelations: VRF %q not found in NetBox: create it manually before syncing",
+				config.Name,
+				vrfName,
+			)
+		}
+	}
+
 	// First we create default tags for the source
 	sourceNameTag, err := netboxInventory.AddTag(ctx, &objects.Tag{
 		Name:        config.Tag,

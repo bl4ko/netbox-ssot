@@ -2,6 +2,7 @@ package source
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
@@ -112,5 +113,26 @@ func TestNewSource_UnsupportedType(t *testing.T) {
 	_, err := NewSource(ctx, config, nbi.Logger, nbi)
 	if err == nil {
 		t.Fatal("expected error for unsupported source type, got nil")
+	}
+}
+
+func TestNewSource_UnknownVRFInIPVrfRelations(t *testing.T) {
+	setupMockServer(t)
+	ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+	nbi := inventory.MockInventory
+
+	config := &parser.SourceConfig{
+		Name:           "test-vrf-typo",
+		Type:           constants.Proxmox,
+		Tag:            "test-tag",
+		TagColor:       "00add8",
+		IPVrfRelations: map[string]string{"^10\\.": "prodd"},
+	}
+	src, err := NewSource(ctx, config, nbi.Logger, nbi)
+	if err == nil {
+		t.Fatalf("NewSource() = %v, want an error for VRF %q missing from NetBox", src, "prodd")
+	}
+	if !strings.Contains(err.Error(), "prodd") {
+		t.Errorf("NewSource() error = %q, want it to name the missing VRF", err)
 	}
 }
