@@ -802,16 +802,16 @@ func (nbi *NetboxInventory) initClusters(ctx context.Context) error {
 		return err
 	}
 
-	// Initialize internal index of clusters by name
-	nbi.clustersIndexByName = make(map[string]*objects.Cluster)
+	// Initialize internal index of clusters by name and source
+	nbi.clustersIndexByNameAndSource = make(map[string]map[string]*objects.Cluster)
 
 	for i := range nbClusters {
 		cluster := &nbClusters[i]
-		nbi.clustersIndexByName[cluster.Name] = cluster
+		nbi.indexCluster(cluster)
 		nbi.OrphanManager.AddItem(cluster)
 	}
 
-	nbi.Logger.Debug(ctx, "Successfully collected clusters from Netbox: ", nbi.clustersIndexByName)
+	nbi.Logger.Debug(ctx, "Successfully collected clusters from Netbox: ", nbi.clustersIndexByNameAndSource)
 	return nil
 }
 

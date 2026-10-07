@@ -600,9 +600,8 @@ func (nbi *NetboxInventory) AddCluster(
 	newCluster.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
 	nbi.clustersLock.Lock()
 	defer nbi.clustersLock.Unlock()
-	if _, ok := nbi.clustersIndexByName[newCluster.Name]; ok {
+	if oldCluster := nbi.lookupCluster(ctx, newCluster.Name); oldCluster != nil {
 		// Remove id from orphan manager, because it still exists in the sources
-		oldCluster := nbi.clustersIndexByName[newCluster.Name]
 		nbi.OrphanManager.RemoveItem(oldCluster)
 		diffMap, err := utils.JSONDiffMapExceptID(newCluster, oldCluster, false, nbi.SourcePriority)
 		if err != nil {
@@ -623,19 +622,54 @@ func (nbi *NetboxInventory) AddCluster(
 			if err != nil {
 				return nil, err
 			}
-			nbi.clustersIndexByName[newCluster.Name] = patchedCluster
-		} else {
-			nbi.Logger.Debugf(ctx, "Cluster %s already exists in Netbox and is up to date...", newCluster.Name)
+			nbi.unindexCluster(oldCluster)
+			// Dry-run patches return only the ID: the name is needed to index the cluster.
+			if patchedCluster.Name == "" {
+				patchedCluster.Name = newCluster.Name
+			}
+			patchedCluster.SetCustomField(constants.CustomFieldSourceName, clusterSourceName(newCluster))
+			nbi.indexCluster(patchedCluster)
+			return patchedCluster, nil
 		}
-	} else {
-		nbi.Logger.Debugf(ctx, "Cluster %s does not exist in Netbox. Creating it...", newCluster.Name)
-		createdCluster, err := service.Create(ctx, nbi.NetboxAPI, newCluster)
-		if err != nil {
-			return nil, err
-		}
-		nbi.clustersIndexByName[createdCluster.Name] = createdCluster
+		nbi.Logger.Debugf(ctx, "Cluster %s already exists in Netbox and is up to date...", newCluster.Name)
+		return oldCluster, nil
 	}
-	return nbi.clustersIndexByName[newCluster.Name], nil
+	nbi.Logger.Debugf(ctx, "Cluster %s does not exist in Netbox. Creating it...", newCluster.Name)
+	createdCluster, err := service.Create(ctx, nbi.NetboxAPI, newCluster)
+	if err != nil {
+		return nil, err
+	}
+	nbi.indexCluster(createdCluster)
+	return createdCluster, nil
+}
+
+// clusterSourceName returns the source managing cluster, "" when none does.
+func clusterSourceName(cluster *objects.Cluster) string {
+	sourceName, _ := cluster.GetCustomField(constants.CustomFieldSourceName).(string)
+	return sourceName
+}
+
+// indexCluster adds cluster to clustersIndexByNameAndSource. Callers hold clustersLock.
+func (nbi *NetboxInventory) indexCluster(cluster *objects.Cluster) {
+	if nbi.clustersIndexByNameAndSource[cluster.Name] == nil {
+		nbi.clustersIndexByNameAndSource[cluster.Name] = make(map[string]*objects.Cluster)
+	}
+	nbi.clustersIndexByNameAndSource[cluster.Name][clusterSourceName(cluster)] = cluster
+}
+
+// unindexCluster removes cluster from clustersIndexByNameAndSource. Callers hold clustersLock.
+func (nbi *NetboxInventory) unindexCluster(cluster *objects.Cluster) {
+	delete(nbi.clustersIndexByNameAndSource[cluster.Name], clusterSourceName(cluster))
+}
+
+// lookupCluster returns the cluster named clusterName of the source in ctx, or
+// else an existing cluster no source manages. Callers hold clustersLock.
+func (nbi *NetboxInventory) lookupCluster(ctx context.Context, clusterName string) *objects.Cluster {
+	sourceName, _ := ctx.Value(constants.CtxSourceKey).(string)
+	if cluster, ok := nbi.clustersIndexByNameAndSource[clusterName][sourceName]; ok {
+		return cluster
+	}
+	return nbi.clustersIndexByNameAndSource[clusterName][""]
 }
 
 // AddDeviceRole adds a new device role to the Netbox inventory.
