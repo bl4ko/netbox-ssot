@@ -370,7 +370,7 @@ func (ps *ProxmoxSource) syncVMs(nbi *inventory.NetboxInventory) error {
 	return common.JoinErrors(errChan)
 }
 
-func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
+func (ps *ProxmoxSource) syncVM(
 	nbi *inventory.NetboxInventory,
 	vm *proxmox.VirtualMachine,
 	nbHost *objects.Device,
@@ -1025,7 +1025,8 @@ func (ps *ProxmoxSource) collectVMDisks(
 	vmName string,
 	vmConfig *proxmox.VirtualMachineConfig,
 ) []*objects.VirtualDisk {
-	vmDisks := make([]*objects.VirtualDisk, 0)
+	diskCount := len(vmConfig.VirtIOs) + len(vmConfig.SCSIs) + len(vmConfig.SATAs) + len(vmConfig.IDEs)
+	vmDisks := make([]*objects.VirtualDisk, 0, diskCount)
 	vmDisks = append(vmDisks, ps.collectDisks(vmName, "virtios", vmConfig.VirtIOs)...)
 	vmDisks = append(vmDisks, ps.collectDisks(vmName, "scsi", vmConfig.SCSIs)...)
 	vmDisks = append(vmDisks, ps.collectDisks(vmName, "sata", vmConfig.SATAs)...)
