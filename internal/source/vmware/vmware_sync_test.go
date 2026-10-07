@@ -294,3 +294,32 @@ func TestCollectVMInterfaceDataTruncatesLongDescriptions(t *testing.T) {
 		t.Errorf("description = %q, want it to start with the adapter and its first VLANs", iface.Description)
 	}
 }
+
+func TestSyncHostVirtualNicsCollectsAddressesForThePrimaryIP(t *testing.T) {
+	nbi, defaultSite := newTestInventory(t)
+	vc := newTestSource(t, &parser.SourceConfig{})
+	host := newTestHost("host-3", "esx-primary-ip")
+	vc.Hosts = map[string]mo.HostSystem{"host-3": host}
+	if err := vc.syncHosts(nbi); err != nil {
+		t.Fatalf("syncHosts() error = %v", err)
+	}
+	nbHost, ok := nbi.GetDevice("esx-primary-ip", defaultSite.ID)
+	if !ok {
+		t.Fatal("host esx-primary-ip not synced")
+	}
+	host.Config = &types.HostConfigInfo{Network: &types.HostNetworkInfo{Vnic: []types.HostVirtualNic{{
+		Device: "vmk0",
+		Spec: types.HostVirtualNicSpec{
+			Ip:  &types.HostIpConfig{IpAddress: "192.0.2.10", SubnetMask: "255.255.255.0"},
+			Mac: "00:50:56:aa:bb:cc",
+		},
+	}}}}
+
+	hostIPv4Addresses, _, err := vc.syncHostVirtualNics(nbi, host, nbHost)
+	if err != nil {
+		t.Fatalf("syncHostVirtualNics() error = %v", err)
+	}
+	if len(hostIPv4Addresses) != 1 || hostIPv4Addresses[0].Address != "192.0.2.10/24" {
+		t.Errorf("collected IPv4 addresses = %v, want [192.0.2.10/24]", hostIPv4Addresses)
+	}
+}

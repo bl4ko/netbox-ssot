@@ -413,19 +413,14 @@ func (vc *VmwareSource) syncHostNics(
 	nbHost *objects.Device,
 	deviceData *devices.DeviceData,
 ) error {
-	// Variable for storeing all ipAddresses from all host interfaces,
-	// we use them to determine the primary ip of the host.
-	hostIPv4Addresses := []*objects.IPAddress{}
-	hostIPv6Addresses := []*objects.IPAddress{}
-
 	// Sync host's physical interfaces
 	err := vc.syncHostPhysicalNics(nbi, vcHost, nbHost, deviceData)
 	if err != nil {
 		return fmt.Errorf("physical interfaces sync: %s", err)
 	}
 
-	// Sync host's virtual interfaces
-	err = vc.syncHostVirtualNics(nbi, vcHost, nbHost, hostIPv4Addresses, hostIPv6Addresses)
+	// Sync host's virtual interfaces, collecting their addresses to pick the primary ip
+	hostIPv4Addresses, hostIPv6Addresses, err := vc.syncHostVirtualNics(nbi, vcHost, nbHost)
 	if err != nil {
 		return fmt.Errorf("virtual interfaces sync: %s", err)
 	}
@@ -670,16 +665,16 @@ func (vc *VmwareSource) syncHostVirtualNics(
 	nbi *inventory.NetboxInventory,
 	vcHost mo.HostSystem,
 	nbHost *objects.Device,
-	hostIPv4Addresses []*objects.IPAddress,
-	hostIPv6Addresses []*objects.IPAddress,
-) error {
+) ([]*objects.IPAddress, []*objects.IPAddress, error) {
+	hostIPv4Addresses := []*objects.IPAddress{}
+	hostIPv6Addresses := []*objects.IPAddress{}
 	// Collect data over all virtual interfaces
 	if vcHost.Config != nil && vcHost.Config.Network != nil && vcHost.Config.Network.Vnic != nil {
 		for _, vnic := range vcHost.Config.Network.Vnic {
 			// Fetch host vnic data
 			hostVnic, macAddress, err := vc.collectHostVirtualNicData(nbi, nbHost, vcHost, vnic)
 			if err != nil {
-				return err
+				return nil, nil, err
 			}
 
 			// Filter host vnic
@@ -696,7 +691,7 @@ func (vc *VmwareSource) syncHostVirtualNics(
 			// After collecting all of the data add interface to nbi
 			nbHostVnic, err := nbi.AddInterface(vc.Ctx, hostVnic)
 			if err != nil {
-				return fmt.Errorf("failed adding virtual interface %+v: %s", hostVnic, err)
+				return nil, nil, fmt.Errorf("failed adding virtual interface %+v: %s", hostVnic, err)
 			}
 
 			// Create MAC address
@@ -708,10 +703,10 @@ func (vc *VmwareSource) syncHostVirtualNics(
 					nbHostVnic,
 				)
 				if err != nil {
-					return fmt.Errorf("create mac address for object type: %s", err)
+					return nil, nil, fmt.Errorf("create mac address for object type: %s", err)
 				}
 				if err = common.SetPrimaryMACForInterface(vc.Ctx, nbi, nbHostVnic, nbMACAddress); err != nil {
-					return fmt.Errorf("set primary mac for interface %+v: %s", nbHostVnic, err)
+					return nil, nil, fmt.Errorf("set primary mac for interface %+v: %s", nbHostVnic, err)
 				}
 			}
 			// Get IPv4 address for this vnic
@@ -731,7 +726,7 @@ func (vc *VmwareSource) syncHostVirtualNics(
 			) {
 				ipv4MaskBits, err := utils.MaskToBits(vnic.Spec.Ip.SubnetMask)
 				if err != nil {
-					return fmt.Errorf("mask to bits: %s", err)
+					return nil, nil, fmt.Errorf("mask to bits: %s", err)
 				}
 				ipv4DNS := utils.ReverseLookup(ipv4Address)
 				nbIPv4Address, err := nbi.AddIPAddress(vc.Ctx, &objects.IPAddress{
@@ -802,7 +797,7 @@ func (vc *VmwareSource) syncHostVirtualNics(
 			}
 		}
 	}
-	return nil
+	return hostIPv4Addresses, hostIPv6Addresses, nil
 }
 
 func (vc *VmwareSource) setHostPrimaryIPAddress(
