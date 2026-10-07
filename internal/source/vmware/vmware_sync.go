@@ -310,40 +310,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 			)
 		}
 
-		// Find serial number from host summary.hardware.OtherIdentifyingInfo (vmware specific logic)
-		var hostSerialNumber string
-		serialInfoTypes := map[string]bool{
-			"EnclosureSerialNumberTag": true,
-			"ServiceTag":               true,
-			"SerialNumberTag":          true,
-		}
-		var assetTag string
-		var identifyingInfo []types.HostSystemIdentificationInfo
-		if host.Summary.Hardware != nil {
-			identifyingInfo = host.Summary.Hardware.OtherIdentifyingInfo
-		}
-		for _, info := range identifyingInfo {
-			if info.IdentifierType == nil {
-				continue
-			}
-			infoType := info.IdentifierType.GetElementDescription().Key
-			infoValue := strings.Trim(info.IdentifierValue, " ") // remove blank spaces from value
-			if infoType == "AssetTag" {
-				if infoValue == "No Asset Tag" {
-					infoValue = ""
-				}
-				if !vc.SourceConfig.IgnoreAssetTags {
-					assetTag = infoValue
-				}
-			} else if serialInfoTypes[infoType] {
-				if infoValue != "" {
-					if !vc.SourceConfig.IgnoreSerialNumbers {
-						hostSerialNumber = infoValue
-					}
-					break
-				}
-			}
-		}
+		hostSerialNumber, assetTag := vc.hostSerialNumberAndAssetTag(host)
 
 		// summary.runtime, summary.hardware and summary.config.product are optional:
 		// vCenter may omit them, e.g. for a host disconnected for a long time
@@ -839,6 +806,44 @@ func (vc *VmwareSource) setHostPrimaryIPAddress(
 			vc.Logger.Warningf(vc.Ctx, "updating host's primary ip: %s", err)
 		}
 	}
+}
+
+// hostSerialNumberAndAssetTag returns the serial number and asset tag of a host, found in
+// summary.hardware.otherIdentifyingInfo (vmware specific logic).
+func (vc *VmwareSource) hostSerialNumberAndAssetTag(host mo.HostSystem) (string, string) {
+	var hostSerialNumber, assetTag string
+	serialInfoTypes := map[string]bool{
+		"EnclosureSerialNumberTag": true,
+		"ServiceTag":               true,
+		"SerialNumberTag":          true,
+	}
+	var identifyingInfo []types.HostSystemIdentificationInfo
+	if host.Summary.Hardware != nil {
+		identifyingInfo = host.Summary.Hardware.OtherIdentifyingInfo
+	}
+	for _, info := range identifyingInfo {
+		if info.IdentifierType == nil {
+			continue
+		}
+		infoType := info.IdentifierType.GetElementDescription().Key
+		infoValue := strings.Trim(info.IdentifierValue, " ") // remove blank spaces from value
+		if infoType == "AssetTag" {
+			if infoValue == "No Asset Tag" {
+				infoValue = ""
+			}
+			if !vc.SourceConfig.IgnoreAssetTags {
+				assetTag = infoValue
+			}
+		} else if serialInfoTypes[infoType] {
+			if infoValue != "" {
+				if !vc.SourceConfig.IgnoreSerialNumbers {
+					hostSerialNumber = infoValue
+				}
+				break
+			}
+		}
+	}
+	return hostSerialNumber, assetTag
 }
 
 // selectPrimaryIPAddress returns the address that the host name resolves to, or the
@@ -1490,22 +1495,9 @@ func (vc *VmwareSource) collectVMInterfaceData(
 		}
 		intConnected = guestNic.Connected
 
-		if guestNic.IpConfig != nil {
-			for _, intIP := range guestNic.IpConfig.IpAddress {
-				// Guest tools report link-local IPv6 addresses with their zone index (fe80::1%2)
-				ipAddress := utils.RemoveZoneIndexFromIPAddress(intIP.IpAddress)
-				intIPAddress := fmt.Sprintf("%s/%d", ipAddress, intIP.PrefixLength)
-				switch utils.GetIPVersion(ipAddress) {
-				case constants.IPv4:
-					nicIPv4Addresses = append(nicIPv4Addresses, intIPAddress)
-				case constants.IPv6:
-					nicIPv6Addresses = append(nicIPv6Addresses, intIPAddress)
-				default:
-					// One unparsable address must not prevent syncing the rest of the VM
-					vc.Logger.Warningf(vc.Ctx, "skipping unparsable ip address %q of vm %s", intIP.IpAddress, netboxVM.Name)
-				}
-			}
-		}
+		guestIPv4Addresses, guestIPv6Addresses := vc.guestNicAddresses(guestNic, netboxVM.Name)
+		nicIPv4Addresses = append(nicIPv4Addresses, guestIPv4Addresses...)
+		nicIPv6Addresses = append(nicIPv6Addresses, guestIPv6Addresses...)
 	}
 	var intUntaggedVlan *objects.Vlan
 	var intTaggedVlanList []*objects.Vlan
@@ -1546,6 +1538,30 @@ func (vc *VmwareSource) collectVMInterfaceData(
 		TaggedVlans:  intTaggedVlanList,
 		UntaggedVlan: intUntaggedVlan,
 	}, strings.ToUpper(intMac), nil
+}
+
+// guestNicAddresses returns the IPv4 and IPv6 addresses, with their prefix length, that
+// the guest tools report for a guest NIC.
+func (vc *VmwareSource) guestNicAddresses(guestNic types.GuestNicInfo, vmName string) ([]string, []string) {
+	var ipv4Addresses, ipv6Addresses []string
+	if guestNic.IpConfig == nil {
+		return ipv4Addresses, ipv6Addresses
+	}
+	for _, intIP := range guestNic.IpConfig.IpAddress {
+		// Guest tools report link-local IPv6 addresses with their zone index (fe80::1%2)
+		ipAddress := utils.RemoveZoneIndexFromIPAddress(intIP.IpAddress)
+		intIPAddress := fmt.Sprintf("%s/%d", ipAddress, intIP.PrefixLength)
+		switch utils.GetIPVersion(ipAddress) {
+		case constants.IPv4:
+			ipv4Addresses = append(ipv4Addresses, intIPAddress)
+		case constants.IPv6:
+			ipv6Addresses = append(ipv6Addresses, intIPAddress)
+		default:
+			// One unparsable address must not prevent syncing the rest of the VM
+			vc.Logger.Warningf(vc.Ctx, "skipping unparsable ip address %q of vm %s", intIP.IpAddress, vmName)
+		}
+	}
+	return ipv4Addresses, ipv6Addresses
 }
 
 // Function that adds all collected IPs for the vm's interface to netbox.

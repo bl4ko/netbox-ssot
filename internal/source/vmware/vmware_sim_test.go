@@ -15,17 +15,26 @@ import (
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/simulator"
 	"github.com/vmware/govmomi/vapi/rest"
+	_ "github.com/vmware/govmomi/vapi/simulator"
 	"github.com/vmware/govmomi/vapi/tags"
 	"github.com/vmware/govmomi/vim25/mo"
-
-	// Register the vCenter REST API (tags) on the simulator
-	_ "github.com/vmware/govmomi/vapi/simulator"
 )
 
 // tagsSessionPath is the first REST call made to read vCenter tags.
 const tagsSessionPath = "/rest/com/vmware/cis/session"
 
+// as returns entity as a T, failing the test when it is not one.
+func as[T any](t *testing.T, entity any) T {
+	t.Helper()
+	typed, ok := entity.(T)
+	if !ok {
+		t.Fatalf("simulator object %T is not a %T", entity, typed)
+	}
+	return typed
+}
+
 // newSimulatedVCenter starts a vcsim vCenter and returns a source configured to reach it.
+// The blank import of vapi/simulator registers the REST API (tags) on the simulator.
 func newSimulatedVCenter(t *testing.T, sourceConfig *parser.SourceConfig) (*VmwareSource, *simulator.Service) {
 	t.Helper()
 	model := simulator.VPX()
@@ -91,12 +100,13 @@ func TestInitAndSyncAgainstSimulatedVCenter(t *testing.T) {
 	simulatorMap := service.Context.Map
 	vmClusters := map[string]string{}
 	for _, entity := range simulatorMap.All("VirtualMachine") {
-		vm := entity.(*simulator.VirtualMachine)
-		host := simulatorMap.Get(*vm.Runtime.Host).(*simulator.HostSystem)
+		vm := as[*simulator.VirtualMachine](t, entity)
+		host := as[*simulator.HostSystem](t, simulatorMap.Get(*vm.Runtime.Host))
 		clusterName := host.Name
 		if cluster, ok := simulatorMap.Get(*host.Parent).(*simulator.ClusterComputeResource); ok {
-			datacenter := simulatorMap.Get(*simulatorMap.Get(*cluster.Parent).(*simulator.Folder).Parent)
-			clusterName = cluster.Name + " (" + datacenter.(*simulator.Datacenter).Name + ")"
+			hostFolder := as[*simulator.Folder](t, simulatorMap.Get(*cluster.Parent))
+			datacenter := as[*simulator.Datacenter](t, simulatorMap.Get(*hostFolder.Parent))
+			clusterName = cluster.Name + " (" + datacenter.Name + ")"
 		}
 		vmClusters[vm.Name] = clusterName
 	}
@@ -158,7 +168,7 @@ func TestInitHandlesPortgroupsWithoutNicTeaming(t *testing.T) {
 	vc, service := newSimulatedVCenter(t, &parser.SourceConfig{Timeout: 5, IgnoreTags: true})
 	patched := 0
 	for _, entity := range service.Context.Map.All("HostSystem") {
-		host := entity.(*simulator.HostSystem)
+		host := as[*simulator.HostSystem](t, entity)
 		if host.Config == nil || host.Config.Network == nil {
 			continue
 		}
@@ -200,7 +210,7 @@ func TestInitReadsTagsInBatch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	vm := service.Context.Map.All("VirtualMachine")[0].(*simulator.VirtualMachine)
+	vm := as[*simulator.VirtualMachine](t, service.Context.Map.All("VirtualMachine")[0])
 	for i := range tagCount {
 		tagID, err := tagManager.CreateTag(ctx, &tags.Tag{Name: "batch-" + strconv.Itoa(i), CategoryID: categoryID})
 		if err != nil {

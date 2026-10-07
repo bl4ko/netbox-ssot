@@ -108,6 +108,25 @@ func newTestVMOnHost(vc *VmwareSource, id, name, hostID string) mo.VirtualMachin
 	return vm
 }
 
+// collectVMInterface returns the NetBox interface collected for a VM network card.
+func collectVMInterface(
+	t *testing.T,
+	vc *VmwareSource,
+	nbi *inventory.NetboxInventory,
+	netboxVM *objects.VM,
+	card *types.VirtualEthernetCard,
+) *objects.VMInterface {
+	t.Helper()
+	// Only the interface matters here, out of the five results
+	_, _, iface, _, err := vc.collectVMInterfaceData( //nolint:dogsled
+		nbi, netboxVM, mo.VirtualMachine{Guest: &types.GuestInfo{}}, card,
+	)
+	if err != nil {
+		t.Fatalf("collectVMInterfaceData() error = %v", err)
+	}
+	return iface
+}
+
 func TestSyncVMsSkipsVMsWithoutConfig(t *testing.T) {
 	nbi, _ := newTestInventory(t)
 	vc := newTestSource(t, &parser.SourceConfig{})
@@ -270,10 +289,7 @@ func TestCollectVMInterfaceDataBoundsDescriptionOfWideTrunks(t *testing.T) {
 	}
 	netboxVM := &objects.VM{Name: "trunk-vm", Host: &objects.Device{Name: "esx-trunk"}}
 
-	_, _, iface, _, err := vc.collectVMInterfaceData(nbi, netboxVM, mo.VirtualMachine{Guest: &types.GuestInfo{}}, card)
-	if err != nil {
-		t.Fatalf("collectVMInterfaceData() error = %v", err)
-	}
+	iface := collectVMInterface(t, vc, nbi, netboxVM, card)
 	want := "Network adapter 1 (vlan ID: 100-199, 300-399)"
 	if iface.Description != want {
 		t.Errorf("description = %q, want %q", iface.Description, want)
@@ -305,10 +321,7 @@ func TestCollectVMInterfaceDataTruncatesLongDescriptions(t *testing.T) {
 	}
 	netboxVM := &objects.VM{Name: "trunk-many-vm", Host: &objects.Device{Name: "esx-trunk"}}
 
-	_, _, iface, _, err := vc.collectVMInterfaceData(nbi, netboxVM, mo.VirtualMachine{Guest: &types.GuestInfo{}}, card)
-	if err != nil {
-		t.Fatalf("collectVMInterfaceData() error = %v", err)
-	}
+	iface := collectVMInterface(t, vc, nbi, netboxVM, card)
 	if n := len([]rune(iface.Description)); n > objects.MaxDescriptionLength {
 		t.Errorf("description has %d characters, want at most %d", n, objects.MaxDescriptionLength)
 	}
@@ -484,11 +497,8 @@ func TestCollectVMInterfaceDataAssignsTaggedVlans(t *testing.T) {
 	}
 	netboxVM := &objects.VM{Name: "tagged-vm", Host: &objects.Device{Name: "esx-tagged"}}
 
-	_, _, iface, _, err := vc.collectVMInterfaceData(nbi, netboxVM, mo.VirtualMachine{Guest: &types.GuestInfo{}}, card)
-	if err != nil {
-		t.Fatalf("collectVMInterfaceData() error = %v", err)
-	}
-	gotVids := []int{}
+	iface := collectVMInterface(t, vc, nbi, netboxVM, card)
+	gotVids := make([]int, 0, len(iface.TaggedVlans))
 	for _, vlan := range iface.TaggedVlans {
 		gotVids = append(gotVids, vlan.Vid)
 	}
@@ -642,10 +652,7 @@ func TestInterfacesOnPortGroupsWithoutVlan(t *testing.T) {
 		},
 	}
 	netboxVM := &objects.VM{Name: "no-vlan-vm", Host: nbHost}
-	_, _, vmIface, _, err := vc.collectVMInterfaceData(nbi, netboxVM, mo.VirtualMachine{Guest: &types.GuestInfo{}}, card)
-	if err != nil {
-		t.Fatalf("collectVMInterfaceData() error = %v", err)
-	}
+	vmIface := collectVMInterface(t, vc, nbi, netboxVM, card)
 	if vmIface.Mode != nil {
 		t.Errorf("vm interface mode = %v, want none without VLAN", vmIface.Mode)
 	}
