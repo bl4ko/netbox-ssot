@@ -11,7 +11,9 @@ func TestKeepVMNetworkObjects(t *testing.T) {
 	ssotTag := &objects.Tag{ID: 1, Name: constants.SsotTagName}
 	vm := &objects.VM{NetboxObject: objects.NetboxObject{ID: 50, Tags: []*objects.Tag{ssotTag}}, Name: "backup-proxy"}
 	otherVM := &objects.VM{NetboxObject: objects.NetboxObject{ID: 51, Tags: []*objects.Tag{ssotTag}}, Name: "other-vm"}
-	iface := &objects.VMInterface{NetboxObject: objects.NetboxObject{ID: 60, Tags: []*objects.Tag{ssotTag}}, Name: "eth0", VM: vm}
+	iface := &objects.VMInterface{
+		NetboxObject: objects.NetboxObject{ID: 60, Tags: []*objects.Tag{ssotTag}}, Name: "eth0", VM: vm,
+	}
 	otherIface := &objects.VMInterface{
 		NetboxObject: objects.NetboxObject{ID: 61, Tags: []*objects.Tag{ssotTag}}, Name: "eth0", VM: otherVM,
 	}
@@ -27,7 +29,9 @@ func TestKeepVMNetworkObjects(t *testing.T) {
 		AssignedObjectType: constants.ContentTypeVirtualizationVMInterface,
 		AssignedObjectID:   60,
 	}
-	prefix := &objects.Prefix{NetboxObject: objects.NetboxObject{ID: 90, Tags: []*objects.Tag{ssotTag}}, Prefix: "198.51.100.0/27"}
+	prefix := &objects.Prefix{
+		NetboxObject: objects.NetboxObject{ID: 90, Tags: []*objects.Tag{ssotTag}}, Prefix: "198.51.100.0/27",
+	}
 	vmType := constants.ContentTypeVirtualizationVirtualMachine
 
 	nbi := &NetboxInventory{
@@ -72,7 +76,9 @@ func TestKeepVMNetworkObjects(t *testing.T) {
 
 func TestKeepPlatform(t *testing.T) {
 	ssotTag := &objects.Tag{ID: 1, Name: constants.SsotTagName}
-	platform := &objects.Platform{NetboxObject: objects.NetboxObject{ID: 6, Tags: []*objects.Tag{ssotTag}}, Name: "Debian 12"}
+	platform := &objects.Platform{
+		NetboxObject: objects.NetboxObject{ID: 6, Tags: []*objects.Tag{ssotTag}}, Name: "Debian 12",
+	}
 	nbi := &NetboxInventory{Logger: mockLogger, OrphanManager: NewOrphanManager(mockLogger)}
 	nbi.OrphanManager.AddItem(platform)
 
