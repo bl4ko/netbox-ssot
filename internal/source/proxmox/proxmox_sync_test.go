@@ -601,3 +601,82 @@ func TestSyncNodeNetworksClearsTheLAGOfAMemberLeavingItsBond(t *testing.T) {
 		t.Errorf("LAG clears = %q, want %q", clears, want)
 	}
 }
+
+// Open vSwitch bonds list their members in ovs_bonds, not in slaves.
+func TestSyncNodeNetworksAttachesOVSBondMembers(t *testing.T) {
+	service.MockNetboxClient.DryRun = true
+	nbi := inventory.MockInventory
+	ps := newTestSource(t, &parser.SourceConfig{})
+	node := &proxmox.Node{Name: "pve-ovs"}
+	host := &objects.Device{NetboxObject: objects.NetboxObject{ID: 4444}, Name: "pve-ovs"}
+	ps.NetboxNodes = map[string]*objects.Device{node.Name: host}
+	ps.NodeIfaces = map[string][]*proxmox.NodeNetwork{node.Name: {
+		{Iface: "eno1", Type: "eth"},
+		{Iface: "eno2", Type: "eth"},
+		{Iface: "bond0", Type: "OVSBond", OVSBonds: "eno1 eno2"},
+	}}
+
+	if err := ps.syncNodeNetworks(nbi, node); err != nil {
+		t.Fatalf("syncNodeNetworks() error = %v", err)
+	}
+
+	for _, member := range []string{"eno1", "eno2"} {
+		iface, ok := nbi.GetInterface(member, host.ID)
+		if !ok {
+			t.Errorf("interface %s not synced", member)
+			continue
+		}
+		if iface.LAG == nil || iface.LAG.Name != "bond0" {
+			t.Errorf("interface %s LAG = %v, want bond0", member, iface.LAG)
+		}
+	}
+}
+
+func TestSyncNodeNetworksKeepsTheLAGOfAnOVSBondMember(t *testing.T) {
+	service.MockNetboxClient.DryRun = true
+	nbi := inventory.MockInventory
+	node := &proxmox.Node{Name: "pve-ovs-keep"}
+	host := &objects.Device{NetboxObject: objects.NetboxObject{ID: 4545}, Name: "pve-ovs-keep"}
+	syncNetworks := func(networks ...*proxmox.NodeNetwork) {
+		t.Helper()
+		ps := newTestSource(t, &parser.SourceConfig{})
+		ps.NetboxNodes = map[string]*objects.Device{node.Name: host}
+		ps.NodeIfaces = map[string][]*proxmox.NodeNetwork{node.Name: networks}
+		if err := ps.syncNodeNetworks(nbi, node); err != nil {
+			t.Fatalf("syncNodeNetworks() error = %v", err)
+		}
+	}
+	// eno1 already is a member of bond0 in NetBox.
+	syncNetworks(
+		&proxmox.NodeNetwork{Iface: "eno1", Type: "eth"},
+		&proxmox.NodeNetwork{Iface: "bond0", Type: "bond", Slaves: "eno1"},
+	)
+
+	var mu sync.Mutex
+	requests := []string{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		mu.Lock()
+		requests = append(requests, r.Method+" "+r.URL.Path+" "+string(body))
+		mu.Unlock()
+		id, _ := strconv.Atoi(strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/api/dcim/interfaces/"), "/"))
+		_, _ = fmt.Fprintf(w, `{"id":%d}`, id)
+	}))
+	defer server.Close()
+	saved := nbi.NetboxAPI
+	nbi.NetboxAPI = &service.NetboxClient{
+		HTTPClient: &http.Client{}, Logger: nbi.Logger, BaseURL: server.URL, APIToken: "t", Timeout: 15,
+	}
+	defer func() { nbi.NetboxAPI = saved }()
+
+	syncNetworks(
+		&proxmox.NodeNetwork{Iface: "eno1", Type: "eth"},
+		&proxmox.NodeNetwork{Iface: "bond0", Type: "OVSBond", OVSBonds: "eno1"},
+	)
+
+	for _, request := range requests {
+		if strings.Contains(request, `"lag":null`) {
+			t.Errorf("unexpected LAG clear %q", request)
+		}
+	}
+}

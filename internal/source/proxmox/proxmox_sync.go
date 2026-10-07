@@ -256,7 +256,7 @@ func (ps *ProxmoxSource) syncNodeNetworks(
 	syncedBonds := make(map[string]bool)
 	for _, nodeNetwork := range nodeNetworks {
 		if lagSyncOrder(nodeNetwork) == 0 {
-			for _, member := range strings.Fields(nodeNetwork.Slaves) {
+			for _, member := range bondMembers(nodeNetwork) {
 				bondOfMember[member] = nodeNetwork.Iface
 			}
 			if !utils.FilterInterfaceName(nodeNetwork.Iface, ps.SourceConfig.InterfaceFilter) {
@@ -316,6 +316,15 @@ func (ps *ProxmoxSource) syncNodeNetworks(
 		}
 	}
 	return nil
+}
+
+// bondMembers returns the interfaces of a bond: Linux bonds list them in slaves,
+// Open vSwitch bonds in ovs_bonds.
+func bondMembers(bond *proxmox.NodeNetwork) []string {
+	if bond.Type == "OVSBond" {
+		return strings.Fields(bond.OVSBonds)
+	}
+	return strings.Fields(bond.Slaves)
 }
 
 // lagSyncOrder returns 0 for bonds and 1 for every other node network.
