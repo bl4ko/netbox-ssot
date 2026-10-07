@@ -436,7 +436,6 @@ func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 
 	// Fetch VM disks
 	vmDisks := make([]*objects.VirtualDisk, 0)
-	vmTotalDiskSizeMiB := 0
 
 	// Fetch VirtIOs disks
 	if len(vm.VirtualMachineConfig.VirtIOs) > 0 {
@@ -453,7 +452,6 @@ func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 
 				if sz := parseDiskSizeMiB(item); sz > 0 {
 					diskSize = sz
-					vmTotalDiskSizeMiB += sz
 				}
 			}
 
@@ -495,7 +493,6 @@ func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 
 				if sz := parseDiskSizeMiB(item); sz > 0 {
 					diskSize = sz
-					vmTotalDiskSizeMiB += sz
 				}
 			}
 
@@ -537,7 +534,6 @@ func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 
 				if sz := parseDiskSizeMiB(item); sz > 0 {
 					diskSize = sz
-					vmTotalDiskSizeMiB += sz
 				}
 			}
 
@@ -579,7 +575,6 @@ func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 
 				if sz := parseDiskSizeMiB(item); sz > 0 {
 					diskSize = sz
-					vmTotalDiskSizeMiB += sz
 				}
 			}
 
@@ -605,18 +600,6 @@ func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 			})
 		}
 	}
-
-	// Compute final VM disk size
-	if vmTotalDiskSizeMiB == 0 {
-		vmTotalDiskSizeMiB = int((vm.MaxDisk / constants.GiB) * 1000) //nolint:gosec,mnd // MaxDisk/GiB fits in int
-	}
-
-	ps.Logger.Debugf(
-		ps.Ctx,
-		"vm.Name: %s vmTotalDiskSizeMiB: %d",
-		vm.Name,
-		vmTotalDiskSizeMiB,
-	)
 
 	// Fetch VM tags
 	newTags := ps.GetSourceTags()
@@ -653,7 +636,6 @@ func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 		VCPUs:    float32(vm.CPUs),
 		Memory:   int(vm.MaxMem / constants.MiB), //nolint:gosec
 		Role:     vmRole,
-		// Disk:     vmTotalDiskSizeMiB,
 	}
 
 	nbVM, err := nbi.AddVM(ps.Ctx, vmStruct)
