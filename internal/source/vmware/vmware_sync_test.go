@@ -2,6 +2,8 @@ package vmware
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"reflect"
 	"sort"
 	"strings"
@@ -695,5 +697,72 @@ func TestSyncHostsSkipsBlankSerialNumbers(t *testing.T) {
 	}
 	if nbHost.SerialNumber != "CZ1234ABCD" {
 		t.Errorf("serial number = %q, want %q", nbHost.SerialNumber, "CZ1234ABCD")
+	}
+}
+
+func TestSelectPrimaryIPAddress(t *testing.T) {
+	first := &objects.IPAddress{Address: "192.0.2.10/24"}
+	resolved := &objects.IPAddress{Address: "192.0.2.20/24"}
+	tests := []struct {
+		name       string
+		addresses  []*objects.IPAddress
+		resolvedIP string
+		want       *objects.IPAddress
+	}{
+		{name: "no address", resolvedIP: "192.0.2.20"},
+		{name: "host name does not resolve", addresses: []*objects.IPAddress{first, resolved}, want: first},
+		{
+			name:       "host name resolves to the second address",
+			addresses:  []*objects.IPAddress{first, resolved},
+			resolvedIP: "192.0.2.20",
+			want:       resolved,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := selectPrimaryIPAddress(tt.addresses, tt.resolvedIP); got != tt.want {
+				t.Errorf("selectPrimaryIPAddress() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSelectPrimaryIPAddressSkipsLinkLocalIPv6(t *testing.T) {
+	linkLocal := &objects.IPAddress{Address: "fe80::250:56ff:fe00:1/64"}
+	global := &objects.IPAddress{Address: "2001:db8::10/64"}
+	if got := selectPrimaryIPAddress([]*objects.IPAddress{linkLocal, global}, ""); got != global {
+		t.Errorf("selectPrimaryIPAddress() = %v, want %v", got, global)
+	}
+	if got := selectPrimaryIPAddress([]*objects.IPAddress{linkLocal}, ""); got != nil {
+		t.Errorf("selectPrimaryIPAddress() = %v, want none with link-local addresses only", got)
+	}
+}
+
+func TestSetHostPrimaryIPAddressLogsFailuresInsteadOfStopping(t *testing.T) {
+	nbi, _ := newTestInventory(t)
+	saved := nbi.NetboxAPI
+	nbi.NetboxAPI = service.FailingMockNetboxClient
+	defer func() { nbi.NetboxAPI = saved }()
+	logPath := filepath.Join(t.TempDir(), "vmware.log")
+	lg, err := logger.New(logPath, logger.WARNING)
+	if err != nil {
+		t.Fatal(err)
+	}
+	vc := newTestSource(t, &parser.SourceConfig{})
+	vc.Logger = lg
+	nbHost := &objects.Device{
+		NetboxObject: objects.NetboxObject{ID: 1},
+		Name:         "existing_device1",
+		Site:         &objects.Site{NetboxObject: objects.NetboxObject{ID: 1}},
+	}
+
+	vc.setHostPrimaryIPAddress(nbi, nbHost, []*objects.IPAddress{{Address: "192.0.2.50/24"}}, nil)
+
+	logged, err := os.ReadFile(logPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(logged), "updating host's primary ip") {
+		t.Errorf("log = %q, want a warning about the host primary ip", logged)
 	}
 }

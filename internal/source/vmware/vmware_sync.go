@@ -451,10 +451,7 @@ func (vc *VmwareSource) syncHostNics(
 	}
 
 	// Set host's private ip address from collected ips
-	err = vc.setHostPrimaryIPAddress(nbi, nbHost, hostIPv4Addresses, hostIPv6Addresses)
-	if err != nil {
-		return fmt.Errorf("adding host primary ip addresses: %s", err)
-	}
+	vc.setHostPrimaryIPAddress(nbi, nbHost, hostIPv4Addresses, hostIPv6Addresses)
 
 	return nil
 }
@@ -830,30 +827,35 @@ func (vc *VmwareSource) setHostPrimaryIPAddress(
 	nbHost *objects.Device,
 	hostIPv4Addresses []*objects.IPAddress,
 	hostIPv6Addresses []*objects.IPAddress,
-) error {
+) {
 	if len(hostIPv4Addresses) > 0 || len(hostIPv6Addresses) > 0 {
-		var hostPrimaryIPv4 *objects.IPAddress
-		for _, addr := range hostIPv4Addresses {
-			if hostPrimaryIPv4 == nil || utils.Lookup(nbHost.Name) == addr.Address {
-				hostPrimaryIPv4 = addr
-			}
-		}
-		var hostPrimaryIPv6 *objects.IPAddress
-		for _, addr := range hostIPv6Addresses {
-			if hostPrimaryIPv6 == nil || utils.Lookup(nbHost.Name) == addr.Address {
-				hostPrimaryIPv6 = addr
-			}
-		}
+		resolvedIP := utils.Lookup(nbHost.Name)
+		hostPrimaryIPv4 := selectPrimaryIPAddress(hostIPv4Addresses, resolvedIP)
+		hostPrimaryIPv6 := selectPrimaryIPAddress(hostIPv6Addresses, resolvedIP)
 		newHost := *nbHost
 		newHost.PrimaryIPv4 = hostPrimaryIPv4
 		newHost.PrimaryIPv6 = hostPrimaryIPv6
-		_, err := nbi.AddDevice(vc.Ctx, &newHost)
-		if err != nil {
-			return fmt.Errorf("updating host's primary ip: %s", err)
+		// A failed update must not stop the sync of the other hosts and of their VMs
+		if _, err := nbi.AddDevice(vc.Ctx, &newHost); err != nil {
+			vc.Logger.Warningf(vc.Ctx, "updating host's primary ip: %s", err)
 		}
 	}
+}
 
-	return nil
+// selectPrimaryIPAddress returns the address that the host name resolves to, or the
+// first address when none does. Link-local IPv6 addresses are never selected.
+func selectPrimaryIPAddress(addresses []*objects.IPAddress, resolvedIP string) *objects.IPAddress {
+	var primary *objects.IPAddress
+	for _, addr := range addresses {
+		// A link-local IPv6 address is not reachable from outside its link
+		if strings.HasPrefix(addr.Address, "fe80:") {
+			continue
+		}
+		if primary == nil || (resolvedIP != "" && resolvedIP == strings.Split(addr.Address, "/")[0]) {
+			primary = addr
+		}
+	}
+	return primary
 }
 
 func (vc *VmwareSource) collectHostVirtualNicData(
