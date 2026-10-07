@@ -1526,6 +1526,12 @@ func (nbi *NetboxInventory) AddPrefix(
 
 	if _, ok := nbi.prefixesIndexByPrefix[newPrefix.Prefix][vrfID]; ok {
 		oldPrefix := nbi.prefixesIndexByPrefix[newPrefix.Prefix][vrfID]
+		// A prefix created outside netbox-ssot is only read: adopting it would make it
+		// an orphan candidate, deleted with its metadata once no source reports it.
+		if !oldPrefix.HasTagByName(nbi.SsotTag.Name) {
+			nbi.Logger.Debugf(ctx, "Prefix %s is not managed by netbox-ssot, leaving it as is", newPrefix.Prefix)
+			return oldPrefix, nil
+		}
 		nbi.OrphanManager.RemoveItem(oldPrefix)
 		diffMap, err := utils.JSONDiffMapExceptID(newPrefix, oldPrefix, false, nbi.SourcePriority)
 		if err != nil {
