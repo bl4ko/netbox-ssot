@@ -56,3 +56,14 @@ func TestInitTimesOutOnUnresponsiveTagsAPI(t *testing.T) {
 		t.Fatalf("Init() did not return within 15s with a 1s timeout")
 	}
 }
+
+func TestInitSkipsTheTagsAPIWithIgnoreTags(t *testing.T) {
+	vc, service := newSimulatedVCenter(t, &parser.SourceConfig{Timeout: 5, IgnoreTags: true})
+	service.ServeMux.HandleFunc("/rest/", func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "tags API unavailable", http.StatusServiceUnavailable)
+	})
+
+	if err := vc.Init(); err != nil {
+		t.Errorf("Init() error = %v, want the tags API skipped with ignoreTags", err)
+	}
+}

@@ -175,9 +175,12 @@ func (vc *VmwareSource) Init() error {
 		return fmt.Errorf("create cluster datacenter relation failed: %s", err)
 	}
 
-	err = vc.CreateObjectTagsRelation(ctx, vim25Client, url.User)
-	if err != nil {
-		return fmt.Errorf("create object tags relation failed: %s", err)
+	// Tags come from the REST API, which ignoreTags must not depend on
+	if !vc.SourceConfig.IgnoreTags {
+		err = vc.CreateObjectTagsRelation(ctx, vim25Client, url.User)
+		if err != nil {
+			return fmt.Errorf("create object tags relation failed: %s", err)
+		}
 	}
 
 	// Initialize items from vsphere API to local storage
