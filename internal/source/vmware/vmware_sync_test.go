@@ -392,3 +392,47 @@ func TestSyncVMsWithoutOptionalGuestFields(t *testing.T) {
 		t.Errorf("syncVMs() error = %v", err)
 	}
 }
+
+func TestSyncVMsKeepsLongDescriptionsInComments(t *testing.T) {
+	nbi, defaultSite := newTestInventory(t)
+	vc := newTestSource(t, &parser.SourceConfig{CustomFieldMappings: map[string]string{"Notes": "description"}})
+	vc.CustomFieldID2Name = map[int32]string{1: "Notes"}
+	vc.Hosts = map[string]mo.HostSystem{"host-7": newTestHost("host-7", "esx-description")}
+	if err := vc.syncHosts(nbi); err != nil {
+		t.Fatalf("syncHosts() error = %v", err)
+	}
+	nbHost, _ := nbi.GetDevice("esx-description", defaultSite.ID)
+	longText := strings.Repeat("long description ", 15)
+	accentedText := strings.Repeat("é", 150)
+	withDescription := func(id, name, description string) mo.VirtualMachine {
+		vm := newTestVMOnHost(vc, id, name, "host-7")
+		vm.Summary.CustomValue = []types.BaseCustomFieldValue{&types.CustomFieldStringValue{
+			CustomFieldValue: types.CustomFieldValue{Key: 1},
+			Value:            description,
+		}}
+		return vm
+	}
+	vc.Vms = map[string]mo.VirtualMachine{
+		"vm-70": withDescription("vm-70", "long-description-vm", longText),
+		"vm-71": withDescription("vm-71", "accented-description-vm", accentedText),
+	}
+
+	if err := vc.syncVMs(nbi); err != nil {
+		t.Fatalf("syncVMs() error = %v", err)
+	}
+	tests := []struct{ vmName, wantDescription, wantComments string }{
+		{vmName: "long-description-vm", wantDescription: "See comments.", wantComments: strings.TrimSpace(longText)},
+		{vmName: "accented-description-vm", wantDescription: accentedText},
+	}
+	for _, tt := range tests {
+		vm, ok := nbi.GetVM(tt.vmName, nbHost.Cluster.ID)
+		if !ok {
+			t.Errorf("vm %s not synced", tt.vmName)
+			continue
+		}
+		if vm.Description != tt.wantDescription || vm.Comments != tt.wantComments {
+			t.Errorf("vm %s description, comments = %q, %q, want %q, %q",
+				tt.vmName, vm.Description, vm.Comments, tt.wantDescription, tt.wantComments)
+		}
+	}
+}

@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"unicode/utf8"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
@@ -1188,9 +1189,9 @@ func (vc *VmwareSource) syncVM(
 	// netbox description has constraint <= len(200 characters)
 	// In this case we make a comment
 	var vmComments string
-	if len(vmDescription) >= objects.MaxDescriptionLength {
-		vmDescription = "See comments."
+	if utf8.RuneCountInString(vmDescription) > objects.MaxDescriptionLength {
 		vmComments = vmDescription
+		vmDescription = "See comments."
 	}
 
 	vmStruct := &objects.VM{
