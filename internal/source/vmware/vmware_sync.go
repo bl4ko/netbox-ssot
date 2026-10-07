@@ -1142,17 +1142,21 @@ func (vc *VmwareSource) syncVM(
 		platformName = vm.Guest.GuestFullName
 	}
 
-	platformStruct := &objects.Platform{
-		Name: platformName,
-		Slug: utils.Slugify(platformName),
-	}
-	vmPlatform, err := nbi.AddPlatform(vc.Ctx, platformStruct)
-	if err != nil {
-		return fmt.Errorf(
-			"failed adding vmware vm's Platform %+v with error: %s",
-			platformStruct,
-			err,
-		)
+	// No platform when vCenter knows no guest OS name: NetBox rejects a nameless platform
+	var vmPlatform *objects.Platform
+	if platformName != "" {
+		platformStruct := &objects.Platform{
+			Name: platformName,
+			Slug: utils.Slugify(platformName),
+		}
+		vmPlatform, err = nbi.AddPlatform(vc.Ctx, platformStruct)
+		if err != nil {
+			return fmt.Errorf(
+				"failed adding vmware vm's Platform %+v with error: %s",
+				platformStruct,
+				err,
+			)
+		}
 	}
 
 	// Extract additional info from CustomFields

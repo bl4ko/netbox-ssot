@@ -766,3 +766,27 @@ func TestSetHostPrimaryIPAddressLogsFailuresInsteadOfStopping(t *testing.T) {
 		t.Errorf("log = %q, want a warning about the host primary ip", logged)
 	}
 }
+
+func TestSyncVMsWithoutGuestOSHaveNoPlatform(t *testing.T) {
+	nbi, defaultSite := newTestInventory(t)
+	vc := newTestSource(t, &parser.SourceConfig{})
+	vc.Hosts = map[string]mo.HostSystem{"host-12": newTestHost("host-12", "esx-no-os")}
+	if err := vc.syncHosts(nbi); err != nil {
+		t.Fatalf("syncHosts() error = %v", err)
+	}
+	nbHost, _ := nbi.GetDevice("esx-no-os", defaultSite.ID)
+	vm := newTestVMOnHost(vc, "vm-120", "no-os-vm", "host-12")
+	vm.Config.GuestFullName = ""
+	vc.Vms = map[string]mo.VirtualMachine{"vm-120": vm}
+
+	if err := vc.syncVMs(nbi); err != nil {
+		t.Fatalf("syncVMs() error = %v", err)
+	}
+	nbVM, ok := nbi.GetVM("no-os-vm", nbHost.Cluster.ID)
+	if !ok {
+		t.Fatal("vm no-os-vm not synced")
+	}
+	if nbVM.Platform != nil {
+		t.Errorf("vm platform = %v, want none without guest OS name", nbVM.Platform)
+	}
+}
