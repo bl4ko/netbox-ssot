@@ -820,3 +820,23 @@ func TestCollectVMInterfaceDataSkipsUnparsableGuestAddresses(t *testing.T) {
 		t.Errorf("addresses = %v, %v, want [192.0.2.30/24], [fe80::1/64]", ipv4, ipv6)
 	}
 }
+
+func TestAddVMInterfaceIPsSetsTheVMTenant(t *testing.T) {
+	nbi, _ := newTestInventory(t)
+	vc := newTestSource(t, &parser.SourceConfig{})
+	tenant := &objects.Tenant{NetboxObject: objects.NetboxObject{ID: 7}, Name: "tenant-ip"}
+	netboxVM := &objects.VM{NetboxObject: objects.NetboxObject{ID: 130}, Name: "tenant-ip-vm", Tenant: tenant}
+	nbVMInterface := &objects.VMInterface{NetboxObject: objects.NetboxObject{ID: 131}, Name: "vNIC 1", VM: netboxVM}
+
+	ipv4, ipv6 := vc.addVMInterfaceIPs(
+		nbi, netboxVM, nbVMInterface, []string{"192.0.2.40/24"}, []string{"2001:db8::40/64"}, nil, nil,
+	)
+	for _, addr := range append(ipv4, ipv6...) {
+		if addr.Tenant != tenant {
+			t.Errorf("address %s tenant = %v, want %s", addr.Address, addr.Tenant, tenant.Name)
+		}
+	}
+	if len(ipv4) != 1 || len(ipv6) != 1 {
+		t.Errorf("added addresses = %v, %v, want one IPv4 and one IPv6", ipv4, ipv6)
+	}
+}

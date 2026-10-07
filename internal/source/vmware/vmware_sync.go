@@ -1632,6 +1632,7 @@ func (vc *VmwareSource) addVMInterfaceIPs(
 				DNSName:            utils.ReverseLookup(ipv6Address),
 				AssignedObjectType: constants.ContentTypeVirtualizationVMInterface,
 				AssignedObjectID:   nbVMInterface.ID,
+				Tenant:             netboxVM.Tenant,
 				VRF:                ipVRF,
 			})
 			if err != nil {
