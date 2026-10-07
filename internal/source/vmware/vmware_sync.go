@@ -310,7 +310,14 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 			"SerialNumberTag":          true,
 		}
 		var assetTag string
-		for _, info := range host.Summary.Hardware.OtherIdentifyingInfo {
+		var identifyingInfo []types.HostSystemIdentificationInfo
+		if host.Summary.Hardware != nil {
+			identifyingInfo = host.Summary.Hardware.OtherIdentifyingInfo
+		}
+		for _, info := range identifyingInfo {
+			if info.IdentifierType == nil {
+				continue
+			}
 			infoType := info.IdentifierType.GetElementDescription().Key
 			infoValue := strings.Trim(info.IdentifierValue, " ") // remove blank spaces from value
 			if infoType == "AssetTag" {
@@ -330,23 +337,29 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 			}
 		}
 
-		hostStatus := vmwareConnectionStateToDeviceStatus(host.Summary.Runtime.ConnectionState)
+		// summary.runtime, summary.hardware and summary.config.product are optional:
+		// vCenter may omit them, e.g. for a host disconnected for a long time
+		var hostConnectionState types.HostSystemConnectionState
+		if host.Summary.Runtime != nil {
+			hostConnectionState = host.Summary.Runtime.ConnectionState
+		}
+		hostStatus := vmwareConnectionStateToDeviceStatus(hostConnectionState)
 
 		var hostPlatform *objects.Platform
-		osType := host.Summary.Config.Product.Name
-		osVersion := host.Summary.Config.Product.Version
-		platformName := utils.GeneratePlatformName(osType, osVersion, "")
-		platformStruct := &objects.Platform{
-			Name: platformName,
-			Slug: utils.Slugify(platformName),
-		}
-		hostPlatform, err = nbi.AddPlatform(vc.Ctx, platformStruct)
-		if err != nil {
-			return fmt.Errorf(
-				"failed adding vmware Platform %+v with error: %s",
-				platformStruct,
-				err,
-			)
+		if product := host.Summary.Config.Product; product != nil {
+			platformName := utils.GeneratePlatformName(product.Name, product.Version, "")
+			platformStruct := &objects.Platform{
+				Name: platformName,
+				Slug: utils.Slugify(platformName),
+			}
+			hostPlatform, err = nbi.AddPlatform(vc.Ctx, platformStruct)
+			if err != nil {
+				return fmt.Errorf(
+					"failed adding vmware Platform %+v with error: %s",
+					platformStruct,
+					err,
+				)
+			}
 		}
 
 		// Match host to a role. First test if user provided relations, if not
@@ -370,8 +383,12 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 			}
 		}
 
-		hostCPUCores := host.Summary.Hardware.NumCpuCores
-		hostMemGB := host.Summary.Hardware.MemorySize / constants.KiB / constants.KiB / constants.KiB
+		var hostCPUCores int16
+		var hostMemGB int64
+		if host.Summary.Hardware != nil {
+			hostCPUCores = host.Summary.Hardware.NumCpuCores
+			hostMemGB = host.Summary.Hardware.MemorySize / constants.KiB / constants.KiB / constants.KiB
+		}
 
 		hostStruct := &objects.Device{
 			NetboxObject: objects.NetboxObject{

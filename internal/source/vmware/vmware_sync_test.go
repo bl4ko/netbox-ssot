@@ -355,3 +355,22 @@ func TestSyncVMsMatchesVMRoleRelationsOnTheVMName(t *testing.T) {
 		}
 	}
 }
+
+func TestSyncHostsWithoutOptionalSummaryFields(t *testing.T) {
+	nbi, defaultSite := newTestInventory(t)
+	vc := newTestSource(t, &parser.SourceConfig{})
+	host := newTestHost("host-5", "esx-bare-summary")
+	host.Summary = types.HostListSummary{}
+	vc.Hosts = map[string]mo.HostSystem{"host-5": host}
+
+	if err := vc.syncHosts(nbi); err != nil {
+		t.Fatalf("syncHosts() error = %v", err)
+	}
+	nbHost, ok := nbi.GetDevice("esx-bare-summary", defaultSite.ID)
+	if !ok {
+		t.Fatal("host esx-bare-summary not synced")
+	}
+	if nbHost.Status == nil || *nbHost.Status != objects.DeviceStatusOffline {
+		t.Errorf("host status = %v, want %v without runtime info", nbHost.Status, objects.DeviceStatusOffline)
+	}
+}
