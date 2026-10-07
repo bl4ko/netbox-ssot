@@ -648,13 +648,11 @@ func (vc *VmwareSource) collectHostPhysicalNicData(
 		default:
 			pnicMode = &objects.InterfaceModeTagged
 			taggedVlanList = []*objects.Vlan{}
-			if pnicMode == &objects.InterfaceModeTagged {
-				for vid, vlan := range vlanIDMap {
-					if vid == 0 {
-						continue
-					}
-					taggedVlanList = append(taggedVlanList, vlan)
+			for vid, vlan := range vlanIDMap {
+				if vid == 0 {
+					continue
 				}
+				taggedVlanList = append(taggedVlanList, vlan)
 			}
 		}
 	}
