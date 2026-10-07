@@ -374,3 +374,21 @@ func TestSyncHostsWithoutOptionalSummaryFields(t *testing.T) {
 		t.Errorf("host status = %v, want %v without runtime info", nbHost.Status, objects.DeviceStatusOffline)
 	}
 }
+
+func TestSyncVMsWithoutOptionalGuestFields(t *testing.T) {
+	nbi, _ := newTestInventory(t)
+	vc := newTestSource(t, &parser.SourceConfig{})
+	vc.Hosts = map[string]mo.HostSystem{"host-6": newTestHost("host-6", "esx-guest-fields")}
+	if err := vc.syncHosts(nbi); err != nil {
+		t.Fatalf("syncHosts() error = %v", err)
+	}
+	withoutGuest := newTestVMOnHost(vc, "vm-60", "no-guest-vm", "host-6")
+	withoutGuest.Guest = nil
+	withoutRoutes := newTestVMOnHost(vc, "vm-61", "no-route-vm", "host-6")
+	withoutRoutes.Guest = &types.GuestInfo{IpStack: []types.GuestStackInfo{{}}}
+	vc.Vms = map[string]mo.VirtualMachine{"vm-60": withoutGuest, "vm-61": withoutRoutes}
+
+	if err := vc.syncVMs(nbi); err != nil {
+		t.Errorf("syncVMs() error = %v", err)
+	}
+}

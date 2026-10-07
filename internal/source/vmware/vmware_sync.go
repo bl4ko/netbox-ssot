@@ -1127,7 +1127,7 @@ func (vc *VmwareSource) syncVM(
 		platformName = vm.Summary.Guest.GuestFullName
 	case vm.Config.GuestFullName != "":
 		platformName = vm.Config.GuestFullName
-	case vm.Guest.GuestFullName != "":
+	case vm.Guest != nil && vm.Guest.GuestFullName != "":
 		platformName = vm.Guest.GuestFullName
 	}
 
@@ -1270,7 +1270,8 @@ func (vc *VmwareSource) syncVMInterfaces(
 	vmIPv6Addresses := make([]*objects.IPAddress, 0)
 
 	// From vm's routing determine the default interface
-	if len(vmwareVM.Guest.IpStack) > 0 {
+	// guest and its ip route config are optional: guest tools may not report them
+	if vmwareVM.Guest != nil && len(vmwareVM.Guest.IpStack) > 0 && vmwareVM.Guest.IpStack[0].IpRouteConfig != nil {
 		for _, route := range vmwareVM.Guest.IpStack[0].IpRouteConfig.IpRoute {
 			if route.PrefixLength == 0 {
 				ipAddress := route.Network
@@ -1465,7 +1466,11 @@ func (vc *VmwareSource) collectVMInterfaceData(
 		intDescription = fmt.Sprintf("%s (%s)", intDescription, vlanDescription)
 	}
 	// Find corresponding guest NIC and get IP addresses and connected status
-	for _, guestNic := range vmwareVM.Guest.Net {
+	var guestNics []types.GuestNicInfo
+	if vmwareVM.Guest != nil {
+		guestNics = vmwareVM.Guest.Net
+	}
+	for _, guestNic := range guestNics {
 		if intMac != guestNic.MacAddress {
 			continue
 		}
