@@ -124,45 +124,47 @@ func (n NetboxConfig) String() string {
 
 // Configuration that can be used for each of the sources.
 type SourceConfig struct {
-	Name                string               `yaml:"name"`
-	Type                constants.SourceType `yaml:"type"`
-	HTTPScheme          HTTPScheme           `yaml:"httpScheme"`
-	Hostname            string               `yaml:"hostname"`
-	Port                int                  `yaml:"port"`
-	Username            string               `yaml:"username"`
-	Password            string               `yaml:"password"`
-	APIToken            string               `yaml:"apiToken"`
-	ValidateCert        bool                 `yaml:"validateCert"`
-	Tag                 string               `yaml:"tag"`
-	TagColor            string               `yaml:"tagColor"`
-	IgnoredSubnets      []string             `yaml:"ignoredSubnets"`
-	PermittedSubnets    []string             `yaml:"permittedSubnets"`
-	InterfaceFilter     string               `yaml:"interfaceFilter"`
-	CollectArpData      bool                 `yaml:"collectArpData"`
-	CAFile              string               `yaml:"caFile"`
-	IgnoreAssetTags     bool                 `yaml:"ignoreAssetTags"`
-	IgnoreSerialNumbers bool                 `yaml:"ignoreSerialNumbers"`
-	IgnoreVMTemplates   bool                 `yaml:"ignoreVMTemplates"`
-	IgnoreVMDisks       bool                 `yaml:"ignoreVMDisks"`
-	IgnoreTags          bool                 `yaml:"ignoreTags"`
-	AssignDomainName    string               `yaml:"assignDomainName"`
-	ContinueOnError     bool                 `yaml:"continueOnError"`
-	VlanPrefix          string               `yaml:"vlanPrefix"`
-	DefaultIPv4MaskBits int                  `yaml:"defaultIPv4MaskBits"`
-	DefaultIPv6MaskBits int                  `yaml:"defaultIPv6MaskBits"`
-	TargetInterface     string               `yaml:"targetInterface"`
-	TenantName          string               `yaml:"tenantName"`
-	DomainName          string               `yaml:"domainName"`
-	ProjectName         string               `yaml:"projectName"`
-	Region              string               `yaml:"region"`
-	ProjectID           string               `yaml:"projectID"`
-	DomainID            string               `yaml:"domainID"`
-	TenantID            string               `yaml:"tenantID"`
-	ProjectDomainName   string               `yaml:"projectDomainName"`
-	ProjectDomainID     string               `yaml:"projectDomainID"`
-	ClusterName         string               `yaml:"clusterName"`
-	ClusterType         string               `yaml:"clusterType"`
-	ClusterGroupName    string               `yaml:"clusterGroupName"`
+	Name         string               `yaml:"name"`
+	Type         constants.SourceType `yaml:"type"`
+	HTTPScheme   HTTPScheme           `yaml:"httpScheme"`
+	Hostname     string               `yaml:"hostname"`
+	Port         int                  `yaml:"port"`
+	Username     string               `yaml:"username"`
+	Password     string               `yaml:"password"`
+	APIToken     string               `yaml:"apiToken"`
+	ValidateCert bool                 `yaml:"validateCert"`
+	// Timeout of a single API call to the source, in seconds.
+	Timeout             int      `yaml:"timeout"`
+	Tag                 string   `yaml:"tag"`
+	TagColor            string   `yaml:"tagColor"`
+	IgnoredSubnets      []string `yaml:"ignoredSubnets"`
+	PermittedSubnets    []string `yaml:"permittedSubnets"`
+	InterfaceFilter     string   `yaml:"interfaceFilter"`
+	CollectArpData      bool     `yaml:"collectArpData"`
+	CAFile              string   `yaml:"caFile"`
+	IgnoreAssetTags     bool     `yaml:"ignoreAssetTags"`
+	IgnoreSerialNumbers bool     `yaml:"ignoreSerialNumbers"`
+	IgnoreVMTemplates   bool     `yaml:"ignoreVMTemplates"`
+	IgnoreVMDisks       bool     `yaml:"ignoreVMDisks"`
+	IgnoreTags          bool     `yaml:"ignoreTags"`
+	AssignDomainName    string   `yaml:"assignDomainName"`
+	ContinueOnError     bool     `yaml:"continueOnError"`
+	VlanPrefix          string   `yaml:"vlanPrefix"`
+	DefaultIPv4MaskBits int      `yaml:"defaultIPv4MaskBits"`
+	DefaultIPv6MaskBits int      `yaml:"defaultIPv6MaskBits"`
+	TargetInterface     string   `yaml:"targetInterface"`
+	TenantName          string   `yaml:"tenantName"`
+	DomainName          string   `yaml:"domainName"`
+	ProjectName         string   `yaml:"projectName"`
+	Region              string   `yaml:"region"`
+	ProjectID           string   `yaml:"projectID"`
+	DomainID            string   `yaml:"domainID"`
+	TenantID            string   `yaml:"tenantID"`
+	ProjectDomainName   string   `yaml:"projectDomainName"`
+	ProjectDomainID     string   `yaml:"projectDomainID"`
+	ClusterName         string   `yaml:"clusterName"`
+	ClusterType         string   `yaml:"clusterType"`
+	ClusterGroupName    string   `yaml:"clusterGroupName"`
 
 	// Relations
 	DatacenterClusterGroupRelations map[string]string `yaml:"datacenterClusterGroupRelations"`
@@ -195,6 +197,7 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		Password                        string               `yaml:"password"`
 		APIToken                        string               `yaml:"apiToken"`
 		ValidateCert                    bool                 `yaml:"validateCert"`
+		Timeout                         int                  `yaml:"timeout"`
 		Tag                             string               `yaml:"tag"`
 		TagColor                        string               `yaml:"tagColor"`
 		AssignDomainName                string               `yaml:"assignDomainName"`
@@ -254,6 +257,7 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	sc.Password = rawMarshal.Password
 	sc.APIToken = rawMarshal.APIToken
 	sc.ValidateCert = rawMarshal.ValidateCert
+	sc.Timeout = rawMarshal.Timeout
 	sc.Tag = rawMarshal.Tag
 	sc.TagColor = rawMarshal.TagColor
 	sc.AssignDomainName = rawMarshal.AssignDomainName
@@ -608,6 +612,11 @@ func validateSourceConfig(config *Config) error {
 		}
 		if externalSource.Password == "" && !tokenOnlySources {
 			return fmt.Errorf("%s.password: cannot be empty", externalSourceStr)
+		}
+		if externalSource.Timeout < 0 {
+			return fmt.Errorf("%s.timeout: cannot be negative", externalSourceStr)
+		} else if externalSource.Timeout == 0 {
+			externalSource.Timeout = constants.DefaultAPITimeout
 		}
 		if externalSource.Tag == "" {
 			externalSource.Tag = fmt.Sprintf("Source: %s", externalSource.Name)

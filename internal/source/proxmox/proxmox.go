@@ -49,6 +49,7 @@ func (ps *ProxmoxSource) Init() error {
 		ps.SourceConfig.HTTPScheme, ps.SourceConfig.Hostname, ps.SourceConfig.Port),
 		proxmox.WithCredentials(&credentials),
 		proxmox.WithHTTPClient(HTTPClient),
+		proxmox.WithTimeout(time.Duration(ps.SourceConfig.Timeout)*time.Second),
 	)
 
 	ctx, cancel := context.WithCancel(context.Background())
