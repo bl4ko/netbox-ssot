@@ -230,7 +230,11 @@ type DeviceType struct {
 }
 
 func (dt DeviceType) String() string {
-	return fmt.Sprintf("DeviceType{Manufacturer: %s, Model: %s}", dt.Manufacturer.Name, dt.Model)
+	manufacturer := nilName
+	if dt.Manufacturer != nil {
+		manufacturer = dt.Manufacturer.Name
+	}
+	return fmt.Sprintf("DeviceType{Manufacturer: %s, Model: %s}", manufacturer, dt.Model)
 }
 
 // DeviceType implements OrphanItem interface.
@@ -688,11 +692,18 @@ type Interface struct {
 }
 
 func (i Interface) String() string {
+	device, ifaceType := nilName, nilName
+	if i.Device != nil {
+		device = i.Device.Name
+	}
+	if i.Type != nil {
+		ifaceType = i.Type.Label
+	}
 	return fmt.Sprintf(
 		"Interface{Name: %s, Device: %s, Type: %s}",
 		i.Name,
-		i.Device.Name,
-		i.Type.Label,
+		device,
+		ifaceType,
 	)
 }
 
