@@ -435,171 +435,7 @@ func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 	}
 
 	// Fetch VM disks
-	vmDisks := make([]*objects.VirtualDisk, 0)
-
-	// Fetch VirtIOs disks
-	if len(vm.VirtualMachineConfig.VirtIOs) > 0 {
-		for _, disk := range vm.VirtualMachineConfig.VirtIOs {
-			diskData := strings.Split(disk, ",")
-			diskName := diskData[0]
-			diskSize := 0
-
-			for index, item := range diskData {
-				// First element is disk name/path
-				if index == 0 {
-					continue
-				}
-
-				if sz := parseDiskSizeMiB(item); sz > 0 {
-					diskSize = sz
-				}
-			}
-
-			// Can't add disk with size == 0
-			if diskSize == 0 {
-				continue
-			}
-
-			ps.Logger.Debugf(
-				ps.Ctx,
-				"vm.Name: %s adding virtios disk: %s/%d",
-				vm.Name,
-				diskName,
-				diskSize,
-			)
-
-			vmDisks = append(vmDisks, &objects.VirtualDisk{
-				NetboxObject: objects.NetboxObject{
-					Description: diskName,
-				},
-				Name: diskName,
-				Size: diskSize,
-			})
-		}
-	}
-
-	// Fetch SCSIs disks
-	if len(vm.VirtualMachineConfig.SCSIs) > 0 {
-		for _, disk := range vm.VirtualMachineConfig.SCSIs {
-			diskData := strings.Split(disk, ",")
-			diskName := diskData[0]
-			diskSize := 0
-
-			for index, item := range diskData {
-				// First element is disk name/path
-				if index == 0 {
-					continue
-				}
-
-				if sz := parseDiskSizeMiB(item); sz > 0 {
-					diskSize = sz
-				}
-			}
-
-			// Can't add disk with size == 0
-			if diskSize == 0 {
-				continue
-			}
-
-			ps.Logger.Debugf(
-				ps.Ctx,
-				"vm.Name: %s adding scsi disk: %s/%d",
-				vm.Name,
-				diskName,
-				diskSize,
-			)
-
-			vmDisks = append(vmDisks, &objects.VirtualDisk{
-				NetboxObject: objects.NetboxObject{
-					Description: diskName,
-				},
-				Name: diskName,
-				Size: diskSize,
-			})
-		}
-	}
-
-	// Fetch SATAs disks
-	if len(vm.VirtualMachineConfig.SATAs) > 0 {
-		for _, disk := range vm.VirtualMachineConfig.SATAs {
-			diskData := strings.Split(disk, ",")
-			diskName := diskData[0]
-			diskSize := 0
-
-			for index, item := range diskData {
-				// First element is disk name/path
-				if index == 0 {
-					continue
-				}
-
-				if sz := parseDiskSizeMiB(item); sz > 0 {
-					diskSize = sz
-				}
-			}
-
-			// Can't add disk with size == 0
-			if diskSize == 0 {
-				continue
-			}
-
-			ps.Logger.Debugf(
-				ps.Ctx,
-				"vm.Name: %s adding sata disk: %s/%d",
-				vm.Name,
-				diskName,
-				diskSize,
-			)
-
-			vmDisks = append(vmDisks, &objects.VirtualDisk{
-				NetboxObject: objects.NetboxObject{
-					Description: diskName,
-				},
-				Name: diskName,
-				Size: diskSize,
-			})
-		}
-	}
-
-	// Fetch IDEs disks
-	if len(vm.VirtualMachineConfig.IDEs) > 0 {
-		for _, disk := range vm.VirtualMachineConfig.IDEs {
-			diskData := strings.Split(disk, ",")
-			diskName := diskData[0]
-			diskSize := 0
-
-			for index, item := range diskData {
-				// First element is disk name/path
-				if index == 0 {
-					continue
-				}
-
-				if sz := parseDiskSizeMiB(item); sz > 0 {
-					diskSize = sz
-				}
-			}
-
-			// Can't add disk with size == 0
-			if diskSize == 0 {
-				continue
-			}
-
-			ps.Logger.Debugf(
-				ps.Ctx,
-				"vm.Name: %s adding ide disk: %s/%d",
-				vm.Name,
-				diskName,
-				diskSize,
-			)
-
-			vmDisks = append(vmDisks, &objects.VirtualDisk{
-				NetboxObject: objects.NetboxObject{
-					Description: diskName,
-				},
-				Name: diskName,
-				Size: diskSize,
-			})
-		}
-	}
+	vmDisks := ps.collectVMDisks(vm.Name, vm.VirtualMachineConfig)
 
 	// Fetch VM tags
 	newTags := ps.GetSourceTags()
@@ -1154,4 +990,62 @@ func (ps *ProxmoxSource) keptGuestIDs() map[string]uint64 {
 		}
 	}
 	return kept
+}
+
+// collectVMDisks returns the virtual disks of a VM config, across all disk buses.
+func (ps *ProxmoxSource) collectVMDisks(
+	vmName string,
+	vmConfig *proxmox.VirtualMachineConfig,
+) []*objects.VirtualDisk {
+	vmDisks := make([]*objects.VirtualDisk, 0)
+	vmDisks = append(vmDisks, ps.collectDisks(vmName, "virtios", vmConfig.VirtIOs)...)
+	vmDisks = append(vmDisks, ps.collectDisks(vmName, "scsi", vmConfig.SCSIs)...)
+	vmDisks = append(vmDisks, ps.collectDisks(vmName, "sata", vmConfig.SATAs)...)
+	vmDisks = append(vmDisks, ps.collectDisks(vmName, "ide", vmConfig.IDEs)...)
+	return vmDisks
+}
+
+// collectDisks returns the virtual disks of one disk bus (kind) of a VM.
+// Disks without size (e.g. cdrom drives) are skipped.
+func (ps *ProxmoxSource) collectDisks(vmName, kind string, disks map[string]string) []*objects.VirtualDisk {
+	vmDisks := make([]*objects.VirtualDisk, 0, len(disks))
+	for _, disk := range disks {
+		diskData := strings.Split(disk, ",")
+		diskName := diskData[0]
+		diskSize := 0
+
+		for index, item := range diskData {
+			// First element is disk name/path
+			if index == 0 {
+				continue
+			}
+
+			if sz := parseDiskSizeMiB(item); sz > 0 {
+				diskSize = sz
+			}
+		}
+
+		// Can't add disk with size == 0
+		if diskSize == 0 {
+			continue
+		}
+
+		ps.Logger.Debugf(
+			ps.Ctx,
+			"vm.Name: %s adding %s disk: %s/%d",
+			vmName,
+			kind,
+			diskName,
+			diskSize,
+		)
+
+		vmDisks = append(vmDisks, &objects.VirtualDisk{
+			NetboxObject: objects.NetboxObject{
+				Description: diskName,
+			},
+			Name: diskName,
+			Size: diskSize,
+		})
+	}
+	return vmDisks
 }
