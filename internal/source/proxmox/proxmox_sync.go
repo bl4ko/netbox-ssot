@@ -3,6 +3,7 @@ package proxmox
 import (
 	"cmp"
 	"fmt"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -16,26 +17,36 @@ import (
 	"github.com/luthermonson/go-proxmox"
 )
 
+// diskSizeRegex follows the grammar of Proxmox's parse_size (pve-common JSONSchema.pm):
+// a number with an optional binary unit, a bare number being a size in bytes.
+var diskSizeRegex = regexp.MustCompile(`^(\d+(?:\.\d+)?)([KMGT])?(?:iB)?$`)
+
+// diskSizeUnits maps Proxmox size units to their size in bytes (powers of 1024).
+var diskSizeUnits = map[string]float64{
+	"":  constants.B,
+	"K": constants.KiB,
+	"M": constants.MiB,
+	"G": constants.GiB,
+	"T": constants.TiB,
+}
+
 // parseDiskSizeMiB parses a proxmox disk config token (e.g. "size=32G") and
 // returns the size in MiB. It returns 0 when item is not a size token or the
 // value cannot be parsed.
 func parseDiskSizeMiB(item string) int {
-	if !strings.Contains(item, "size") {
-		return 0
-	}
-	_, value, ok := strings.Cut(item, "=")
+	value, ok := strings.CutPrefix(item, "size=")
 	if !ok {
 		return 0
 	}
-	switch {
-	case strings.HasSuffix(value, "G"):
-		size, _ := strconv.Atoi(strings.TrimSuffix(value, "G"))
-		return size * constants.KB
-	case strings.HasSuffix(value, "T"):
-		size, _ := strconv.Atoi(strings.TrimSuffix(value, "T"))
-		return size * constants.MB
+	match := diskSizeRegex.FindStringSubmatch(value)
+	if match == nil {
+		return 0
 	}
-	return 0
+	number, err := strconv.ParseFloat(match[1], 64)
+	if err != nil {
+		return 0
+	}
+	return int(number * diskSizeUnits[match[2]] / constants.MiB)
 }
 
 func (ps *ProxmoxSource) syncCluster(nbi *inventory.NetboxInventory) error {
