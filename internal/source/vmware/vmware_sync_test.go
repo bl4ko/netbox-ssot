@@ -119,6 +119,47 @@ func TestSyncVMsSkipsVMsWithoutConfig(t *testing.T) {
 	}
 }
 
+func TestCollectHostPhysicalNicDataSpeed(t *testing.T) {
+	nbi, _ := newTestInventory(t)
+	vc := newTestSource(t, &parser.SourceConfig{})
+	nbHost := &objects.Device{Name: "esx-nic-speed"}
+	tests := []struct {
+		name      string
+		pnic      types.PhysicalNic
+		wantSpeed objects.InterfaceSpeed
+	}{
+		{
+			name:      "link up",
+			pnic:      types.PhysicalNic{Device: "vmnic0", LinkSpeed: &types.PhysicalNicLinkInfo{SpeedMb: 10000}},
+			wantSpeed: 10000000,
+		},
+		{
+			name: "link down with a forced speed",
+			pnic: types.PhysicalNic{
+				Device: "vmnic1",
+				Spec:   types.PhysicalNicSpec{LinkSpeed: &types.PhysicalNicLinkInfo{SpeedMb: 1000}},
+			},
+			wantSpeed: 1000000,
+		},
+		{
+			name:      "link down without any speed",
+			pnic:      types.PhysicalNic{Device: "vmnic2", ValidLinkSpecification: []types.PhysicalNicLinkInfo{}},
+			wantSpeed: 0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			iface, _, err := vc.collectHostPhysicalNicData(nbi, nbHost, tt.pnic, nil)
+			if err != nil {
+				t.Fatalf("collectHostPhysicalNicData() error = %v", err)
+			}
+			if iface.Speed != tt.wantSpeed {
+				t.Errorf("speed = %d, want %d", iface.Speed, tt.wantSpeed)
+			}
+		})
+	}
+}
+
 func TestSyncHostsWithoutHostSiteRelationsUsesDefaultSite(t *testing.T) {
 	nbi, defaultSite := newTestInventory(t)
 	vc := newTestSource(t, &parser.SourceConfig{})

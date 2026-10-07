@@ -504,15 +504,11 @@ func (vc *VmwareSource) collectHostPhysicalNicData(
 	if pnic.LinkSpeed != nil {
 		pnicLinkSpeedMb = pnic.LinkSpeed.SpeedMb
 	}
-	if pnicLinkSpeedMb == 0 {
-		if pnic.Spec.LinkSpeed != nil {
-			pnicLinkSpeedMb = pnic.LinkSpeed.SpeedMb
-		}
-		if pnicLinkSpeedMb == 0 {
-			if pnic.ValidLinkSpecification != nil {
-				pnicLinkSpeedMb = pnic.ValidLinkSpecification[0].SpeedMb
-			}
-		}
+	if pnicLinkSpeedMb == 0 && pnic.Spec.LinkSpeed != nil {
+		pnicLinkSpeedMb = pnic.Spec.LinkSpeed.SpeedMb
+	}
+	if pnicLinkSpeedMb == 0 && len(pnic.ValidLinkSpecification) > 0 {
+		pnicLinkSpeedMb = pnic.ValidLinkSpecification[0].SpeedMb
 	}
 	var pnicDescription string
 	if pnicLinkSpeedMb/constants.KB >= 1 {
