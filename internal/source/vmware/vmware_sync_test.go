@@ -640,3 +640,32 @@ func TestInterfacesOnPortGroupsWithoutVlan(t *testing.T) {
 		t.Fatalf("collectHostVirtualNicData() error = %v", err)
 	}
 }
+
+func TestCollectHostVirtualNicDataDescribesItsDistributedSwitch(t *testing.T) {
+	nbi, _ := newTestInventory(t)
+	vc := newTestSource(t, &parser.SourceConfig{})
+	vc.Networks.DistributedVirtualPortgroups["dvportgroup-mgmt"] = &DistributedPortgroupData{
+		Name: "mgmt", VlanIDs: []int{3110},
+	}
+	vc.Networks.HostProxySwitches["esx-dvs"] = map[string]*HostProxySwitchData{
+		"50 2a 6f 11": {name: "dvs-prod", mtu: 9000},
+	}
+	vnic := types.HostVirtualNic{
+		Device: "vmk0",
+		Spec: types.HostVirtualNicSpec{
+			DistributedVirtualPort: &types.DistributedVirtualSwitchPortConnection{
+				PortgroupKey: "dvportgroup-mgmt",
+				SwitchUuid:   "50 2a 6f 11",
+			},
+		},
+	}
+
+	nbHost := &objects.Device{Name: "esx-dvs"}
+	iface, _, err := vc.collectHostVirtualNicData(nbi, nbHost, newTestHost("host-10", "esx-dvs"), vnic)
+	if err != nil {
+		t.Fatalf("collectHostVirtualNicData() error = %v", err)
+	}
+	if want := "mgmt (dvs-prod, vlan ID: 3110)"; iface.Description != want {
+		t.Errorf("description = %q, want %q", iface.Description, want)
+	}
+}

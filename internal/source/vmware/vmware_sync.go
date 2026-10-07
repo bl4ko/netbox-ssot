@@ -903,9 +903,10 @@ func (vc *VmwareSource) collectHostVirtualNicData(
 			}
 		}
 		vnicDvPortgroupDwSwitchUUID := vnic.Spec.DistributedVirtualPort.SwitchUuid
-		vnicVswitch, vnicVswitchOk := vc.Networks.HostVirtualSwitches[vcHost.Name][vnicDvPortgroupDwSwitchUUID]
-		if vnicVswitchOk {
-			vnicDescription = fmt.Sprintf("%s (%v, %s)", vnicDescription, vnicVswitch, vlanDescription)
+		// Distributed switches of a host are proxy switches, keyed by their UUID
+		vnicDvSwitch, vnicDvSwitchOk := vc.Networks.HostProxySwitches[vcHost.Name][vnicDvPortgroupDwSwitchUUID]
+		if vnicDvSwitchOk {
+			vnicDescription = fmt.Sprintf("%s (%s, %s)", vnicDescription, vnicDvSwitch.name, vlanDescription)
 		}
 	}
 
