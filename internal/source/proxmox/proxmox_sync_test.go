@@ -191,3 +191,105 @@ func TestSyncNodesWithDomainSuffixSyncsHostInterfaces(t *testing.T) {
 		})
 	}
 }
+
+func TestVMPlatformName(t *testing.T) {
+	l26 := "l26"
+	existingWithPlatform := &objects.VM{Platform: &objects.Platform{NetboxObject: objects.NetboxObject{ID: 6}, Name: "Debian 12"}}
+	tests := []struct {
+		name         string
+		agentOsInfo  *proxmox.AgentOsInfo
+		osType       *string
+		existingVM   *objects.VM
+		wantName     string
+		wantKeepCurr bool
+	}{
+		{
+			name:        "agent reports the OS",
+			agentOsInfo: &proxmox.AgentOsInfo{PrettyName: "Debian GNU/Linux 13 (trixie)"},
+			osType:      &l26,
+			existingVM:  existingWithPlatform,
+			wantName:    "Debian GNU/Linux 13 (trixie)",
+		},
+		{
+			name:         "agent silent keeps the current platform",
+			osType:       &l26,
+			existingVM:   existingWithPlatform,
+			wantKeepCurr: true,
+		},
+		{
+			name:         "agent without OS name keeps the current platform",
+			agentOsInfo:  &proxmox.AgentOsInfo{},
+			osType:       &l26,
+			existingVM:   existingWithPlatform,
+			wantKeepCurr: true,
+		},
+		{
+			name:     "agent silent on a new VM falls back to ostype",
+			osType:   &l26,
+			wantName: "Other 2.6.x Linux (64-bit)",
+		},
+		{
+			name:       "agent silent on a VM without platform falls back to ostype",
+			osType:     &l26,
+			existingVM: &objects.VM{},
+			wantName:   "Other 2.6.x Linux (64-bit)",
+		},
+		{
+			name:     "nothing known",
+			wantName: "Unknown",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotName, gotKeep := vmPlatformName(tt.agentOsInfo, tt.osType, tt.existingVM)
+			if gotKeep != tt.wantKeepCurr || (!gotKeep && gotName != tt.wantName) {
+				t.Errorf("vmPlatformName() = (%q, %t), want (%q, %t)", gotName, gotKeep, tt.wantName, tt.wantKeepCurr)
+			}
+		})
+	}
+}
+
+func TestSyncVMKeepsKnownNetworkObjectsWhenAgentDataIsUnknown(t *testing.T) {
+	service.MockNetboxClient.DryRun = true
+	nbi := inventory.MockInventory
+	host := &objects.Device{
+		NetboxObject: objects.NetboxObject{ID: 1},
+		Name:         "n1",
+		Site:         &objects.Site{NetboxObject: objects.NetboxObject{ID: 1}},
+	}
+	tests := []struct {
+		name       string
+		vmIfaces   map[string][]*proxmox.AgentNetworkIface
+		wantOrphan bool
+	}{
+		{name: "agent data unknown", vmIfaces: map[string][]*proxmox.AgentNetworkIface{}, wantOrphan: false},
+		{
+			name:       "agent reports no interface",
+			vmIfaces:   map[string][]*proxmox.AgentNetworkIface{"existing_vm1": {}},
+			wantOrphan: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			existingIface := nbi.GetVMInterfaceByVMIDAndName(1, "vmeth0")
+			if existingIface == nil {
+				t.Fatalf("mock inventory has no vmeth0 on VM 1")
+			}
+			nbi.OrphanManager.AddItem(existingIface)
+			t.Cleanup(func() { nbi.OrphanManager.RemoveItem(existingIface) })
+
+			ps := newTestSource(t, &parser.SourceConfig{})
+			ps.NetboxCluster.ID = 1
+			ps.VMIfaces = tt.vmIfaces
+			vm := newTestVM("existing_vm1", 1)
+			vm.Status = "stopped"
+			if err := ps.syncVM(nbi, vm, host); err != nil {
+				t.Fatalf("syncVM() error = %v", err)
+			}
+			_, orphan := nbi.OrphanManager.Items[constants.VMInterfacesAPIPath][existingIface.ID]
+			if orphan != tt.wantOrphan {
+				t.Errorf("vmeth0 orphan = %t, want %t", orphan, tt.wantOrphan)
+			}
+		})
+	}
+}

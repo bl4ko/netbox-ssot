@@ -322,3 +322,12 @@ func (nbi *NetboxInventory) GetVRF(vrfName string) (*objects.VRF, bool) {
 	}
 	return vrf, true
 }
+
+// GetVM returns the VirtualMachine with the given name in the given cluster.
+// This function is thread-safe.
+func (nbi *NetboxInventory) GetVM(vmName string, clusterID int) (*objects.VM, bool) {
+	nbi.vmsLock.Lock()
+	defer nbi.vmsLock.Unlock()
+	vm, ok := nbi.vmsIndexByNameAndClusterID[vmName][clusterID]
+	return vm, ok
+}
