@@ -1667,3 +1667,54 @@ func TestAddClusterMovesTheSourceVMsOutOfASharedCluster(t *testing.T) {
 		t.Errorf("app-a of proxmox-a = (%v, %t), want it left in the shared cluster", kept, ok)
 	}
 }
+
+// A run that created the source's cluster but failed to move all of its VMs leaves some
+// of them in the shared cluster. The next run finds the source's cluster and must resume
+// the move, otherwise AddVM creates replacements for the VMs left behind.
+func TestAddClusterResumesTheMoveIntoAnExistingSourceCluster(t *testing.T) {
+	shared := &objects.Cluster{
+		NetboxObject: objects.NetboxObject{
+			ID: 10, CustomFields: map[string]interface{}{constants.CustomFieldSourceName: "proxmox-a"},
+		},
+		Name: "pve-cluster0",
+	}
+	own := &objects.Cluster{
+		NetboxObject: objects.NetboxObject{
+			ID: 20, CustomFields: map[string]interface{}{constants.CustomFieldSourceName: "proxmox-b"},
+		},
+		Name: "pve-cluster0",
+	}
+	left := &objects.VM{
+		NetboxObject: objects.NetboxObject{
+			ID: 31, CustomFields: map[string]interface{}{constants.CustomFieldSourceName: "proxmox-b"},
+		},
+		Name: "app-b", Cluster: shared,
+	}
+	nbi := &NetboxInventory{
+		Logger:         mockLogger,
+		OrphanManager:  NewOrphanManager(mockLogger),
+		SsotTag:        &objects.Tag{ID: 1, Name: constants.SsotTagName},
+		SourcePriority: map[string]int{},
+		NetboxAPI:      &service.NetboxClient{Logger: mockLogger, DryRun: true},
+		clustersIndexByNameAndSource: map[string]map[string]*objects.Cluster{
+			"pve-cluster0": {"proxmox-a": shared, "proxmox-b": own},
+		},
+		vmsIndexByNameAndClusterID: map[string]map[int]*objects.VM{"app-b": {10: left}},
+		vmsIndexByID:               map[int]*objects.VM{31: left},
+	}
+	ctxB := context.WithValue(context.Background(), constants.CtxSourceKey, "proxmox-b")
+
+	got, err := nbi.AddCluster(ctxB, &objects.Cluster{Name: "pve-cluster0"})
+	if err != nil {
+		t.Fatalf("AddCluster() error = %v", err)
+	}
+	if got.ID != 20 {
+		t.Fatalf("AddCluster() returned cluster %d, want the existing cluster 20 of proxmox-b", got.ID)
+	}
+	if moved, ok := nbi.GetVM("app-b", 20); !ok || moved.ID != 31 {
+		t.Errorf("GetVM(app-b, 20) = (%v, %t), want VM 31 moved with its ID", moved, ok)
+	}
+	if _, ok := nbi.GetVM("app-b", 10); ok {
+		t.Errorf("app-b is still indexed in the shared cluster")
+	}
+}
