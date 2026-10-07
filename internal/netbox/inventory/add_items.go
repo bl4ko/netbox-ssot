@@ -1338,11 +1338,11 @@ func (nbi *NetboxInventory) AddIPAddress(
 	addSourceNameCustomField(ctx, &newIPAddress.NetboxObject)
 	newIPAddress.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
 
-	objType, objName, ifaceName, err := nbi.getIndexValuesForIPAddress(newIPAddress)
+	ifaceType, ifaceName, parentName, err := nbi.getIndexValuesForIPAddress(newIPAddress)
 	if err != nil {
 		return nil, fmt.Errorf("get index values for ip address %+v: %s", newIPAddress, err)
 	}
-	nbi.verifyIPAddressIndexExists(objType, objName, ifaceName)
+	nbi.verifyIPAddressIndexExists(ifaceType, ifaceName, parentName)
 
 	indexKey := ipAddressIndexKey(newIPAddress)
 
@@ -1351,17 +1351,17 @@ func (nbi *NetboxInventory) AddIPAddress(
 
 	// When VRF is not specified by the source (nil), try to find the IP in any VRF.
 	// This preserves manually assigned VRFs in NetBox and avoids creating duplicates.
-	if _, ok := nbi.ipAddressesIndex[objType][objName][ifaceName][indexKey]; !ok && newIPAddress.VRF == nil {
+	if _, ok := nbi.ipAddressesIndex[ifaceType][ifaceName][parentName][indexKey]; !ok && newIPAddress.VRF == nil {
 		if foundKey, foundIP := findIPAddressAcrossVRFs(
-			nbi.ipAddressesIndex[objType][objName][ifaceName], newIPAddress.Address,
+			nbi.ipAddressesIndex[ifaceType][ifaceName][parentName], newIPAddress.Address,
 		); foundIP != nil {
 			indexKey = foundKey
 			newIPAddress.VRF = foundIP.VRF
 		}
 	}
 
-	if _, ok := nbi.ipAddressesIndex[objType][objName][ifaceName][indexKey]; ok {
-		oldIPAddress := nbi.ipAddressesIndex[objType][objName][ifaceName][indexKey]
+	if _, ok := nbi.ipAddressesIndex[ifaceType][ifaceName][parentName][indexKey]; ok {
+		oldIPAddress := nbi.ipAddressesIndex[ifaceType][ifaceName][parentName][indexKey]
 		nbi.OrphanManager.RemoveItem(oldIPAddress)
 		diffMap, err := utils.JSONDiffMapExceptID(
 			newIPAddress,
@@ -1387,7 +1387,7 @@ func (nbi *NetboxInventory) AddIPAddress(
 			if err != nil {
 				return nil, err
 			}
-			nbi.ipAddressesIndex[objType][objName][ifaceName][indexKey] = patchedIPAddress
+			nbi.ipAddressesIndex[ifaceType][ifaceName][parentName][indexKey] = patchedIPAddress
 			return patchedIPAddress, nil
 		}
 		nbi.Logger.Debugf(
@@ -1441,13 +1441,13 @@ func (nbi *NetboxInventory) AddIPAddress(
 			if patchErr != nil {
 				return nil, fmt.Errorf("reassign existing ip address %d: %w", chosenIP.ID, patchErr)
 			}
-			nbi.ipAddressesIndex[objType][objName][ifaceName][indexKey] = patchedIP
+			nbi.ipAddressesIndex[ifaceType][ifaceName][parentName][indexKey] = patchedIP
 			return patchedIP, nil
 		}
-		nbi.ipAddressesIndex[objType][objName][ifaceName][indexKey] = createdIPAddress
+		nbi.ipAddressesIndex[ifaceType][ifaceName][parentName][indexKey] = createdIPAddress
 		return createdIPAddress, nil
 	}
-	return nbi.ipAddressesIndex[objType][objName][ifaceName][indexKey], nil
+	return nbi.ipAddressesIndex[ifaceType][ifaceName][parentName][indexKey], nil
 }
 
 // AddMACAddress adds a new MAC address to the Netbox inventory.
@@ -1463,21 +1463,21 @@ func (nbi *NetboxInventory) AddMACAddress(
 	newMACAddress.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
 
 	// Get index values with helper function.
-	objType, objName, ifaceName, err := nbi.getIndexValuesForMACAddress(newMACAddress)
+	ifaceType, ifaceName, parentName, err := nbi.getIndexValuesForMACAddress(newMACAddress)
 	if err != nil {
 		return nil, fmt.Errorf("get index values for mac address %+v: %s", newMACAddress, err)
 	}
 
 	// ensure index is not nil
-	nbi.verifyMACAddressIndexExists(objType, objName, ifaceName)
+	nbi.verifyMACAddressIndexExists(ifaceType, ifaceName, parentName)
 
 	// ensure MAC address is uppercase
 	newMACAddress.MAC = strings.ToUpper(newMACAddress.MAC)
 
 	nbi.macAddressesLock.Lock()
 	defer nbi.macAddressesLock.Unlock()
-	if _, ok := nbi.macAddressesIndex[objType][objName][ifaceName][newMACAddress.MAC]; ok {
-		oldMACAddress := nbi.macAddressesIndex[objType][objName][ifaceName][newMACAddress.MAC]
+	if _, ok := nbi.macAddressesIndex[ifaceType][ifaceName][parentName][newMACAddress.MAC]; ok {
+		oldMACAddress := nbi.macAddressesIndex[ifaceType][ifaceName][parentName][newMACAddress.MAC]
 		nbi.OrphanManager.RemoveItem(oldMACAddress)
 
 		diffMap, err := utils.JSONDiffMapExceptID(
@@ -1505,7 +1505,7 @@ func (nbi *NetboxInventory) AddMACAddress(
 			if err != nil {
 				return nil, err
 			}
-			nbi.macAddressesIndex[objType][objName][ifaceName][newMACAddress.MAC] = patchedMACAddress
+			nbi.macAddressesIndex[ifaceType][ifaceName][parentName][newMACAddress.MAC] = patchedMACAddress
 			return patchedMACAddress, nil
 		}
 		nbi.Logger.Debugf(
@@ -1519,10 +1519,10 @@ func (nbi *NetboxInventory) AddMACAddress(
 		if err != nil {
 			return nil, err
 		}
-		nbi.macAddressesIndex[objType][objName][ifaceName][newMACAddress.MAC] = newMACAddress
+		nbi.macAddressesIndex[ifaceType][ifaceName][parentName][newMACAddress.MAC] = newMACAddress
 		return newMACAddress, nil
 	}
-	return nbi.macAddressesIndex[objType][objName][ifaceName][newMACAddress.MAC], nil
+	return nbi.macAddressesIndex[ifaceType][ifaceName][parentName][newMACAddress.MAC], nil
 }
 
 // AddPrefix adds a new prefix to the Netbox inventory.
