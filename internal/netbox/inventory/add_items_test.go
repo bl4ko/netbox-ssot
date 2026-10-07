@@ -1534,3 +1534,136 @@ func testAddIPAddressDuplicateError(t *testing.T, failure string, failGet, failP
 		t.Errorf("AddIPAddress() error = %q, want the NetBox failure (permission denied)", err)
 	}
 }
+
+// newRecordingServer fakes a NetBox that accepts every PATCH and records its body.
+func newRecordingServer(t *testing.T) (*service.NetboxClient, func() []string) {
+	t.Helper()
+	var mu sync.Mutex
+	bodies := []string{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		mu.Lock()
+		bodies = append(bodies, r.Method+" "+r.URL.Path+" "+string(body))
+		mu.Unlock()
+		_, _ = io.WriteString(w, `{"id":9,"name":"eno1","device":{"id":7,"name":"pve01"}}`)
+	}))
+	t.Cleanup(server.Close)
+	client := &service.NetboxClient{
+		HTTPClient: &http.Client{}, Logger: mockLogger, BaseURL: server.URL,
+		APIToken: "testtoken", Timeout: constants.DefaultAPITimeout,
+	}
+	return client, func() []string {
+		mu.Lock()
+		defer mu.Unlock()
+		out := make([]string, len(bodies))
+		copy(out, bodies)
+		return out
+	}
+}
+
+func TestClearInterfaceLAG(t *testing.T) {
+	tests := []struct {
+		name        string
+		ownerSource string
+		priorities  map[string]int
+		wantPatches []string
+	}{
+		{
+			name:        "the member's source clears its LAG",
+			ownerSource: "proxmox-a",
+			priorities:  map[string]int{},
+			wantPatches: []string{`PATCH /api/dcim/interfaces/9/ {"lag":null}`},
+		},
+		{
+			name:        "a source of lower priority leaves it alone",
+			ownerSource: "vcenter",
+			priorities:  map[string]int{"vcenter": 0, "proxmox-a": 1},
+			wantPatches: []string{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client, patches := newRecordingServer(t)
+			host := &objects.Device{NetboxObject: objects.NetboxObject{ID: 7}, Name: "pve01"}
+			bond := &objects.Interface{NetboxObject: objects.NetboxObject{ID: 8}, Name: "bond0", Device: host}
+			member := &objects.Interface{
+				NetboxObject: objects.NetboxObject{
+					ID:           9,
+					CustomFields: map[string]interface{}{constants.CustomFieldSourceName: tt.ownerSource},
+				},
+				Name: "eno1", Device: host, LAG: bond,
+			}
+			nbi := &NetboxInventory{
+				Logger:         mockLogger,
+				SourcePriority: tt.priorities,
+				NetboxAPI:      client,
+				interfacesIndexByDeviceIDAndName: map[int]map[string]*objects.Interface{
+					7: {"bond0": bond, "eno1": member},
+				},
+				interfacesIndexByID: map[int]*objects.Interface{8: bond, 9: member},
+			}
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "proxmox-a")
+			if err := nbi.ClearInterfaceLAG(ctx, host, "eno1"); err != nil {
+				t.Fatalf("ClearInterfaceLAG() error = %v", err)
+			}
+			if got := patches(); !reflect.DeepEqual(got, tt.wantPatches) {
+				t.Errorf("requests = %q, want %q", got, tt.wantPatches)
+			}
+		})
+	}
+}
+
+// Before clusters were indexed by source, two sources with the same cluster name shared
+// one NetBox cluster. The first run that gives a source its own cluster must move that
+// source's VMs into it, keeping their IDs, instead of creating replacements.
+func TestAddClusterMovesTheSourceVMsOutOfASharedCluster(t *testing.T) {
+	shared := &objects.Cluster{
+		NetboxObject: objects.NetboxObject{
+			ID: 10, CustomFields: map[string]interface{}{constants.CustomFieldSourceName: "proxmox-a"},
+		},
+		Name: "pve-cluster0",
+	}
+	vmOf := func(id int, name, source string) *objects.VM {
+		return &objects.VM{
+			NetboxObject: objects.NetboxObject{
+				ID: id, CustomFields: map[string]interface{}{constants.CustomFieldSourceName: source},
+			},
+			Name: name, Cluster: shared,
+		}
+	}
+	vmB, vmA := vmOf(31, "app-b", "proxmox-b"), vmOf(32, "app-a", "proxmox-a")
+	nbi := &NetboxInventory{
+		Logger:         mockLogger,
+		OrphanManager:  NewOrphanManager(mockLogger),
+		SsotTag:        &objects.Tag{ID: 1, Name: constants.SsotTagName},
+		SourcePriority: map[string]int{},
+		NetboxAPI:      &service.NetboxClient{Logger: mockLogger, DryRun: true},
+		clustersIndexByNameAndSource: map[string]map[string]*objects.Cluster{
+			"pve-cluster0": {"proxmox-a": shared},
+		},
+		vmsIndexByNameAndClusterID: map[string]map[int]*objects.VM{
+			"app-b": {10: vmB},
+			"app-a": {10: vmA},
+		},
+		vmsIndexByID: map[int]*objects.VM{31: vmB, 32: vmA},
+	}
+	ctxB := context.WithValue(context.Background(), constants.CtxSourceKey, "proxmox-b")
+
+	own, err := nbi.AddCluster(ctxB, &objects.Cluster{Name: "pve-cluster0"})
+	if err != nil {
+		t.Fatalf("AddCluster() error = %v", err)
+	}
+	if own.ID == shared.ID {
+		t.Fatalf("AddCluster() returned the shared cluster, want a cluster of proxmox-b")
+	}
+	moved, ok := nbi.GetVM("app-b", own.ID)
+	if !ok || moved.ID != 31 {
+		t.Errorf("GetVM(app-b, own cluster) = (%v, %t), want VM 31 moved with its ID", moved, ok)
+	}
+	if _, ok := nbi.GetVM("app-b", shared.ID); ok {
+		t.Errorf("app-b is still indexed in the shared cluster")
+	}
+	if kept, ok := nbi.GetVM("app-a", shared.ID); !ok || kept.ID != 32 {
+		t.Errorf("app-a of proxmox-a = (%v, %t), want it left in the shared cluster", kept, ok)
+	}
+}

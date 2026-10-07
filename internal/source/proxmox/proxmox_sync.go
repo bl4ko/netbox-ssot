@@ -252,10 +252,15 @@ func (ps *ProxmoxSource) syncNodeNetworks(
 		return cmp.Compare(lagSyncOrder(a), lagSyncOrder(b))
 	})
 	bondOfMember := make(map[string]string)
+	// Bonds synced by this run: only they can tell that an interface left them.
+	syncedBonds := make(map[string]bool)
 	for _, nodeNetwork := range nodeNetworks {
 		if lagSyncOrder(nodeNetwork) == 0 {
 			for _, member := range strings.Fields(nodeNetwork.Slaves) {
 				bondOfMember[member] = nodeNetwork.Iface
+			}
+			if !utils.FilterInterfaceName(nodeNetwork.Iface, ps.SourceConfig.InterfaceFilter) {
+				syncedBonds[nodeNetwork.Iface] = true
 			}
 		}
 	}
@@ -301,6 +306,14 @@ func (ps *ProxmoxSource) syncNodeNetworks(
 		if lagSyncOrder(nodeNetwork) == 0 {
 			nbLAGs[nodeNetwork.Iface] = nbIface
 		}
+		// A nil LAG leaves the NetBox one in place: an interface still attached to a
+		// bond of this node that no longer lists it is detached explicitly.
+		if _, member := bondOfMember[nodeNetwork.Iface]; !member && nbIface.LAG != nil &&
+			syncedBonds[nbIface.LAG.Name] {
+			if err := nbi.ClearInterfaceLAG(ps.Ctx, nbHost, nodeNetwork.Iface); err != nil {
+				return fmt.Errorf("clear host interface lag: %s", err)
+			}
+		}
 	}
 	return nil
 }
@@ -339,7 +352,7 @@ func (ps *ProxmoxSource) syncVMs(nbi *inventory.NetboxInventory) error {
 
 		// Iterate over each VM and start a goroutine to sync it
 		for _, vm := range vms {
-			if keptID := keptGuestIDs[vm.Name]; keptID != uint64(vm.VMID) {
+			if keptID := keptGuestIDs[inventory.TruncateVMName(vm.Name)]; keptID != uint64(vm.VMID) {
 				ps.Logger.Warningf(
 					ps.Ctx,
 					"skipping vm %s (vmid %d): name already used by vmid %d in the cluster",
@@ -671,7 +684,7 @@ func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 				continue
 			}
 			for _, container := range containers {
-				if keptID := keptGuestIDs[container.Name]; keptID != uint64(container.VMID) {
+				if keptID := keptGuestIDs[inventory.TruncateVMName(container.Name)]; keptID != uint64(container.VMID) {
 					ps.Logger.Warningf(
 						ps.Ctx,
 						"skipping container %s (vmid %d): name already used by vmid %d in the cluster",
@@ -986,8 +999,8 @@ func splitProxmoxTags(raw string) []string {
 	return tags
 }
 
-// keptGuestIDs maps each guest name of the cluster to the VMID synced under that
-// name. NetBox names VMs uniquely within a cluster while Proxmox identifies them
+// keptGuestIDs maps each guest name of the cluster, as NetBox stores it (truncated),
+// to the VMID synced under that name. NetBox names VMs uniquely within a cluster while Proxmox identifies them
 // by VMID, so among homonym VMs and containers only the lowest VMID is synced.
 func (ps *ProxmoxSource) keptGuestIDs() map[string]uint64 {
 	kept := make(map[string]uint64)
@@ -1006,7 +1019,7 @@ func (ps *ProxmoxSource) keptGuestIDs() map[string]uint64 {
 			if ps.SourceConfig.IgnoreVMTemplates && bool(vm.Template) {
 				continue
 			}
-			keep(vm.Name, uint64(vm.VMID))
+			keep(inventory.TruncateVMName(vm.Name), uint64(vm.VMID))
 		}
 	}
 	for nodeName, containers := range ps.Containers {
@@ -1014,7 +1027,7 @@ func (ps *ProxmoxSource) keptGuestIDs() map[string]uint64 {
 			continue
 		}
 		for _, container := range containers {
-			keep(container.Name, uint64(container.VMID))
+			keep(inventory.TruncateVMName(container.Name), uint64(container.VMID))
 		}
 	}
 	return kept

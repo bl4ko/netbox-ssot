@@ -3,6 +3,7 @@ package inventory
 import (
 	"context"
 	"fmt"
+	"maps"
 	"net/url"
 	"strings"
 
@@ -639,8 +640,58 @@ func (nbi *NetboxInventory) AddCluster(
 	if err != nil {
 		return nil, err
 	}
+	shared := maps.Clone(nbi.clustersIndexByNameAndSource[newCluster.Name])
 	nbi.indexCluster(createdCluster)
+	if err := nbi.moveSourceVMs(ctx, shared, createdCluster); err != nil {
+		return nil, err
+	}
 	return createdCluster, nil
+}
+
+// moveSourceVMs moves into cluster the VMs of the source in ctx that sit in a cluster of
+// the same name owned by another source. Before clusters were indexed by source, such
+// sources shared one NetBox cluster: moving the VMs keeps their IDs and the objects
+// attached to them, where AddVM would create replacements in the new cluster.
+//
+// NetBox requires a VM's host to belong to the VM's cluster, and the source's hosts only
+// move with its next device sync: the host is detached here and set back by that sync.
+// Callers hold clustersLock.
+func (nbi *NetboxInventory) moveSourceVMs(
+	ctx context.Context,
+	shared map[string]*objects.Cluster,
+	cluster *objects.Cluster,
+) error {
+	sourceName, _ := ctx.Value(constants.CtxSourceKey).(string)
+	nbi.vmsLock.Lock()
+	defer nbi.vmsLock.Unlock()
+	for owner, from := range shared {
+		if owner == sourceName || from.ID == cluster.ID {
+			continue
+		}
+		for vmName, byCluster := range nbi.vmsIndexByNameAndClusterID {
+			vm, ok := byCluster[from.ID]
+			if !ok {
+				continue
+			}
+			if vmSource, _ := vm.GetCustomField(constants.CustomFieldSourceName).(string); vmSource != sourceName {
+				continue
+			}
+			nbi.Logger.Infof(ctx, "Moving VM %s from shared cluster %d to cluster %d", vmName, from.ID, cluster.ID)
+			_, err := service.Patch[objects.VM](
+				ctx, nbi.NetboxAPI, vm.ID, map[string]interface{}{"cluster": cluster.ID, "device": nil},
+			)
+			if err != nil {
+				return fmt.Errorf("move vm %s to cluster %s: %s", vmName, cluster.Name, err)
+			}
+			moved := *vm
+			moved.Cluster = cluster
+			moved.Host = nil
+			delete(byCluster, from.ID)
+			byCluster[cluster.ID] = &moved
+			nbi.vmsIndexByID[vm.ID] = &moved
+		}
+	}
+	return nil
 }
 
 // clusterSourceName returns the source managing cluster, "" when none does.
@@ -1220,9 +1271,7 @@ func (nbi *NetboxInventory) AddVM(ctx context.Context, newVM *objects.VM) (*obje
 	if newVM.Cluster != nil {
 		newVMClusterID = newVM.Cluster.ID
 	}
-	if len(newVM.Name) > constants.MaxVMNameLength {
-		newVM.Name = newVM.Name[:constants.MaxVMNameLength]
-	}
+	newVM.Name = TruncateVMName(newVM.Name)
 	if oldVM, ok := nbi.vmsIndexByNameAndClusterID[newVM.Name][newVMClusterID]; ok {
 		nbi.OrphanManager.RemoveItem(oldVM)
 		diffMap, err := utils.JSONDiffMapExceptID(newVM, oldVM, false, nbi.SourcePriority)
@@ -1846,4 +1895,34 @@ func (nbi *NetboxInventory) AddTagIfMissing(ctx context.Context, newTag *objects
 	}
 	nbi.tagsIndexByName[newTag.Name] = createdTag
 	return createdTag, nil
+}
+
+// ClearInterfaceLAG detaches the interface ifaceName of device from its LAG.
+//
+// AddInterface diffs without resetting fields, so a nil LAG never removes a known
+// membership: a source that knows the interface left its bond calls this instead.
+// Like the diff, it only writes when the calling source has priority over the one
+// that synced the interface.
+func (nbi *NetboxInventory) ClearInterfaceLAG(ctx context.Context, device *objects.Device, ifaceName string) error {
+	nbi.interfacesLock.Lock()
+	defer nbi.interfacesLock.Unlock()
+	current, ok := nbi.interfacesIndexByDeviceIDAndName[device.ID][ifaceName]
+	if !ok || current.LAG == nil {
+		return nil
+	}
+	sourceName, _ := ctx.Value(constants.CtxSourceKey).(string)
+	ownerName, _ := current.GetCustomField(constants.CustomFieldSourceName).(string)
+	if !utils.HasSourcePriority(sourceName, ownerName, nbi.SourcePriority) {
+		return nil
+	}
+	nbi.Logger.Debugf(ctx, "Interface %s/%s left LAG %s. Patching it...", device.Name, ifaceName, current.LAG.Name)
+	_, err := service.Patch[objects.Interface](ctx, nbi.NetboxAPI, current.ID, map[string]interface{}{"lag": nil})
+	if err != nil {
+		return fmt.Errorf("clear lag of interface %s/%s: %s", device.Name, ifaceName, err)
+	}
+	updated := *current
+	updated.LAG = nil
+	nbi.interfacesIndexByDeviceIDAndName[device.ID][ifaceName] = &updated
+	nbi.interfacesIndexByID[current.ID] = &updated
+	return nil
 }

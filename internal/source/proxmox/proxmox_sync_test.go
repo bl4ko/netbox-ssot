@@ -2,8 +2,14 @@ package proxmox
 
 import (
 	"context"
+	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"reflect"
+	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -518,5 +524,80 @@ func TestCollectVMDisks(t *testing.T) {
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("collectVMDisks() = %v, want %v", got, want)
+	}
+}
+
+func TestKeptGuestIDsComparesTheNamesNetBoxStores(t *testing.T) {
+	base := strings.Repeat("g", constants.MaxVMNameLength)
+	ps := newTestSource(t, &parser.SourceConfig{})
+	ps.NetboxNodes = map[string]*objects.Device{"n1": {NetboxObject: objects.NetboxObject{ID: 1}, Name: "n1"}}
+	ps.Vms = map[string][]*proxmox.VirtualMachine{"n1": {newTestVM(base+"-one", 110)}}
+	ps.Containers = map[string][]*proxmox.Container{"n1": {{Name: base + "-two", VMID: 105}}}
+
+	kept := ps.keptGuestIDs()
+
+	// Both names are stored as `base` in NetBox: only the lowest VMID is synced.
+	if got := kept[inventory.TruncateVMName(base+"-one")]; got != 105 {
+		t.Errorf("kept VMID for the truncated name = %d, want 105", got)
+	}
+}
+
+func TestSyncNodeNetworksClearsTheLAGOfAMemberLeavingItsBond(t *testing.T) {
+	service.MockNetboxClient.DryRun = true
+	nbi := inventory.MockInventory
+	node := &proxmox.Node{Name: "pve-leave"}
+	host := &objects.Device{NetboxObject: objects.NetboxObject{ID: 4343}, Name: "pve-leave"}
+	syncNetworks := func(ps *ProxmoxSource, networks ...*proxmox.NodeNetwork) {
+		t.Helper()
+		ps.NetboxNodes = map[string]*objects.Device{node.Name: host}
+		ps.NodeIfaces = map[string][]*proxmox.NodeNetwork{node.Name: networks}
+		if err := ps.syncNodeNetworks(nbi, node); err != nil {
+			t.Fatalf("syncNodeNetworks() error = %v", err)
+		}
+	}
+	syncNetworks(newTestSource(t, &parser.SourceConfig{}),
+		&proxmox.NodeNetwork{Iface: "eno1", Type: "eth"},
+		&proxmox.NodeNetwork{Iface: "eno2", Type: "eth"},
+		&proxmox.NodeNetwork{Iface: "eno3", Type: "eth"},
+		&proxmox.NodeNetwork{Iface: "bond0", Type: "bond", Slaves: "eno1 eno2"},
+		&proxmox.NodeNetwork{Iface: "bond1", Type: "bond", Slaves: "eno3"},
+	)
+	eno1, _ := nbi.GetInterface("eno1", host.ID)
+
+	var mu sync.Mutex
+	requests := []string{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		mu.Lock()
+		requests = append(requests, r.Method+" "+r.URL.Path+" "+string(body))
+		mu.Unlock()
+		id, _ := strconv.Atoi(strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/api/dcim/interfaces/"), "/"))
+		_, _ = fmt.Fprintf(w, `{"id":%d}`, id)
+	}))
+	defer server.Close()
+	saved := nbi.NetboxAPI
+	nbi.NetboxAPI = &service.NetboxClient{
+		HTTPClient: &http.Client{}, Logger: nbi.Logger, BaseURL: server.URL, APIToken: "t", Timeout: 15,
+	}
+	defer func() { nbi.NetboxAPI = saved }()
+
+	// eno1 left bond0; bond1 is now filtered out, which says nothing about eno3.
+	syncNetworks(newTestSource(t, &parser.SourceConfig{InterfaceFilter: "^bond1$"}),
+		&proxmox.NodeNetwork{Iface: "eno1", Type: "eth"},
+		&proxmox.NodeNetwork{Iface: "eno2", Type: "eth"},
+		&proxmox.NodeNetwork{Iface: "eno3", Type: "eth"},
+		&proxmox.NodeNetwork{Iface: "bond0", Type: "bond", Slaves: "eno2"},
+		&proxmox.NodeNetwork{Iface: "bond1", Type: "bond", Slaves: ""},
+	)
+
+	clears := []string{}
+	for _, request := range requests {
+		if strings.Contains(request, `"lag":null`) {
+			clears = append(clears, request)
+		}
+	}
+	want := []string{fmt.Sprintf(`PATCH /api/dcim/interfaces/%d/ {"lag":null}`, eno1.ID)}
+	if !reflect.DeepEqual(clears, want) {
+		t.Errorf("LAG clears = %q, want %q", clears, want)
 	}
 }

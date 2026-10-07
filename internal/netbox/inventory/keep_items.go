@@ -11,44 +11,56 @@ import (
 // the orphans. Sources call it when they could not read the VM's network data,
 // so that unknown data is not mistaken for removed data.
 func (nbi *NetboxInventory) KeepVMNetworkObjects(vm *objects.VM) {
-	ifaceNames := nbi.keepVMInterfaces(vm)
-	ipAddresses := nbi.keepVMIPAddresses(vm, ifaceNames)
-	nbi.keepVMMACAddresses(vm, ifaceNames)
+	ifaceIDs := nbi.keepVMInterfaces(vm)
+	ipAddresses := nbi.keepVMIPAddresses(vm, ifaceIDs)
+	nbi.keepVMMACAddresses(vm, ifaceIDs)
 	nbi.keepPrefixesOfIPAddresses(ipAddresses)
 }
 
-func (nbi *NetboxInventory) keepVMInterfaces(vm *objects.VM) []string {
+// keepVMInterfaces keeps the VM's interfaces and returns their IDs by name.
+func (nbi *NetboxInventory) keepVMInterfaces(vm *objects.VM) map[string]int {
 	nbi.vmInterfacesLock.Lock()
 	defer nbi.vmInterfacesLock.Unlock()
-	ifaceNames := make([]string, 0, len(nbi.vmInterfacesIndexByVMIdAndName[vm.ID]))
+	ifaceIDs := make(map[string]int, len(nbi.vmInterfacesIndexByVMIdAndName[vm.ID]))
 	for name, iface := range nbi.vmInterfacesIndexByVMIdAndName[vm.ID] {
 		nbi.OrphanManager.RemoveItem(iface)
-		ifaceNames = append(ifaceNames, name)
+		ifaceIDs[name] = iface.ID
 	}
-	return ifaceNames
+	return ifaceIDs
 }
 
-func (nbi *NetboxInventory) keepVMIPAddresses(vm *objects.VM, ifaceNames []string) []*objects.IPAddress {
+// assignedToVMInterface reports whether an address belongs to the VM interface ifaceID.
+// The address indexes are keyed by interface and VM names, which VMs of other
+// clusters may share: only the assignment tells whose address it is.
+func assignedToVMInterface(objectType constants.ContentType, objectID, ifaceID int) bool {
+	return objectType == constants.ContentTypeVirtualizationVMInterface && objectID == ifaceID
+}
+
+func (nbi *NetboxInventory) keepVMIPAddresses(vm *objects.VM, ifaceIDs map[string]int) []*objects.IPAddress {
 	nbi.ipAddressesLock.Lock()
 	defer nbi.ipAddressesLock.Unlock()
 	ipAddresses := make([]*objects.IPAddress, 0)
 	vmIndex := nbi.ipAddressesIndex[constants.ContentTypeVirtualizationVirtualMachine]
-	for _, ifaceName := range ifaceNames {
+	for ifaceName, ifaceID := range ifaceIDs {
 		for _, ipAddress := range vmIndex[ifaceName][vm.Name] {
-			nbi.OrphanManager.RemoveItem(ipAddress)
-			ipAddresses = append(ipAddresses, ipAddress)
+			if assignedToVMInterface(ipAddress.AssignedObjectType, ipAddress.AssignedObjectID, ifaceID) {
+				nbi.OrphanManager.RemoveItem(ipAddress)
+				ipAddresses = append(ipAddresses, ipAddress)
+			}
 		}
 	}
 	return ipAddresses
 }
 
-func (nbi *NetboxInventory) keepVMMACAddresses(vm *objects.VM, ifaceNames []string) {
+func (nbi *NetboxInventory) keepVMMACAddresses(vm *objects.VM, ifaceIDs map[string]int) {
 	nbi.macAddressesLock.Lock()
 	defer nbi.macAddressesLock.Unlock()
 	vmIndex := nbi.macAddressesIndex[constants.ContentTypeVirtualizationVirtualMachine]
-	for _, ifaceName := range ifaceNames {
+	for ifaceName, ifaceID := range ifaceIDs {
 		for _, macAddress := range vmIndex[ifaceName][vm.Name] {
-			nbi.OrphanManager.RemoveItem(macAddress)
+			if assignedToVMInterface(macAddress.AssignedObjectType, macAddress.AssignedObjectID, ifaceID) {
+				nbi.OrphanManager.RemoveItem(macAddress)
+			}
 		}
 	}
 }
