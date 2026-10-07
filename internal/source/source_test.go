@@ -136,3 +136,21 @@ func TestNewSource_UnknownVRFInIPVrfRelations(t *testing.T) {
 		t.Errorf("NewSource() error = %q, want it to name the missing VRF", err)
 	}
 }
+
+// An empty target maps the matching addresses to the global table: it names no VRF.
+func TestNewSource_EmptyTargetInIPVrfRelations(t *testing.T) {
+	setupMockServer(t)
+	ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+	nbi := inventory.MockInventory
+
+	config := &parser.SourceConfig{
+		Name:           "test-vrf-global",
+		Type:           constants.Proxmox,
+		Tag:            "test-tag",
+		TagColor:       "00add8",
+		IPVrfRelations: map[string]string{"^10\\.": ""},
+	}
+	if _, err := NewSource(ctx, config, nbi.Logger, nbi); err != nil {
+		t.Fatalf("NewSource() error = %v, want an empty VRF target accepted", err)
+	}
+}
