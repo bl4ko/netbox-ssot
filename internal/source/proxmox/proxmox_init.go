@@ -26,9 +26,9 @@ func (ps *ProxmoxSource) initNodes(ctx context.Context, c *proxmox.Client) error
 	ps.Nodes = make([]*proxmox.Node, 0, len(nodes))
 	ps.NodeIfaces = make(map[string][]*proxmox.NodeNetwork, len(nodes))
 	ps.Vms = make(map[string][]*proxmox.VirtualMachine, len(nodes))
-	ps.VMIfaces = make(map[string][]*proxmox.AgentNetworkIface, 0)
+	ps.VMIfaces = make(map[uint64][]*proxmox.AgentNetworkIface, 0)
 	ps.Containers = make(map[string][]*proxmox.Container, len(nodes))
-	ps.ContainerIfaces = make(map[string][]*proxmox.ContainerInterface, 0)
+	ps.ContainerIfaces = make(map[uint64][]*proxmox.ContainerInterface, 0)
 
 	for _, node := range nodes {
 		node, err := c.Node(ctx, node.Node)
@@ -101,7 +101,7 @@ func (ps *ProxmoxSource) initNodeVMs(ctx context.Context, node *proxmox.Node) er
 			ps.Logger.Debugf(ps.Ctx, "vm %s: guest agent network data unavailable: %s", vm.Name, err)
 			continue
 		}
-		ps.VMIfaces[vm.Name] = ifaces
+		ps.VMIfaces[uint64(vm.VMID)] = ifaces
 	}
 	return nil
 }
@@ -122,7 +122,7 @@ func (ps *ProxmoxSource) initContainers(ctx context.Context, node *proxmox.Node)
 			ps.Logger.Debugf(ps.Ctx, "container %s: network data unavailable: %s", container.Name, err)
 			continue
 		}
-		ps.ContainerIfaces[container.Name] = ifaces
+		ps.ContainerIfaces[uint64(container.VMID)] = ifaces
 	}
 	return nil
 }

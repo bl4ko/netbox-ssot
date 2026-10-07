@@ -329,6 +329,7 @@ func (ps *ProxmoxSource) syncVMs(nbi *inventory.NetboxInventory) error {
 	// Use a WaitGroup to wait for all goroutines to complete
 	var wg sync.WaitGroup
 
+	keptGuestIDs := ps.keptGuestIDs()
 	for nodeName, vms := range ps.Vms {
 		nbHost := ps.NetboxNodes[nodeName]
 		if nbHost == nil {
@@ -338,6 +339,14 @@ func (ps *ProxmoxSource) syncVMs(nbi *inventory.NetboxInventory) error {
 
 		// Iterate over each VM and start a goroutine to sync it
 		for _, vm := range vms {
+			if keptID := keptGuestIDs[vm.Name]; keptID != uint64(vm.VMID) {
+				ps.Logger.Warningf(
+					ps.Ctx,
+					"skipping vm %s (vmid %d): name already used by vmid %d in the cluster",
+					vm.Name, uint64(vm.VMID), keptID,
+				)
+				continue
+			}
 			guard <- struct{}{} // Block if maxGoroutines are running
 			wg.Add(1)
 
@@ -653,8 +662,8 @@ func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 	}
 
 	// Sync VM networks, or keep the known ones when the guest agent did not answer
-	if _, known := ps.VMIfaces[vm.Name]; known {
-		err = ps.syncVMNetworks(nbi, nbVM)
+	if vmIfaces, known := ps.VMIfaces[uint64(vm.VMID)]; known {
+		err = ps.syncVMNetworks(nbi, nbVM, vmIfaces)
 		if err != nil {
 			return fmt.Errorf("failed to sync vm's %+v networks: %s", nbVM, err)
 		}
@@ -673,10 +682,14 @@ func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 	return nil
 }
 
-func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *objects.VM) error {
+func (ps *ProxmoxSource) syncVMNetworks(
+	nbi *inventory.NetboxInventory,
+	nbVM *objects.VM,
+	vmIfaces []*proxmox.AgentNetworkIface,
+) error {
 	vmIPv4Addresses := make([]*objects.IPAddress, 0)
 	vmIPv6Addresses := make([]*objects.IPAddress, 0)
-	for _, vmNetwork := range ps.VMIfaces[nbVM.Name] {
+	for _, vmNetwork := range vmIfaces {
 		if utils.FilterInterfaceName(vmNetwork.Name, ps.SourceConfig.InterfaceFilter) {
 			ps.Logger.Debugf(
 				ps.Ctx,
@@ -827,6 +840,7 @@ func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 		if err != nil {
 			return fmt.Errorf("create container role: %s", err)
 		}
+		keptGuestIDs := ps.keptGuestIDs()
 		for nodeName, containers := range ps.Containers {
 			nbHost := ps.NetboxNodes[nodeName]
 			if nbHost == nil {
@@ -839,6 +853,14 @@ func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 				continue
 			}
 			for _, container := range containers {
+				if keptID := keptGuestIDs[container.Name]; keptID != uint64(container.VMID) {
+					ps.Logger.Warningf(
+						ps.Ctx,
+						"skipping container %s (vmid %d): name already used by vmid %d in the cluster",
+						container.Name, uint64(container.VMID), keptID,
+					)
+					continue
+				}
 				// Determine Container status
 				containerStatus := &objects.VMStatusActive
 				if container.Status == "stopped" {
@@ -894,8 +916,8 @@ func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 				}
 
 				// Sync container networks, or keep the known ones when they could not be read
-				if _, known := ps.ContainerIfaces[container.Name]; known {
-					err = ps.syncContainerNetworks(nbi, nbContainer)
+				if containerIfaces, known := ps.ContainerIfaces[uint64(container.VMID)]; known {
+					err = ps.syncContainerNetworks(nbi, nbContainer, containerIfaces)
 					if err != nil {
 						return fmt.Errorf("sync container networks: %s", err)
 					}
@@ -911,10 +933,11 @@ func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 func (ps *ProxmoxSource) syncContainerNetworks(
 	nbi *inventory.NetboxInventory,
 	nbContainer *objects.VM,
+	containerIfaces []*proxmox.ContainerInterface,
 ) error {
 	vmIPv4Addresses := make([]*objects.IPAddress, 0)
 	vmIPv6Addresses := make([]*objects.IPAddress, 0)
-	for _, containerIface := range ps.ContainerIfaces[nbContainer.Name] {
+	for _, containerIface := range containerIfaces {
 		if utils.FilterInterfaceName(containerIface.Name, ps.SourceConfig.InterfaceFilter) {
 			ps.Logger.Debugf(
 				ps.Ctx,
@@ -1115,4 +1138,38 @@ func splitProxmoxTags(raw string) []string {
 		}
 	}
 	return tags
+}
+
+// keptGuestIDs maps each guest name of the cluster to the VMID synced under that
+// name. NetBox names VMs uniquely within a cluster while Proxmox identifies them
+// by VMID, so among homonym VMs and containers only the lowest VMID is synced.
+func (ps *ProxmoxSource) keptGuestIDs() map[string]uint64 {
+	kept := make(map[string]uint64)
+	keep := func(name string, vmid uint64) {
+		if keptID, ok := kept[name]; !ok || vmid < keptID {
+			kept[name] = vmid
+		}
+	}
+	// Only guests that are actually synced compete for a name: a skipped template or a
+	// guest of an unsynced node must not shadow the guest that would be synced.
+	for nodeName, vms := range ps.Vms {
+		if ps.NetboxNodes[nodeName] == nil {
+			continue
+		}
+		for _, vm := range vms {
+			if ps.SourceConfig.IgnoreVMTemplates && bool(vm.Template) {
+				continue
+			}
+			keep(vm.Name, uint64(vm.VMID))
+		}
+	}
+	for nodeName, containers := range ps.Containers {
+		if ps.NetboxNodes[nodeName] == nil {
+			continue
+		}
+		for _, container := range containers {
+			keep(container.Name, uint64(container.VMID))
+		}
+	}
+	return kept
 }
