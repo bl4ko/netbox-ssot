@@ -1381,12 +1381,17 @@ func (nbi *NetboxInventory) AddIPAddress(
 			if getErr != nil || len(existingIPs) == 0 {
 				return nil, err
 			}
-			chosenIP := existingIPs[0]
-			for _, ip := range existingIPs {
-				if ip.AssignedObjectID == 0 {
-					chosenIP = ip
+			// Only take over an unassigned IP of the same VRF: an IP assigned to another
+			// object, or living in another VRF, belongs to someone else.
+			var chosenIP *objects.IPAddress
+			for i, ip := range existingIPs {
+				if ip.AssignedObjectID == 0 && sameVRF(ip.VRF, newIPAddress.VRF) {
+					chosenIP = &existingIPs[i]
 					break
 				}
+			}
+			if chosenIP == nil {
+				return nil, err
 			}
 			patchData := map[string]interface{}{
 				"assigned_object_type": newIPAddress.AssignedObjectType,
