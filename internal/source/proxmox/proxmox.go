@@ -21,9 +21,9 @@ type ProxmoxSource struct {
 	Nodes           []*proxmox.Node
 	NodeIfaces      map[string][]*proxmox.NodeNetwork        // NodeName -> NodeNetworks (interfaces)
 	Vms             map[string][]*proxmox.VirtualMachine     // NodeName -> VirtualMachines
-	VMIfaces        map[string][]*proxmox.AgentNetworkIface  // VMName -> NetworkDevices
+	VMIfaces        map[uint64][]*proxmox.AgentNetworkIface  // VMID -> NetworkDevices
 	Containers      map[string][]*proxmox.Container          // NodeName -> Contatiners
-	ContainerIfaces map[string][]*proxmox.ContainerInterface // ContainerName -> ContainerInterfaces
+	ContainerIfaces map[uint64][]*proxmox.ContainerInterface // VMID -> ContainerInterfaces
 
 	// Netbox related data for easier access. Initialized in sync functions.
 	NetboxCluster *objects.Cluster

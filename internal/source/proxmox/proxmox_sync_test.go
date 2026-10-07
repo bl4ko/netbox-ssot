@@ -260,13 +260,13 @@ func TestSyncVMKeepsKnownNetworkObjectsWhenAgentDataIsUnknown(t *testing.T) {
 	}
 	tests := []struct {
 		name       string
-		vmIfaces   map[string][]*proxmox.AgentNetworkIface
+		vmIfaces   map[uint64][]*proxmox.AgentNetworkIface
 		wantOrphan bool
 	}{
-		{name: "agent data unknown", vmIfaces: map[string][]*proxmox.AgentNetworkIface{}, wantOrphan: false},
+		{name: "agent data unknown", vmIfaces: map[uint64][]*proxmox.AgentNetworkIface{}, wantOrphan: false},
 		{
 			name:       "agent reports no interface",
-			vmIfaces:   map[string][]*proxmox.AgentNetworkIface{"existing_vm1": {}},
+			vmIfaces:   map[uint64][]*proxmox.AgentNetworkIface{1: {}},
 			wantOrphan: true,
 		},
 	}
@@ -367,7 +367,7 @@ func TestSyncContainersReportsDiskInMiB(t *testing.T) {
 	ps.Containers = map[string][]*proxmox.Container{
 		"n1": {{Name: "disk-unit-ct", VMID: 401, MaxDisk: 8 * constants.GiB, MaxMem: 512 * constants.MiB}},
 	}
-	ps.ContainerIfaces = map[string][]*proxmox.ContainerInterface{}
+	ps.ContainerIfaces = map[uint64][]*proxmox.ContainerInterface{}
 
 	if err := ps.syncContainers(nbi); err != nil {
 		t.Fatalf("syncContainers() error = %v", err)
@@ -399,5 +399,75 @@ func TestSplitProxmoxTags(t *testing.T) {
 				t.Errorf("splitProxmoxTags(%q) = %q, want %q", tt.raw, got, tt.want)
 			}
 		})
+	}
+}
+
+func TestSyncSkipsHomonymGuestsOfACluster(t *testing.T) {
+	service.MockNetboxClient.DryRun = true
+	nbi := inventory.MockInventory
+	ps := newTestSource(t, &parser.SourceConfig{})
+	ps.NetboxCluster.ID = 77
+	site := &objects.Site{NetboxObject: objects.NetboxObject{ID: 1}}
+	ps.NetboxNodes = map[string]*objects.Device{
+		"n1": {NetboxObject: objects.NetboxObject{ID: 1}, Name: "n1", Site: site},
+		"n2": {NetboxObject: objects.NetboxObject{ID: 2}, Name: "n2", Site: site},
+	}
+	// The lowest VMID of homonym guests is synced, VMs and containers alike.
+	ps.Vms = map[string][]*proxmox.VirtualMachine{
+		"n1": {newTestVM("dup-test", 101), newTestVM("dup-guest", 120)},
+		"n2": {newTestVM("dup-test", 205)},
+	}
+	ps.Containers = map[string][]*proxmox.Container{"n2": {{Name: "dup-guest", VMID: 150}}}
+	ps.VMIfaces = map[uint64][]*proxmox.AgentNetworkIface{
+		101: {{Name: "eth0"}},
+		120: {{Name: "eth0"}},
+		205: {{Name: "eth1"}},
+	}
+	ps.ContainerIfaces = map[uint64][]*proxmox.ContainerInterface{150: {{Name: "veth150"}}}
+
+	if err := ps.syncVMs(nbi); err != nil {
+		t.Fatalf("syncVMs() error = %v", err)
+	}
+	if err := ps.syncContainers(nbi); err != nil {
+		t.Fatalf("syncContainers() error = %v", err)
+	}
+
+	tests := []struct {
+		vmName, keptIface, skippedIface string
+	}{
+		{vmName: "dup-test", keptIface: "eth0", skippedIface: "eth1"},
+		{vmName: "dup-guest", keptIface: "eth0", skippedIface: "veth150"},
+	}
+	for _, tt := range tests {
+		nbVM, ok := nbi.GetVM(tt.vmName, ps.NetboxCluster.ID)
+		if !ok {
+			t.Errorf("vm %s not synced", tt.vmName)
+			continue
+		}
+		if nbi.GetVMInterfaceByVMIDAndName(nbVM.ID, tt.keptIface) == nil {
+			t.Errorf("vm %s has no interface %s of the lowest VMID", tt.vmName, tt.keptIface)
+		}
+		if nbi.GetVMInterfaceByVMIDAndName(nbVM.ID, tt.skippedIface) != nil {
+			t.Errorf("vm %s got interface %s of a skipped homonym", tt.vmName, tt.skippedIface)
+		}
+	}
+}
+
+func TestKeptGuestIDsIgnoresGuestsThatAreNotSynced(t *testing.T) {
+	ps := newTestSource(t, &parser.SourceConfig{IgnoreVMTemplates: true})
+	ps.NetboxNodes = map[string]*objects.Device{"n1": {Name: "n1"}}
+	template := newTestVM("debian", 100)
+	template.Template = true
+	ps.Vms = map[string][]*proxmox.VirtualMachine{
+		"n1":        {template, newTestVM("debian", 200), newTestVM("app", 60)},
+		"lost-node": {newTestVM("app", 50)},
+	}
+	ps.Containers = map[string][]*proxmox.Container{"lost-node": {{Name: "web", VMID: 10}}}
+
+	got := ps.keptGuestIDs()
+
+	want := map[string]uint64{"debian": 200, "app": 60}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("keptGuestIDs() = %v, want %v", got, want)
 	}
 }
