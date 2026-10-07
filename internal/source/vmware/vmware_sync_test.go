@@ -77,6 +77,48 @@ func newTestHost(id, name string) mo.HostSystem {
 	return host
 }
 
+// newTestVMOnHost returns a powered-on VM registered on the given host, with one disk.
+func newTestVMOnHost(vc *VmwareSource, id, name, hostID string) mo.VirtualMachine {
+	vm := mo.VirtualMachine{
+		Config: &types.VirtualMachineConfigInfo{
+			GuestFullName: "Debian GNU/Linux 12 (64-bit)",
+			Hardware: types.VirtualHardware{
+				NumCPU:   2,
+				MemoryMB: 4096,
+				Device: []types.BaseVirtualDevice{&types.VirtualDisk{
+					VirtualDevice:   types.VirtualDevice{DeviceInfo: &types.Description{Label: "Hard disk 1"}},
+					CapacityInBytes: 8 * constants.GiB,
+				}},
+			},
+		},
+		Runtime: types.VirtualMachineRuntimeInfo{PowerState: types.VirtualMachinePowerStatePoweredOn},
+		Guest:   &types.GuestInfo{},
+	}
+	vm.Self = types.ManagedObjectReference{Type: "VirtualMachine", Value: id}
+	vm.Name = name
+	if vc.VM2Host == nil {
+		vc.VM2Host = map[string]string{}
+	}
+	vc.VM2Host[id] = hostID
+	return vm
+}
+
+func TestSyncVMsSkipsVMsWithoutConfig(t *testing.T) {
+	nbi, _ := newTestInventory(t)
+	vc := newTestSource(t, &parser.SourceConfig{})
+	vc.Hosts = map[string]mo.HostSystem{"host-2": newTestHost("host-2", "esx-no-config")}
+	if err := vc.syncHosts(nbi); err != nil {
+		t.Fatalf("syncHosts() error = %v", err)
+	}
+	inaccessible := newTestVMOnHost(vc, "vm-20", "inaccessible-vm", "host-2")
+	inaccessible.Config = nil
+	vc.Vms = map[string]mo.VirtualMachine{"vm-20": inaccessible}
+
+	if err := vc.syncVMs(nbi); err != nil {
+		t.Errorf("syncVMs() error = %v, want the VM without config skipped", err)
+	}
+}
+
 func TestSyncHostsWithoutHostSiteRelationsUsesDefaultSite(t *testing.T) {
 	nbi, defaultSite := newTestInventory(t)
 	vc := newTestSource(t, &parser.SourceConfig{})

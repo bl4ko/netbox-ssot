@@ -1022,7 +1022,12 @@ func (vc *VmwareSource) syncVM(
 	vmKey string,
 	vm mo.VirtualMachine,
 ) error {
-	isTemplate := vm.Config != nil && vm.Config.Template
+	// vCenter returns no config for inaccessible or orphaned VMs (e.g. lost datastore)
+	if vm.Config == nil {
+		vc.Logger.Warningf(vc.Ctx, "VM %q has no config (inaccessible or orphaned), skipping", vm.Name)
+		return nil
+	}
+	isTemplate := vm.Config.Template
 
 	if vc.SourceConfig.IgnoreVMTemplates && isTemplate {
 		return nil
@@ -1085,11 +1090,8 @@ func (vc *VmwareSource) syncVM(
 	}
 
 	// vmVCPUs and vmMemory
-	var vmVCPUs, vmMemoryMB int32
-	if vm.Config != nil {
-		vmVCPUs = vm.Config.Hardware.NumCPU
-		vmMemoryMB = vm.Config.Hardware.MemoryMB
-	}
+	vmVCPUs := vm.Config.Hardware.NumCPU
+	vmMemoryMB := vm.Config.Hardware.MemoryMB
 
 	// DisksSize
 	// vmTotalDiskSizeMiB := int64(0)
