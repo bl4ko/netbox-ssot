@@ -1792,3 +1792,21 @@ func (nbi *NetboxInventory) applyDeviceFieldLengthLimitations(device *objects.De
 		device.AssetTag = device.AssetTag[:constants.MaxAssetTagLength]
 	}
 }
+
+// AddTagIfMissing returns the tag named newTag.Name if it already exists in NetBox,
+// untouched, and creates newTag otherwise. Sources use it for tags mirrored from
+// the source, whose color or description may have been chosen in NetBox.
+func (nbi *NetboxInventory) AddTagIfMissing(ctx context.Context, newTag *objects.Tag) (*objects.Tag, error) {
+	nbi.tagsLock.Lock()
+	defer nbi.tagsLock.Unlock()
+	if existingTag, ok := nbi.tagsIndexByName[newTag.Name]; ok {
+		return existingTag, nil
+	}
+	nbi.Logger.Debugf(ctx, "Tag %s does not exist in Netbox. Creating it...", newTag.Name)
+	createdTag, err := service.Create(ctx, nbi.NetboxAPI, newTag)
+	if err != nil {
+		return nil, err
+	}
+	nbi.tagsIndexByName[newTag.Name] = createdTag
+	return createdTag, nil
+}

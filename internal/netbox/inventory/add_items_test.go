@@ -1409,3 +1409,22 @@ func TestAddIPAddressDuplicateOnlyReassignsUnassignedIPOfSameVRF(t *testing.T) {
 		})
 	}
 }
+
+func TestAddTagIfMissingLeavesExistingTagUntouched(t *testing.T) {
+	existingTag := &objects.Tag{ID: 7, Name: "prod", Slug: "prod", Color: "f44336"}
+	nbi := &NetboxInventory{
+		Logger:          mockLogger,
+		SourcePriority:  map[string]int{},
+		NetboxAPI:       service.FailingMockNetboxClient,
+		tagsIndexByName: map[string]*objects.Tag{"prod": existingTag},
+	}
+	ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "proxmox-a")
+
+	got, err := nbi.AddTagIfMissing(ctx, &objects.Tag{Name: "prod", Slug: "prod", Color: constants.ColorGreen})
+	if err != nil {
+		t.Fatalf("AddTagIfMissing() error = %v, want the existing tag without any API call", err)
+	}
+	if got != existingTag || existingTag.Color != "f44336" {
+		t.Errorf("AddTagIfMissing() = %v, want the existing red tag untouched", got)
+	}
+}
