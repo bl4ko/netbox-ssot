@@ -1428,3 +1428,50 @@ func TestAddTagIfMissingLeavesExistingTagUntouched(t *testing.T) {
 		t.Errorf("AddTagIfMissing() = %v, want the existing red tag untouched", got)
 	}
 }
+
+func TestAddClusterIsScopedBySource(t *testing.T) {
+	ssotTag := &objects.Tag{ID: 1, Name: constants.SsotTagName}
+	unownedCluster := &objects.Cluster{NetboxObject: objects.NetboxObject{ID: 10}, Name: "legacy-cluster"}
+	otherSourceCluster := &objects.Cluster{
+		NetboxObject: objects.NetboxObject{
+			ID:           11,
+			CustomFields: map[string]interface{}{constants.CustomFieldSourceName: "proxmox-b"},
+		},
+		Name: "pve-cluster0",
+	}
+	nbi := &NetboxInventory{
+		Logger:         mockLogger,
+		OrphanManager:  NewOrphanManager(mockLogger),
+		SsotTag:        ssotTag,
+		SourcePriority: map[string]int{},
+		NetboxAPI:      &service.NetboxClient{Logger: mockLogger, DryRun: true},
+		clustersIndexByNameAndSource: map[string]map[string]*objects.Cluster{
+			"legacy-cluster": {"": unownedCluster},
+			"pve-cluster0":   {"proxmox-b": otherSourceCluster},
+		},
+	}
+	ctxA := context.WithValue(context.Background(), constants.CtxSourceKey, "proxmox-a")
+	ctxB := context.WithValue(context.Background(), constants.CtxSourceKey, "proxmox-b")
+
+	clusterA, err := nbi.AddCluster(ctxA, &objects.Cluster{Name: "pve-cluster0"})
+	if err != nil {
+		t.Fatalf("AddCluster(proxmox-a) error = %v", err)
+	}
+	if clusterA.ID == otherSourceCluster.ID {
+		t.Errorf("proxmox-a got the cluster of proxmox-b (ID %d), want its own", clusterA.ID)
+	}
+	if got, ok := nbi.GetCluster(ctxB, "pve-cluster0"); !ok || got.ID != otherSourceCluster.ID {
+		t.Errorf("GetCluster(proxmox-b) = %v, want cluster %d", got, otherSourceCluster.ID)
+	}
+	if got, ok := nbi.GetCluster(ctxA, "pve-cluster0"); !ok || got.ID != clusterA.ID {
+		t.Errorf("GetCluster(proxmox-a) = %v, want cluster %d", got, clusterA.ID)
+	}
+
+	adopted, err := nbi.AddCluster(ctxA, &objects.Cluster{Name: "legacy-cluster"})
+	if err != nil {
+		t.Fatalf("AddCluster(legacy-cluster) error = %v", err)
+	}
+	if adopted.ID != unownedCluster.ID {
+		t.Errorf("AddCluster(legacy-cluster) ID = %d, want the existing unowned cluster %d", adopted.ID, unownedCluster.ID)
+	}
+}

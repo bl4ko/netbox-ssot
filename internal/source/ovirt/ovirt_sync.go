@@ -252,7 +252,7 @@ func extractHostData(
 	if !exists {
 		o.Logger.Warningf(o.Ctx, "name of host with id=%s is empty", hostID)
 	}
-	hostCluster, _ := nbi.GetCluster(o.Clusters[host.MustCluster().MustId()].MustName())
+	hostCluster, _ := nbi.GetCluster(o.Ctx, o.Clusters[host.MustCluster().MustId()].MustName())
 
 	hostSite, err := common.MatchHostToSite(o.Ctx, nbi, hostName, o.SourceConfig.HostSiteRelations)
 	if err != nil {
@@ -1126,7 +1126,7 @@ func (o *OVirtSource) extractVMData(
 	cluster, exists := vm.Cluster()
 	if exists {
 		if _, ok := o.Clusters[cluster.MustId()]; ok {
-			vmCluster, _ = nbi.GetCluster(o.Clusters[cluster.MustId()].MustName())
+			vmCluster, _ = nbi.GetCluster(o.Ctx, o.Clusters[cluster.MustId()].MustName())
 		}
 	}
 
