@@ -2,6 +2,7 @@ package proxmox
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -76,7 +77,12 @@ func TestSyncVMsReturnsWhenMoreVMsThanNodesFail(t *testing.T) {
 	select {
 	case err := <-done:
 		if err == nil {
-			t.Errorf("syncVMs returned nil, want an error")
+			t.Fatalf("syncVMs returned nil, want an error")
+		}
+		for _, vmName := range []string{"failing-vm1", "failing-vm2"} {
+			if !strings.Contains(err.Error(), vmName) {
+				t.Errorf("syncVMs error does not report %s: %s", vmName, err)
+			}
 		}
 	case <-time.After(5 * time.Second):
 		t.Fatalf("syncVMs did not return within 5s (1 node, 2 failing VMs)")

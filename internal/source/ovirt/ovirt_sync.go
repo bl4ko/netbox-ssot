@@ -1053,13 +1053,7 @@ func (o *OVirtSource) syncVMs(nbi *inventory.NetboxInventory) error {
 	close(errChan)
 	close(guard)
 
-	for err := range errChan {
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return common.JoinErrors(errChan)
 }
 
 // syncVM synces a single ovirt vm into netbox inventory.
