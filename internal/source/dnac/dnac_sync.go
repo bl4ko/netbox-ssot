@@ -154,13 +154,7 @@ func (ds *DnacSource) syncDevices(nbi *inventory.NetboxInventory) error {
 	close(errChan)
 	close(guard)
 
-	for err := range errChan {
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return common.JoinErrors(errChan)
 }
 
 func (ds *DnacSource) syncDevice(
@@ -337,13 +331,7 @@ func (ds *DnacSource) syncDeviceInterfaces(nbi *inventory.NetboxInventory) error
 	close(errChan)
 	close(guard)
 
-	for err := range errChan {
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return common.JoinErrors(errChan)
 }
 
 func (ds *DnacSource) syncDeviceInterface(

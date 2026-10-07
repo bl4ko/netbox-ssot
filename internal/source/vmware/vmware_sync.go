@@ -1016,13 +1016,7 @@ func (vc *VmwareSource) syncVMs(nbi *inventory.NetboxInventory) error {
 	close(errChan)
 
 	// Collect any errors
-	for err := range errChan {
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return common.JoinErrors(errChan)
 }
 
 // syncVM synces VM from the source to Netbox.

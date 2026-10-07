@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"crypto/x509"
+	"errors"
 
 	"github.com/bl4ko/netbox-ssot/internal/logger"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
@@ -31,4 +32,16 @@ type Config struct {
 
 func (c Config) GetSourceTags() []*objects.Tag {
 	return []*objects.Tag{c.SourceNameTag, c.SourceTypeTag}
+}
+
+// JoinErrors drains a closed error channel and returns every error it held,
+// joined with errors.Join, or nil when there was none.
+func JoinErrors(errChan <-chan error) error {
+	var errs []error
+	for err := range errChan {
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errors.Join(errs...)
 }
