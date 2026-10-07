@@ -616,7 +616,7 @@ func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 		splitTags := strings.Split(vm.Tags, ";")
 
 		for _, tag := range splitTags {
-			vmTag, err := nbi.AddTag(ps.Ctx, &objects.Tag{
+			vmTag, err := nbi.AddTagIfMissing(ps.Ctx, &objects.Tag{
 				Name:  tag,
 				Slug:  utils.Slugify(tag),
 				Color: constants.ColorGreen,
@@ -868,7 +868,7 @@ func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 						if tag == "" {
 							continue
 						}
-						ctTag, err := nbi.AddTag(ps.Ctx, &objects.Tag{
+						ctTag, err := nbi.AddTagIfMissing(ps.Ctx, &objects.Tag{
 							Name:  tag,
 							Slug:  utils.Slugify(tag),
 							Color: constants.ColorGreen,

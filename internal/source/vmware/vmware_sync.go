@@ -27,7 +27,7 @@ func (vc *VmwareSource) syncTags(nbi *inventory.NetboxInventory) error {
 			} else {
 				description = "Tag synced from vmware"
 			}
-			nbTag, err := nbi.AddTag(vc.Ctx, &objects.Tag{
+			nbTag, err := nbi.AddTagIfMissing(vc.Ctx, &objects.Tag{
 				Name:        tag.Name,
 				Slug:        utils.Slugify(tag.Name),
 				Color:       constants.ColorGreen,
