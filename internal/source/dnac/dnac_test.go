@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 
@@ -583,41 +584,27 @@ func TestDnacSourceDeviceStatusMapping(t *testing.T) {
 	}
 }
 
-func TestDnacSourceDeviceDescriptionTruncation(t *testing.T) {
+func TestDescriptionAndComments(t *testing.T) {
+	long := strings.Repeat("x", 201)
+	accented := strings.Repeat("é", 150)
 	tests := []struct {
 		name            string
 		description     string
 		wantDescription string
 		wantComments    string
 	}{
-		{
-			name:            "short description",
-			description:     "A short description",
-			wantDescription: "A short description",
-			wantComments:    "",
-		},
-		{
-			name:            "empty description",
-			description:     "",
-			wantDescription: "",
-			wantComments:    "",
-		},
+		{name: "short description", description: " A short description ", wantDescription: "A short description"},
+		{name: "empty description", description: ""},
+		{name: "description at the limit", description: strings.Repeat("x", 200), wantDescription: strings.Repeat("x", 200)},
+		{name: "too long description", description: long, wantDescription: "See comments", wantComments: long},
+		{name: "accented description within the limit", description: accented, wantDescription: accented},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var description, comments string
-			if tt.description != "" {
-				description = tt.description
-			}
-			if len(description) > objects.MaxDescriptionLength {
-				comments = description
-				description = "See comments"
-			}
-			if description != tt.wantDescription {
-				t.Errorf("description = %q, want %q", description, tt.wantDescription)
-			}
-			if comments != tt.wantComments {
-				t.Errorf("comments = %q, want %q", comments, tt.wantComments)
+			description, comments := descriptionAndComments(tt.description)
+			if description != tt.wantDescription || comments != tt.wantComments {
+				t.Errorf("descriptionAndComments() = (%q, %q), want (%q, %q)",
+					description, comments, tt.wantDescription, tt.wantComments)
 			}
 		})
 	}

@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"unicode/utf8"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
@@ -162,14 +163,7 @@ func (ds *DnacSource) syncDevice(
 	deviceID string,
 	device dnac.ResponseDevicesGetDeviceListResponse,
 ) error {
-	var description, comments string
-	if device.Description != "" {
-		description = strings.TrimSpace(device.Description)
-	}
-	if len(description) > objects.MaxDescriptionLength {
-		comments = description
-		description = "See comments"
-	}
+	description, comments := descriptionAndComments(device.Description)
 
 	ciscoManufacturer, err := nbi.AddManufacturer(ds.Ctx, &objects.Manufacturer{
 		Name: "Cisco",
@@ -794,4 +788,14 @@ func (ds *DnacSource) syncMissingDevicePrimaryIPs(nbi *inventory.NetboxInventory
 		return syncErr
 	}
 	return nil
+}
+
+// descriptionAndComments returns the description of a device, moved to the comments
+// when it is too long for a NetBox description.
+func descriptionAndComments(rawDescription string) (string, string) {
+	description := strings.TrimSpace(rawDescription)
+	if utf8.RuneCountInString(description) > objects.MaxDescriptionLength {
+		return "See comments", description
+	}
+	return description, ""
 }
