@@ -1,10 +1,13 @@
 package proxmox
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strconv"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -67,5 +70,96 @@ func TestInitTimesOutOnUnresponsiveAPI(t *testing.T) {
 		}
 	case <-time.After(10 * time.Second):
 		t.Fatalf("Init() did not return within 10s with a 1s timeout")
+	}
+}
+
+// newFakeProxmoxAPI serves one node "n1" with the given VMs (vmid -> status) and
+// records the VMIDs whose guest agent is queried.
+func newFakeProxmoxAPI(t *testing.T, vmStatuses map[int]string) (*httptest.Server, func() []int) {
+	t.Helper()
+	var mu sync.Mutex
+	agentCalls := []int{}
+	respond := func(w http.ResponseWriter, data string) {
+		_, _ = fmt.Fprintf(w, `{"data":%s}`, data)
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := strings.TrimPrefix(r.URL.Path, "/api2/json")
+		var vmid int
+		switch {
+		case path == "/access/ticket":
+			respond(w, `{"ticket":"t","CSRFPreventionToken":"c","username":"root@pam"}`)
+		case path == "/cluster/status":
+			respond(w, `[]`)
+		case path == "/nodes":
+			respond(w, `[{"node":"n1","status":"online"}]`)
+		case path == "/nodes/n1/status":
+			respond(w, `{}`)
+		case path == "/nodes/n1/network", path == "/nodes/n1/lxc":
+			respond(w, `[]`)
+		case path == "/nodes/n1/qemu":
+			vms := make([]string, 0, len(vmStatuses))
+			for id, status := range vmStatuses {
+				vms = append(vms, fmt.Sprintf(`{"vmid":%d,"name":"vm%d","status":%q}`, id, id, status))
+			}
+			respond(w, "["+strings.Join(vms, ",")+"]")
+		case scanPath(path, "/nodes/n1/qemu/%d/status/current", &vmid):
+			respond(w, fmt.Sprintf(`{"vmid":%d,"name":"vm%d","status":%q}`, vmid, vmid, vmStatuses[vmid]))
+		case scanPath(path, "/nodes/n1/qemu/%d/config", &vmid):
+			respond(w, `{}`)
+		case scanPath(path, "/nodes/n1/qemu/%d/agent/network-get-interfaces", &vmid):
+			mu.Lock()
+			agentCalls = append(agentCalls, vmid)
+			mu.Unlock()
+			respond(w, `{"result":[{"name":"eth0"}]}`)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(server.Close)
+	return server, func() []int {
+		mu.Lock()
+		defer mu.Unlock()
+		out := make([]int, len(agentCalls))
+		copy(out, agentCalls)
+		return out
+	}
+}
+
+// scanPath reports whether path matches format, an fmt.Sscanf pattern with one %d.
+func scanPath(path, format string, vmid *int) bool {
+	n, err := fmt.Sscanf(path, format, vmid)
+	return err == nil && n == 1 && fmt.Sprintf(format, *vmid) == path
+}
+
+func TestInitQueriesGuestAgentOfRunningVMsOnly(t *testing.T) {
+	server, agentCalls := newFakeProxmoxAPI(t, map[int]string{101: "running", 102: "stopped"})
+	serverURL, err := url.Parse(server.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	port, err := strconv.Atoi(serverURL.Port())
+	if err != nil {
+		t.Fatal(err)
+	}
+	ps := newTestSource(t, &parser.SourceConfig{
+		HTTPScheme: parser.HTTP,
+		Hostname:   serverURL.Hostname(),
+		Port:       port,
+		Username:   "root@pam",
+		Password:   "secret",
+		Timeout:    5,
+	})
+
+	if err := ps.Init(); err != nil {
+		t.Fatalf("Init() error = %v", err)
+	}
+	if got := agentCalls(); len(got) != 1 || got[0] != 101 {
+		t.Errorf("guest agent queried for VMIDs %v, want only the running VM 101", got)
+	}
+	if _, known := ps.VMIfaces[101]; !known {
+		t.Errorf("interfaces of running VM 101 are unknown, want them read from the agent")
+	}
+	if _, known := ps.VMIfaces[102]; known {
+		t.Errorf("interfaces of stopped VM 102 are known, want them unknown")
 	}
 }
