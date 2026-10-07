@@ -1,7 +1,9 @@
 package proxmox
 
 import (
+	"cmp"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -232,12 +234,28 @@ func (ps *ProxmoxSource) syncNodeNetworks(
 	nbi *inventory.NetboxInventory,
 	node *proxmox.Node,
 ) error {
-	for _, nodeNetwork := range ps.NodeIfaces[node.Name] {
+	nbHost := ps.NetboxNodes[node.Name]
+
+	// Bonds are synced first, so that their members can reference them as LAG.
+	nodeNetworks := slices.Clone(ps.NodeIfaces[node.Name])
+	slices.SortStableFunc(nodeNetworks, func(a, b *proxmox.NodeNetwork) int {
+		return cmp.Compare(lagSyncOrder(a), lagSyncOrder(b))
+	})
+	bondOfMember := make(map[string]string)
+	for _, nodeNetwork := range nodeNetworks {
+		if lagSyncOrder(nodeNetwork) == 0 {
+			for _, member := range strings.Fields(nodeNetwork.Slaves) {
+				bondOfMember[member] = nodeNetwork.Iface
+			}
+		}
+	}
+	nbLAGs := make(map[string]*objects.Interface)
+
+	for _, nodeNetwork := range nodeNetworks {
 		active := false
 		if nodeNetwork.Active == 1 {
 			active = true
 		}
-		nbHost := ps.NetboxNodes[node.Name]
 		if utils.FilterInterfaceName(nodeNetwork.Iface, ps.SourceConfig.InterfaceFilter) {
 			ps.Logger.Debugf(
 				ps.Ctx,
@@ -247,14 +265,22 @@ func (ps *ProxmoxSource) syncNodeNetworks(
 			)
 			continue
 		}
-		_, err := nbi.AddInterface(ps.Ctx, &objects.Interface{
+		ifaceType := nodeInterfaceType(nodeNetwork.Type)
+		if ifaceType == nil {
+			// Keep the type of an existing physical interface, it is more accurate than ours.
+			if _, exists := nbi.GetInterface(nodeNetwork.Iface, nbHost.ID); !exists {
+				ifaceType = &objects.OtherInterfaceType
+			}
+		}
+		nbIface, err := nbi.AddInterface(ps.Ctx, &objects.Interface{
 			NetboxObject: objects.NetboxObject{
 				Tags: ps.GetSourceTags(),
 			},
 			Device: nbHost,
 			Name:   nodeNetwork.Iface,
 			Status: active,
-			Type:   &objects.OtherInterfaceType, // TODO
+			Type:   ifaceType,
+			LAG:    nbLAGs[bondOfMember[nodeNetwork.Iface]],
 			// Speed: TODO
 			// Mode: TODO
 			// TaggedVlans: TODO
@@ -262,8 +288,19 @@ func (ps *ProxmoxSource) syncNodeNetworks(
 		if err != nil {
 			return fmt.Errorf("add host interface: %s", err)
 		}
+		if lagSyncOrder(nodeNetwork) == 0 {
+			nbLAGs[nodeNetwork.Iface] = nbIface
+		}
 	}
 	return nil
+}
+
+// lagSyncOrder returns 0 for bonds and 1 for every other node network.
+func lagSyncOrder(nodeNetwork *proxmox.NodeNetwork) int {
+	if ifaceType := nodeInterfaceType(nodeNetwork.Type); ifaceType != nil && *ifaceType == objects.LAGInterfaceType {
+		return 0
+	}
+	return 1
 }
 
 // Function that synces proxmox vms to the netbox inventory.
@@ -1017,5 +1054,20 @@ func proxmoxOSTypeToPlatformName(osType string) string {
 		return "Windows 11"
 	default:
 		return ""
+	}
+}
+
+// nodeInterfaceType maps a Proxmox node network type to a NetBox interface type.
+// It returns nil for physical NICs, whose real type Proxmox does not expose.
+func nodeInterfaceType(proxmoxType string) *objects.InterfaceType {
+	switch proxmoxType {
+	case "bond", "OVSBond":
+		return &objects.LAGInterfaceType
+	case "bridge", "OVSBridge":
+		return &objects.BridgeInterfaceType
+	case "vlan", "OVSIntPort", "alias":
+		return &objects.VirtualInterfaceType
+	default:
+		return nil
 	}
 }
