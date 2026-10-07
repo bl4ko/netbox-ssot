@@ -1036,7 +1036,7 @@ func (vc *VmwareSource) syncVM(
 	var vmRole *objects.DeviceRole
 	var err error
 	if len(vc.SourceConfig.VMRoleRelations) > 0 {
-		vmRole, err = common.MatchVMToRole(vc.Ctx, nbi, vmHostName, vc.SourceConfig.VMRoleRelations)
+		vmRole, err = common.MatchVMToRole(vc.Ctx, nbi, vmName, vc.SourceConfig.VMRoleRelations)
 		if err != nil {
 			return fmt.Errorf("match vm to role: %s", err)
 		}

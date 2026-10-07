@@ -323,3 +323,35 @@ func TestSyncHostVirtualNicsCollectsAddressesForThePrimaryIP(t *testing.T) {
 		t.Errorf("collected IPv4 addresses = %v, want [192.0.2.10/24]", hostIPv4Addresses)
 	}
 }
+
+func TestSyncVMsMatchesVMRoleRelationsOnTheVMName(t *testing.T) {
+	nbi, defaultSite := newTestInventory(t)
+	vc := newTestSource(t, &parser.SourceConfig{VMRoleRelations: map[string]string{"^db-": "Database"}})
+	vc.Hosts = map[string]mo.HostSystem{"host-4": newTestHost("host-4", "db-esx")}
+	if err := vc.syncHosts(nbi); err != nil {
+		t.Fatalf("syncHosts() error = %v", err)
+	}
+	nbHost, _ := nbi.GetDevice("db-esx", defaultSite.ID)
+	vc.Vms = map[string]mo.VirtualMachine{
+		"vm-40": newTestVMOnHost(vc, "vm-40", "db-role-vm", "host-4"),
+		"vm-41": newTestVMOnHost(vc, "vm-41", "web-role-vm", "host-4"),
+	}
+
+	if err := vc.syncVMs(nbi); err != nil {
+		t.Fatalf("syncVMs() error = %v", err)
+	}
+	tests := []struct{ vmName, wantRole string }{
+		{vmName: "db-role-vm", wantRole: "Database"},
+		{vmName: "web-role-vm", wantRole: constants.DeviceRoleVM},
+	}
+	for _, tt := range tests {
+		vm, ok := nbi.GetVM(tt.vmName, nbHost.Cluster.ID)
+		if !ok {
+			t.Errorf("vm %s not synced", tt.vmName)
+			continue
+		}
+		if vm.Role == nil || vm.Role.Name != tt.wantRole {
+			t.Errorf("vm %s role = %v, want %s", tt.vmName, vm.Role, tt.wantRole)
+		}
+	}
+}
