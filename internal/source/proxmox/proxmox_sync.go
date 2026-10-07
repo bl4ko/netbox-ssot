@@ -363,31 +363,29 @@ func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 		vmStatus = &objects.VMStatusOffline
 	}
 
+	existingVM, _ := nbi.GetVM(vm.Name, ps.NetboxCluster.ID)
+
 	// Determine VM platform
 	var vmAgentOsInfo *proxmox.AgentOsInfo
 	if vm.Status == "running" {
 		vmAgentOsInfo, _ = vm.AgentOsInfo(ps.Ctx)
 	}
 
-	platformName := "Unknown"
-	if vmAgentOsInfo != nil && vmAgentOsInfo.PrettyName != "" {
-		platformName = vmAgentOsInfo.PrettyName
-	}
-
-	if platformName == "Unknown" && vm.VirtualMachineConfig.OSType != nil {
-		if name := proxmoxOSTypeToPlatformName(*vm.VirtualMachineConfig.OSType); name != "" {
-			platformName = name
+	var vmPlatform *objects.Platform
+	platformName, keepCurrentPlatform := vmPlatformName(vmAgentOsInfo, vm.VirtualMachineConfig.OSType, existingVM)
+	if keepCurrentPlatform {
+		vmPlatform = existingVM.Platform
+		nbi.KeepPlatform(vmPlatform)
+	} else {
+		platformStruct := &objects.Platform{
+			Name: platformName,
+			Slug: utils.Slugify(platformName),
 		}
-	}
-
-	platformStruct := &objects.Platform{
-		Name: platformName,
-		Slug: utils.Slugify(platformName),
-	}
-
-	vmPlatform, err := nbi.AddPlatform(ps.Ctx, platformStruct)
-	if err != nil {
-		return fmt.Errorf("failed to add vm's %+v platform: %s", vm, err)
+		var err error
+		vmPlatform, err = nbi.AddPlatform(ps.Ctx, platformStruct)
+		if err != nil {
+			return fmt.Errorf("failed to add vm's %+v platform: %s", vm, err)
+		}
 	}
 
 	// Determine VM tenant
@@ -643,10 +641,14 @@ func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 		return fmt.Errorf("failed to add vm: %s %s", vm.Name, err)
 	}
 
-	// Sync VM networks
-	err = ps.syncVMNetworks(nbi, nbVM)
-	if err != nil {
-		return fmt.Errorf("failed to sync vm's %+v networks: %s", nbVM, err)
+	// Sync VM networks, or keep the known ones when the guest agent did not answer
+	if _, known := ps.VMIfaces[vm.Name]; known {
+		err = ps.syncVMNetworks(nbi, nbVM)
+		if err != nil {
+			return fmt.Errorf("failed to sync vm's %+v networks: %s", nbVM, err)
+		}
+	} else if existingVM != nil {
+		nbi.KeepVMNetworkObjects(existingVM)
 	}
 
 	// Sync VM disks
@@ -854,6 +856,7 @@ func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 					}
 				}
 
+				existingContainer, _ := nbi.GetVM(container.Name, ps.NetboxCluster.ID)
 				nbContainer, err := nbi.AddVM(ps.Ctx, &objects.VM{
 					NetboxObject: objects.NetboxObject{
 						Tags: newTags,
@@ -876,9 +879,14 @@ func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 					return fmt.Errorf("new vm: %s", err)
 				}
 
-				err = ps.syncContainerNetworks(nbi, nbContainer)
-				if err != nil {
-					return fmt.Errorf("sync container networks: %s", err)
+				// Sync container networks, or keep the known ones when they could not be read
+				if _, known := ps.ContainerIfaces[container.Name]; known {
+					err = ps.syncContainerNetworks(nbi, nbContainer)
+					if err != nil {
+						return fmt.Errorf("sync container networks: %s", err)
+					}
+				} else if existingContainer != nil {
+					nbi.KeepVMNetworkObjects(existingContainer)
 				}
 			}
 		}
@@ -1060,4 +1068,26 @@ func nodeInterfaceType(proxmoxType string) *objects.InterfaceType {
 	default:
 		return nil
 	}
+}
+
+// vmPlatformName returns the platform name of a VM, or keepCurrent when the guest
+// agent did not report the OS and the VM already has a platform in NetBox: an agent
+// that does not answer (stopped VM, agent down) says nothing about the platform.
+func vmPlatformName(
+	agentOsInfo *proxmox.AgentOsInfo,
+	osType *string,
+	existingVM *objects.VM,
+) (name string, keepCurrent bool) {
+	if agentOsInfo != nil && agentOsInfo.PrettyName != "" {
+		return agentOsInfo.PrettyName, false
+	}
+	if existingVM != nil && existingVM.Platform != nil {
+		return "", true
+	}
+	if osType != nil {
+		if name := proxmoxOSTypeToPlatformName(*osType); name != "" {
+			return name, false
+		}
+	}
+	return "Unknown", false
 }

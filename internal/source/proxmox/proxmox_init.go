@@ -94,10 +94,14 @@ func (ps *ProxmoxSource) initNodeVMs(ctx context.Context, node *proxmox.Node) er
 		// Store VM info in our list
 		ps.Vms[node.Name] = append(ps.Vms[node.Name], vmconfig)
 
-		// Load VM interfaces
-		ifaces, _ := vm.AgentGetNetworkIFaces(ctx)
-		ps.VMIfaces[vm.Name] = make([]*proxmox.AgentNetworkIface, 0, len(ifaces))
-		ps.VMIfaces[vm.Name] = append(ps.VMIfaces[vm.Name], ifaces...)
+		// Load VM interfaces. When the guest agent does not answer, the VM is left out
+		// of VMIfaces: its interfaces are unknown, which is not the same as having none.
+		ifaces, err := vm.AgentGetNetworkIFaces(ctx)
+		if err != nil {
+			ps.Logger.Debugf(ps.Ctx, "vm %s: guest agent network data unavailable: %s", vm.Name, err)
+			continue
+		}
+		ps.VMIfaces[vm.Name] = ifaces
 	}
 	return nil
 }
@@ -112,9 +116,13 @@ func (ps *ProxmoxSource) initContainers(ctx context.Context, node *proxmox.Node)
 	ps.Containers[node.Name] = make([]*proxmox.Container, 0, len(containers))
 	for _, container := range containers {
 		ps.Containers[node.Name] = append(ps.Containers[node.Name], container)
-		ifaces, _ := container.Interfaces(ctx)
-		ps.ContainerIfaces[container.Name] = make([]*proxmox.ContainerInterface, 0, len(ifaces))
-		ps.ContainerIfaces[container.Name] = append(ps.ContainerIfaces[container.Name], ifaces...)
+		// When the interfaces cannot be read, the container is left out of ContainerIfaces.
+		ifaces, err := container.Interfaces(ctx)
+		if err != nil {
+			ps.Logger.Debugf(ps.Ctx, "container %s: network data unavailable: %s", container.Name, err)
+			continue
+		}
+		ps.ContainerIfaces[container.Name] = ifaces
 	}
 	return nil
 }
