@@ -237,7 +237,7 @@ func (vc *VmwareSource) Init() (initErr error) {
 	return nil
 }
 
-// Function that syncs all data from oVirt to Netbox.
+// Function that syncs all data from vSphere to Netbox.
 func (vc *VmwareSource) Sync(nbi *inventory.NetboxInventory) error {
 	syncFunctions := []func(*inventory.NetboxInventory) error{}
 	if !vc.SourceConfig.IgnoreTags {
