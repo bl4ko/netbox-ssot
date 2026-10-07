@@ -194,7 +194,7 @@ func TestSyncNodesWithDomainSuffixSyncsHostInterfaces(t *testing.T) {
 }
 
 func TestVMPlatformName(t *testing.T) {
-	l26 := "l26"
+	l26, win10, w2k8 := "l26", "win10", "w2k8"
 	existingWithPlatform := &objects.VM{Platform: &objects.Platform{NetboxObject: objects.NetboxObject{ID: 6}, Name: "Debian 12"}}
 	tests := []struct {
 		name         string
@@ -223,6 +223,24 @@ func TestVMPlatformName(t *testing.T) {
 			osType:       &l26,
 			existingVM:   existingWithPlatform,
 			wantKeepCurr: true,
+		},
+		{
+			name:       "agent silent replaces a platform of the former ostype table",
+			osType:     &win10,
+			existingVM: &objects.VM{Platform: &objects.Platform{Name: "Windows 10"}},
+			wantName:   "Microsoft Windows 10 (64-bit)",
+		},
+		{
+			name:       "agent silent replaces an unknown platform",
+			osType:     &w2k8,
+			existingVM: &objects.VM{Platform: &objects.Platform{Name: "Unknown"}},
+			wantName:   "Microsoft Windows Server 2008 (64-bit)",
+		},
+		{
+			name:       "agent silent replaces a platform of the ostype table",
+			osType:     &w2k8,
+			existingVM: &objects.VM{Platform: &objects.Platform{Name: "Other 2.6.x Linux (64-bit)"}},
+			wantName:   "Microsoft Windows Server 2008 (64-bit)",
 		},
 		{
 			name:     "agent silent on a new VM falls back to ostype",

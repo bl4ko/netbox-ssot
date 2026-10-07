@@ -894,20 +894,47 @@ func (ps *ProxmoxSource) syncContainerNetworks(
 	return nil
 }
 
+// proxmoxOSTypePlatformNames maps Proxmox VM OSType identifiers to the VMware guest
+// full names (Broadcom KB 321876), which netbox-sync uses as platform of vCenter VMs
+// whose guest tools do not report the OS, so that both tools share the same platforms.
+// 64-bit is assumed when Proxmox does not tell. "other", "l24" and "solaris" have no
+// unambiguous VMware equivalent.
+var proxmoxOSTypePlatformNames = map[string]string{
+	"wxp":    "Microsoft Windows XP (32-bit)",
+	"w2k":    "Microsoft Windows 2000 Server",
+	"w2k3":   "Microsoft Windows Server 2003 Standard (32-bit)",
+	"w2k8":   "Microsoft Windows Server 2008 (64-bit)",
+	"wvista": "Microsoft Windows Vista (32-bit)",
+	"win7":   "Microsoft Windows 7 (64-bit)",
+	"win8":   "Microsoft Windows 8 (64-bit)",
+	"win10":  "Microsoft Windows 10 (64-bit)",
+	"win11":  "Microsoft Windows 11 (64-bit)",
+	"l26":    "Other 2.6.x Linux (64-bit)",
+}
+
 // proxmoxOSTypeToPlatformName maps a Proxmox VM OSType identifier to a
 // human-readable platform name. It returns an empty string for unknown types,
 // letting the caller keep its existing fallback.
 func proxmoxOSTypeToPlatformName(osType string) string {
-	switch osType {
-	case "l26":
-		return "Other 2.6.x Linux (64-bit)"
-	case "win10":
-		return "Windows 10"
-	case "win11":
-		return "Windows 11"
-	default:
-		return ""
+	return proxmoxOSTypePlatformNames[osType]
+}
+
+// formerOSTypePlatformNames are the platform names of the former ostype table and
+// fallback, which an existing VM may still carry.
+var formerOSTypePlatformNames = map[string]bool{"Windows 10": true, "Windows 11": true, "Unknown": true}
+
+// isOSTypePlatformName reports whether a platform name was derived from the ostype
+// rather than reported by the guest agent, so that it can be refreshed.
+func isOSTypePlatformName(name string) bool {
+	if formerOSTypePlatformNames[name] {
+		return true
 	}
+	for _, platformName := range proxmoxOSTypePlatformNames {
+		if platformName == name {
+			return true
+		}
+	}
+	return false
 }
 
 // nodeInterfaceType maps a Proxmox node network type to a NetBox interface type.
@@ -926,8 +953,9 @@ func nodeInterfaceType(proxmoxType string) *objects.InterfaceType {
 }
 
 // vmPlatformName returns the platform name of a VM, or keepCurrent when the guest
-// agent did not report the OS and the VM already has a platform in NetBox: an agent
-// that does not answer (stopped VM, agent down) says nothing about the platform.
+// agent did not report the OS and the VM already has a platform reported by the agent
+// in NetBox: an agent that does not answer (stopped VM, agent down) says nothing about
+// the platform. A platform derived from the ostype is refreshed from the ostype.
 func vmPlatformName(
 	agentOsInfo *proxmox.AgentOsInfo,
 	osType *string,
@@ -936,7 +964,7 @@ func vmPlatformName(
 	if agentOsInfo != nil && agentOsInfo.PrettyName != "" {
 		return agentOsInfo.PrettyName, false
 	}
-	if existingVM != nil && existingVM.Platform != nil {
+	if existingVM != nil && existingVM.Platform != nil && !isOSTypePlatformName(existingVM.Platform.Name) {
 		return "", true
 	}
 	if osType != nil {
