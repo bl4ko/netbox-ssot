@@ -669,3 +669,31 @@ func TestCollectHostVirtualNicDataDescribesItsDistributedSwitch(t *testing.T) {
 		t.Errorf("description = %q, want %q", iface.Description, want)
 	}
 }
+
+func TestSyncHostsSkipsBlankSerialNumbers(t *testing.T) {
+	nbi, defaultSite := newTestInventory(t)
+	vc := newTestSource(t, &parser.SourceConfig{})
+	host := newTestHost("host-11", "esx-serial")
+	identifier := func(key, value string) types.HostSystemIdentificationInfo {
+		return types.HostSystemIdentificationInfo{
+			IdentifierType:  &types.ElementDescription{Key: key},
+			IdentifierValue: value,
+		}
+	}
+	host.Summary.Hardware.OtherIdentifyingInfo = []types.HostSystemIdentificationInfo{
+		identifier("ServiceTag", "   "),
+		identifier("SerialNumberTag", " CZ1234ABCD "),
+	}
+	vc.Hosts = map[string]mo.HostSystem{"host-11": host}
+
+	if err := vc.syncHosts(nbi); err != nil {
+		t.Fatalf("syncHosts() error = %v", err)
+	}
+	nbHost, ok := nbi.GetDevice("esx-serial", defaultSite.ID)
+	if !ok {
+		t.Fatal("host esx-serial not synced")
+	}
+	if nbHost.SerialNumber != "CZ1234ABCD" {
+		t.Errorf("serial number = %q, want %q", nbHost.SerialNumber, "CZ1234ABCD")
+	}
+}

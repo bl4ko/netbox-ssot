@@ -336,7 +336,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 					assetTag = infoValue
 				}
 			} else if serialInfoTypes[infoType] {
-				if info.IdentifierValue != "" {
+				if infoValue != "" {
 					if !vc.SourceConfig.IgnoreSerialNumbers {
 						hostSerialNumber = infoValue
 					}
