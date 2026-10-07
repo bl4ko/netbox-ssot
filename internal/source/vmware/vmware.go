@@ -110,6 +110,8 @@ func (vc *VmwareSource) Init() error {
 
 	// How to set custom ca certificates for govmomi: https://github.com/vmware/govmomi/issues/1200#issuecomment-412950179
 	soapClient := soap.NewClient(url, !vc.SourceConfig.ValidateCert)
+	// Bound every vCenter call, so an unresponsive vCenter cannot block the run forever
+	soapClient.Timeout = time.Duration(vc.SourceConfig.Timeout) * time.Second
 	if vc.CAFile != "" {
 		err = soapClient.SetRootCAs(vc.CAFile)
 		if err != nil {
@@ -337,6 +339,8 @@ func (vc *VmwareSource) CreateObjectTagsRelation(
 	userInfo *url.Userinfo,
 ) error {
 	restClient := rest.NewClient(vim25client)
+	// The REST client gets a fresh http.Client, which does not inherit the SOAP timeout
+	restClient.Timeout = time.Duration(vc.SourceConfig.Timeout) * time.Second
 
 	_, err := restClient.Session(ctx)
 	if err != nil {
