@@ -790,3 +790,33 @@ func TestSyncVMsWithoutGuestOSHaveNoPlatform(t *testing.T) {
 		t.Errorf("vm platform = %v, want none without guest OS name", nbVM.Platform)
 	}
 }
+
+func TestCollectVMInterfaceDataSkipsUnparsableGuestAddresses(t *testing.T) {
+	nbi, _ := newTestInventory(t)
+	vc := newTestSource(t, &parser.SourceConfig{})
+	card := &types.VirtualEthernetCard{
+		VirtualDevice: types.VirtualDevice{
+			DeviceInfo:  &types.Description{Label: "Network adapter 1"},
+			Connectable: &types.VirtualDeviceConnectInfo{Connected: true},
+		},
+		MacAddress: "00:50:56:00:00:01",
+	}
+	guest := &types.GuestInfo{Net: []types.GuestNicInfo{{
+		MacAddress: "00:50:56:00:00:01",
+		Connected:  true,
+		IpConfig: &types.NetIpConfigInfo{IpAddress: []types.NetIpConfigInfoIpAddress{
+			{IpAddress: "192.0.2.30", PrefixLength: 24},
+			{IpAddress: "fe80::1%2", PrefixLength: 64},
+			{IpAddress: "not-an-address", PrefixLength: 24},
+		}},
+	}}}
+	netboxVM := &objects.VM{Name: "guest-ip-vm", Host: &objects.Device{Name: "esx-guest-ip"}}
+
+	ipv4, ipv6, _, _, err := vc.collectVMInterfaceData(nbi, netboxVM, mo.VirtualMachine{Guest: guest}, card)
+	if err != nil {
+		t.Fatalf("collectVMInterfaceData() error = %v", err)
+	}
+	if !reflect.DeepEqual(ipv4, []string{"192.0.2.30/24"}) || !reflect.DeepEqual(ipv6, []string{"fe80::1/64"}) {
+		t.Errorf("addresses = %v, %v, want [192.0.2.30/24], [fe80::1/64]", ipv4, ipv6)
+	}
+}

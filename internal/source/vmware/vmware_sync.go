@@ -1493,18 +1493,17 @@ func (vc *VmwareSource) collectVMInterfaceData(
 
 		if guestNic.IpConfig != nil {
 			for _, intIP := range guestNic.IpConfig.IpAddress {
-				intIPAddress := fmt.Sprintf("%s/%d", intIP.IpAddress, intIP.PrefixLength)
-				ipVersion := utils.GetIPVersion(intIP.IpAddress)
-				switch ipVersion {
+				// Guest tools report link-local IPv6 addresses with their zone index (fe80::1%2)
+				ipAddress := utils.RemoveZoneIndexFromIPAddress(intIP.IpAddress)
+				intIPAddress := fmt.Sprintf("%s/%d", ipAddress, intIP.PrefixLength)
+				switch utils.GetIPVersion(ipAddress) {
 				case constants.IPv4:
 					nicIPv4Addresses = append(nicIPv4Addresses, intIPAddress)
 				case constants.IPv6:
 					nicIPv6Addresses = append(nicIPv6Addresses, intIPAddress)
 				default:
-					return nicIPv4Addresses, nicIPv6Addresses, nil, "", fmt.Errorf(
-						"unknown ip version: %s",
-						intIPAddress,
-					)
+					// One unparsable address must not prevent syncing the rest of the VM
+					vc.Logger.Warningf(vc.Ctx, "skipping unparsable ip address %q of vm %s", intIP.IpAddress, netboxVM.Name)
 				}
 			}
 		}
