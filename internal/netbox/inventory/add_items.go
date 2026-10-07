@@ -604,36 +604,16 @@ func (nbi *NetboxInventory) AddCluster(
 	if oldCluster := nbi.lookupCluster(ctx, newCluster.Name); oldCluster != nil {
 		// Remove id from orphan manager, because it still exists in the sources
 		nbi.OrphanManager.RemoveItem(oldCluster)
-		diffMap, err := utils.JSONDiffMapExceptID(newCluster, oldCluster, false, nbi.SourcePriority)
+		cluster, err := nbi.updateCluster(ctx, newCluster, oldCluster)
 		if err != nil {
 			return nil, err
 		}
-		if len(diffMap) > 0 {
-			nbi.Logger.Debugf(
-				ctx,
-				"Cluster %s already exists in Netbox but is out of date. Patching it...",
-				newCluster.Name,
-			)
-			patchedCluster, err := service.Patch[objects.Cluster](
-				ctx,
-				nbi.NetboxAPI,
-				oldCluster.ID,
-				diffMap,
-			)
-			if err != nil {
-				return nil, err
-			}
-			nbi.unindexCluster(oldCluster)
-			// Dry-run patches return only the ID: the name is needed to index the cluster.
-			if patchedCluster.Name == "" {
-				patchedCluster.Name = newCluster.Name
-			}
-			patchedCluster.SetCustomField(constants.CustomFieldSourceName, clusterSourceName(newCluster))
-			nbi.indexCluster(patchedCluster)
-			return patchedCluster, nil
+		// A previous run may have created the cluster and failed while moving the VMs:
+		// resume the move, otherwise AddVM creates replacements for the VMs left behind.
+		if err := nbi.moveSourceVMs(ctx, nbi.clustersIndexByNameAndSource[newCluster.Name], cluster); err != nil {
+			return nil, err
 		}
-		nbi.Logger.Debugf(ctx, "Cluster %s already exists in Netbox and is up to date...", newCluster.Name)
-		return oldCluster, nil
+		return cluster, nil
 	}
 	nbi.Logger.Debugf(ctx, "Cluster %s does not exist in Netbox. Creating it...", newCluster.Name)
 	createdCluster, err := service.Create(ctx, nbi.NetboxAPI, newCluster)
@@ -646,6 +626,44 @@ func (nbi *NetboxInventory) AddCluster(
 		return nil, err
 	}
 	return createdCluster, nil
+}
+
+// updateCluster patches oldCluster with the changes of newCluster and returns the
+// up to date cluster. Callers hold clustersLock.
+func (nbi *NetboxInventory) updateCluster(
+	ctx context.Context,
+	newCluster, oldCluster *objects.Cluster,
+) (*objects.Cluster, error) {
+	diffMap, err := utils.JSONDiffMapExceptID(newCluster, oldCluster, false, nbi.SourcePriority)
+	if err != nil {
+		return nil, err
+	}
+	if len(diffMap) == 0 {
+		nbi.Logger.Debugf(ctx, "Cluster %s already exists in Netbox and is up to date...", newCluster.Name)
+		return oldCluster, nil
+	}
+	nbi.Logger.Debugf(
+		ctx,
+		"Cluster %s already exists in Netbox but is out of date. Patching it...",
+		newCluster.Name,
+	)
+	patchedCluster, err := service.Patch[objects.Cluster](
+		ctx,
+		nbi.NetboxAPI,
+		oldCluster.ID,
+		diffMap,
+	)
+	if err != nil {
+		return nil, err
+	}
+	nbi.unindexCluster(oldCluster)
+	// Dry-run patches return only the ID: the name is needed to index the cluster.
+	if patchedCluster.Name == "" {
+		patchedCluster.Name = newCluster.Name
+	}
+	patchedCluster.SetCustomField(constants.CustomFieldSourceName, clusterSourceName(newCluster))
+	nbi.indexCluster(patchedCluster)
+	return patchedCluster, nil
 }
 
 // moveSourceVMs moves into cluster the VMs of the source in ctx that sit in a cluster of
