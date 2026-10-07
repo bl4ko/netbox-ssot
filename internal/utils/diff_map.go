@@ -429,7 +429,9 @@ func addStructDiff(
 
 	// We check if struct is a objects.Choice (special netbox struct)
 	if isChoiceEmbedded(newObj) {
-		if !existingObj.IsValid() || newObj.Interface() != existingObj.Interface() {
+		if !existingObj.IsValid() {
+			diffMap[jsonTag] = choiceValue(newObj)
+		} else if newObj.Interface() != existingObj.Interface() && hasPriority {
 			diffMap[jsonTag] = choiceValue(newObj)
 		}
 		return nil
@@ -454,7 +456,7 @@ func addStructDiff(
 				return fmt.Errorf("id field is not an int")
 			}
 			diffMap[jsonTag] = IDObject{ID: idValue}
-		} else if newObj.FieldByName("ID").Interface() != existingObj.FieldByName("ID").Interface() {
+		} else if newObj.FieldByName("ID").Interface() != existingObj.FieldByName("ID").Interface() && hasPriority {
 			// Objects have ID field, compare their ids
 			idValue, ok := idField.Interface().(int)
 			if !ok {
