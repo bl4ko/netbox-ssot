@@ -894,7 +894,7 @@ func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 					Tenant:  vmTenant,
 					VCPUs:   float32(container.CPUs),
 					Memory:  int(container.MaxMem / constants.MiB),  //nolint:gosec
-					Disk:    int(container.MaxDisk / constants.GiB), //nolint:gosec
+					Disk:    int(container.MaxDisk / constants.MiB), //nolint:gosec
 					Site:    nbHost.Site,
 					Name:    container.Name,
 					Status:  containerStatus,

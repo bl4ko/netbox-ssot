@@ -351,3 +351,31 @@ func TestSyncVMsAndContainersSkipGuestsWithoutHost(t *testing.T) {
 		t.Errorf("syncContainers() error = %v, want the container skipped", err)
 	}
 }
+
+func TestSyncContainersReportsDiskInMiB(t *testing.T) {
+	service.MockNetboxClient.DryRun = true
+	nbi := inventory.MockInventory
+	ps := newTestSource(t, &parser.SourceConfig{})
+	ps.NetboxNodes = map[string]*objects.Device{
+		"n1": {
+			NetboxObject: objects.NetboxObject{ID: 1},
+			Name:         "n1",
+			Site:         &objects.Site{NetboxObject: objects.NetboxObject{ID: 1}},
+		},
+	}
+	ps.Containers = map[string][]*proxmox.Container{
+		"n1": {{Name: "disk-unit-ct", VMID: 401, MaxDisk: 8 * constants.GiB, MaxMem: 512 * constants.MiB}},
+	}
+	ps.ContainerIfaces = map[string][]*proxmox.ContainerInterface{}
+
+	if err := ps.syncContainers(nbi); err != nil {
+		t.Fatalf("syncContainers() error = %v", err)
+	}
+	nbContainer, ok := nbi.GetVM("disk-unit-ct", ps.NetboxCluster.ID)
+	if !ok {
+		t.Fatalf("container disk-unit-ct not synced")
+	}
+	if nbContainer.Disk != 8192 {
+		t.Errorf("container disk = %d, want 8192 (MiB)", nbContainer.Disk)
+	}
+}
