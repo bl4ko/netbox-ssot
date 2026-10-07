@@ -79,6 +79,22 @@ func hasPriorityOver(newObj, existingObj reflect.Value, source2priority map[stri
 	return true
 }
 
+// HasSourcePriority reports whether newSource may overwrite what existingSource synced:
+// true when either is unknown, otherwise when its rank in source2priority is lower or
+// equal (sources missing from it rank last), as for the fields of a diff.
+func HasSourcePriority(newSource, existingSource string, source2priority map[string]int) bool {
+	if newSource == "" || existingSource == "" {
+		return true
+	}
+	rank := func(source string) int {
+		if priority, ok := source2priority[source]; ok {
+			return priority
+		}
+		return int(^uint(0) >> 1)
+	}
+	return rank(newSource) <= rank(existingSource)
+}
+
 // JSONDiffMapExceptID compares two objects and returns a map of fields
 // (represented by their JSON tag names) that are different with their
 // values from newObj.

@@ -15,8 +15,8 @@ func (nbi *NetboxInventory) RegisterManagedSourceTags(configuredTagNames []strin
 	names := append([]string{}, configuredTagNames...)
 	nbi.tagsLock.Lock()
 	for name, tag := range nbi.tagsIndexByName {
-		if strings.HasPrefix(name, utils.SourceTagPrefix) &&
-			strings.HasPrefix(tag.Description, constants.SourceTagDescriptionPrefix) {
+		// source.tag accepts any name: the description netbox-ssot writes is the mark.
+		if strings.HasPrefix(tag.Description, constants.SourceTagDescriptionPrefix) {
 			names = append(names, name)
 		}
 	}
