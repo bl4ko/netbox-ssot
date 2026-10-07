@@ -293,3 +293,29 @@ func TestSyncVMKeepsKnownNetworkObjectsWhenAgentDataIsUnknown(t *testing.T) {
 		})
 	}
 }
+
+func TestParseDiskSizeMiB(t *testing.T) {
+	tests := []struct {
+		item string
+		want int
+	}{
+		{item: "size=32G", want: 32768},
+		{item: "size=2T", want: 2097152},
+		{item: "size=2252M", want: 2252},
+		{item: "size=1.5T", want: 1572864},
+		{item: "size=34359738368", want: 32768},
+		{item: "size=4194304K", want: 4096},
+		{item: "size=32GiB", want: 32768},
+		{item: "size=", want: 0},
+		{item: "size=abc", want: 0},
+		{item: "discard=on", want: 0},
+		{item: "cache=writeback", want: 0},
+	}
+	for _, tt := range tests {
+		t.Run(tt.item, func(t *testing.T) {
+			if got := parseDiskSizeMiB(tt.item); got != tt.want {
+				t.Errorf("parseDiskSizeMiB(%q) = %d, want %d", tt.item, got, tt.want)
+			}
+		})
+	}
+}
