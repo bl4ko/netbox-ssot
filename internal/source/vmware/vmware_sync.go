@@ -220,12 +220,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 		var err error
 		hostName := host.Name
 
-		hostSite, err := common.MatchHostToSite(
-			vc.Ctx,
-			nbi,
-			hostName,
-			vc.SourceConfig.HostSiteRelations,
-		)
+		hostSite, err := vc.matchHostSite(nbi, hostName)
 		if err != nil {
 			return fmt.Errorf("hostSite: %s", err)
 		}
@@ -1071,12 +1066,7 @@ func (vc *VmwareSource) syncVM(
 	}
 
 	// Site is the same as the Host
-	vmSite, err := common.MatchHostToSite(
-		vc.Ctx,
-		nbi,
-		vmHostName,
-		vc.SourceConfig.HostSiteRelations,
-	)
+	vmSite, err := vc.matchHostSite(nbi, vmHostName)
 	if err != nil {
 		return fmt.Errorf("vm's Site: %s", err)
 	}
@@ -1813,6 +1803,22 @@ func (vc *VmwareSource) createHypotheticalCluster(
 	}
 
 	return nbCluster, nil
+}
+
+// matchHostSite returns the site of a host from hostSiteRelations, or the default site
+// when no relation is configured: vSphere has no site of its own to fall back on.
+func (vc *VmwareSource) matchHostSite(nbi *inventory.NetboxInventory, hostName string) (*objects.Site, error) {
+	site, err := common.MatchHostToSite(vc.Ctx, nbi, hostName, vc.SourceConfig.HostSiteRelations)
+	if err != nil {
+		return nil, err
+	}
+	if site == nil {
+		site, _ = nbi.GetSite(constants.DefaultSite)
+	}
+	if site == nil {
+		return nil, fmt.Errorf("no site matched host %s and site %s does not exist", hostName, constants.DefaultSite)
+	}
+	return site, nil
 }
 
 // vmwareConnectionStateToDeviceStatus maps a vCenter host ConnectionState to a
