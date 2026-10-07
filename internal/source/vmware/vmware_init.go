@@ -175,8 +175,11 @@ func (vc *VmwareSource) initHosts(ctx context.Context, containerView *view.Conta
 			if host.Config.Network.Portgroup != nil {
 				for _, pgroup := range host.Config.Network.Portgroup {
 					if pgroup.Spec.Name != "" {
-						nicOrder := pgroup.ComputedPolicy.NicTeaming.NicOrder
 						pgroupNics := []string{}
+						var nicOrder *types.HostNicOrderPolicy
+						if pgroup.ComputedPolicy.NicTeaming != nil {
+							nicOrder = pgroup.ComputedPolicy.NicTeaming.NicOrder
+						}
 						if nicOrder != nil {
 							if len(nicOrder.ActiveNic) > 0 {
 								pgroupNics = append(pgroupNics, nicOrder.ActiveNic...)

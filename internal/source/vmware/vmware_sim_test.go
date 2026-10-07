@@ -150,3 +150,25 @@ func TestInitLogsOutWhenItFailsAfterLogin(t *testing.T) {
 		t.Errorf("open vCenter sessions = %d, want 1: Init left its session open", n)
 	}
 }
+
+func TestInitHandlesPortgroupsWithoutNicTeaming(t *testing.T) {
+	vc, service := newSimulatedVCenter(t, &parser.SourceConfig{Timeout: 5, IgnoreTags: true})
+	patched := 0
+	for _, entity := range service.Context.Map.All("HostSystem") {
+		host := entity.(*simulator.HostSystem)
+		if host.Config == nil || host.Config.Network == nil {
+			continue
+		}
+		for i := range host.Config.Network.Portgroup {
+			host.Config.Network.Portgroup[i].ComputedPolicy.NicTeaming = nil
+			patched++
+		}
+	}
+	if patched == 0 {
+		t.Fatal("the simulator has no host port group")
+	}
+
+	if err := vc.Init(); err != nil {
+		t.Errorf("Init() error = %v", err)
+	}
+}
