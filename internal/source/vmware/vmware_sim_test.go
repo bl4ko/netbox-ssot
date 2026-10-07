@@ -1,14 +1,19 @@
 package vmware
 
 import (
+	"context"
+	"net"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/bl4ko/netbox-ssot/internal/parser"
+	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/simulator"
+	"github.com/vmware/govmomi/vim25/mo"
 
 	// Register the vCenter REST API (tags) on the simulator
 	_ "github.com/vmware/govmomi/vapi/simulator"
@@ -111,5 +116,37 @@ func TestInitAndSyncAgainstSimulatedVCenter(t *testing.T) {
 		if _, ok := nbi.GetVM(vmName, cluster.ID); !ok {
 			t.Errorf("vm %s not synced in cluster %s", vmName, clusterName)
 		}
+	}
+}
+
+func TestInitLogsOutWhenItFailsAfterLogin(t *testing.T) {
+	vc, service := newSimulatedVCenter(t, &parser.SourceConfig{Timeout: 5})
+	service.ServeMux.HandleFunc(tagsSessionPath, func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "tags API unavailable", http.StatusServiceUnavailable)
+	})
+	if err := vc.Init(); err == nil {
+		t.Fatal("Init() = nil, want the tags API error")
+	}
+
+	ctx := context.Background()
+	sc := vc.SourceConfig
+	vcURL := &url.URL{
+		Scheme: string(sc.HTTPScheme),
+		Host:   net.JoinHostPort(sc.Hostname, strconv.Itoa(sc.Port)),
+		Path:   "/sdk",
+		User:   url.UserPassword(sc.Username, sc.Password),
+	}
+	client, err := govmomi.NewClient(ctx, vcURL, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var sessionManager mo.SessionManager
+	err = client.RetrieveOne(ctx, *client.ServiceContent.SessionManager, []string{"sessionList"}, &sessionManager)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Only the session of this check remains
+	if n := len(sessionManager.SessionList); n != 1 {
+		t.Errorf("open vCenter sessions = %d, want 1: Init left its session open", n)
 	}
 }

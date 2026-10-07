@@ -84,7 +84,7 @@ type HostPortgroupData struct {
 	nics    []string
 }
 
-func (vc *VmwareSource) Init() error {
+func (vc *VmwareSource) Init() (initErr error) {
 	// Initialize the connection
 	vc.Logger.Debug(vc.Ctx, "vmware source ", vc.SourceConfig.Name)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -130,6 +130,27 @@ func (vc *VmwareSource) Init() error {
 	if err = sessionManager.Login(ctx, url.User); err != nil {
 		return fmt.Errorf("login failed: %s", err)
 	}
+	// Log out on every return, failures included, so failed runs do not pile up sessions
+	defer func() {
+		if err := sessionManager.Logout(ctx); err != nil {
+			logoutErr := fmt.Errorf(
+				"error occurred when ending vmware connection to host %s: %s",
+				vc.SourceConfig.Hostname,
+				err,
+			)
+			if initErr == nil {
+				initErr = logoutErr
+			} else {
+				vc.Logger.Errorf(vc.Ctx, "%s", logoutErr)
+			}
+			return
+		}
+		vc.Logger.Debug(
+			vc.Ctx,
+			"Successfully closed connection to vmware host: ",
+			vc.SourceConfig.Hostname,
+		)
+	}()
 
 	// View manager is used to create and manage views. Views are a mechanism in vSphere
 	// to group and manage objects in the inventory.
@@ -212,21 +233,6 @@ func (vc *VmwareSource) Init() error {
 	if err != nil {
 		vc.Logger.Errorf(vc.Ctx, "failed destroying containerView: %s", err)
 	}
-
-	err = sessionManager.Logout(ctx)
-	if err != nil {
-		return fmt.Errorf(
-			"error occurred when ending vmware connection to host %s: %s",
-			vc.SourceConfig.Hostname,
-			err,
-		)
-	}
-
-	vc.Logger.Debug(
-		vc.Ctx,
-		"Successfully closed connection to vmware host: ",
-		vc.SourceConfig.Hostname,
-	)
 
 	return nil
 }
