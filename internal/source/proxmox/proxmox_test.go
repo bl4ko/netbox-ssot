@@ -20,9 +20,21 @@ func TestProxmoxOSTypeToPlatformName(t *testing.T) {
 		osType string
 		want   string
 	}{
+		// Names are the VMware guest full names that netbox-sync writes for vCenter VMs
+		// (Broadcom KB 321876), so that both tools share the same platforms.
 		{name: "linux 2.6 kernel", osType: "l26", want: "Other 2.6.x Linux (64-bit)"},
-		{name: "windows 11", osType: "win11", want: "Windows 11"},
-		{name: "windows 10", osType: "win10", want: "Windows 10"},
+		{name: "windows xp", osType: "wxp", want: "Microsoft Windows XP (32-bit)"},
+		{name: "windows 2000", osType: "w2k", want: "Microsoft Windows 2000 Server"},
+		{name: "windows 2003", osType: "w2k3", want: "Microsoft Windows Server 2003 Standard (32-bit)"},
+		{name: "windows 2008", osType: "w2k8", want: "Microsoft Windows Server 2008 (64-bit)"},
+		{name: "windows vista", osType: "wvista", want: "Microsoft Windows Vista (32-bit)"},
+		{name: "windows 7", osType: "win7", want: "Microsoft Windows 7 (64-bit)"},
+		{name: "windows 8", osType: "win8", want: "Microsoft Windows 8 (64-bit)"},
+		{name: "windows 10", osType: "win10", want: "Microsoft Windows 10 (64-bit)"},
+		{name: "windows 11", osType: "win11", want: "Microsoft Windows 11 (64-bit)"},
+		{name: "unspecified os", osType: "other", want: ""},
+		{name: "linux 2.4 kernel without known name", osType: "l24", want: ""},
+		{name: "solaris without known version", osType: "solaris", want: ""},
 		{name: "empty type", osType: "", want: ""},
 	}
 	for _, tt := range tests {
