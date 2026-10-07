@@ -548,6 +548,40 @@ func TestPriorityMergeDiff(t *testing.T) {
 				"comments": "Added comment",
 			},
 		},
+		{
+			name:        "Lower priority source does not override choice and object fields",
+			resetFields: false,
+			newStruct: &objects.Vlan{
+				Name:   "Vlan1000",
+				Vid:    1000,
+				Status: &objects.VlanStatusDeprecated,
+				Tenant: &objects.Tenant{NetboxObject: objects.NetboxObject{ID: 7}, Name: "Tenant7"},
+				Site:   &objects.Site{NetboxObject: objects.NetboxObject{ID: 3}, Name: "Site3"},
+				NetboxObject: objects.NetboxObject{
+					CustomFields: map[string]interface{}{
+						constants.CustomFieldSourceName: "test1",
+					},
+				},
+			},
+			existingStruct: &objects.Vlan{
+				Name:   "Vlan1000",
+				Vid:    1000,
+				Status: &objects.VlanStatusActive,
+				Tenant: &objects.Tenant{NetboxObject: objects.NetboxObject{ID: 5}, Name: "Tenant5"},
+				NetboxObject: objects.NetboxObject{
+					CustomFields: map[string]interface{}{
+						constants.CustomFieldSourceName: "test2",
+					},
+				},
+			},
+			sourcePriority: map[string]int{
+				"test1": 1,
+				"test2": 0,
+			},
+			expectedDiff: map[string]interface{}{
+				"site": IDObject{ID: 3},
+			},
+		},
 	}
 
 	for _, tt := range tests {
