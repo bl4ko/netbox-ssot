@@ -1412,7 +1412,10 @@ func (nbi *NetboxInventory) AddIPAddress(
 				nbi.NetboxAPI,
 				fmt.Sprintf("&address=%s", url.QueryEscape(newIPAddress.Address)),
 			)
-			if getErr != nil || len(existingIPs) == 0 {
+			if getErr != nil {
+				return nil, fmt.Errorf("find existing ip address %s: %w", newIPAddress.Address, getErr)
+			}
+			if len(existingIPs) == 0 {
 				return nil, err
 			}
 			// Only take over an unassigned IP of the same VRF: an IP assigned to another
@@ -1436,7 +1439,7 @@ func (nbi *NetboxInventory) AddIPAddress(
 			}
 			patchedIP, patchErr := service.Patch[objects.IPAddress](ctx, nbi.NetboxAPI, chosenIP.ID, patchData)
 			if patchErr != nil {
-				return nil, err
+				return nil, fmt.Errorf("reassign existing ip address %d: %w", chosenIP.ID, patchErr)
 			}
 			nbi.ipAddressesIndex[objType][objName][ifaceName][indexKey] = patchedIP
 			return patchedIP, nil
