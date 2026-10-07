@@ -1497,44 +1497,27 @@ func (vc *VmwareSource) collectVMInterfaceData(
 	}
 	var intUntaggedVlan *objects.Vlan
 	var intTaggedVlanList []*objects.Vlan
+	vlanGroups := map[string]*objects.VlanGroup{}
 	if len(intNetworkVlanIDs) > 0 && intMode != &objects.VMInterfaceModeTaggedAll {
 		if len(intNetworkVlanIDs) == 1 && intNetworkVlanIDs[0] != 0 {
-			vidID := intNetworkVlanIDs[0]
-			nicUntaggedVlanSite, err := common.MatchVlanToSite(
-				vc.Ctx,
-				nbi,
-				vc.Networks.Vid2Name[vidID],
-				vc.SourceConfig.VlanSiteRelations,
-			)
+			vlan, err := vc.getVlan(nbi, intNetworkVlanIDs[0], vlanGroups)
 			if err != nil {
-				return nicIPv4Addresses, nicIPv6Addresses, nil, "", fmt.Errorf(
-					"match vlan to site: %s",
-					err,
-				)
+				return nicIPv4Addresses, nicIPv6Addresses, nil, "", err
 			}
-			nicUntaggedVlanGroup, err := common.MatchVlanToGroup(
-				vc.Ctx,
-				nbi,
-				vc.Networks.Vid2Name[vidID],
-				nicUntaggedVlanSite,
-				vc.SourceConfig.VlanGroupRelations,
-				vc.SourceConfig.VlanGroupSiteRelations,
-				"",
-			)
-			if err != nil {
-				return nicIPv4Addresses, nicIPv6Addresses, nil, "", fmt.Errorf(
-					"mathc vlan to vlan group: %s",
-					err,
-				)
-			}
-			intUntaggedVlan, _ = nbi.GetVlan(nicUntaggedVlanGroup.ID, vidID)
+			intUntaggedVlan = vlan
 		} else {
 			intTaggedVlanList = []*objects.Vlan{}
 			for _, intNetworkVlanID := range intNetworkVlanIDs {
 				if intNetworkVlanID == 0 {
 					continue
 				}
-				// nicTaggedVlanList = append(nicTaggedVlanList, nbi.get[intNetworkVlanId])
+				vlan, err := vc.getVlan(nbi, intNetworkVlanID, vlanGroups)
+				if err != nil {
+					return nicIPv4Addresses, nicIPv6Addresses, nil, "", err
+				}
+				if vlan != nil {
+					intTaggedVlanList = append(intTaggedVlanList, vlan)
+				}
 			}
 		}
 	}
@@ -1819,6 +1802,40 @@ func (vc *VmwareSource) createHypotheticalCluster(
 	}
 
 	return nbCluster, nil
+}
+
+// getVlan returns the NetBox VLAN with the given VID, in the VLAN group matched from
+// the name of the distributed port group carrying it, or nil when it does not exist.
+// vlanGroups caches the VLAN group of each VLAN name: a wide trunk carries thousands
+// of VLANs, most of them unnamed, which all resolve to the same group.
+func (vc *VmwareSource) getVlan(
+	nbi *inventory.NetboxInventory,
+	vid int,
+	vlanGroups map[string]*objects.VlanGroup,
+) (*objects.Vlan, error) {
+	vlanName := vc.Networks.Vid2Name[vid]
+	vlanGroup, ok := vlanGroups[vlanName]
+	if !ok {
+		vlanSite, err := common.MatchVlanToSite(vc.Ctx, nbi, vlanName, vc.SourceConfig.VlanSiteRelations)
+		if err != nil {
+			return nil, fmt.Errorf("match vlan to site: %s", err)
+		}
+		vlanGroup, err = common.MatchVlanToGroup(
+			vc.Ctx,
+			nbi,
+			vlanName,
+			vlanSite,
+			vc.SourceConfig.VlanGroupRelations,
+			vc.SourceConfig.VlanGroupSiteRelations,
+			"",
+		)
+		if err != nil {
+			return nil, fmt.Errorf("match vlan to vlan group: %s", err)
+		}
+		vlanGroups[vlanName] = vlanGroup
+	}
+	vlan, _ := nbi.GetVlan(vlanGroup.ID, vid)
+	return vlan, nil
 }
 
 // truncateDescription bounds a description to the length NetBox accepts.

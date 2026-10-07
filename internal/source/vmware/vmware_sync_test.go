@@ -3,6 +3,7 @@ package vmware
 import (
 	"context"
 	"reflect"
+	"sort"
 	"strings"
 	"testing"
 
@@ -433,6 +434,84 @@ func TestSyncVMsKeepsLongDescriptionsInComments(t *testing.T) {
 		if vm.Description != tt.wantDescription || vm.Comments != tt.wantComments {
 			t.Errorf("vm %s description, comments = %q, %q, want %q, %q",
 				tt.vmName, vm.Description, vm.Comments, tt.wantDescription, tt.wantComments)
+		}
+	}
+}
+
+func TestCollectVMInterfaceDataAssignsTaggedVlans(t *testing.T) {
+	nbi, _ := newTestInventory(t)
+	vc := newTestSource(t, &parser.SourceConfig{})
+	vc.Networks.DistributedVirtualPortgroups = map[string]*DistributedPortgroupData{
+		"dvportgroup-10": {Name: "tagged-vlan-10", VlanIDs: []int{3010}},
+		"dvportgroup-20": {Name: "tagged-vlan-20", VlanIDs: []int{3020}},
+	}
+	vc.Networks.Vid2Name = map[int]string{3010: "tagged-vlan-10", 3020: "tagged-vlan-20"}
+	if err := vc.syncNetworks(nbi); err != nil {
+		t.Fatalf("syncNetworks() error = %v", err)
+	}
+	vc.Networks.DistributedVirtualPortgroups["dvportgroup-30"] = &DistributedPortgroupData{
+		Name: "tagged-trunk", VlanIDs: []int{3010, 3020}, VlanIDRanges: []string{"3010", "3020"},
+	}
+	card := &types.VirtualEthernetCard{
+		VirtualDevice: types.VirtualDevice{
+			DeviceInfo: &types.Description{Label: "Network adapter 1"},
+			Backing: &types.VirtualEthernetCardDistributedVirtualPortBackingInfo{
+				Port: types.DistributedVirtualSwitchPortConnection{PortgroupKey: "dvportgroup-30"},
+			},
+			Connectable: &types.VirtualDeviceConnectInfo{Connected: true},
+		},
+	}
+	netboxVM := &objects.VM{Name: "tagged-vm", Host: &objects.Device{Name: "esx-tagged"}}
+
+	_, _, iface, _, err := vc.collectVMInterfaceData(nbi, netboxVM, mo.VirtualMachine{Guest: &types.GuestInfo{}}, card)
+	if err != nil {
+		t.Fatalf("collectVMInterfaceData() error = %v", err)
+	}
+	gotVids := []int{}
+	for _, vlan := range iface.TaggedVlans {
+		gotVids = append(gotVids, vlan.Vid)
+	}
+	sort.Ints(gotVids)
+	if !reflect.DeepEqual(gotVids, []int{3010, 3020}) {
+		t.Errorf("tagged vlans = %v, want [3010 3020]", gotVids)
+	}
+}
+
+func BenchmarkCollectVMInterfaceDataWideTrunk(b *testing.B) {
+	service.MockNetboxClient.DryRun = true
+	nbi := inventory.MockInventory
+	lg, err := logger.New("", logger.ERROR)
+	if err != nil {
+		b.Fatal(err)
+	}
+	vc := &VmwareSource{Config: common.Config{Logger: lg, Ctx: context.Background(), SourceConfig: &parser.SourceConfig{}}}
+	ids, ranges, _, err := parseDvpgVlanSpec(&types.VmwareDistributedVirtualSwitchTrunkVlanSpec{
+		VlanId: []types.NumericRange{{Start: 2, End: 4094}},
+	})
+	if err != nil {
+		b.Fatal(err)
+	}
+	vc.Networks = NetworkData{
+		DistributedVirtualPortgroups: map[string]*DistributedPortgroupData{
+			"dvportgroup-wide": {Name: "trunk-2-4094", VlanIDs: ids, VlanIDRanges: ranges},
+		},
+		Vid2Name: map[int]string{},
+	}
+	card := &types.VirtualEthernetCard{
+		VirtualDevice: types.VirtualDevice{
+			DeviceInfo: &types.Description{Label: "Network adapter 1"},
+			Backing: &types.VirtualEthernetCardDistributedVirtualPortBackingInfo{
+				Port: types.DistributedVirtualSwitchPortConnection{PortgroupKey: "dvportgroup-wide"},
+			},
+			Connectable: &types.VirtualDeviceConnectInfo{},
+		},
+	}
+	netboxVM := &objects.VM{Name: "wide-trunk-vm", Host: &objects.Device{Name: "esx-wide"}}
+	b.ResetTimer()
+	for range b.N {
+		_, _, _, _, err := vc.collectVMInterfaceData(nbi, netboxVM, mo.VirtualMachine{Guest: &types.GuestInfo{}}, card)
+		if err != nil {
+			b.Fatal(err)
 		}
 	}
 }
