@@ -1281,3 +1281,34 @@ func TestNetboxInventory_applyDeviceFieldLengthLimitations(t *testing.T) {
 		})
 	}
 }
+
+func TestAddPrefixDoesNotAdoptManualPrefix(t *testing.T) {
+	manualPrefix := &objects.Prefix{
+		NetboxObject: objects.NetboxObject{
+			ID:          12,
+			Description: "office LAN",
+			Tags:        []*objects.Tag{{ID: 40, Name: "manual"}},
+		},
+		Prefix: "192.0.2.0/24",
+	}
+	nbi := &NetboxInventory{
+		Logger:                mockLogger,
+		OrphanManager:         NewOrphanManager(mockLogger),
+		SsotTag:               &objects.Tag{ID: 1, Name: constants.SsotTagName},
+		SourcePriority:        map[string]int{},
+		NetboxAPI:             service.FailingMockNetboxClient,
+		prefixesIndexByPrefix: map[string]map[int]*objects.Prefix{"192.0.2.0/24": {0: manualPrefix}},
+	}
+	ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "proxmox-a")
+
+	got, err := nbi.AddPrefix(ctx, &objects.Prefix{Prefix: "192.0.2.0/24"})
+	if err != nil {
+		t.Fatalf("AddPrefix() error = %v, want the manual prefix returned without any API call", err)
+	}
+	if got != manualPrefix {
+		t.Errorf("AddPrefix() = %v, want the existing manual prefix", got)
+	}
+	if manualPrefix.HasTagByName(constants.SsotTagName) {
+		t.Errorf("manual prefix was tagged %s", constants.SsotTagName)
+	}
+}
