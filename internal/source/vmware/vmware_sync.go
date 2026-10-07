@@ -650,7 +650,7 @@ func (vc *VmwareSource) collectHostPhysicalNicData(
 	return &objects.Interface{
 		NetboxObject: objects.NetboxObject{
 			Tags:        vc.GetSourceTags(),
-			Description: pnicDescription,
+			Description: truncateDescription(pnicDescription),
 			CustomFields: map[string]interface{}{
 				constants.CustomFieldSourceName: vc.SourceConfig.Name,
 			},
@@ -963,7 +963,7 @@ func (vc *VmwareSource) collectHostVirtualNicData(
 	return &objects.Interface{
 		NetboxObject: objects.NetboxObject{
 			Tags:        vc.GetSourceTags(),
-			Description: vnicDescription,
+			Description: truncateDescription(vnicDescription),
 		},
 		Device:       nbHost,
 		Name:         vnicName,
@@ -1523,7 +1523,7 @@ func (vc *VmwareSource) collectVMInterfaceData(
 	return nicIPv4Addresses, nicIPv6Addresses, &objects.VMInterface{
 		NetboxObject: objects.NetboxObject{
 			Tags:        vc.GetSourceTags(),
-			Description: intDescription,
+			Description: truncateDescription(intDescription),
 		},
 		VM:           netboxVM,
 		Name:         intFullName,
@@ -1801,6 +1801,16 @@ func (vc *VmwareSource) createHypotheticalCluster(
 	}
 
 	return nbCluster, nil
+}
+
+// truncateDescription bounds a description to the length NetBox accepts.
+func truncateDescription(description string) string {
+	runes := []rune(description)
+	if len(runes) <= objects.MaxDescriptionLength {
+		return description
+	}
+	const ellipsis = "..."
+	return string(runes[:objects.MaxDescriptionLength-len(ellipsis)]) + ellipsis
 }
 
 // matchHostSite returns the site of a host from hostSiteRelations, or the default site

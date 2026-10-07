@@ -2,6 +2,8 @@ package vmware
 
 import (
 	"context"
+	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
@@ -170,5 +172,125 @@ func TestSyncHostsWithoutHostSiteRelationsUsesDefaultSite(t *testing.T) {
 	}
 	if _, ok := nbi.GetDevice("esx-default-site", defaultSite.ID); !ok {
 		t.Errorf("host esx-default-site not found in site %s", constants.DefaultSite)
+	}
+}
+
+func TestParseDvpgVlanSpec(t *testing.T) {
+	trunk := func(ranges ...types.NumericRange) *types.VmwareDistributedVirtualSwitchTrunkVlanSpec {
+		return &types.VmwareDistributedVirtualSwitchTrunkVlanSpec{VlanId: ranges}
+	}
+	tests := []struct {
+		name        string
+		spec        types.BaseVmwareDistributedVirtualSwitchVlanSpec
+		wantIDs     []int
+		wantRanges  []string
+		wantPrivate bool
+	}{
+		{
+			name:    "access vlan",
+			spec:    &types.VmwareDistributedVirtualSwitchVlanIdSpec{VlanId: 42},
+			wantIDs: []int{42},
+		},
+		{
+			name:        "private vlan",
+			spec:        &types.VmwareDistributedVirtualSwitchPvlanSpec{PvlanId: 7},
+			wantIDs:     []int{7},
+			wantPrivate: true,
+		},
+		{
+			name:       "trunk of single vlans and a range",
+			spec:       trunk(types.NumericRange{Start: 10, End: 10}, types.NumericRange{Start: 100, End: 103}),
+			wantIDs:    []int{10, 100, 101, 102, 103},
+			wantRanges: []string{"10", "100-103"},
+		},
+		{
+			name:       "trunk of every vlan",
+			spec:       trunk(types.NumericRange{Start: 0, End: 4094}),
+			wantIDs:    []int{4095},
+			wantRanges: []string{"0-4094"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ids, ranges, private, err := parseDvpgVlanSpec(tt.spec)
+			if err != nil {
+				t.Fatalf("parseDvpgVlanSpec() error = %v", err)
+			}
+			if !reflect.DeepEqual(ids, tt.wantIDs) || !reflect.DeepEqual(ranges, tt.wantRanges) ||
+				private != tt.wantPrivate {
+				t.Errorf("parseDvpgVlanSpec() = (%v, %v, %t), want (%v, %v, %t)",
+					ids, ranges, private, tt.wantIDs, tt.wantRanges, tt.wantPrivate)
+			}
+		})
+	}
+}
+
+func TestCollectVMInterfaceDataBoundsDescriptionOfWideTrunks(t *testing.T) {
+	nbi, _ := newTestInventory(t)
+	vc := newTestSource(t, &parser.SourceConfig{})
+	ids, ranges, _, err := parseDvpgVlanSpec(&types.VmwareDistributedVirtualSwitchTrunkVlanSpec{
+		VlanId: []types.NumericRange{{Start: 100, End: 199}, {Start: 300, End: 399}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	vc.Networks.DistributedVirtualPortgroups["dvportgroup-1"] = &DistributedPortgroupData{
+		Name: "trunk-wide", VlanIDs: ids, VlanIDRanges: ranges,
+	}
+	card := &types.VirtualEthernetCard{
+		VirtualDevice: types.VirtualDevice{
+			DeviceInfo: &types.Description{Label: "Network adapter 1"},
+			Backing: &types.VirtualEthernetCardDistributedVirtualPortBackingInfo{
+				Port: types.DistributedVirtualSwitchPortConnection{PortgroupKey: "dvportgroup-1"},
+			},
+			Connectable: &types.VirtualDeviceConnectInfo{Connected: true},
+		},
+	}
+	netboxVM := &objects.VM{Name: "trunk-vm", Host: &objects.Device{Name: "esx-trunk"}}
+
+	_, _, iface, _, err := vc.collectVMInterfaceData(nbi, netboxVM, mo.VirtualMachine{Guest: &types.GuestInfo{}}, card)
+	if err != nil {
+		t.Fatalf("collectVMInterfaceData() error = %v", err)
+	}
+	want := "Network adapter 1 (vlan ID: 100-199, 300-399)"
+	if iface.Description != want {
+		t.Errorf("description = %q, want %q", iface.Description, want)
+	}
+}
+
+func TestCollectVMInterfaceDataTruncatesLongDescriptions(t *testing.T) {
+	nbi, _ := newTestInventory(t)
+	vc := newTestSource(t, &parser.SourceConfig{})
+	vlanRanges := make([]types.NumericRange, 0, 60)
+	for vid := int32(1000); vid < 1060; vid++ {
+		vlanRanges = append(vlanRanges, types.NumericRange{Start: vid, End: vid})
+	}
+	ids, ranges, _, err := parseDvpgVlanSpec(&types.VmwareDistributedVirtualSwitchTrunkVlanSpec{VlanId: vlanRanges})
+	if err != nil {
+		t.Fatal(err)
+	}
+	vc.Networks.DistributedVirtualPortgroups["dvportgroup-2"] = &DistributedPortgroupData{
+		Name: "trunk-many", VlanIDs: ids, VlanIDRanges: ranges,
+	}
+	card := &types.VirtualEthernetCard{
+		VirtualDevice: types.VirtualDevice{
+			DeviceInfo: &types.Description{Label: "Network adapter 2"},
+			Backing: &types.VirtualEthernetCardDistributedVirtualPortBackingInfo{
+				Port: types.DistributedVirtualSwitchPortConnection{PortgroupKey: "dvportgroup-2"},
+			},
+			Connectable: &types.VirtualDeviceConnectInfo{Connected: true},
+		},
+	}
+	netboxVM := &objects.VM{Name: "trunk-many-vm", Host: &objects.Device{Name: "esx-trunk"}}
+
+	_, _, iface, _, err := vc.collectVMInterfaceData(nbi, netboxVM, mo.VirtualMachine{Guest: &types.GuestInfo{}}, card)
+	if err != nil {
+		t.Fatalf("collectVMInterfaceData() error = %v", err)
+	}
+	if n := len([]rune(iface.Description)); n > objects.MaxDescriptionLength {
+		t.Errorf("description has %d characters, want at most %d", n, objects.MaxDescriptionLength)
+	}
+	if !strings.HasPrefix(iface.Description, "Network adapter 2 (vlan ID: 1000, 1001,") {
+		t.Errorf("description = %q, want it to start with the adapter and its first VLANs", iface.Description)
 	}
 }
