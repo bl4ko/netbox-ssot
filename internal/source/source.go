@@ -34,13 +34,10 @@ func NewSource(
 ) (common.Source, error) {
 	// First we create default tags for the source
 	sourceNameTag, err := netboxInventory.AddTag(ctx, &objects.Tag{
-		Name:  config.Tag,
-		Slug:  utils.Slugify("source-" + config.Name),
-		Color: constants.Color(config.TagColor),
-		Description: fmt.Sprintf(
-			"Automatically created tag by netbox-ssot for source %s",
-			config.Name,
-		),
+		Name:        config.Tag,
+		Slug:        utils.Slugify("source-" + config.Name),
+		Color:       constants.Color(config.TagColor),
+		Description: constants.SourceTagDescriptionPrefix + config.Name,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error creating sourceTag: %s", err)
