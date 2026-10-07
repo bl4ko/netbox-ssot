@@ -7,12 +7,15 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/bl4ko/netbox-ssot/internal/parser"
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/simulator"
+	"github.com/vmware/govmomi/vapi/rest"
+	"github.com/vmware/govmomi/vapi/tags"
 	"github.com/vmware/govmomi/vim25/mo"
 
 	// Register the vCenter REST API (tags) on the simulator
@@ -170,5 +173,61 @@ func TestInitHandlesPortgroupsWithoutNicTeaming(t *testing.T) {
 
 	if err := vc.Init(); err != nil {
 		t.Errorf("Init() error = %v", err)
+	}
+}
+
+func TestInitReadsTagsInBatch(t *testing.T) {
+	const tagCount = 10
+	vc, service := newSimulatedVCenter(t, &parser.SourceConfig{Timeout: 5})
+	ctx := context.Background()
+	sc := vc.SourceConfig
+	vcURL := &url.URL{
+		Scheme: string(sc.HTTPScheme),
+		Host:   net.JoinHostPort(sc.Hostname, strconv.Itoa(sc.Port)),
+		Path:   "/sdk",
+		User:   url.UserPassword(sc.Username, sc.Password),
+	}
+	client, err := govmomi.NewClient(ctx, vcURL, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	restClient := rest.NewClient(client.Client)
+	if err := restClient.Login(ctx, vcURL.User); err != nil {
+		t.Fatal(err)
+	}
+	tagManager := tags.NewManager(restClient)
+	categoryID, err := tagManager.CreateCategory(ctx, &tags.Category{Name: "batch", Cardinality: "MULTIPLE"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	vm := service.Context.Map.All("VirtualMachine")[0].(*simulator.VirtualMachine)
+	for i := range tagCount {
+		tagID, err := tagManager.CreateTag(ctx, &tags.Tag{Name: "batch-" + strconv.Itoa(i), CategoryID: categoryID})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := tagManager.AttachTag(ctx, tagID, vm.Self); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Count the tagging requests of Init, server side
+	var taggingRequests atomic.Int64
+	tagging := "/rest/com/vmware/cis/tagging/"
+	vapiHandler, _ := service.ServeMux.Handler(&http.Request{URL: &url.URL{Path: tagging}})
+	service.ServeMux.HandleFunc(tagging, func(w http.ResponseWriter, r *http.Request) {
+		taggingRequests.Add(1)
+		vapiHandler.ServeHTTP(w, r)
+	})
+
+	if err := vc.Init(); err != nil {
+		t.Fatalf("Init() error = %v", err)
+	}
+	if n := len(vc.Object2Tags[vm.Self.Value]); n != tagCount {
+		t.Errorf("tags of vm %s = %d, want %d", vm.Name, n, tagCount)
+	}
+	// One list of tags, one batch of attached objects, one read per attached tag
+	if n := taggingRequests.Load(); n > tagCount+2 {
+		t.Errorf("tagging requests = %d, want at most %d", n, tagCount+2)
 	}
 }

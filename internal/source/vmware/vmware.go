@@ -373,22 +373,24 @@ func (vc *VmwareSource) CreateObjectTagsRelation(
 	}
 
 	objectNames2tags := make(map[string][]*tags.Tag)
-	for _, tag := range tagList {
-		objs, err := tagManager.GetAttachedObjectsOnTags(ctx, []string{tag})
-		if err != nil {
-			return fmt.Errorf("failed getting attached objects on tag %+v: %s", tag, err)
+	if len(tagList) == 0 {
+		vc.Object2Tags = objectNames2tags
+		return nil
+	}
+	// One request for the objects of every tag, then one per attached tag to read it
+	attachedObjects, err := tagManager.GetAttachedObjectsOnTags(ctx, tagList)
+	if err != nil {
+		return fmt.Errorf("failed getting attached objects on tags: %s", err)
+	}
+	for _, attached := range attachedObjects {
+		if attached.Tag == nil {
+			continue
 		}
-		if len(objs) > 0 {
-			tagInfo, err := tagManager.GetTag(ctx, tag)
-			if err != nil {
-				return fmt.Errorf("failed getting tag %+v info: %s", tag, err)
-			}
-			for _, elem := range objs[0].ObjectIDs {
-				objectNames2tags[elem.Reference().Value] = append(
-					objectNames2tags[elem.Reference().Value],
-					tagInfo,
-				)
-			}
+		for _, elem := range attached.ObjectIDs {
+			objectNames2tags[elem.Reference().Value] = append(
+				objectNames2tags[elem.Reference().Value],
+				attached.Tag,
+			)
 		}
 	}
 
