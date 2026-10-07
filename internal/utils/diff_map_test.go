@@ -2,6 +2,7 @@ package utils
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
@@ -1614,5 +1615,60 @@ func TestAddMapDiffSanitizesExistingMultiobjectCustomFields(t *testing.T) {
 	wantIDs := []interface{}{float64(4), float64(2)}
 	if !reflect.DeepEqual(mdcVlan, wantIDs) {
 		t.Errorf("mdc_vlan should be sanitized to IDs %v, got %v (%T)", wantIDs, mdcVlan, mdcVlan)
+	}
+}
+
+func TestJSONDiffMapExceptIDExplicitBoolPointer(t *testing.T) {
+	tests := []struct {
+		name     string
+		newIface *objects.Interface
+		existing *objects.Interface
+		want     map[string]interface{}
+	}{
+		{
+			name:     "explicit false disables an enabled interface",
+			newIface: &objects.Interface{Name: "eno3", Status: new(false)},
+			existing: &objects.Interface{Name: "eno3", Status: new(true)},
+			want:     map[string]interface{}{"enabled": false},
+		},
+		{
+			name:     "explicit true enables a disabled interface",
+			newIface: &objects.Interface{Name: "eno3", Status: new(true)},
+			existing: &objects.Interface{Name: "eno3", Status: new(false)},
+			want:     map[string]interface{}{"enabled": true},
+		},
+		{
+			name:     "explicit false is written when NetBox has no value",
+			newIface: &objects.Interface{Name: "eno3", Status: new(false)},
+			existing: &objects.Interface{Name: "eno3"},
+			want:     map[string]interface{}{"enabled": false},
+		},
+		{
+			name:     "unknown status leaves NetBox untouched",
+			newIface: &objects.Interface{Name: "eno3"},
+			existing: &objects.Interface{Name: "eno3", Status: new(false)},
+			want:     map[string]interface{}{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := JSONDiffMapExceptID(tt.newIface, tt.existing, false, map[string]int{})
+			if err != nil {
+				t.Fatalf("JSONDiffMapExceptID() error = %v", err)
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("JSONDiffMapExceptID() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNetboxJSONMarshalSendsExplicitFalseEnabled(t *testing.T) {
+	body, err := NetboxJSONMarshal(&objects.Interface{Name: "eno3", Status: new(false)})
+	if err != nil {
+		t.Fatalf("NetboxJSONMarshal() error = %v", err)
+	}
+	if !strings.Contains(string(body), `"enabled":false`) {
+		t.Errorf("NetboxJSONMarshal() = %s, want it to contain \"enabled\":false", body)
 	}
 }

@@ -238,7 +238,7 @@ func (fmcs *FMCSource) syncVlanInterfaces(
 				},
 				Name:        vlanIface.Name,
 				Device:      nbDevice,
-				Status:      vlanIface.Enabled,
+				Status:      new(vlanIface.Enabled),
 				MTU:         vlanIface.MTU,
 				TaggedVlans: ifaceTaggedVlans,
 				Type:        &objects.VirtualInterfaceType,
@@ -325,7 +325,7 @@ func (fmcs *FMCSource) syncPhysicalInterfaces(
 				},
 				Name:   pIface.Name,
 				Device: nbDevice,
-				Status: pIface.Enabled,
+				Status: new(pIface.Enabled),
 				MTU:    pIface.MTU,
 				Type:   &objects.OtherInterfaceType,
 			}
@@ -388,7 +388,7 @@ func (fmcs *FMCSource) syncEtherChannelInterfaces(
 				},
 				Name:   eIface.Name,
 				Device: nbDevice,
-				Status: eIface.Enabled,
+				Status: new(eIface.Enabled),
 				MTU:    eIface.MTU,
 				Type:   &objects.OtherInterfaceType, // TODO
 			})
@@ -508,7 +508,7 @@ func (fmcs *FMCSource) syncSubInterfaces(
 				Name:            subIface.Name,
 				ParentInterface: parentIface,
 				Device:          nbDevice,
-				Status:          subIface.Enabled,
+				Status:          new(subIface.Enabled),
 				MTU:             subIface.MTU,
 				TaggedVlans:     ifaceTaggedVlans,
 				Type:            &objects.VirtualInterfaceType,

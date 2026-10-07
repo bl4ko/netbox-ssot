@@ -391,7 +391,7 @@ func (ds *DnacSource) syncDeviceInterface(
 		},
 		Name:         ifaceName,
 		Speed:        ifaceSpeed,
-		Status:       ifaceStatus,
+		Status:       new(ifaceStatus),
 		Duplex:       ifaceDuplex,
 		Device:       ifaceDevice,
 		Type:         ifaceType,
@@ -730,7 +730,7 @@ func (ds *DnacSource) syncMissingDevicePrimaryIPs(nbi *inventory.NetboxInventory
 				Device: nbDevice,
 				Name:   "mgmt",
 				Type:   &objects.OtherInterfaceType,
-				Status: true,
+				Status: new(true),
 			}
 			nbIface, err := nbi.AddInterface(ds.Ctx, managementInterfaceStruct)
 			if err != nil {
