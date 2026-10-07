@@ -528,10 +528,11 @@ func (vc *VmwareSource) collectHostPhysicalNicData(
 		pnicLinkSpeedMb = pnic.ValidLinkSpecification[0].SpeedMb
 	}
 	var pnicDescription string
-	if pnicLinkSpeedMb/constants.KB >= 1 {
-		pnicDescription = fmt.Sprintf("%dGB/s", pnicLinkSpeedMb/constants.KB)
+	// vSphere reports link speeds in megabits per second
+	if pnicLinkSpeedMb >= constants.KB {
+		pnicDescription = strconv.FormatFloat(float64(pnicLinkSpeedMb)/constants.KB, 'f', -1, 64) + "Gb/s"
 	} else {
-		pnicDescription = fmt.Sprintf("%dMB/s", pnicLinkSpeedMb)
+		pnicDescription = fmt.Sprintf("%dMb/s", pnicLinkSpeedMb)
 	}
 	pnicDescription += " pNIC"
 	var pnicMtu int

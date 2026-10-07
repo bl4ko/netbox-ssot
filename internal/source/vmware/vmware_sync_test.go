@@ -129,14 +129,22 @@ func TestCollectHostPhysicalNicDataSpeed(t *testing.T) {
 	vc := newTestSource(t, &parser.SourceConfig{})
 	nbHost := &objects.Device{Name: "esx-nic-speed"}
 	tests := []struct {
-		name      string
-		pnic      types.PhysicalNic
-		wantSpeed objects.InterfaceSpeed
+		name            string
+		pnic            types.PhysicalNic
+		wantSpeed       objects.InterfaceSpeed
+		wantDescription string
 	}{
 		{
-			name:      "link up",
-			pnic:      types.PhysicalNic{Device: "vmnic0", LinkSpeed: &types.PhysicalNicLinkInfo{SpeedMb: 10000}},
-			wantSpeed: 10000000,
+			name:            "link up",
+			pnic:            types.PhysicalNic{Device: "vmnic0", LinkSpeed: &types.PhysicalNicLinkInfo{SpeedMb: 10000}},
+			wantSpeed:       10000000,
+			wantDescription: "10Gb/s pNIC",
+		},
+		{
+			name:            "link up at 2.5 Gb/s",
+			pnic:            types.PhysicalNic{Device: "vmnic3", LinkSpeed: &types.PhysicalNicLinkInfo{SpeedMb: 2500}},
+			wantSpeed:       2500000,
+			wantDescription: "2.5Gb/s pNIC",
 		},
 		{
 			name: "link down with a forced speed",
@@ -144,12 +152,20 @@ func TestCollectHostPhysicalNicDataSpeed(t *testing.T) {
 				Device: "vmnic1",
 				Spec:   types.PhysicalNicSpec{LinkSpeed: &types.PhysicalNicLinkInfo{SpeedMb: 1000}},
 			},
-			wantSpeed: 1000000,
+			wantSpeed:       1000000,
+			wantDescription: "1Gb/s pNIC",
 		},
 		{
-			name:      "link down without any speed",
-			pnic:      types.PhysicalNic{Device: "vmnic2", ValidLinkSpecification: []types.PhysicalNicLinkInfo{}},
-			wantSpeed: 0,
+			name:            "link up at 100 Mb/s",
+			pnic:            types.PhysicalNic{Device: "vmnic4", LinkSpeed: &types.PhysicalNicLinkInfo{SpeedMb: 100}},
+			wantSpeed:       100000,
+			wantDescription: "100Mb/s pNIC",
+		},
+		{
+			name:            "link down without any speed",
+			pnic:            types.PhysicalNic{Device: "vmnic2", ValidLinkSpecification: []types.PhysicalNicLinkInfo{}},
+			wantSpeed:       0,
+			wantDescription: "0Mb/s pNIC",
 		},
 	}
 	for _, tt := range tests {
@@ -160,6 +176,9 @@ func TestCollectHostPhysicalNicDataSpeed(t *testing.T) {
 			}
 			if iface.Speed != tt.wantSpeed {
 				t.Errorf("speed = %d, want %d", iface.Speed, tt.wantSpeed)
+			}
+			if iface.Description != tt.wantDescription {
+				t.Errorf("description = %q, want %q", iface.Description, tt.wantDescription)
 			}
 		})
 	}
