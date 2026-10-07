@@ -612,21 +612,17 @@ func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 	// Fetch VM tags
 	newTags := ps.GetSourceTags()
 
-	if vm.Tags != "" && vm.Tags != " " {
-		splitTags := strings.Split(vm.Tags, ";")
-
-		for _, tag := range splitTags {
-			vmTag, err := nbi.AddTagIfMissing(ps.Ctx, &objects.Tag{
-				Name:  tag,
-				Slug:  utils.Slugify(tag),
-				Color: constants.ColorGreen,
-			})
-			if err != nil {
-				return fmt.Errorf("add vm tag %q: %w", tag, err)
-			}
-
-			newTags = append(newTags, vmTag)
+	for _, tag := range splitProxmoxTags(vm.Tags) {
+		vmTag, err := nbi.AddTagIfMissing(ps.Ctx, &objects.Tag{
+			Name:  tag,
+			Slug:  utils.Slugify(tag),
+			Color: constants.ColorGreen,
+		})
+		if err != nil {
+			return fmt.Errorf("add vm tag %q: %w", tag, err)
 		}
+
+		newTags = append(newTags, vmTag)
 	}
 
 	// Add VM to Netbox
@@ -862,22 +858,16 @@ func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 				// Fetch CT tags
 				newTags := ps.GetSourceTags()
 
-				if rawTags := strings.TrimSpace(container.Tags); rawTags != "" {
-					for _, tag := range strings.Split(rawTags, ";") {
-						tag = strings.TrimSpace(tag)
-						if tag == "" {
-							continue
-						}
-						ctTag, err := nbi.AddTagIfMissing(ps.Ctx, &objects.Tag{
-							Name:  tag,
-							Slug:  utils.Slugify(tag),
-							Color: constants.ColorGreen,
-						})
-						if err != nil {
-							return fmt.Errorf("add container tag %q: %w", tag, err)
-						}
-						newTags = append(newTags, ctTag)
+				for _, tag := range splitProxmoxTags(container.Tags) {
+					ctTag, err := nbi.AddTagIfMissing(ps.Ctx, &objects.Tag{
+						Name:  tag,
+						Slug:  utils.Slugify(tag),
+						Color: constants.ColorGreen,
+					})
+					if err != nil {
+						return fmt.Errorf("add container tag %q: %w", tag, err)
 					}
+					newTags = append(newTags, ctTag)
 				}
 
 				existingContainer, _ := nbi.GetVM(container.Name, ps.NetboxCluster.ID)
@@ -1114,4 +1104,15 @@ func vmPlatformName(
 		}
 	}
 	return "Unknown", false
+}
+
+// splitProxmoxTags splits a Proxmox tag list ("a;b") into trimmed, non-empty tag names.
+func splitProxmoxTags(raw string) []string {
+	tags := make([]string, 0)
+	for _, tag := range strings.Split(raw, ";") {
+		if tag = strings.TrimSpace(tag); tag != "" {
+			tags = append(tags, tag)
+		}
+	}
+	return tags
 }
