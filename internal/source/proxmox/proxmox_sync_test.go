@@ -195,7 +195,9 @@ func TestSyncNodesWithDomainSuffixSyncsHostInterfaces(t *testing.T) {
 
 func TestVMPlatformName(t *testing.T) {
 	l26, win10, w2k8 := "l26", "win10", "w2k8"
-	existingWithPlatform := &objects.VM{Platform: &objects.Platform{NetboxObject: objects.NetboxObject{ID: 6}, Name: "Debian 12"}}
+	existingWithPlatform := &objects.VM{
+		Platform: &objects.Platform{NetboxObject: objects.NetboxObject{ID: 6}, Name: "Debian 12"},
+	}
 	tests := []struct {
 		name         string
 		agentOsInfo  *proxmox.AgentOsInfo
