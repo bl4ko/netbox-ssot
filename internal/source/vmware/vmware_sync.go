@@ -893,7 +893,7 @@ func (vc *VmwareSource) collectHostVirtualNicData(
 		} else {
 			if len(vnicDvPortgroupData.VlanIDRanges) > 0 {
 				vlanDescription = fmt.Sprintf("vlan IDs: %s", strings.Join(vnicDvPortgroupData.VlanIDRanges, ","))
-			} else {
+			} else if len(vnicDvPortgroupData.VlanIDs) > 0 {
 				vlanDescription = fmt.Sprintf("vlan ID: %d", vnicDvPortgroupData.VlanIDs[0])
 			}
 			if len(vnicDvPortgroupData.VlanIDs) == 1 && vnicDvPortgroupData.VlanIDs[0] == 0 {
@@ -1432,7 +1432,7 @@ func (vc *VmwareSource) collectVMInterfaceData(
 			intNetworkName = intPortgroupData.Name
 			intNetworkVlanIDs = intPortgroupData.VlanIDs
 			intNetworkVlanIDRanges = intPortgroupData.VlanIDRanges
-			if len(intNetworkVlanIDRanges) == 0 {
+			if len(intNetworkVlanIDRanges) == 0 && len(intNetworkVlanIDs) > 0 {
 				intNetworkVlanIDRanges = []string{strconv.Itoa(intNetworkVlanIDs[0])}
 			}
 			intNetworkPrivate = intPortgroupData.Private

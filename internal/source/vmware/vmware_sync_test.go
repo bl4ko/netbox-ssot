@@ -604,3 +604,39 @@ func TestSyncClustersRenamesClustersNamedBeforeQualification(t *testing.T) {
 		t.Errorf("cluster Legacy01 still indexed under its former name")
 	}
 }
+
+func TestInterfacesOnPortGroupsWithoutVlan(t *testing.T) {
+	nbi, _ := newTestInventory(t)
+	vc := newTestSource(t, &parser.SourceConfig{})
+	vc.Networks.DistributedVirtualPortgroups["dvportgroup-empty"] = &DistributedPortgroupData{Name: "no-vlan"}
+	nbHost := &objects.Device{Name: "esx-no-vlan"}
+
+	card := &types.VirtualEthernetCard{
+		VirtualDevice: types.VirtualDevice{
+			DeviceInfo: &types.Description{Label: "Network adapter 1"},
+			Backing: &types.VirtualEthernetCardDistributedVirtualPortBackingInfo{
+				Port: types.DistributedVirtualSwitchPortConnection{PortgroupKey: "dvportgroup-empty"},
+			},
+			Connectable: &types.VirtualDeviceConnectInfo{},
+		},
+	}
+	netboxVM := &objects.VM{Name: "no-vlan-vm", Host: nbHost}
+	_, _, vmIface, _, err := vc.collectVMInterfaceData(nbi, netboxVM, mo.VirtualMachine{Guest: &types.GuestInfo{}}, card)
+	if err != nil {
+		t.Fatalf("collectVMInterfaceData() error = %v", err)
+	}
+	if vmIface.Mode != nil {
+		t.Errorf("vm interface mode = %v, want none without VLAN", vmIface.Mode)
+	}
+
+	vnic := types.HostVirtualNic{
+		Device: "vmk1",
+		Spec: types.HostVirtualNicSpec{
+			DistributedVirtualPort: &types.DistributedVirtualSwitchPortConnection{PortgroupKey: "dvportgroup-empty"},
+		},
+	}
+	host := newTestHost("host-9", "esx-no-vlan")
+	if _, _, err := vc.collectHostVirtualNicData(nbi, nbHost, host, vnic); err != nil {
+		t.Fatalf("collectHostVirtualNicData() error = %v", err)
+	}
+}
