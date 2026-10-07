@@ -214,24 +214,20 @@ var MockExistingClusterTypes = map[string]*objects.ClusterType{
 	},
 }
 
-var MockExistingClusters = map[string]map[string]*objects.Cluster{
+var MockExistingClusters = map[string]*objects.Cluster{
 	"existing_cluster1": {
-		"": {
-			NetboxObject: objects.NetboxObject{
-				ID:   1,
-				Tags: []*objects.Tag{service.MockDefaultSsotTag},
-			},
-			Name: "existing_cluster1",
+		NetboxObject: objects.NetboxObject{
+			ID:   1,
+			Tags: []*objects.Tag{service.MockDefaultSsotTag},
 		},
+		Name: "existing_cluster1",
 	},
 	"existing_cluster2": {
-		"": {
-			NetboxObject: objects.NetboxObject{
-				ID:   2, //nolint:mnd
-				Tags: []*objects.Tag{service.MockDefaultSsotTag},
-			},
-			Name: "existing_cluster2",
+		NetboxObject: objects.NetboxObject{
+			ID:   2, //nolint:mnd
+			Tags: []*objects.Tag{service.MockDefaultSsotTag},
 		},
+		Name: "existing_cluster2",
 	},
 }
 
@@ -584,7 +580,7 @@ var MockInventory = &NetboxInventory{
 	clusterGroupsLock:                sync.Mutex{},
 	clusterTypesIndexByName:          MockExistingClusterTypes,
 	clusterTypesLock:                 sync.Mutex{},
-	clustersIndexByNameAndSource:     MockExistingClusters,
+	clustersIndexByName:              MockExistingClusters,
 	clustersLock:                     sync.Mutex{},
 	deviceRolesIndexByName:           MockExistingDeviceRoles,
 	deviceRolesLock:                  sync.Mutex{},

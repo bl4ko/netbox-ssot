@@ -144,11 +144,10 @@ type NetboxInventory struct {
 	clusterTypesIndexByName map[string]*objects.ClusterType
 	clusterTypesLock        sync.Mutex
 
-	// clustersIndexByNameAndSource is a map of all clusters in the Netbox's inventory,
-	// indexed by their name and by the source that manages them ("" when none does),
-	// so that two sources with the same cluster name are not merged.
-	clustersIndexByNameAndSource map[string]map[string]*objects.Cluster
-	clustersLock                 sync.Mutex
+	// clustersIndexByName is a map of all clusters in the Netbox's inventory,
+	// indexed by their name
+	clustersIndexByName map[string]*objects.Cluster
+	clustersLock        sync.Mutex
 
 	// Netbox's Device Roles is a map of all device roles in the inventory,
 	// indexed by name.

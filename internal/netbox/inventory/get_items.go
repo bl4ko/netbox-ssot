@@ -1,7 +1,6 @@
 package inventory
 
 import (
-	"context"
 	"strings"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
@@ -133,14 +132,18 @@ func (nbi *NetboxInventory) GetClusterGroup(clusterGroupName string) (*objects.C
 	return clusterGroup, true
 }
 
-// GetCluster returns the Cluster named clusterName of the source in ctx, or an
-// existing cluster that no source manages yet. It returns nil if none is found.
+// GetCluster returns the Cluster for the given clusterName.
+// It returns nil if the Cluster is not found.
 // This function is thread-safe.
-func (nbi *NetboxInventory) GetCluster(ctx context.Context, clusterName string) (*objects.Cluster, bool) {
+func (nbi *NetboxInventory) GetCluster(clusterName string) (*objects.Cluster, bool) {
 	nbi.clustersLock.Lock()
 	defer nbi.clustersLock.Unlock()
-	cluster := nbi.lookupCluster(ctx, clusterName)
-	return cluster, cluster != nil
+	cluster, clusterExists := nbi.clustersIndexByName[clusterName]
+	if !clusterExists {
+		return nil, false
+	}
+	// Remove the cluster from the OrphanManager if found
+	return cluster, true
 }
 
 func (nbi *NetboxInventory) GetDevice(deviceName string, siteID int) (*objects.Device, bool) {

@@ -176,6 +176,12 @@ Example configuration can be found [here](#example-config).
 | `source.clusterType`                     | Type categorization string of the cluster to use/create in NetBox.                                                       | [**openstack**]            | string   | any                                      | "OpenStack"| No       |
 | `source.clusterGroupName`                | Name to use when creating the NetBox cluster group.                                                                      | [**openstack**]            | string   | any                                      | "OpenStack"| No       |
 
+> [!NOTE]
+> Clusters are matched by name: sources that report clusters with the same name share one NetBox cluster,
+> whose fields, `source` custom field included, follow `netbox.sourcePriority` (the last source to sync
+> wins when no priority is set). Give each cluster a distinct name, for example with `source.clusterName`
+> on OpenStack.
+
 ### Example config
 
 ```yaml

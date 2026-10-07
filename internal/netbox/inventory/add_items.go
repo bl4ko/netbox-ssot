@@ -3,7 +3,6 @@ package inventory
 import (
 	"context"
 	"fmt"
-	"maps"
 	"net/url"
 	"strings"
 
@@ -601,144 +600,42 @@ func (nbi *NetboxInventory) AddCluster(
 	newCluster.SetCustomField(constants.CustomFieldOrphanLastSeenName, nil)
 	nbi.clustersLock.Lock()
 	defer nbi.clustersLock.Unlock()
-	if oldCluster := nbi.lookupCluster(ctx, newCluster.Name); oldCluster != nil {
+	if _, ok := nbi.clustersIndexByName[newCluster.Name]; ok {
 		// Remove id from orphan manager, because it still exists in the sources
+		oldCluster := nbi.clustersIndexByName[newCluster.Name]
 		nbi.OrphanManager.RemoveItem(oldCluster)
-		cluster, err := nbi.updateCluster(ctx, newCluster, oldCluster)
+		diffMap, err := utils.JSONDiffMapExceptID(newCluster, oldCluster, false, nbi.SourcePriority)
 		if err != nil {
 			return nil, err
 		}
-		// A previous run may have created the cluster and failed while moving the VMs:
-		// resume the move, otherwise AddVM creates replacements for the VMs left behind.
-		if err := nbi.moveSourceVMs(ctx, nbi.clustersIndexByNameAndSource[newCluster.Name], cluster); err != nil {
-			return nil, err
-		}
-		return cluster, nil
-	}
-	nbi.Logger.Debugf(ctx, "Cluster %s does not exist in Netbox. Creating it...", newCluster.Name)
-	createdCluster, err := service.Create(ctx, nbi.NetboxAPI, newCluster)
-	if err != nil {
-		return nil, err
-	}
-	shared := maps.Clone(nbi.clustersIndexByNameAndSource[newCluster.Name])
-	nbi.indexCluster(createdCluster)
-	if err := nbi.moveSourceVMs(ctx, shared, createdCluster); err != nil {
-		return nil, err
-	}
-	return createdCluster, nil
-}
-
-// updateCluster patches oldCluster with the changes of newCluster and returns the
-// up to date cluster. Callers hold clustersLock.
-func (nbi *NetboxInventory) updateCluster(
-	ctx context.Context,
-	newCluster, oldCluster *objects.Cluster,
-) (*objects.Cluster, error) {
-	diffMap, err := utils.JSONDiffMapExceptID(newCluster, oldCluster, false, nbi.SourcePriority)
-	if err != nil {
-		return nil, err
-	}
-	if len(diffMap) == 0 {
-		nbi.Logger.Debugf(ctx, "Cluster %s already exists in Netbox and is up to date...", newCluster.Name)
-		return oldCluster, nil
-	}
-	nbi.Logger.Debugf(
-		ctx,
-		"Cluster %s already exists in Netbox but is out of date. Patching it...",
-		newCluster.Name,
-	)
-	patchedCluster, err := service.Patch[objects.Cluster](
-		ctx,
-		nbi.NetboxAPI,
-		oldCluster.ID,
-		diffMap,
-	)
-	if err != nil {
-		return nil, err
-	}
-	nbi.unindexCluster(oldCluster)
-	// Dry-run patches return only the ID: the name is needed to index the cluster.
-	if patchedCluster.Name == "" {
-		patchedCluster.Name = newCluster.Name
-	}
-	patchedCluster.SetCustomField(constants.CustomFieldSourceName, clusterSourceName(newCluster))
-	nbi.indexCluster(patchedCluster)
-	return patchedCluster, nil
-}
-
-// moveSourceVMs moves into cluster the VMs of the source in ctx that sit in a cluster of
-// the same name owned by another source. Before clusters were indexed by source, such
-// sources shared one NetBox cluster: moving the VMs keeps their IDs and the objects
-// attached to them, where AddVM would create replacements in the new cluster.
-//
-// NetBox requires a VM's host to belong to the VM's cluster, and the source's hosts only
-// move with its next device sync: the host is detached here and set back by that sync.
-// Callers hold clustersLock.
-func (nbi *NetboxInventory) moveSourceVMs(
-	ctx context.Context,
-	shared map[string]*objects.Cluster,
-	cluster *objects.Cluster,
-) error {
-	sourceName, _ := ctx.Value(constants.CtxSourceKey).(string)
-	nbi.vmsLock.Lock()
-	defer nbi.vmsLock.Unlock()
-	for owner, from := range shared {
-		if owner == sourceName || from.ID == cluster.ID {
-			continue
-		}
-		for vmName, byCluster := range nbi.vmsIndexByNameAndClusterID {
-			vm, ok := byCluster[from.ID]
-			if !ok {
-				continue
-			}
-			if vmSource, _ := vm.GetCustomField(constants.CustomFieldSourceName).(string); vmSource != sourceName {
-				continue
-			}
-			nbi.Logger.Infof(ctx, "Moving VM %s from shared cluster %d to cluster %d", vmName, from.ID, cluster.ID)
-			_, err := service.Patch[objects.VM](
-				ctx, nbi.NetboxAPI, vm.ID, map[string]interface{}{"cluster": cluster.ID, "device": nil},
+		if len(diffMap) > 0 {
+			nbi.Logger.Debugf(
+				ctx,
+				"Cluster %s already exists in Netbox but is out of date. Patching it...",
+				newCluster.Name,
+			)
+			patchedCluster, err := service.Patch[objects.Cluster](
+				ctx,
+				nbi.NetboxAPI,
+				oldCluster.ID,
+				diffMap,
 			)
 			if err != nil {
-				return fmt.Errorf("move vm %s to cluster %s: %s", vmName, cluster.Name, err)
+				return nil, err
 			}
-			moved := *vm
-			moved.Cluster = cluster
-			moved.Host = nil
-			delete(byCluster, from.ID)
-			byCluster[cluster.ID] = &moved
-			nbi.vmsIndexByID[vm.ID] = &moved
+			nbi.clustersIndexByName[newCluster.Name] = patchedCluster
+		} else {
+			nbi.Logger.Debugf(ctx, "Cluster %s already exists in Netbox and is up to date...", newCluster.Name)
 		}
+	} else {
+		nbi.Logger.Debugf(ctx, "Cluster %s does not exist in Netbox. Creating it...", newCluster.Name)
+		createdCluster, err := service.Create(ctx, nbi.NetboxAPI, newCluster)
+		if err != nil {
+			return nil, err
+		}
+		nbi.clustersIndexByName[createdCluster.Name] = createdCluster
 	}
-	return nil
-}
-
-// clusterSourceName returns the source managing cluster, "" when none does.
-func clusterSourceName(cluster *objects.Cluster) string {
-	sourceName, _ := cluster.GetCustomField(constants.CustomFieldSourceName).(string)
-	return sourceName
-}
-
-// indexCluster adds cluster to clustersIndexByNameAndSource. Callers hold clustersLock.
-func (nbi *NetboxInventory) indexCluster(cluster *objects.Cluster) {
-	if nbi.clustersIndexByNameAndSource[cluster.Name] == nil {
-		nbi.clustersIndexByNameAndSource[cluster.Name] = make(map[string]*objects.Cluster)
-	}
-	nbi.clustersIndexByNameAndSource[cluster.Name][clusterSourceName(cluster)] = cluster
-}
-
-// unindexCluster removes cluster from clustersIndexByNameAndSource. Callers hold clustersLock.
-func (nbi *NetboxInventory) unindexCluster(cluster *objects.Cluster) {
-	delete(nbi.clustersIndexByNameAndSource[cluster.Name], clusterSourceName(cluster))
-}
-
-// lookupCluster returns the cluster named clusterName of the source in ctx, or
-// else an existing cluster no source manages. Callers hold clustersLock.
-func (nbi *NetboxInventory) lookupCluster(ctx context.Context, clusterName string) *objects.Cluster {
-	sourceName, _ := ctx.Value(constants.CtxSourceKey).(string)
-	if cluster, ok := nbi.clustersIndexByNameAndSource[clusterName][sourceName]; ok {
-		return cluster
-	}
-	return nbi.clustersIndexByNameAndSource[clusterName][""]
+	return nbi.clustersIndexByName[newCluster.Name], nil
 }
 
 // AddDeviceRole adds a new device role to the Netbox inventory.

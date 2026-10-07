@@ -240,7 +240,7 @@ func (vc *VmwareSource) syncHosts(nbi *inventory.NetboxInventory) error {
 			return fmt.Errorf("hostTenant: %s", err)
 		}
 
-		hostCluster, _ := nbi.GetCluster(vc.Ctx, vc.Clusters[vc.Host2Cluster[hostID]].Name)
+		hostCluster, _ := nbi.GetCluster(vc.Clusters[vc.Host2Cluster[hostID]].Name)
 		if hostCluster == nil {
 			// Create a hypothetical cluster https://github.com/bl4ko/netbox-ssot/issues/141
 			hostCluster, err = vc.createHypotheticalCluster(nbi, hostName, hostSite, hostTenant)
