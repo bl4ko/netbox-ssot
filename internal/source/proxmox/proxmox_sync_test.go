@@ -471,3 +471,32 @@ func TestKeptGuestIDsIgnoresGuestsThatAreNotSynced(t *testing.T) {
 		t.Errorf("keptGuestIDs() = %v, want %v", got, want)
 	}
 }
+
+func TestCollectVMDisks(t *testing.T) {
+	config := &proxmox.VirtualMachineConfig{
+		VirtIOs: map[string]string{"virtio0": "local-lvm:vm-100-disk-0,iothread=1,size=32G"},
+		SCSIs:   map[string]string{"scsi0": "ceph:vm-100-disk-1,discard=on,size=2T"},
+		SATAs:   map[string]string{"sata0": "local:vm-100-disk-2,size=2252M"},
+		IDEs: map[string]string{
+			"ide0": "local:vm-100-disk-3,size=1G",
+			"ide2": "none,media=cdrom",
+		},
+	}
+	ps := newTestSource(t, &parser.SourceConfig{})
+	got := map[string]int{}
+	for _, disk := range ps.collectVMDisks("vm100", config) {
+		got[disk.Name] = disk.Size
+		if disk.Description != disk.Name {
+			t.Errorf("disk %s description = %q, want the disk name", disk.Name, disk.Description)
+		}
+	}
+	want := map[string]int{
+		"local-lvm:vm-100-disk-0": 32768,
+		"ceph:vm-100-disk-1":      2097152,
+		"local:vm-100-disk-2":     2252,
+		"local:vm-100-disk-3":     1024,
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("collectVMDisks() = %v, want %v", got, want)
+	}
+}
