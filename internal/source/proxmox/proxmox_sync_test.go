@@ -2,6 +2,7 @@ package proxmox
 
 import (
 	"context"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -377,5 +378,26 @@ func TestSyncContainersReportsDiskInMiB(t *testing.T) {
 	}
 	if nbContainer.Disk != 8192 {
 		t.Errorf("container disk = %d, want 8192 (MiB)", nbContainer.Disk)
+	}
+}
+
+func TestSplitProxmoxTags(t *testing.T) {
+	tests := []struct {
+		raw  string
+		want []string
+	}{
+		{raw: "", want: []string{}},
+		{raw: " ", want: []string{}},
+		{raw: "prod", want: []string{"prod"}},
+		{raw: "prod;", want: []string{"prod"}},
+		{raw: " prod ; web ", want: []string{"prod", "web"}},
+		{raw: "prod;;web", want: []string{"prod", "web"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.raw, func(t *testing.T) {
+			if got := splitProxmoxTags(tt.raw); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("splitProxmoxTags(%q) = %q, want %q", tt.raw, got, tt.want)
+			}
+		})
 	}
 }
