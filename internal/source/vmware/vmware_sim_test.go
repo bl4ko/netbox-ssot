@@ -9,7 +9,13 @@ import (
 
 	"github.com/bl4ko/netbox-ssot/internal/parser"
 	"github.com/vmware/govmomi/simulator"
+
+	// Register the vCenter REST API (tags) on the simulator
+	_ "github.com/vmware/govmomi/vapi/simulator"
 )
+
+// tagsSessionPath is the first REST call made to read vCenter tags.
+const tagsSessionPath = "/rest/com/vmware/cis/session"
 
 // newSimulatedVCenter starts a vcsim vCenter and returns a source configured to reach it.
 func newSimulatedVCenter(t *testing.T, sourceConfig *parser.SourceConfig) (*VmwareSource, *simulator.Service) {
@@ -19,6 +25,7 @@ func newSimulatedVCenter(t *testing.T, sourceConfig *parser.SourceConfig) (*Vmwa
 		t.Fatal(err)
 	}
 	t.Cleanup(model.Remove)
+	model.Service.RegisterEndpoints = true
 	server := model.Service.NewServer()
 	t.Cleanup(server.Close)
 	port, err := strconv.Atoi(server.URL.Port())
@@ -38,7 +45,7 @@ func TestInitTimesOutOnUnresponsiveTagsAPI(t *testing.T) {
 	vc, service := newSimulatedVCenter(t, &parser.SourceConfig{Timeout: 1})
 	release := make(chan struct{})
 	defer close(release)
-	service.ServeMux.HandleFunc("/rest/", func(_ http.ResponseWriter, r *http.Request) {
+	service.ServeMux.HandleFunc(tagsSessionPath, func(_ http.ResponseWriter, r *http.Request) {
 		select {
 		case <-release:
 		case <-r.Context().Done():
@@ -59,11 +66,50 @@ func TestInitTimesOutOnUnresponsiveTagsAPI(t *testing.T) {
 
 func TestInitSkipsTheTagsAPIWithIgnoreTags(t *testing.T) {
 	vc, service := newSimulatedVCenter(t, &parser.SourceConfig{Timeout: 5, IgnoreTags: true})
-	service.ServeMux.HandleFunc("/rest/", func(w http.ResponseWriter, _ *http.Request) {
+	service.ServeMux.HandleFunc(tagsSessionPath, func(w http.ResponseWriter, _ *http.Request) {
 		http.Error(w, "tags API unavailable", http.StatusServiceUnavailable)
 	})
 
 	if err := vc.Init(); err != nil {
 		t.Errorf("Init() error = %v, want the tags API skipped with ignoreTags", err)
+	}
+}
+
+func TestInitAndSyncAgainstSimulatedVCenter(t *testing.T) {
+	nbi, _ := newTestInventory(t)
+	vc, service := newSimulatedVCenter(t, &parser.SourceConfig{Timeout: 5})
+	// Expected VMs and their NetBox clusters come from the simulator inventory: a VM is in
+	// "<cluster> (<datacenter>)", or in the cluster named after its standalone host.
+	simulatorMap := service.Context.Map
+	vmClusters := map[string]string{}
+	for _, entity := range simulatorMap.All("VirtualMachine") {
+		vm := entity.(*simulator.VirtualMachine)
+		host := simulatorMap.Get(*vm.Runtime.Host).(*simulator.HostSystem)
+		clusterName := host.Name
+		if cluster, ok := simulatorMap.Get(*host.Parent).(*simulator.ClusterComputeResource); ok {
+			datacenter := simulatorMap.Get(*simulatorMap.Get(*cluster.Parent).(*simulator.Folder).Parent)
+			clusterName = cluster.Name + " (" + datacenter.(*simulator.Datacenter).Name + ")"
+		}
+		vmClusters[vm.Name] = clusterName
+	}
+	if len(vmClusters) == 0 {
+		t.Fatal("the simulator has no VM")
+	}
+
+	if err := vc.Init(); err != nil {
+		t.Fatalf("Init() error = %v", err)
+	}
+	if err := vc.Sync(nbi); err != nil {
+		t.Fatalf("Sync() error = %v", err)
+	}
+	for vmName, clusterName := range vmClusters {
+		cluster, ok := nbi.GetCluster(clusterName)
+		if !ok {
+			t.Errorf("cluster %s of vm %s not synced", clusterName, vmName)
+			continue
+		}
+		if _, ok := nbi.GetVM(vmName, cluster.ID); !ok {
+			t.Errorf("vm %s not synced in cluster %s", vmName, clusterName)
+		}
 	}
 }
