@@ -272,8 +272,13 @@ func (ps *ProxmoxSource) syncVMs(nbi *inventory.NetboxInventory) error {
 	const maxGoroutines = 50
 	// Use a guard channel as semaphore to limit the number of goroutines
 	guard := make(chan struct{}, maxGoroutines)
-	// Use errChan to collect errors from goroutines
-	errChan := make(chan error, len(ps.Vms))
+	// Use errChan to collect errors from goroutines. It must hold one error per VM,
+	// otherwise a failing goroutine blocks before wg.Done() and wg.Wait() never returns.
+	totalVMs := 0
+	for _, vms := range ps.Vms {
+		totalVMs += len(vms)
+	}
+	errChan := make(chan error, totalVMs)
 	// Use a WaitGroup to wait for all goroutines to complete
 	var wg sync.WaitGroup
 
