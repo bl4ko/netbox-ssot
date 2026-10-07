@@ -277,7 +277,7 @@ func (ps *ProxmoxSource) syncNodeNetworks(
 			},
 			Device: nbHost,
 			Name:   nodeNetwork.Iface,
-			Status: active,
+			Status: new(active),
 			Type:   ifaceType,
 			LAG:    nbLAGs[bondOfMember[nodeNetwork.Iface]],
 			// Speed: TODO

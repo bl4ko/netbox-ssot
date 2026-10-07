@@ -657,7 +657,7 @@ type Interface struct {
 	// Name is the name of the interface. This field is required.
 	Name string `json:"name,omitempty"`
 	// Status whether the interface is enabled or not.
-	Status bool `json:"enabled,omitempty"`
+	Status *bool `json:"enabled,omitempty"`
 	// Type is the type of interface. This field is required. Can only be one of the predetermined values.
 	Type *InterfaceType `json:"type,omitempty"`
 	// Interface speed in kbps

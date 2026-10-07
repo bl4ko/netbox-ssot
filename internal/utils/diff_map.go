@@ -158,6 +158,18 @@ func JSONDiffMapExceptID(
 		// Check if elements are pointers, in that case get the elements they are pointing to
 		newObjectField := newObject.Field(i)
 		existingObjectField := existingObject.Field(i)
+
+		// A set pointer to a basic value is compared even when zero (e.g. enabled: false)
+		if isExplicitBasicValue(newObjectField) {
+			newValue := newObjectField.Elem().Interface()
+			if existingObjectField.IsNil() {
+				diff[jsonTag] = newValue
+			} else if newValue != existingObjectField.Elem().Interface() && hasPriority {
+				diff[jsonTag] = newValue
+			}
+			continue
+		}
+
 		if newObjectField.Kind() == reflect.Pointer {
 			newObjectField = newObjectField.Elem()
 			existingObjectField = existingObjectField.Elem()

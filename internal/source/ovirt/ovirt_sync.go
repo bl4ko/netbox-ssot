@@ -982,7 +982,7 @@ func (o *OVirtSource) collectHostNicsData(
 			Device:      nbHost,
 			Name:        nicName,
 			Speed:       objects.InterfaceSpeed(nicSpeedKbps),
-			Status:      nicEnabled,
+			Status:      new(nicEnabled),
 			MTU:         int(nicMtu),
 			Type:        nicType,
 			Mode:        nicMode,
@@ -1360,7 +1360,7 @@ func (o *OVirtSource) syncVMInterfaces(
 							},
 							VM:      netboxVM,
 							Name:    reportedDeviceName,
-							Enabled: true, // TODO
+							Enabled: new(true), // TODO
 						}
 						if nicData, ok := mac2NicData[vmInterfaceMac]; ok {
 							processedNics[nicData] = true
@@ -1692,7 +1692,7 @@ func (o *OVirtSource) addVMNicInterface(
 		VM:          netboxVM,
 		Name:        nicData.name,
 		Mode:        nicData.mode,
-		Enabled:     true,
+		Enabled:     new(true),
 		TaggedVlans: nicData.vlans,
 	})
 	if err != nil {
