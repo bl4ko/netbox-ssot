@@ -667,3 +667,14 @@ func TestSerializeOwners(t *testing.T) {
 		})
 	}
 }
+
+func TestFilterInterfaceNameCompilesFilterOnce(t *testing.T) {
+	const filter = "(veth|docker|br-|isatap|vEthernet|Loopback)"
+	FilterInterfaceName("eno1", filter)
+	allocs := testing.AllocsPerRun(100, func() {
+		FilterInterfaceName("eno1", filter)
+	})
+	if allocs != 0 {
+		t.Errorf("FilterInterfaceName() allocates %.0f times per call, want 0 once the filter is compiled", allocs)
+	}
+}
