@@ -21,13 +21,13 @@ type ProxmoxSource struct {
 	Nodes           []*proxmox.Node
 	NodeIfaces      map[string][]*proxmox.NodeNetwork        // NodeName -> NodeNetworks (interfaces)
 	Vms             map[string][]*proxmox.VirtualMachine     // NodeName -> VirtualMachines
-	VMIfaces        map[string][]*proxmox.AgentNetworkIface  // VMName -> NetworkDevices
+	VMIfaces        map[uint64][]*proxmox.AgentNetworkIface  // VMID -> NetworkDevices
 	Containers      map[string][]*proxmox.Container          // NodeName -> Contatiners
-	ContainerIfaces map[string][]*proxmox.ContainerInterface // ContainerName -> ContainerInterfaces
+	ContainerIfaces map[uint64][]*proxmox.ContainerInterface // VMID -> ContainerInterfaces
 
 	// Netbox related data for easier access. Initialized in sync functions.
 	NetboxCluster *objects.Cluster
-	NetboxNodes   map[string]*objects.Device // NodeName -> netbox device
+	NetboxNodes   map[string]*objects.Device // Proxmox node name -> netbox device
 }
 
 // Function that collects all data from Proxmox API and stores it in ProxmoxSource struct.
@@ -49,6 +49,7 @@ func (ps *ProxmoxSource) Init() error {
 		ps.SourceConfig.HTTPScheme, ps.SourceConfig.Hostname, ps.SourceConfig.Port),
 		proxmox.WithCredentials(&credentials),
 		proxmox.WithHTTPClient(HTTPClient),
+		proxmox.WithTimeout(time.Duration(ps.SourceConfig.Timeout)*time.Second),
 	)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -78,19 +79,24 @@ func (ps *ProxmoxSource) Init() error {
 
 // Function that syncs all collected data to Netbox inventory.
 func (ps *ProxmoxSource) Sync(nbi *inventory.NetboxInventory) error {
-	syncFunctions := []func(*inventory.NetboxInventory) error{
-		ps.syncCluster,
-		ps.syncNodes,
-		ps.syncVMs,
-		ps.syncContainers,
+	// Every later step needs the NetBox cluster, so its sync never continues on error.
+	syncSteps := []struct {
+		syncFunc func(*inventory.NetboxInventory) error
+		required bool
+	}{
+		{syncFunc: ps.syncCluster, required: true},
+		{syncFunc: ps.syncNodes},
+		{syncFunc: ps.syncVMs},
+		{syncFunc: ps.syncContainers},
 	}
 	var encounteredErrors []error
-	for _, syncFunc := range syncFunctions {
+	for _, step := range syncSteps {
+		syncFunc := step.syncFunc
 		startTime := time.Now()
 		funcName := utils.ExtractFunctionNameWithTrimPrefix(syncFunc, "sync")
 		err := syncFunc(nbi)
 		if err != nil {
-			if ps.SourceConfig.ContinueOnError {
+			if ps.SourceConfig.ContinueOnError && !step.required {
 				ps.Logger.Errorf(
 					ps.Ctx,
 					"Error syncing %s: %s (continuing due to continueOnError flag)",

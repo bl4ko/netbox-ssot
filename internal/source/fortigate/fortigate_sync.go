@@ -169,7 +169,7 @@ func (fs *FortigateSource) syncInterfaces(nbi *inventory.NetboxInventory) error 
 			Type:   &objects.OtherInterfaceType,
 			Name:   ifaceName,
 			MTU:    interfaceMTU,
-			Status: interfaceStatus,
+			Status: new(interfaceStatus),
 			Vdcs:   vdcs,
 		})
 		if err != nil {

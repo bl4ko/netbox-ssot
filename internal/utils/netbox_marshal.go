@@ -46,6 +46,12 @@ func StructToNetboxJSONMap(obj interface{}) map[string]interface{} {
 			continue
 		}
 
+		// A set pointer to a basic value is sent even when zero (e.g. enabled: false)
+		if isExplicitBasicValue(fieldValue) {
+			netboxJSONMap[jsonTag] = fieldValue.Elem().Interface()
+			continue
+		}
+
 		// If field is a pointer, we need to get the element it points to
 		if fieldValue.Kind() == reflect.Pointer {
 			// Filter out nil pointers
@@ -110,4 +116,22 @@ func StructToNetboxJSONMap(obj interface{}) map[string]interface{} {
 		}
 	}
 	return netboxJSONMap
+}
+
+// isExplicitBasicValue reports whether v is a non-nil pointer to a basic value
+// (bool, number or string). Such pointers mark a value the source knows, so
+// their zero value (e.g. false) must be written instead of being skipped.
+func isExplicitBasicValue(v reflect.Value) bool {
+	if v.Kind() != reflect.Pointer || v.IsNil() {
+		return false
+	}
+	switch v.Elem().Kind() {
+	case reflect.Bool, reflect.String,
+		reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+		reflect.Float32, reflect.Float64:
+		return true
+	default:
+		return false
+	}
 }

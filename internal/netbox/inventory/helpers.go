@@ -207,3 +207,11 @@ func findPrefixAcrossVRFs(vrfMap map[int]*objects.Prefix) (int, *objects.Prefix)
 	}
 	return 0, nil
 }
+
+// sameVRF reports whether two VRFs are the same, nil being the global table.
+func sameVRF(a, b *objects.VRF) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	return a.ID == b.ID
+}

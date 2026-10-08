@@ -1,7 +1,10 @@
 package proxmox
 
 import (
+	"cmp"
 	"fmt"
+	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -14,26 +17,36 @@ import (
 	"github.com/luthermonson/go-proxmox"
 )
 
+// diskSizeRegex follows the grammar of Proxmox's parse_size (pve-common JSONSchema.pm):
+// a number with an optional binary unit, a bare number being a size in bytes.
+var diskSizeRegex = regexp.MustCompile(`^(\d+(?:\.\d+)?)([KMGT])?(?:iB)?$`)
+
+// diskSizeUnits maps Proxmox size units to their size in bytes (powers of 1024).
+var diskSizeUnits = map[string]float64{
+	"":  constants.B,
+	"K": constants.KiB,
+	"M": constants.MiB,
+	"G": constants.GiB,
+	"T": constants.TiB,
+}
+
 // parseDiskSizeMiB parses a proxmox disk config token (e.g. "size=32G") and
 // returns the size in MiB. It returns 0 when item is not a size token or the
 // value cannot be parsed.
 func parseDiskSizeMiB(item string) int {
-	if !strings.Contains(item, "size") {
-		return 0
-	}
-	_, value, ok := strings.Cut(item, "=")
+	value, ok := strings.CutPrefix(item, "size=")
 	if !ok {
 		return 0
 	}
-	switch {
-	case strings.HasSuffix(value, "G"):
-		size, _ := strconv.Atoi(strings.TrimSuffix(value, "G"))
-		return size * constants.KB
-	case strings.HasSuffix(value, "T"):
-		size, _ := strconv.Atoi(strings.TrimSuffix(value, "T"))
-		return size * constants.MB
+	match := diskSizeRegex.FindStringSubmatch(value)
+	if match == nil {
+		return 0
 	}
-	return 0
+	number, err := strconv.ParseFloat(match[1], 64)
+	if err != nil {
+		return 0
+	}
+	return int(number * diskSizeUnits[match[2]] / constants.MiB)
 }
 
 func (ps *ProxmoxSource) syncCluster(nbi *inventory.NetboxInventory) error {
@@ -110,10 +123,9 @@ func (ps *ProxmoxSource) syncNodes(nbi *inventory.NetboxInventory) error {
 	for _, node := range ps.Nodes {
 		var hostSite *objects.Site
 
-		// Add domain name suffix if needed
-		if ps.SourceConfig.AssignDomainName != "" {
-			node.Name += ps.SourceConfig.AssignDomainName
-		}
+		// NetBox host name, with the domain name suffix if needed. node.Name stays the
+		// Proxmox name, which keys NodeIfaces, Vms, Containers and NetboxNodes.
+		hostName := node.Name + ps.SourceConfig.AssignDomainName
 
 		if ps.NetboxCluster.ScopeType == constants.ContentTypeDcimSite {
 			hostSite = nbi.GetSiteByID(ps.NetboxCluster.ScopeID)
@@ -124,7 +136,7 @@ func (ps *ProxmoxSource) syncNodes(nbi *inventory.NetboxInventory) error {
 			hostSite, err = common.MatchHostToSite(
 				ps.Ctx,
 				nbi,
-				node.Name,
+				hostName,
 				ps.SourceConfig.HostSiteRelations,
 			)
 			if err != nil {
@@ -135,7 +147,7 @@ func (ps *ProxmoxSource) syncNodes(nbi *inventory.NetboxInventory) error {
 		hostTenant, err := common.MatchHostToTenant(
 			ps.Ctx,
 			nbi,
-			node.Name,
+			hostName,
 			ps.SourceConfig.HostTenantRelations,
 		)
 		if err != nil {
@@ -177,7 +189,7 @@ func (ps *ProxmoxSource) syncNodes(nbi *inventory.NetboxInventory) error {
 			hostRole, err = common.MatchHostToRole(
 				ps.Ctx,
 				nbi,
-				node.Name,
+				hostName,
 				ps.SourceConfig.HostRoleRelations,
 			)
 			if err != nil {
@@ -208,7 +220,7 @@ func (ps *ProxmoxSource) syncNodes(nbi *inventory.NetboxInventory) error {
 					),
 				},
 			},
-			Name:       node.Name,
+			Name:       hostName,
 			DeviceRole: hostRole,
 			Site:       hostSite,
 			Tenant:     hostTenant,
@@ -232,12 +244,33 @@ func (ps *ProxmoxSource) syncNodeNetworks(
 	nbi *inventory.NetboxInventory,
 	node *proxmox.Node,
 ) error {
-	for _, nodeNetwork := range ps.NodeIfaces[node.Name] {
+	nbHost := ps.NetboxNodes[node.Name]
+
+	// Bonds are synced first, so that their members can reference them as LAG.
+	nodeNetworks := slices.Clone(ps.NodeIfaces[node.Name])
+	slices.SortStableFunc(nodeNetworks, func(a, b *proxmox.NodeNetwork) int {
+		return cmp.Compare(lagSyncOrder(a), lagSyncOrder(b))
+	})
+	bondOfMember := make(map[string]string)
+	// Bonds synced by this run: only they can tell that an interface left them.
+	syncedBonds := make(map[string]bool)
+	for _, nodeNetwork := range nodeNetworks {
+		if lagSyncOrder(nodeNetwork) == 0 {
+			for _, member := range bondMembers(nodeNetwork) {
+				bondOfMember[member] = nodeNetwork.Iface
+			}
+			if !utils.FilterInterfaceName(nodeNetwork.Iface, ps.SourceConfig.InterfaceFilter) {
+				syncedBonds[nodeNetwork.Iface] = true
+			}
+		}
+	}
+	nbLAGs := make(map[string]*objects.Interface)
+
+	for _, nodeNetwork := range nodeNetworks {
 		active := false
 		if nodeNetwork.Active == 1 {
 			active = true
 		}
-		nbHost := ps.NetboxNodes[node.Name]
 		if utils.FilterInterfaceName(nodeNetwork.Iface, ps.SourceConfig.InterfaceFilter) {
 			ps.Logger.Debugf(
 				ps.Ctx,
@@ -247,14 +280,22 @@ func (ps *ProxmoxSource) syncNodeNetworks(
 			)
 			continue
 		}
-		_, err := nbi.AddInterface(ps.Ctx, &objects.Interface{
+		ifaceType := nodeInterfaceType(nodeNetwork.Type)
+		if ifaceType == nil {
+			// Keep the type of an existing physical interface, it is more accurate than ours.
+			if _, exists := nbi.GetInterface(nodeNetwork.Iface, nbHost.ID); !exists {
+				ifaceType = &objects.OtherInterfaceType
+			}
+		}
+		nbIface, err := nbi.AddInterface(ps.Ctx, &objects.Interface{
 			NetboxObject: objects.NetboxObject{
 				Tags: ps.GetSourceTags(),
 			},
 			Device: nbHost,
 			Name:   nodeNetwork.Iface,
-			Status: active,
-			Type:   &objects.OtherInterfaceType, // TODO
+			Status: new(active),
+			Type:   ifaceType,
+			LAG:    nbLAGs[bondOfMember[nodeNetwork.Iface]],
 			// Speed: TODO
 			// Mode: TODO
 			// TaggedVlans: TODO
@@ -262,8 +303,36 @@ func (ps *ProxmoxSource) syncNodeNetworks(
 		if err != nil {
 			return fmt.Errorf("add host interface: %s", err)
 		}
+		if lagSyncOrder(nodeNetwork) == 0 {
+			nbLAGs[nodeNetwork.Iface] = nbIface
+		}
+		// A nil LAG leaves the NetBox one in place: an interface still attached to a
+		// bond of this node that no longer lists it is detached explicitly.
+		if _, member := bondOfMember[nodeNetwork.Iface]; !member && nbIface.LAG != nil &&
+			syncedBonds[nbIface.LAG.Name] {
+			if err := nbi.ClearInterfaceLAG(ps.Ctx, nbHost, nodeNetwork.Iface); err != nil {
+				return fmt.Errorf("clear host interface lag: %s", err)
+			}
+		}
 	}
 	return nil
+}
+
+// bondMembers returns the interfaces of a bond: Linux bonds list them in slaves,
+// Open vSwitch bonds in ovs_bonds.
+func bondMembers(bond *proxmox.NodeNetwork) []string {
+	if bond.Type == "OVSBond" {
+		return strings.Fields(bond.OVSBonds)
+	}
+	return strings.Fields(bond.Slaves)
+}
+
+// lagSyncOrder returns 0 for bonds and 1 for every other node network.
+func lagSyncOrder(nodeNetwork *proxmox.NodeNetwork) int {
+	if ifaceType := nodeInterfaceType(nodeNetwork.Type); ifaceType != nil && *ifaceType == objects.LAGInterfaceType {
+		return 0
+	}
+	return 1
 }
 
 // Function that synces proxmox vms to the netbox inventory.
@@ -272,20 +341,34 @@ func (ps *ProxmoxSource) syncVMs(nbi *inventory.NetboxInventory) error {
 	const maxGoroutines = 50
 	// Use a guard channel as semaphore to limit the number of goroutines
 	guard := make(chan struct{}, maxGoroutines)
-	// Use errChan to collect errors from goroutines
-	errChan := make(chan error, len(ps.Vms))
+	// Use errChan to collect errors from goroutines. It must hold one error per VM,
+	// otherwise a failing goroutine blocks before wg.Done() and wg.Wait() never returns.
+	totalVMs := 0
+	for _, vms := range ps.Vms {
+		totalVMs += len(vms)
+	}
+	errChan := make(chan error, totalVMs)
 	// Use a WaitGroup to wait for all goroutines to complete
 	var wg sync.WaitGroup
 
+	keptGuestIDs := ps.keptGuestIDs()
 	for nodeName, vms := range ps.Vms {
-		// Add domain name suffix if needed
-		if ps.SourceConfig.AssignDomainName != "" {
-			nodeName += ps.SourceConfig.AssignDomainName
-		}
 		nbHost := ps.NetboxNodes[nodeName]
+		if nbHost == nil {
+			ps.Logger.Warningf(ps.Ctx, "skipping %d vms of node %s: node is not synced to netbox", len(vms), nodeName)
+			continue
+		}
 
 		// Iterate over each VM and start a goroutine to sync it
 		for _, vm := range vms {
+			if keptID := keptGuestIDs[inventory.TruncateVMName(vm.Name)]; keptID != uint64(vm.VMID) {
+				ps.Logger.Warningf(
+					ps.Ctx,
+					"skipping vm %s (vmid %d): name already used by vmid %d in the cluster",
+					vm.Name, uint64(vm.VMID), keptID,
+				)
+				continue
+			}
 			guard <- struct{}{} // Block if maxGoroutines are running
 			wg.Add(1)
 
@@ -306,16 +389,10 @@ func (ps *ProxmoxSource) syncVMs(nbi *inventory.NetboxInventory) error {
 	close(errChan)
 	close(guard)
 
-	for err := range errChan {
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return common.JoinErrors(errChan)
 }
 
-func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
+func (ps *ProxmoxSource) syncVM(
 	nbi *inventory.NetboxInventory,
 	vm *proxmox.VirtualMachine,
 	nbHost *objects.Device,
@@ -332,31 +409,29 @@ func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 		vmStatus = &objects.VMStatusOffline
 	}
 
+	existingVM, _ := nbi.GetVM(vm.Name, ps.NetboxCluster.ID)
+
 	// Determine VM platform
 	var vmAgentOsInfo *proxmox.AgentOsInfo
 	if vm.Status == "running" {
 		vmAgentOsInfo, _ = vm.AgentOsInfo(ps.Ctx)
 	}
 
-	platformName := "Unknown"
-	if vmAgentOsInfo != nil && vmAgentOsInfo.PrettyName != "" {
-		platformName = vmAgentOsInfo.PrettyName
-	}
-
-	if platformName == "Unknown" && vm.VirtualMachineConfig.OSType != nil {
-		if name := proxmoxOSTypeToPlatformName(*vm.VirtualMachineConfig.OSType); name != "" {
-			platformName = name
+	var vmPlatform *objects.Platform
+	platformName, keepCurrentPlatform := vmPlatformName(vmAgentOsInfo, vm.VirtualMachineConfig.OSType, existingVM)
+	if keepCurrentPlatform {
+		vmPlatform = existingVM.Platform
+		nbi.KeepPlatform(vmPlatform)
+	} else {
+		platformStruct := &objects.Platform{
+			Name: platformName,
+			Slug: utils.Slugify(platformName),
 		}
-	}
-
-	platformStruct := &objects.Platform{
-		Name: platformName,
-		Slug: utils.Slugify(platformName),
-	}
-
-	vmPlatform, err := nbi.AddPlatform(ps.Ctx, platformStruct)
-	if err != nil {
-		return fmt.Errorf("failed to add vm's %+v platform: %s", vm, err)
+		var err error
+		vmPlatform, err = nbi.AddPlatform(ps.Ctx, platformStruct)
+		if err != nil {
+			return fmt.Errorf("failed to add vm's %+v platform: %s", vm, err)
+		}
 	}
 
 	// Determine VM tenant
@@ -382,207 +457,22 @@ func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 	}
 
 	// Fetch VM disks
-	vmDisks := make([]*objects.VirtualDisk, 0)
-	vmTotalDiskSizeMiB := 0
-
-	// Fetch VirtIOs disks
-	if len(vm.VirtualMachineConfig.VirtIOs) > 0 {
-		for _, disk := range vm.VirtualMachineConfig.VirtIOs {
-			diskData := strings.Split(disk, ",")
-			diskName := diskData[0]
-			diskSize := 0
-
-			for index, item := range diskData {
-				// First element is disk name/path
-				if index == 0 {
-					continue
-				}
-
-				if sz := parseDiskSizeMiB(item); sz > 0 {
-					diskSize = sz
-					vmTotalDiskSizeMiB += sz
-				}
-			}
-
-			// Can't add disk with size == 0
-			if diskSize == 0 {
-				continue
-			}
-
-			ps.Logger.Debugf(
-				ps.Ctx,
-				"vm.Name: %s adding virtios disk: %s/%d",
-				vm.Name,
-				diskName,
-				diskSize,
-			)
-
-			vmDisks = append(vmDisks, &objects.VirtualDisk{
-				NetboxObject: objects.NetboxObject{
-					Description: diskName,
-				},
-				Name: diskName,
-				Size: diskSize,
-			})
-		}
-	}
-
-	// Fetch SCSIs disks
-	if len(vm.VirtualMachineConfig.SCSIs) > 0 {
-		for _, disk := range vm.VirtualMachineConfig.SCSIs {
-			diskData := strings.Split(disk, ",")
-			diskName := diskData[0]
-			diskSize := 0
-
-			for index, item := range diskData {
-				// First element is disk name/path
-				if index == 0 {
-					continue
-				}
-
-				if sz := parseDiskSizeMiB(item); sz > 0 {
-					diskSize = sz
-					vmTotalDiskSizeMiB += sz
-				}
-			}
-
-			// Can't add disk with size == 0
-			if diskSize == 0 {
-				continue
-			}
-
-			ps.Logger.Debugf(
-				ps.Ctx,
-				"vm.Name: %s adding scsi disk: %s/%d",
-				vm.Name,
-				diskName,
-				diskSize,
-			)
-
-			vmDisks = append(vmDisks, &objects.VirtualDisk{
-				NetboxObject: objects.NetboxObject{
-					Description: diskName,
-				},
-				Name: diskName,
-				Size: diskSize,
-			})
-		}
-	}
-
-	// Fetch SATAs disks
-	if len(vm.VirtualMachineConfig.SATAs) > 0 {
-		for _, disk := range vm.VirtualMachineConfig.SATAs {
-			diskData := strings.Split(disk, ",")
-			diskName := diskData[0]
-			diskSize := 0
-
-			for index, item := range diskData {
-				// First element is disk name/path
-				if index == 0 {
-					continue
-				}
-
-				if sz := parseDiskSizeMiB(item); sz > 0 {
-					diskSize = sz
-					vmTotalDiskSizeMiB += sz
-				}
-			}
-
-			// Can't add disk with size == 0
-			if diskSize == 0 {
-				continue
-			}
-
-			ps.Logger.Debugf(
-				ps.Ctx,
-				"vm.Name: %s adding sata disk: %s/%d",
-				vm.Name,
-				diskName,
-				diskSize,
-			)
-
-			vmDisks = append(vmDisks, &objects.VirtualDisk{
-				NetboxObject: objects.NetboxObject{
-					Description: diskName,
-				},
-				Name: diskName,
-				Size: diskSize,
-			})
-		}
-	}
-
-	// Fetch IDEs disks
-	if len(vm.VirtualMachineConfig.IDEs) > 0 {
-		for _, disk := range vm.VirtualMachineConfig.IDEs {
-			diskData := strings.Split(disk, ",")
-			diskName := diskData[0]
-			diskSize := 0
-
-			for index, item := range diskData {
-				// First element is disk name/path
-				if index == 0 {
-					continue
-				}
-
-				if sz := parseDiskSizeMiB(item); sz > 0 {
-					diskSize = sz
-					vmTotalDiskSizeMiB += sz
-				}
-			}
-
-			// Can't add disk with size == 0
-			if diskSize == 0 {
-				continue
-			}
-
-			ps.Logger.Debugf(
-				ps.Ctx,
-				"vm.Name: %s adding ide disk: %s/%d",
-				vm.Name,
-				diskName,
-				diskSize,
-			)
-
-			vmDisks = append(vmDisks, &objects.VirtualDisk{
-				NetboxObject: objects.NetboxObject{
-					Description: diskName,
-				},
-				Name: diskName,
-				Size: diskSize,
-			})
-		}
-	}
-
-	// Compute final VM disk size
-	if vmTotalDiskSizeMiB == 0 {
-		vmTotalDiskSizeMiB = int((vm.MaxDisk / constants.GiB) * 1000) //nolint:gosec,mnd // MaxDisk/GiB fits in int
-	}
-
-	ps.Logger.Debugf(
-		ps.Ctx,
-		"vm.Name: %s vmTotalDiskSizeMiB: %d",
-		vm.Name,
-		vmTotalDiskSizeMiB,
-	)
+	vmDisks := ps.collectVMDisks(vm.Name, vm.VirtualMachineConfig)
 
 	// Fetch VM tags
 	newTags := ps.GetSourceTags()
 
-	if vm.Tags != "" && vm.Tags != " " {
-		splitTags := strings.Split(vm.Tags, ";")
-
-		for _, tag := range splitTags {
-			vmTag, err := nbi.AddTag(ps.Ctx, &objects.Tag{
-				Name:  tag,
-				Slug:  utils.Slugify(tag),
-				Color: constants.ColorGreen,
-			})
-			if err != nil {
-				return fmt.Errorf("add vm tag %q: %w", tag, err)
-			}
-
-			newTags = append(newTags, vmTag)
+	for _, tag := range splitProxmoxTags(vm.Tags) {
+		vmTag, err := nbi.AddTagIfMissing(ps.Ctx, &objects.Tag{
+			Name:  tag,
+			Slug:  utils.Slugify(tag),
+			Color: constants.ColorGreen,
+		})
+		if err != nil {
+			return fmt.Errorf("add vm tag %q: %w", tag, err)
 		}
+
+		newTags = append(newTags, vmTag)
 	}
 
 	// Add VM to Netbox
@@ -604,7 +494,6 @@ func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 		VCPUs:    float32(vm.CPUs),
 		Memory:   int(vm.MaxMem / constants.MiB), //nolint:gosec
 		Role:     vmRole,
-		// Disk:     vmTotalDiskSizeMiB,
 	}
 
 	nbVM, err := nbi.AddVM(ps.Ctx, vmStruct)
@@ -612,10 +501,14 @@ func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 		return fmt.Errorf("failed to add vm: %s %s", vm.Name, err)
 	}
 
-	// Sync VM networks
-	err = ps.syncVMNetworks(nbi, nbVM)
-	if err != nil {
-		return fmt.Errorf("failed to sync vm's %+v networks: %s", nbVM, err)
+	// Sync VM networks, or keep the known ones when the guest agent did not answer
+	if vmIfaces, known := ps.VMIfaces[uint64(vm.VMID)]; known {
+		err = ps.syncVMNetworks(nbi, nbVM, vmIfaces)
+		if err != nil {
+			return fmt.Errorf("failed to sync vm's %+v networks: %s", nbVM, err)
+		}
+	} else if existingVM != nil {
+		nbi.KeepVMNetworkObjects(existingVM)
 	}
 
 	// Sync VM disks
@@ -629,10 +522,14 @@ func (ps *ProxmoxSource) syncVM( //nolint:gocyclo
 	return nil
 }
 
-func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *objects.VM) error {
+func (ps *ProxmoxSource) syncVMNetworks(
+	nbi *inventory.NetboxInventory,
+	nbVM *objects.VM,
+	vmIfaces []*proxmox.AgentNetworkIface,
+) error {
 	vmIPv4Addresses := make([]*objects.IPAddress, 0)
 	vmIPv6Addresses := make([]*objects.IPAddress, 0)
-	for _, vmNetwork := range ps.VMIfaces[nbVM.Name] {
+	for _, vmNetwork := range vmIfaces {
 		if utils.FilterInterfaceName(vmNetwork.Name, ps.SourceConfig.InterfaceFilter) {
 			ps.Logger.Debugf(
 				ps.Ctx,
@@ -783,14 +680,27 @@ func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 		if err != nil {
 			return fmt.Errorf("create container role: %s", err)
 		}
+		keptGuestIDs := ps.keptGuestIDs()
 		for nodeName, containers := range ps.Containers {
-			// Add domain name suffix if needed
-			if ps.SourceConfig.AssignDomainName != "" {
-				nodeName += ps.SourceConfig.AssignDomainName
-			}
-
 			nbHost := ps.NetboxNodes[nodeName]
+			if nbHost == nil {
+				ps.Logger.Warningf(
+					ps.Ctx,
+					"skipping %d containers of node %s: node is not synced to netbox",
+					len(containers),
+					nodeName,
+				)
+				continue
+			}
 			for _, container := range containers {
+				if keptID := keptGuestIDs[inventory.TruncateVMName(container.Name)]; keptID != uint64(container.VMID) {
+					ps.Logger.Warningf(
+						ps.Ctx,
+						"skipping container %s (vmid %d): name already used by vmid %d in the cluster",
+						container.Name, uint64(container.VMID), keptID,
+					)
+					continue
+				}
 				// Determine Container status
 				containerStatus := &objects.VMStatusActive
 				if container.Status == "stopped" {
@@ -810,24 +720,19 @@ func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 				// Fetch CT tags
 				newTags := ps.GetSourceTags()
 
-				if rawTags := strings.TrimSpace(container.Tags); rawTags != "" {
-					for _, tag := range strings.Split(rawTags, ";") {
-						tag = strings.TrimSpace(tag)
-						if tag == "" {
-							continue
-						}
-						ctTag, err := nbi.AddTag(ps.Ctx, &objects.Tag{
-							Name:  tag,
-							Slug:  utils.Slugify(tag),
-							Color: constants.ColorGreen,
-						})
-						if err != nil {
-							return fmt.Errorf("add container tag %q: %w", tag, err)
-						}
-						newTags = append(newTags, ctTag)
+				for _, tag := range splitProxmoxTags(container.Tags) {
+					ctTag, err := nbi.AddTagIfMissing(ps.Ctx, &objects.Tag{
+						Name:  tag,
+						Slug:  utils.Slugify(tag),
+						Color: constants.ColorGreen,
+					})
+					if err != nil {
+						return fmt.Errorf("add container tag %q: %w", tag, err)
 					}
+					newTags = append(newTags, ctTag)
 				}
 
+				existingContainer, _ := nbi.GetVM(container.Name, ps.NetboxCluster.ID)
 				nbContainer, err := nbi.AddVM(ps.Ctx, &objects.VM{
 					NetboxObject: objects.NetboxObject{
 						Tags: newTags,
@@ -841,7 +746,7 @@ func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 					Tenant:  vmTenant,
 					VCPUs:   float32(container.CPUs),
 					Memory:  int(container.MaxMem / constants.MiB),  //nolint:gosec
-					Disk:    int(container.MaxDisk / constants.GiB), //nolint:gosec
+					Disk:    int(container.MaxDisk / constants.MiB), //nolint:gosec
 					Site:    nbHost.Site,
 					Name:    container.Name,
 					Status:  containerStatus,
@@ -850,9 +755,14 @@ func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 					return fmt.Errorf("new vm: %s", err)
 				}
 
-				err = ps.syncContainerNetworks(nbi, nbContainer)
-				if err != nil {
-					return fmt.Errorf("sync container networks: %s", err)
+				// Sync container networks, or keep the known ones when they could not be read
+				if containerIfaces, known := ps.ContainerIfaces[uint64(container.VMID)]; known {
+					err = ps.syncContainerNetworks(nbi, nbContainer, containerIfaces)
+					if err != nil {
+						return fmt.Errorf("sync container networks: %s", err)
+					}
+				} else if existingContainer != nil {
+					nbi.KeepVMNetworkObjects(existingContainer)
 				}
 			}
 		}
@@ -863,10 +773,11 @@ func (ps *ProxmoxSource) syncContainers(nbi *inventory.NetboxInventory) error {
 func (ps *ProxmoxSource) syncContainerNetworks(
 	nbi *inventory.NetboxInventory,
 	nbContainer *objects.VM,
+	containerIfaces []*proxmox.ContainerInterface,
 ) error {
 	vmIPv4Addresses := make([]*objects.IPAddress, 0)
 	vmIPv6Addresses := make([]*objects.IPAddress, 0)
-	for _, containerIface := range ps.ContainerIfaces[nbContainer.Name] {
+	for _, containerIface := range containerIfaces {
 		if utils.FilterInterfaceName(containerIface.Name, ps.SourceConfig.InterfaceFilter) {
 			ps.Logger.Debugf(
 				ps.Ctx,
@@ -1005,18 +916,187 @@ func (ps *ProxmoxSource) syncContainerNetworks(
 	return nil
 }
 
+// proxmoxOSTypePlatformNames maps Proxmox VM OSType identifiers to the VMware guest
+// full names (Broadcom KB 321876), which netbox-sync uses as platform of vCenter VMs
+// whose guest tools do not report the OS, so that both tools share the same platforms.
+// 64-bit is assumed when Proxmox does not tell. "other", "l24" and "solaris" have no
+// unambiguous VMware equivalent.
+var proxmoxOSTypePlatformNames = map[string]string{
+	"wxp":    "Microsoft Windows XP (32-bit)",
+	"w2k":    "Microsoft Windows 2000 Server",
+	"w2k3":   "Microsoft Windows Server 2003 Standard (32-bit)",
+	"w2k8":   "Microsoft Windows Server 2008 (64-bit)",
+	"wvista": "Microsoft Windows Vista (32-bit)",
+	"win7":   "Microsoft Windows 7 (64-bit)",
+	"win8":   "Microsoft Windows 8 (64-bit)",
+	"win10":  "Microsoft Windows 10 (64-bit)",
+	"win11":  "Microsoft Windows 11 (64-bit)",
+	"l26":    "Other 2.6.x Linux (64-bit)",
+}
+
 // proxmoxOSTypeToPlatformName maps a Proxmox VM OSType identifier to a
 // human-readable platform name. It returns an empty string for unknown types,
 // letting the caller keep its existing fallback.
 func proxmoxOSTypeToPlatformName(osType string) string {
-	switch osType {
-	case "l26":
-		return "Other 2.6.x Linux (64-bit)"
-	case "win10":
-		return "Windows 10"
-	case "win11":
-		return "Windows 11"
-	default:
-		return ""
+	return proxmoxOSTypePlatformNames[osType]
+}
+
+// formerOSTypePlatformNames are the platform names of the former ostype table and
+// fallback, which an existing VM may still carry.
+var formerOSTypePlatformNames = map[string]bool{"Windows 10": true, "Windows 11": true, "Unknown": true}
+
+// isOSTypePlatformName reports whether a platform name was derived from the ostype
+// rather than reported by the guest agent, so that it can be refreshed.
+func isOSTypePlatformName(name string) bool {
+	if formerOSTypePlatformNames[name] {
+		return true
 	}
+	for _, platformName := range proxmoxOSTypePlatformNames {
+		if platformName == name {
+			return true
+		}
+	}
+	return false
+}
+
+// nodeInterfaceType maps a Proxmox node network type to a NetBox interface type.
+// It returns nil for physical NICs, whose real type Proxmox does not expose.
+func nodeInterfaceType(proxmoxType string) *objects.InterfaceType {
+	switch proxmoxType {
+	case "bond", "OVSBond":
+		return &objects.LAGInterfaceType
+	case "bridge", "OVSBridge":
+		return &objects.BridgeInterfaceType
+	case "vlan", "OVSIntPort", "alias":
+		return &objects.VirtualInterfaceType
+	default:
+		return nil
+	}
+}
+
+// vmPlatformName returns the platform name of a VM, or keepCurrent when the guest
+// agent did not report the OS and the VM already has a platform reported by the agent
+// in NetBox: an agent that does not answer (stopped VM, agent down) says nothing about
+// the platform. A platform derived from the ostype is refreshed from the ostype.
+func vmPlatformName(
+	agentOsInfo *proxmox.AgentOsInfo,
+	osType *string,
+	existingVM *objects.VM,
+) (name string, keepCurrent bool) {
+	if agentOsInfo != nil && agentOsInfo.PrettyName != "" {
+		return agentOsInfo.PrettyName, false
+	}
+	if existingVM != nil && existingVM.Platform != nil && !isOSTypePlatformName(existingVM.Platform.Name) {
+		return "", true
+	}
+	if osType != nil {
+		if name := proxmoxOSTypeToPlatformName(*osType); name != "" {
+			return name, false
+		}
+	}
+	return "Unknown", false
+}
+
+// splitProxmoxTags splits a Proxmox tag list ("a;b") into trimmed, non-empty tag names.
+func splitProxmoxTags(raw string) []string {
+	tags := make([]string, 0)
+	for _, tag := range strings.Split(raw, ";") {
+		if tag = strings.TrimSpace(tag); tag != "" {
+			tags = append(tags, tag)
+		}
+	}
+	return tags
+}
+
+// keptGuestIDs maps each guest name of the cluster, as NetBox stores it (truncated),
+// to the VMID synced under that name. NetBox names VMs uniquely within a cluster while Proxmox identifies them
+// by VMID, so among homonym VMs and containers only the lowest VMID is synced.
+func (ps *ProxmoxSource) keptGuestIDs() map[string]uint64 {
+	kept := make(map[string]uint64)
+	keep := func(name string, vmid uint64) {
+		if keptID, ok := kept[name]; !ok || vmid < keptID {
+			kept[name] = vmid
+		}
+	}
+	// Only guests that are actually synced compete for a name: a skipped template or a
+	// guest of an unsynced node must not shadow the guest that would be synced.
+	for nodeName, vms := range ps.Vms {
+		if ps.NetboxNodes[nodeName] == nil {
+			continue
+		}
+		for _, vm := range vms {
+			if ps.SourceConfig.IgnoreVMTemplates && bool(vm.Template) {
+				continue
+			}
+			keep(inventory.TruncateVMName(vm.Name), uint64(vm.VMID))
+		}
+	}
+	for nodeName, containers := range ps.Containers {
+		if ps.NetboxNodes[nodeName] == nil {
+			continue
+		}
+		for _, container := range containers {
+			keep(inventory.TruncateVMName(container.Name), uint64(container.VMID))
+		}
+	}
+	return kept
+}
+
+// collectVMDisks returns the virtual disks of a VM config, across all disk buses.
+func (ps *ProxmoxSource) collectVMDisks(
+	vmName string,
+	vmConfig *proxmox.VirtualMachineConfig,
+) []*objects.VirtualDisk {
+	diskCount := len(vmConfig.VirtIOs) + len(vmConfig.SCSIs) + len(vmConfig.SATAs) + len(vmConfig.IDEs)
+	vmDisks := make([]*objects.VirtualDisk, 0, diskCount)
+	vmDisks = append(vmDisks, ps.collectDisks(vmName, "virtios", vmConfig.VirtIOs)...)
+	vmDisks = append(vmDisks, ps.collectDisks(vmName, "scsi", vmConfig.SCSIs)...)
+	vmDisks = append(vmDisks, ps.collectDisks(vmName, "sata", vmConfig.SATAs)...)
+	vmDisks = append(vmDisks, ps.collectDisks(vmName, "ide", vmConfig.IDEs)...)
+	return vmDisks
+}
+
+// collectDisks returns the virtual disks of one disk bus (kind) of a VM.
+// Disks without size (e.g. cdrom drives) are skipped.
+func (ps *ProxmoxSource) collectDisks(vmName, kind string, disks map[string]string) []*objects.VirtualDisk {
+	vmDisks := make([]*objects.VirtualDisk, 0, len(disks))
+	for _, disk := range disks {
+		diskData := strings.Split(disk, ",")
+		diskName := diskData[0]
+		diskSize := 0
+
+		for index, item := range diskData {
+			// First element is disk name/path
+			if index == 0 {
+				continue
+			}
+
+			if sz := parseDiskSizeMiB(item); sz > 0 {
+				diskSize = sz
+			}
+		}
+
+		// Can't add disk with size == 0
+		if diskSize == 0 {
+			continue
+		}
+
+		ps.Logger.Debugf(
+			ps.Ctx,
+			"vm.Name: %s adding %s disk: %s/%d",
+			vmName,
+			kind,
+			diskName,
+			diskSize,
+		)
+
+		vmDisks = append(vmDisks, &objects.VirtualDisk{
+			NetboxObject: objects.NetboxObject{
+				Description: diskName,
+			},
+			Name: diskName,
+			Size: diskSize,
+		})
+	}
+	return vmDisks
 }

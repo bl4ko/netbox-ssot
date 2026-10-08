@@ -78,13 +78,15 @@ func main() {
 	}
 	ssotLogger.Debug(mainCtx, "Netbox inventory initialized: ", netboxInventory)
 
-	// Variable to store if the run was successful. If it wasn't we don't remove orphans.
-	successfullRun := true
-	// Variable to store failed sourcesFalse
-	encounteredErrors := map[string]error{}
+	// Register the source tags owned by netbox-ssot, so tags of other tools are left alone
+	sourceTagNames := make([]string, 0, len(config.Sources))
+	for _, sourceConfig := range config.Sources {
+		sourceTagNames = append(sourceTagNames, sourceConfig.Tag)
+	}
+	netboxInventory.RegisterManagedSourceTags(sourceTagNames)
 
-	// Go through all sources and sync data
-	var wg sync.WaitGroup
+	// Create every source first, then sync them all in parallel
+	sources := make([]namedSource, 0, len(config.Sources))
 	for i := range config.Sources {
 		sourceConfig := &config.Sources[i]
 		ssotLogger.Info(mainCtx, "Processing source ", sourceConfig.Name, "...")
@@ -96,39 +98,11 @@ func main() {
 		}
 		ssotLogger.Infof(sourceCtx, "Successfully created source %s", constants.CheckMark)
 		ssotLogger.Debugf(sourceCtx, "Source content: %s", source)
-		wg.Add(1)
-		// Run each source in parallel
-		go func(sourceCtx context.Context, source common.Source) {
-			defer wg.Done()
-			sourceName, ok := sourceCtx.Value(constants.CtxSourceKey).(string)
-			if !ok {
-				ssotLogger.Errorf(sourceCtx, "source ctx value is not set")
-				return
-			}
-			// Source initialization
-			ssotLogger.Info(sourceCtx, "Initializing source")
-			err = source.Init()
-			if err != nil {
-				ssotLogger.Error(sourceCtx, err)
-				successfullRun = false
-				encounteredErrors[sourceName] = err
-				return
-			}
-			ssotLogger.Infof(sourceCtx, "Successfully initialized source %s", constants.CheckMark)
-
-			// Source synchronization
-			ssotLogger.Info(sourceCtx, "Syncing source...")
-			err = source.Sync(netboxInventory)
-			if err != nil {
-				successfullRun = false
-				ssotLogger.Error(sourceCtx, err)
-				encounteredErrors[sourceName] = err
-				return
-			}
-			ssotLogger.Infof(sourceCtx, "Source synced successfully %s", constants.CheckMark)
-		}(sourceCtx, source)
+		sources = append(sources, namedSource{name: sourceConfig.Name, ctx: sourceCtx, source: source})
 	}
-	wg.Wait()
+	// Failed sources by name. If any failed, we don't remove orphans.
+	encounteredErrors := syncSources(ssotLogger, netboxInventory, sources)
+	successfullRun := len(encounteredErrors) == 0
 
 	// Orphan manager cleanup on successful run and if enabled
 	if successfullRun {
@@ -164,4 +138,53 @@ func main() {
 		}
 		os.Exit(1)
 	}
+}
+
+// namedSource is a source ready to be synced, with its name and logging context.
+type namedSource struct {
+	name   string
+	ctx    context.Context
+	source common.Source
+}
+
+// syncSources initializes and syncs all sources in parallel, and returns the
+// error of each source that failed, by source name.
+func syncSources(
+	ssotLogger *logger.Logger,
+	netboxInventory *inventory.NetboxInventory,
+	sources []namedSource,
+) map[string]error {
+	encounteredErrors := map[string]error{}
+	var errorsLock sync.Mutex
+	addError := func(sourceName string, err error) {
+		errorsLock.Lock()
+		defer errorsLock.Unlock()
+		encounteredErrors[sourceName] = err
+	}
+	var wg sync.WaitGroup
+	for _, s := range sources {
+		wg.Add(1)
+		go func(s namedSource) {
+			defer wg.Done()
+			// Source initialization
+			ssotLogger.Info(s.ctx, "Initializing source")
+			if err := s.source.Init(); err != nil {
+				ssotLogger.Error(s.ctx, err)
+				addError(s.name, err)
+				return
+			}
+			ssotLogger.Infof(s.ctx, "Successfully initialized source %s", constants.CheckMark)
+
+			// Source synchronization
+			ssotLogger.Info(s.ctx, "Syncing source...")
+			if err := s.source.Sync(netboxInventory); err != nil {
+				ssotLogger.Error(s.ctx, err)
+				addError(s.name, err)
+				return
+			}
+			ssotLogger.Infof(s.ctx, "Source synced successfully %s", constants.CheckMark)
+		}(s)
+	}
+	wg.Wait()
+	return encounteredErrors
 }

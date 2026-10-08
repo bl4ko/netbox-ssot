@@ -2,10 +2,12 @@ package inventory
 
 import (
 	"context"
+	"slices"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/logger"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
 type OrphanManager struct {
@@ -79,14 +81,34 @@ func NewOrphanManager(logger *logger.Logger) *OrphanManager {
 func (orphanManager *OrphanManager) AddItem(orphanItem objects.OrphanItem) {
 	// Manage only objects created with netbox-ssot tag
 	netboxObject := orphanItem.GetNetboxObject()
-	if netboxObject.HasTagByName(constants.SsotTagName) {
-		if orphanManager.Items[orphanItem.GetAPIPath()] == nil {
-			orphanManager.Items[orphanItem.GetAPIPath()] = map[int]objects.OrphanItem{}
-		}
-		orphanManager.Items[orphanItem.GetAPIPath()][netboxObject.ID] = orphanItem
+	if !netboxObject.HasTagByName(constants.SsotTagName) {
+		return
 	}
+	if orphanManager.Items[orphanItem.GetAPIPath()] == nil {
+		orphanManager.Items[orphanItem.GetAPIPath()] = map[int]objects.OrphanItem{}
+	}
+	orphanManager.Items[orphanItem.GetAPIPath()][netboxObject.ID] = orphanItem
 }
 
 func (orphanManager *OrphanManager) RemoveItem(obj objects.OrphanItem) {
 	delete(orphanManager.Items[obj.GetAPIPath()], obj.GetID())
+}
+
+// Deletable returns the orphans of objectAPIPath that may be deleted.
+//
+// Objects that another tool also tags with its own source tag are shared: deleting them
+// would break that tool's objects (e.g. platforms of vCenter VMs). Ownership is decided
+// here, at deletion time, because the managed source tags are only registered after
+// Init has loaded every object into the orphan manager.
+func (orphanManager *OrphanManager) Deletable(objectAPIPath constants.APIPath) []objects.OrphanItem {
+	deletable := make([]objects.OrphanItem, 0, len(orphanManager.Items[objectAPIPath]))
+	for _, item := range orphanManager.Items[objectAPIPath] {
+		shared := slices.ContainsFunc(item.GetNetboxObject().Tags, func(tag *objects.Tag) bool {
+			return utils.IsForeignSourceTag(tag.Name)
+		})
+		if !shared {
+			deletable = append(deletable, item)
+		}
+	}
+	return deletable
 }

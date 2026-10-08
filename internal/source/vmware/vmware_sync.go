@@ -27,7 +27,7 @@ func (vc *VmwareSource) syncTags(nbi *inventory.NetboxInventory) error {
 			} else {
 				description = "Tag synced from vmware"
 			}
-			nbTag, err := nbi.AddTag(vc.Ctx, &objects.Tag{
+			nbTag, err := nbi.AddTagIfMissing(vc.Ctx, &objects.Tag{
 				Name:        tag.Name,
 				Slug:        utils.Slugify(tag.Name),
 				Color:       constants.ColorGreen,
@@ -666,7 +666,7 @@ func (vc *VmwareSource) collectHostPhysicalNicData(
 		},
 		Device:      nbHost,
 		Name:        pnicName,
-		Status:      true,
+		Status:      new(true),
 		Type:        pnicType,
 		Speed:       objects.InterfaceSpeed(pnicLinkSpeedKb),
 		MTU:         pnicMtu,
@@ -976,7 +976,7 @@ func (vc *VmwareSource) collectHostVirtualNicData(
 		},
 		Device:       nbHost,
 		Name:         vnicName,
-		Status:       true,
+		Status:       new(true),
 		Type:         &objects.VirtualInterfaceType,
 		MTU:          int(vnic.Spec.Mtu),
 		Mode:         vnicMode,
@@ -1016,13 +1016,7 @@ func (vc *VmwareSource) syncVMs(nbi *inventory.NetboxInventory) error {
 	close(errChan)
 
 	// Collect any errors
-	for err := range errChan {
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return common.JoinErrors(errChan)
 }
 
 // syncVM synces VM from the source to Netbox.
@@ -1547,7 +1541,7 @@ func (vc *VmwareSource) collectVMInterfaceData(
 		Name:         intFullName,
 		MTU:          intMtu,
 		Mode:         intMode,
-		Enabled:      intConnected,
+		Enabled:      new(intConnected),
 		TaggedVlans:  intTaggedVlanList,
 		UntaggedVlan: intUntaggedVlan,
 	}, strings.ToUpper(intMac), nil

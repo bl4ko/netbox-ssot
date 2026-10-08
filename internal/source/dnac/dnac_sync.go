@@ -154,13 +154,7 @@ func (ds *DnacSource) syncDevices(nbi *inventory.NetboxInventory) error {
 	close(errChan)
 	close(guard)
 
-	for err := range errChan {
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return common.JoinErrors(errChan)
 }
 
 func (ds *DnacSource) syncDevice(
@@ -337,13 +331,7 @@ func (ds *DnacSource) syncDeviceInterfaces(nbi *inventory.NetboxInventory) error
 	close(errChan)
 	close(guard)
 
-	for err := range errChan {
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return common.JoinErrors(errChan)
 }
 
 func (ds *DnacSource) syncDeviceInterface(
@@ -403,7 +391,7 @@ func (ds *DnacSource) syncDeviceInterface(
 		},
 		Name:         ifaceName,
 		Speed:        ifaceSpeed,
-		Status:       ifaceStatus,
+		Status:       new(ifaceStatus),
 		Duplex:       ifaceDuplex,
 		Device:       ifaceDevice,
 		Type:         ifaceType,
@@ -742,7 +730,7 @@ func (ds *DnacSource) syncMissingDevicePrimaryIPs(nbi *inventory.NetboxInventory
 				Device: nbDevice,
 				Name:   "mgmt",
 				Type:   &objects.OtherInterfaceType,
-				Status: true,
+				Status: new(true),
 			}
 			nbIface, err := nbi.AddInterface(ds.Ctx, managementInterfaceStruct)
 			if err != nil {
