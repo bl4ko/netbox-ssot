@@ -95,8 +95,11 @@ github.com/scrapli/scrapligo v1.4.1 h1:D0lg2xusZKbKnzy9l0yT7ly/D2rgqab12yZvEXNim
 github.com/scrapli/scrapligo v1.4.1/go.mod h1:pOWxVyPsQRrWTrkoSSDg05tjOqtWfLffAZtAsCc0w3M=
 github.com/scrapli/scrapligo v1.4.2 h1:Dj5suvaxn2pARMVLbLKP2YJ+a3yTMOTJEQOzNKQdjCQ=
 github.com/scrapli/scrapligo v1.4.2/go.mod h1:pOWxVyPsQRrWTrkoSSDg05tjOqtWfLffAZtAsCc0w3M=
+github.com/scrapli/scrapligo/v2 v2.0.0/go.mod h1:56nDZfjXyogWxDz10kpE8lXUXPYm78MKaE514DaBdPs=
 github.com/sirikothe/gotextfsm v1.0.1-0.20200816110946-6aa2cfd355e4 h1:FHUL2HofYJuslFOQdy/JjjP36zxqIpd/dcoiwLMIs7k=
 github.com/sirikothe/gotextfsm v1.0.1-0.20200816110946-6aa2cfd355e4/go.mod h1:CJYqpTg9u5VPCoD0VEl9E68prCIiWQD8m457k098DdQ=
+github.com/sirikothe/gotextfsm v1.2.0 h1:DG+8Zmj0C9UdmqBp57FHbc0WUriCrdiDgtwgVyteTms=
+github.com/sirikothe/gotextfsm v1.2.0/go.mod h1:wbW8v960jP2sXgCDKneBp9lm4Cutkc9o2GPwhaSLRsI=
 github.com/sirupsen/logrus v1.9.4 h1:TsZE7l11zFCLZnZ+teH4Umoq5BhEIfIzfRDZ1Uzql2w=
 github.com/sirupsen/logrus v1.9.4/go.mod h1:ftWc9WdOfJ0a92nsE2jF5u5ZwH8Bv2zdeOC42RjbV2g=
 github.com/src-doo/go-devicetype-library v0.1.56 h1:UaPzlRZVJ9RY4Hzm0l/4EhwCFKqtDQylVJzzC6Lhc6k=
@@ -124,6 +127,8 @@ golang.org/x/sys v0.0.0-20210331175145-43e1dd70ce54/go.mod h1:h1NjWce9XRLGQEsW7w
 golang.org/x/sys v0.0.0-20220615213510-4f61da869c0c/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.47.0 h1:o7XGOvZQCADBQQ4Y7VNq2dRWQR7JmOUW8Kxx4ZsNgWs=
 golang.org/x/sys v0.47.0/go.mod h1:4GL1E5IUh+htKOUEOaiffhrAeqysfVGipDYzABqnCmw=
+golang.org/x/sys v0.48.0 h1:bbX/i/6MgT9BVLM9RT1thmxL04yeTAhbEz4SyadbXoo=
+golang.org/x/sys v0.48.0/go.mod h1:hNLxWAXmnKAxqDtdwIYC4bM9oQPEecfsnNMuSxOs3og=
 golang.org/x/term v0.45.0 h1:NwWyBmoJCbfTHpxrWoZ9C6/VxOf7ic219I8xZZFdrf0=
 golang.org/x/term v0.45.0/go.mod h1:9aqxs0blBcrm/n0L9QW0aRVD+ktan8ssZromtqJC43w=
 golang.org/x/text v0.42.0 h1:JbOZXgfeCPU9gacVtYliJqOhD+zhrEqK4LfdpmlUZqI=
