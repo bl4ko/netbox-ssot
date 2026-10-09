@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"fmt"
+	"maps"
 	"strings"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
@@ -404,6 +405,11 @@ func SetPrimaryIPAddressForObject(
 	switch targetObject := targetObject.(type) {
 	case *objects.Device:
 		deviceCopy := *targetObject
+		// CustomFields is a map, so the shallow copy above still shares it with the
+		// cached, concurrently-accessed original; Add* mutates CustomFields in place
+		// (e.g. via SetCustomField) before taking any lock, so without cloning here
+		// that write races with other goroutines reading the same cached object.
+		deviceCopy.CustomFields = maps.Clone(targetObject.CustomFields)
 		deviceCopy.PrimaryIPv4 = ipv4
 		deviceCopy.PrimaryIPv6 = ipv6
 		_, err := nbi.AddDevice(ctx, &deviceCopy)
@@ -412,6 +418,7 @@ func SetPrimaryIPAddressForObject(
 		}
 	case *objects.VM:
 		vmCopy := *targetObject
+		vmCopy.CustomFields = maps.Clone(targetObject.CustomFields)
 		vmCopy.PrimaryIPv4 = ipv4
 		vmCopy.PrimaryIPv6 = ipv6
 		_, err := nbi.AddVM(ctx, &vmCopy)
@@ -431,6 +438,9 @@ func SetPrimaryMACForInterface(
 	switch targetInterface := targetInterface.(type) {
 	case *objects.Interface:
 		interfaceCopy := *targetInterface
+		// See the CustomFields comment in SetPrimaryIPForObject: this shallow copy
+		// still shares the CustomFields map with the cached original otherwise.
+		interfaceCopy.CustomFields = maps.Clone(targetInterface.CustomFields)
 		interfaceCopy.PrimaryMACAddress = mac
 		_, err := nbi.AddInterface(ctx, &interfaceCopy)
 		if err != nil {
@@ -438,6 +448,7 @@ func SetPrimaryMACForInterface(
 		}
 	case *objects.VMInterface:
 		vmInterfaceCopy := *targetInterface
+		vmInterfaceCopy.CustomFields = maps.Clone(targetInterface.CustomFields)
 		vmInterfaceCopy.PrimaryMACAddress = mac
 		_, err := nbi.AddVMInterface(ctx, &vmInterfaceCopy)
 		if err != nil {
