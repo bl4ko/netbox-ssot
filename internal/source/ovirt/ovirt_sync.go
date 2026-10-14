@@ -101,7 +101,7 @@ func (o *OVirtSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
 		}
 		description, _ := datacenter.Description()
 		nbClusterGroupName := dcName
-		if mappedClusterGroupName, ok := o.SourceConfig.DatacenterClusterGroupRelations[dcName]; ok {
+		if mappedClusterGroupName, ok := o.SourceConfig.DatacenterClusterGroupRelations.GetValue(dcName); ok {
 			nbClusterGroupName = mappedClusterGroupName
 			o.Logger.Debugf(
 				o.Ctx,
@@ -160,7 +160,7 @@ func (o *OVirtSource) syncClusters(nbi *inventory.NetboxInventory) error {
 			o.Logger.Warning(o.Ctx, "failed to get datacenter for oVirt cluster ", clusterName)
 		}
 		if clusterGroupName != "" {
-			if mappedName, ok := o.SourceConfig.DatacenterClusterGroupRelations[clusterGroupName]; ok {
+			if mappedName, ok := o.SourceConfig.DatacenterClusterGroupRelations.GetValue(clusterGroupName); ok {
 				clusterGroupName = mappedName
 			}
 			clusterGroup, _ = nbi.GetClusterGroup(clusterGroupName)

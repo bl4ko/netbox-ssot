@@ -110,7 +110,8 @@ func (vc *VmwareSource) syncNetworks(nbi *inventory.NetboxInventory) error {
 func (vc *VmwareSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
 	for dcID, dc := range vc.DataCenters {
 		netboxClusterGroupName := dc.Name
-		if mappedClusterGroupName, ok := vc.SourceConfig.DatacenterClusterGroupRelations[netboxClusterGroupName]; ok {
+		mappedClusterGroupName, ok := vc.SourceConfig.DatacenterClusterGroupRelations.GetValue(netboxClusterGroupName)
+		if ok {
 			netboxClusterGroupName = mappedClusterGroupName
 			vc.Logger.Debugf(
 				vc.Ctx,
@@ -155,7 +156,7 @@ func (vc *VmwareSource) syncClusters(nbi *inventory.NetboxInventory) error {
 		var clusterGroup *objects.ClusterGroup
 		datacenterID := vc.Cluster2Datacenter[clusterID]
 		clusterGroupName := vc.DataCenters[datacenterID].Name
-		if mappedName, ok := vc.SourceConfig.DatacenterClusterGroupRelations[clusterGroupName]; ok {
+		if mappedName, ok := vc.SourceConfig.DatacenterClusterGroupRelations.GetValue(clusterGroupName); ok {
 			clusterGroupName = mappedName
 		}
 		clusterGroup, _ = nbi.GetClusterGroup(clusterGroupName)
@@ -1160,7 +1161,7 @@ func (vc *VmwareSource) syncVM(
 			if field, ok := field.(*types.CustomFieldStringValue); ok {
 				fieldName := vc.CustomFieldID2Name[field.Key]
 
-				if mappedField, ok := vc.SourceConfig.CustomFieldMappings[fieldName]; ok {
+				if mappedField, ok := vc.SourceConfig.CustomFieldMappings.GetValue(fieldName); ok {
 					switch mappedField {
 					case "owner":
 						vmOwners = utils.SerializeOwners(strings.Split(field.Value, ","))
