@@ -361,6 +361,10 @@ func (ps *ProxmoxSource) syncVMs(nbi *inventory.NetboxInventory) error {
 
 		// Iterate over each VM and start a goroutine to sync it
 		for _, vm := range vms {
+			// Ignored templates are left out of keptGuestIDs: skip them before the homonym check.
+			if ps.SourceConfig.IgnoreVMTemplates && bool(vm.Template) {
+				continue
+			}
 			if keptID := keptGuestIDs[inventory.TruncateVMName(vm.Name)]; keptID != uint64(vm.VMID) {
 				ps.Logger.Warningf(
 					ps.Ctx,

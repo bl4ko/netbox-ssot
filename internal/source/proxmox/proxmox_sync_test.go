@@ -1,6 +1,7 @@
 package proxmox
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -678,5 +679,37 @@ func TestSyncNodeNetworksKeepsTheLAGOfAnOVSBondMember(t *testing.T) {
 		if strings.Contains(request, `"lag":null`) {
 			t.Errorf("unexpected LAG clear %q", request)
 		}
+	}
+}
+
+// An ignored template is not a guest of the cluster: it must not be reported as a homonym.
+func TestSyncVMsSkipsIgnoredTemplatesWithoutHomonymWarning(t *testing.T) {
+	service.MockNetboxClient.DryRun = true
+	nbi := inventory.MockInventory
+	ps := newTestSource(t, &parser.SourceConfig{IgnoreVMTemplates: true})
+	var logs bytes.Buffer
+	lg, err := logger.New("", logger.WARNING)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lg.SetOutput(&logs)
+	ps.Logger = lg
+	site := &objects.Site{NetboxObject: objects.NetboxObject{ID: 1}}
+	ps.NetboxNodes = map[string]*objects.Device{
+		"n1": {NetboxObject: objects.NetboxObject{ID: 1}, Name: "n1", Site: site},
+	}
+	template := newTestVM("template-trixie", 115)
+	template.Template = true
+	ps.Vms = map[string][]*proxmox.VirtualMachine{"n1": {template}}
+
+	if err := ps.syncVMs(nbi); err != nil {
+		t.Fatalf("syncVMs() error = %v", err)
+	}
+
+	if strings.Contains(logs.String(), "name already used") {
+		t.Errorf("syncVMs() logged a homonym warning for an ignored template:\n%s", logs.String())
+	}
+	if _, ok := nbi.GetVM("template-trixie", ps.NetboxCluster.ID); ok {
+		t.Errorf("ignored template template-trixie was synced")
 	}
 }
