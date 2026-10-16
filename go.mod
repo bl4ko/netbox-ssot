@@ -12,7 +12,7 @@ require (
 	github.com/scrapli/scrapligo v1.4.2
 	github.com/src-doo/go-devicetype-library v0.1.56
 	github.com/vmware/govmomi v0.56.0
-	golang.org/x/text v0.42.0
+	golang.org/x/text v0.43.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
