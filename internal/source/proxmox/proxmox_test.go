@@ -21,3 +21,25 @@ func TestProxmoxOSTypeToPlatformName(t *testing.T) {
 		})
 	}
 }
+
+func TestParseDiskSizeMiB(t *testing.T) {
+	tests := []struct {
+		name string
+		item string
+		want int
+	}{
+		{name: "256G disk", item: "size=256G", want: 262144},
+		{name: "32G disk", item: "size=32G", want: 32768},
+		{name: "1T disk", item: "size=1T", want: 1048576},
+		{name: "not a size token", item: "backup=0", want: 0},
+		{name: "missing equals sign", item: "sizeG", want: 0},
+		{name: "unsupported suffix", item: "size=512M", want: 0},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := parseDiskSizeMiB(tt.item); got != tt.want {
+				t.Errorf("parseDiskSizeMiB(%q) = %d, want %d", tt.item, got, tt.want)
+			}
+		})
+	}
+}
