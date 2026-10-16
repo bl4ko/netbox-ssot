@@ -327,7 +327,7 @@ func (oss *Source) syncVMInterfaces(
 			},
 			VM:      nbVM,
 			Name:    netName,
-			Enabled: true,
+			Enabled: new(true),
 		})
 		if err != nil {
 			return err

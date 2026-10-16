@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -44,6 +45,7 @@ func TestValidonfig(t *testing.T) {
 					"fd00::/8",
 				},
 				ValidateCert: true,
+				Timeout:      constants.DefaultAPITimeout, // Default
 				Tag:          "testing",
 				TagColor:     "ff0000",
 			}, {
@@ -60,6 +62,7 @@ func TestValidonfig(t *testing.T) {
 					"fd00::/8",
 				},
 				CollectArpData: true,
+				Timeout:        constants.DefaultAPITimeout,                     // Default
 				TagColor:       constants.SourceTagColorMap[constants.PaloAlto], // Default
 				Tag:            "Source: paloalto",                              // Default
 				VlanSiteRelations: map[string]string{
@@ -87,8 +90,9 @@ func TestValidonfig(t *testing.T) {
 					"172.16.0.0/12",
 				},
 				ValidateCert: false,
-				Tag:          "Source: prodolvm", // Default
-				TagColor:     "aa1409",           // Default
+				Timeout:      constants.DefaultAPITimeout, // Default
+				Tag:          "Source: prodolvm",          // Default
+				TagColor:     "aa1409",                    // Default
 				ClusterSiteRelations: map[string]string{
 					"Cluster_NYC":         "New York",
 					"Cluster_FFM.*":       "Frankfurt",
@@ -404,6 +408,72 @@ func TestParseConfigInvalidConfigs(t *testing.T) {
 				t.Errorf("Expected error for %v, got nil", tc.filename)
 			} else if strings.TrimSpace(err.Error()) != strings.TrimSpace(tc.expectedErr) {
 				t.Errorf("Expected error: %v, got: %v", tc.expectedErr, err)
+			}
+		})
+	}
+}
+
+func TestConfigStringRedactsSecrets(t *testing.T) {
+	const secret = "s3cr3t-value"
+	tests := []struct {
+		name   string
+		object fmt.Stringer
+	}{
+		{name: "netbox api token", object: NetboxConfig{APIToken: secret, Hostname: "netbox.example.com"}},
+		{name: "source password", object: SourceConfig{Name: "pve", Password: secret}},
+		{name: "source api token", object: SourceConfig{Name: "pve", APIToken: secret}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			for _, format := range []string{"%s", "%v", "%+v"} {
+				out := fmt.Sprintf(format, tt.object)
+				if strings.Contains(out, secret) {
+					t.Errorf("Sprintf(%q) leaks the secret: %s", format, out)
+				}
+				if !strings.Contains(out, "***") {
+					t.Errorf("Sprintf(%q) does not show the redaction marker: %s", format, out)
+				}
+			}
+		})
+	}
+}
+
+func TestSourceTimeout(t *testing.T) {
+	const configTemplate = `netbox:
+  apiToken: "netbox-token"
+  hostname: netbox.example.com
+source:
+  - name: pve
+    type: proxmox
+    hostname: pve.example.com
+    username: root@pam
+    password: secret
+%s`
+	tests := []struct {
+		name        string
+		extraLine   string
+		wantTimeout int
+		wantErr     bool
+	}{
+		{name: "default", extraLine: "", wantTimeout: constants.DefaultAPITimeout},
+		{name: "custom", extraLine: "    timeout: 5\n", wantTimeout: 5},
+		{name: "negative", extraLine: "    timeout: -1\n", wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "config.yaml")
+			if err := os.WriteFile(path, []byte(fmt.Sprintf(configTemplate, tt.extraLine)), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			config, err := ParseConfig(path)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("ParseConfig() error = %v, wantErr %t", err, tt.wantErr)
+			}
+			if tt.wantErr {
+				return
+			}
+			if got := config.Sources[0].Timeout; got != tt.wantTimeout {
+				t.Errorf("source timeout = %d, want %d", got, tt.wantTimeout)
 			}
 		})
 	}

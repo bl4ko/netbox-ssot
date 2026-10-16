@@ -667,3 +667,13 @@ func TestSerializeOwners(t *testing.T) {
 		})
 	}
 }
+
+// The compiled filter is shared: counting allocations instead would be unreliable under
+// -race, where sync.Pool drops objects at random and regexp then allocates.
+func TestFilterInterfaceNameCompilesFilterOnce(t *testing.T) {
+	const filter = "(veth|docker|br-|isatap|vEthernet|Loopback)"
+	first := compiledInterfaceFilter(filter)
+	if second := compiledInterfaceFilter(filter); second != first {
+		t.Errorf("compiledInterfaceFilter() compiled %q twice, want the first compiled filter reused", filter)
+	}
+}

@@ -17,7 +17,7 @@ func (nbi *NetboxInventory) DeleteOrphans(hard bool) error {
 			deleteTypeStr = "hard"
 		}
 		objectAPIPath := nbi.OrphanManager.OrphanObjectPriority[i]
-		id2orphanItem := nbi.OrphanManager.Items[objectAPIPath]
+		id2orphanItem := nbi.OrphanManager.Deletable(objectAPIPath)
 		if len(id2orphanItem) == 0 {
 			continue
 		}

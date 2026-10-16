@@ -2,6 +2,7 @@ package utils
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
@@ -460,7 +461,34 @@ func TestMapAttributeDiff(t *testing.T) {
 	}
 }
 
+func TestMergeTagSlicesKeepsForeignSourceTags(t *testing.T) {
+	SetManagedSourceTagNames([]string{"Source: proxmox-a", "Source: proxmox-b"})
+	t.Cleanup(func() { SetManagedSourceTagNames(nil) })
+
+	newTags := []*objects.Tag{{ID: 1, Name: "Source: proxmox-a"}}
+	existingTags := []*objects.Tag{
+		{ID: 2, Name: "Source: proxmox-b"},
+		{ID: 3, Name: "Source: vcenter.example"},
+		{ID: 4, Name: "NetBox-synced"},
+		{ID: 5, Name: constants.SsotTagName},
+	}
+	merged, changed, err := mergeTagSlices(reflect.ValueOf(newTags), reflect.ValueOf(existingTags))
+	if err != nil {
+		t.Fatalf("mergeTagSlices() error = %v", err)
+	}
+	if !changed {
+		t.Errorf("mergeTagSlices() changed = false, want true")
+	}
+	want := []IDObject{{ID: 1}, {ID: 3}, {ID: 4}}
+	if !reflect.DeepEqual(merged, want) {
+		t.Errorf("mergeTagSlices() = %v, want %v", merged, want)
+	}
+}
+
 func TestPriorityMergeDiff(t *testing.T) {
+	SetManagedSourceTagNames([]string{"Source: test1", "Source: test2"})
+	t.Cleanup(func() { SetManagedSourceTagNames(nil) })
+
 	tests := []struct {
 		name           string
 		newStruct      interface{}
@@ -507,7 +535,7 @@ func TestPriorityMergeDiff(t *testing.T) {
 				"custom_fields": map[string]interface{}{
 					constants.CustomFieldSourceName: "test1",
 				},
-				"tags": []IDObject{{ID: 1}, {ID: 2}},
+				"tags": []IDObject{{ID: 1}, {ID: 2}, {ID: 3}},
 			},
 		},
 		{
@@ -546,6 +574,40 @@ func TestPriorityMergeDiff(t *testing.T) {
 			},
 			expectedDiff: map[string]interface{}{
 				"comments": "Added comment",
+			},
+		},
+		{
+			name:        "Lower priority source does not override choice and object fields",
+			resetFields: false,
+			newStruct: &objects.Vlan{
+				Name:   "Vlan1000",
+				Vid:    1000,
+				Status: &objects.VlanStatusDeprecated,
+				Tenant: &objects.Tenant{NetboxObject: objects.NetboxObject{ID: 7}, Name: "Tenant7"},
+				Site:   &objects.Site{NetboxObject: objects.NetboxObject{ID: 3}, Name: "Site3"},
+				NetboxObject: objects.NetboxObject{
+					CustomFields: map[string]interface{}{
+						constants.CustomFieldSourceName: "test1",
+					},
+				},
+			},
+			existingStruct: &objects.Vlan{
+				Name:   "Vlan1000",
+				Vid:    1000,
+				Status: &objects.VlanStatusActive,
+				Tenant: &objects.Tenant{NetboxObject: objects.NetboxObject{ID: 5}, Name: "Tenant5"},
+				NetboxObject: objects.NetboxObject{
+					CustomFields: map[string]interface{}{
+						constants.CustomFieldSourceName: "test2",
+					},
+				},
+			},
+			sourcePriority: map[string]int{
+				"test1": 1,
+				"test2": 0,
+			},
+			expectedDiff: map[string]interface{}{
+				"site": IDObject{ID: 3},
 			},
 		},
 	}
@@ -1235,6 +1297,9 @@ func Test_sliceToSet(t *testing.T) {
 }
 
 func TestMergeTagSlices(t *testing.T) {
+	SetManagedSourceTagNames([]string{"Source: test1", "Source: test2", "Source: old-source"})
+	t.Cleanup(func() { SetManagedSourceTagNames(nil) })
+
 	tests := []struct {
 		name         string
 		newTags      []*objects.Tag
@@ -1550,5 +1615,60 @@ func TestAddMapDiffSanitizesExistingMultiobjectCustomFields(t *testing.T) {
 	wantIDs := []interface{}{float64(4), float64(2)}
 	if !reflect.DeepEqual(mdcVlan, wantIDs) {
 		t.Errorf("mdc_vlan should be sanitized to IDs %v, got %v (%T)", wantIDs, mdcVlan, mdcVlan)
+	}
+}
+
+func TestJSONDiffMapExceptIDExplicitBoolPointer(t *testing.T) {
+	tests := []struct {
+		name     string
+		newIface *objects.Interface
+		existing *objects.Interface
+		want     map[string]interface{}
+	}{
+		{
+			name:     "explicit false disables an enabled interface",
+			newIface: &objects.Interface{Name: "eno3", Status: new(false)},
+			existing: &objects.Interface{Name: "eno3", Status: new(true)},
+			want:     map[string]interface{}{"enabled": false},
+		},
+		{
+			name:     "explicit true enables a disabled interface",
+			newIface: &objects.Interface{Name: "eno3", Status: new(true)},
+			existing: &objects.Interface{Name: "eno3", Status: new(false)},
+			want:     map[string]interface{}{"enabled": true},
+		},
+		{
+			name:     "explicit false is written when NetBox has no value",
+			newIface: &objects.Interface{Name: "eno3", Status: new(false)},
+			existing: &objects.Interface{Name: "eno3"},
+			want:     map[string]interface{}{"enabled": false},
+		},
+		{
+			name:     "unknown status leaves NetBox untouched",
+			newIface: &objects.Interface{Name: "eno3"},
+			existing: &objects.Interface{Name: "eno3", Status: new(false)},
+			want:     map[string]interface{}{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := JSONDiffMapExceptID(tt.newIface, tt.existing, false, map[string]int{})
+			if err != nil {
+				t.Fatalf("JSONDiffMapExceptID() error = %v", err)
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("JSONDiffMapExceptID() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNetboxJSONMarshalSendsExplicitFalseEnabled(t *testing.T) {
+	body, err := NetboxJSONMarshal(&objects.Interface{Name: "eno3", Status: new(false)})
+	if err != nil {
+		t.Fatalf("NetboxJSONMarshal() error = %v", err)
+	}
+	if !strings.Contains(string(body), `"enabled":false`) {
+		t.Errorf("NetboxJSONMarshal() = %s, want it to contain \"enabled\":false", body)
 	}
 }

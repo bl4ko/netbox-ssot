@@ -218,7 +218,7 @@ type VMInterface struct {
 	// MTU of the interface.
 	MTU int `json:"mtu,omitempty"`
 	// Enabled is true if interface is enabled, false otherwise.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 	// Related parent interface of this interface.
 	ParentInterface *VMInterface `json:"parent,omitempty"`
 	// Related bridged interface

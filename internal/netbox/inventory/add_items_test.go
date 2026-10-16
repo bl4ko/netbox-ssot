@@ -2,7 +2,13 @@ package inventory
 
 import (
 	"context"
+	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"reflect"
+	"strings"
+	"sync"
 	"testing"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
@@ -1277,6 +1283,284 @@ func TestNetboxInventory_applyDeviceFieldLengthLimitations(t *testing.T) {
 			tt.nbi.applyDeviceFieldLengthLimitations(tt.args.device)
 			if !reflect.DeepEqual(tt.want, tt.args.device) {
 				t.Errorf("%+v != %+v", tt.want, tt.args)
+			}
+		})
+	}
+}
+
+func TestAddPrefixDoesNotAdoptManualPrefix(t *testing.T) {
+	manualPrefix := &objects.Prefix{
+		NetboxObject: objects.NetboxObject{
+			ID:          12,
+			Description: "office LAN",
+			Tags:        []*objects.Tag{{ID: 40, Name: "manual"}},
+		},
+		Prefix: "192.0.2.0/24",
+	}
+	nbi := &NetboxInventory{
+		Logger:                mockLogger,
+		OrphanManager:         NewOrphanManager(mockLogger),
+		SsotTag:               &objects.Tag{ID: 1, Name: constants.SsotTagName},
+		SourcePriority:        map[string]int{},
+		NetboxAPI:             service.FailingMockNetboxClient,
+		prefixesIndexByPrefix: map[string]map[int]*objects.Prefix{"192.0.2.0/24": {0: manualPrefix}},
+	}
+	ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "proxmox-a")
+
+	got, err := nbi.AddPrefix(ctx, &objects.Prefix{Prefix: "192.0.2.0/24"})
+	if err != nil {
+		t.Fatalf("AddPrefix() error = %v, want the manual prefix returned without any API call", err)
+	}
+	if got != manualPrefix {
+		t.Errorf("AddPrefix() = %v, want the existing manual prefix", got)
+	}
+	if manualPrefix.HasTagByName(constants.SsotTagName) {
+		t.Errorf("manual prefix was tagged %s", constants.SsotTagName)
+	}
+}
+
+// newDuplicateIPServer fakes a NetBox that refuses to create a duplicate IP address
+// and lists existingIPsJSON for it. It records the IDs of the patched IP addresses.
+func newDuplicateIPServer(t *testing.T, existingIPsJSON string) (*service.NetboxClient, func() []string) {
+	t.Helper()
+	var mu sync.Mutex
+	patched := []string{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = io.WriteString(w, `{"address":["Duplicate IP address found in global table: 10.0.0.5/24"]}`)
+		case http.MethodGet:
+			_, _ = io.WriteString(w, fmt.Sprintf(`{"count":1,"next":null,"previous":null,"results":%s}`, existingIPsJSON))
+		case http.MethodPatch:
+			mu.Lock()
+			patched = append(patched, strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/api/ipam/ip-addresses/"), "/"))
+			mu.Unlock()
+			_, _ = io.WriteString(w, `{"id":1,"address":"10.0.0.5/24"}`)
+		}
+	}))
+	t.Cleanup(server.Close)
+	client := &service.NetboxClient{
+		HTTPClient: &http.Client{},
+		Logger:     mockLogger,
+		BaseURL:    server.URL,
+		APIToken:   "testtoken",
+		Timeout:    constants.DefaultAPITimeout,
+	}
+	return client, func() []string {
+		mu.Lock()
+		defer mu.Unlock()
+		out := make([]string, len(patched))
+		copy(out, patched)
+		return out
+	}
+}
+
+func TestAddIPAddressDuplicateOnlyReassignsUnassignedIPOfSameVRF(t *testing.T) {
+	tests := []struct {
+		name        string
+		existingIPs string
+		wantErr     bool
+		wantPatched []string
+	}{
+		{
+			name:        "IP assigned to another object is not taken over",
+			existingIPs: `[{"id":100,"address":"10.0.0.5/24","assigned_object_type":"dcim.interface","assigned_object_id":7}]`,
+			wantErr:     true,
+			wantPatched: []string{},
+		},
+		{
+			name:        "unassigned IP of another VRF is not taken over",
+			existingIPs: `[{"id":101,"address":"10.0.0.5/24","vrf":{"id":5,"name":"mgmt"}}]`,
+			wantErr:     true,
+			wantPatched: []string{},
+		},
+		{
+			name: "unassigned IP of the same VRF is reassigned",
+			existingIPs: `[{"id":102,"address":"10.0.0.5/24","assigned_object_type":"dcim.interface","assigned_object_id":7},` +
+				`{"id":103,"address":"10.0.0.5/24"}]`,
+			wantErr:     false,
+			wantPatched: []string{"103"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client, patched := newDuplicateIPServer(t, tt.existingIPs)
+			nbi := &NetboxInventory{
+				Logger:           mockLogger,
+				OrphanManager:    NewOrphanManager(mockLogger),
+				SsotTag:          &objects.Tag{ID: 1, Name: constants.SsotTagName},
+				SourcePriority:   map[string]int{},
+				NetboxAPI:        client,
+				ipAddressesIndex: map[constants.ContentType]map[string]map[string]map[string]*objects.IPAddress{},
+			}
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "proxmox-a")
+			_, err := nbi.AddIPAddress(ctx, &objects.IPAddress{
+				Address:            "10.0.0.5/24",
+				AssignedObjectType: constants.ContentTypeVirtualizationVMInterface,
+				AssignedObjectID:   60,
+			})
+			if (err != nil) != tt.wantErr {
+				t.Errorf("AddIPAddress() error = %v, wantErr %t", err, tt.wantErr)
+			}
+			if got := patched(); !reflect.DeepEqual(got, tt.wantPatched) {
+				t.Errorf("patched IP addresses = %v, want %v", got, tt.wantPatched)
+			}
+		})
+	}
+}
+
+func TestAddTagIfMissingLeavesExistingTagUntouched(t *testing.T) {
+	existingTag := &objects.Tag{ID: 7, Name: "prod", Slug: "prod", Color: "f44336"}
+	nbi := &NetboxInventory{
+		Logger:          mockLogger,
+		SourcePriority:  map[string]int{},
+		NetboxAPI:       service.FailingMockNetboxClient,
+		tagsIndexByName: map[string]*objects.Tag{"prod": existingTag},
+	}
+	ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "proxmox-a")
+
+	got, err := nbi.AddTagIfMissing(ctx, &objects.Tag{Name: "prod", Slug: "prod", Color: constants.ColorGreen})
+	if err != nil {
+		t.Fatalf("AddTagIfMissing() error = %v, want the existing tag without any API call", err)
+	}
+	if got != existingTag || existingTag.Color != "f44336" {
+		t.Errorf("AddTagIfMissing() = %v, want the existing red tag untouched", got)
+	}
+}
+
+func TestAddIPAddressDuplicateReturnsLookupAndPatchErrors(t *testing.T) {
+	permissionDenied := `{"detail":"You do not have permission to perform this action."}`
+	tests := []struct {
+		name      string
+		failGet   bool
+		failPatch bool
+	}{
+		{name: "lookup of the existing IP fails", failGet: true},
+		{name: "reassignment of the existing IP fails", failPatch: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testAddIPAddressDuplicateError(t, permissionDenied, tt.failGet, tt.failPatch)
+		})
+	}
+}
+
+func testAddIPAddressDuplicateError(t *testing.T, failure string, failGet, failPatch bool) {
+	t.Helper()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodPost:
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = io.WriteString(w, `{"address":["Duplicate IP address found in global table: 10.0.0.5/24"]}`)
+		case r.Method == http.MethodGet && failGet, r.Method == http.MethodPatch && failPatch:
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = io.WriteString(w, failure)
+		case r.Method == http.MethodGet:
+			_, _ = io.WriteString(w, `{"count":1,"next":null,"previous":null,"results":[{"id":103,"address":"10.0.0.5/24"}]}`)
+		case r.Method == http.MethodPatch:
+			_, _ = io.WriteString(w, `{"id":103,"address":"10.0.0.5/24"}`)
+		}
+	}))
+	defer server.Close()
+	nbi := &NetboxInventory{
+		Logger:         mockLogger,
+		OrphanManager:  NewOrphanManager(mockLogger),
+		SsotTag:        &objects.Tag{ID: 1, Name: constants.SsotTagName},
+		SourcePriority: map[string]int{},
+		NetboxAPI: &service.NetboxClient{
+			HTTPClient: &http.Client{},
+			Logger:     mockLogger,
+			BaseURL:    server.URL,
+			APIToken:   "testtoken",
+			Timeout:    constants.DefaultAPITimeout,
+		},
+		ipAddressesIndex: map[constants.ContentType]map[string]map[string]map[string]*objects.IPAddress{},
+	}
+	ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "proxmox-a")
+
+	_, err := nbi.AddIPAddress(ctx, &objects.IPAddress{Address: "10.0.0.5/24"})
+	if err == nil {
+		t.Fatalf("AddIPAddress() = nil error, want the NetBox failure")
+	}
+	if !strings.Contains(err.Error(), "permission") {
+		t.Errorf("AddIPAddress() error = %q, want the NetBox failure (permission denied)", err)
+	}
+}
+
+// newRecordingServer fakes a NetBox that accepts every PATCH and records its body.
+func newRecordingServer(t *testing.T) (*service.NetboxClient, func() []string) {
+	t.Helper()
+	var mu sync.Mutex
+	bodies := []string{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		mu.Lock()
+		bodies = append(bodies, r.Method+" "+r.URL.Path+" "+string(body))
+		mu.Unlock()
+		_, _ = io.WriteString(w, `{"id":9,"name":"eno1","device":{"id":7,"name":"pve01"}}`)
+	}))
+	t.Cleanup(server.Close)
+	client := &service.NetboxClient{
+		HTTPClient: &http.Client{}, Logger: mockLogger, BaseURL: server.URL,
+		APIToken: "testtoken", Timeout: constants.DefaultAPITimeout,
+	}
+	return client, func() []string {
+		mu.Lock()
+		defer mu.Unlock()
+		out := make([]string, len(bodies))
+		copy(out, bodies)
+		return out
+	}
+}
+
+func TestClearInterfaceLAG(t *testing.T) {
+	tests := []struct {
+		name        string
+		ownerSource string
+		priorities  map[string]int
+		wantPatches []string
+	}{
+		{
+			name:        "the member's source clears its LAG",
+			ownerSource: "proxmox-a",
+			priorities:  map[string]int{},
+			wantPatches: []string{`PATCH /api/dcim/interfaces/9/ {"lag":null}`},
+		},
+		{
+			name:        "a source of lower priority leaves it alone",
+			ownerSource: "vcenter",
+			priorities:  map[string]int{"vcenter": 0, "proxmox-a": 1},
+			wantPatches: []string{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client, patches := newRecordingServer(t)
+			host := &objects.Device{NetboxObject: objects.NetboxObject{ID: 7}, Name: "pve01"}
+			bond := &objects.Interface{NetboxObject: objects.NetboxObject{ID: 8}, Name: "bond0", Device: host}
+			member := &objects.Interface{
+				NetboxObject: objects.NetboxObject{
+					ID:           9,
+					CustomFields: map[string]interface{}{constants.CustomFieldSourceName: tt.ownerSource},
+				},
+				Name: "eno1", Device: host, LAG: bond,
+			}
+			nbi := &NetboxInventory{
+				Logger:         mockLogger,
+				SourcePriority: tt.priorities,
+				NetboxAPI:      client,
+				interfacesIndexByDeviceIDAndName: map[int]map[string]*objects.Interface{
+					7: {"bond0": bond, "eno1": member},
+				},
+				interfacesIndexByID: map[int]*objects.Interface{8: bond, 9: member},
+			}
+			ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "proxmox-a")
+			if err := nbi.ClearInterfaceLAG(ctx, host, "eno1"); err != nil {
+				t.Fatalf("ClearInterfaceLAG() error = %v", err)
+			}
+			if got := patches(); !reflect.DeepEqual(got, tt.wantPatches) {
+				t.Errorf("requests = %q, want %q", got, tt.wantPatches)
 			}
 		})
 	}
