@@ -79,6 +79,22 @@ func hasPriorityOver(newObj, existingObj reflect.Value, source2priority map[stri
 	return true
 }
 
+// HasSourcePriority reports whether newSource may overwrite what existingSource synced:
+// true when either is unknown, otherwise when its rank in source2priority is lower or
+// equal (sources missing from it rank last), as for the fields of a diff.
+func HasSourcePriority(newSource, existingSource string, source2priority map[string]int) bool {
+	if newSource == "" || existingSource == "" {
+		return true
+	}
+	rank := func(source string) int {
+		if priority, ok := source2priority[source]; ok {
+			return priority
+		}
+		return int(^uint(0) >> 1)
+	}
+	return rank(newSource) <= rank(existingSource)
+}
+
 // JSONDiffMapExceptID compares two objects and returns a map of fields
 // (represented by their JSON tag names) that are different with their
 // values from newObj.
@@ -158,6 +174,18 @@ func JSONDiffMapExceptID(
 		// Check if elements are pointers, in that case get the elements they are pointing to
 		newObjectField := newObject.Field(i)
 		existingObjectField := existingObject.Field(i)
+
+		// A set pointer to a basic value is compared even when zero (e.g. enabled: false)
+		if isExplicitBasicValue(newObjectField) {
+			newValue := newObjectField.Elem().Interface()
+			if existingObjectField.IsNil() {
+				diff[jsonTag] = newValue
+			} else if newValue != existingObjectField.Elem().Interface() && hasPriority {
+				diff[jsonTag] = newValue
+			}
+			continue
+		}
+
 		if newObjectField.Kind() == reflect.Pointer {
 			newObjectField = newObjectField.Elem()
 			existingObjectField = existingObjectField.Elem()
@@ -214,8 +242,9 @@ func JSONDiffMapExceptID(
 
 // mergeTagSlices merges two slices of *objects.Tag.
 // It keeps all tags from existingSlice that are NOT managed by netbox-ssot
-// (i.e. tags whose name does not start with "Source:"),
-// and replaces/adds all tags from newSlice.
+// (i.e. tags other than its own configured source tags and internal tags),
+// and replaces/adds all tags from newSlice. Source tags of other tools, which
+// share the "Source: " prefix, are kept.
 // Returns the merged slice as []IDObject, whether it changed, and an error.
 func mergeTagSlices(
 	newSlice reflect.Value,
@@ -256,7 +285,7 @@ func mergeTagSlices(
 	}
 
 	// Add existing tags that are NOT managed by netbox-ssot source tagging
-	// A tag is considered "managed by source" if its name starts with "Source: "
+	// A tag is considered "managed by source" if it is one of the configured source tags
 	if existingSlice.IsValid() {
 		for i := 0; i < existingSlice.Len(); i++ {
 			elem := existingSlice.Index(i)
@@ -272,7 +301,7 @@ func mergeTagSlices(
 			default:
 				return nil, false, fmt.Errorf("existing tag slice contains non-Tag element")
 			}
-			isManagedBySource := strings.HasPrefix(tag.Name, "Source: ") ||
+			isManagedBySource := IsManagedSourceTag(tag.Name) ||
 				tag.Name == constants.SsotTagName ||
 				tag.Name == constants.OrphanTagName ||
 				tag.Name == constants.IgnoreDeviceTypeTagName
@@ -429,7 +458,9 @@ func addStructDiff(
 
 	// We check if struct is a objects.Choice (special netbox struct)
 	if isChoiceEmbedded(newObj) {
-		if !existingObj.IsValid() || newObj.Interface() != existingObj.Interface() {
+		if !existingObj.IsValid() {
+			diffMap[jsonTag] = choiceValue(newObj)
+		} else if newObj.Interface() != existingObj.Interface() && hasPriority {
 			diffMap[jsonTag] = choiceValue(newObj)
 		}
 		return nil
@@ -454,7 +485,7 @@ func addStructDiff(
 				return fmt.Errorf("id field is not an int")
 			}
 			diffMap[jsonTag] = IDObject{ID: idValue}
-		} else if newObj.FieldByName("ID").Interface() != existingObj.FieldByName("ID").Interface() {
+		} else if newObj.FieldByName("ID").Interface() != existingObj.FieldByName("ID").Interface() && hasPriority {
 			// Objects have ID field, compare their ids
 			idValue, ok := idField.Interface().(int)
 			if !ok {

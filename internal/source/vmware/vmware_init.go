@@ -35,33 +35,9 @@ func (vc *VmwareSource) initNetworks(ctx context.Context, containerView *view.Co
 		}
 
 		if vlanInfo, ok := dvpg.Config.DefaultPortConfig.(*types.VMwareDVSPortSetting); ok {
-			var vlanIDs []int
-			var vlanIDRanges []string
-			private := false
-			switch v := vlanInfo.Vlan.(type) {
-			case *types.VmwareDistributedVirtualSwitchTrunkVlanSpec:
-				for _, item := range v.VlanId {
-					switch {
-					case item.Start == item.End:
-						vlanIDs = append(vlanIDs, int(item.Start))
-						vlanIDRanges = append(vlanIDRanges, fmt.Sprintf("%d", item.Start))
-					case item.Start == constants.UntaggedVID && item.End == constants.MaxVID:
-						vlanIDs = append(vlanIDs, constants.TaggedVID)
-						vlanIDRanges = append(vlanIDRanges, fmt.Sprintf("%d-%d", item.Start, item.End))
-					default:
-						for vlan := item.Start; vlan <= item.End; vlan++ {
-							vlanIDs = append(vlanIDs, int(vlan))
-							vlanIDRanges = append(vlanIDRanges, fmt.Sprintf("%d-%d", item.Start, item.End))
-						}
-					}
-				}
-			case *types.VmwareDistributedVirtualSwitchPvlanSpec:
-				vlanIDs = append(vlanIDs, int(v.PvlanId))
-				private = true
-			case *types.VmwareDistributedVirtualSwitchVlanIdSpec:
-				vlanIDs = append(vlanIDs, int(v.VlanId))
-			default:
-				return fmt.Errorf("unknown vlan info spec %T", v)
+			vlanIDs, vlanIDRanges, private, err := parseDvpgVlanSpec(vlanInfo.Vlan)
+			if err != nil {
+				return err
 			}
 
 			for _, vid := range vlanIDs {
@@ -199,8 +175,11 @@ func (vc *VmwareSource) initHosts(ctx context.Context, containerView *view.Conta
 			if host.Config.Network.Portgroup != nil {
 				for _, pgroup := range host.Config.Network.Portgroup {
 					if pgroup.Spec.Name != "" {
-						nicOrder := pgroup.ComputedPolicy.NicTeaming.NicOrder
 						pgroupNics := []string{}
+						var nicOrder *types.HostNicOrderPolicy
+						if pgroup.ComputedPolicy.NicTeaming != nil {
+							nicOrder = pgroup.ComputedPolicy.NicTeaming.NicOrder
+						}
 						if nicOrder != nil {
 							if len(nicOrder.ActiveNic) > 0 {
 								pgroupNics = append(pgroupNics, nicOrder.ActiveNic...)
@@ -246,4 +225,40 @@ func (vc *VmwareSource) initVms(ctx context.Context, containerView *view.Contain
 		vc.Vms[vm.Self.Value] = vm
 	}
 	return nil
+}
+
+// parseDvpgVlanSpec returns the VLAN IDs of a distributed port group VLAN spec, their
+// textual ranges, and whether the port group is a private VLAN.
+func parseDvpgVlanSpec(
+	spec types.BaseVmwareDistributedVirtualSwitchVlanSpec,
+) ([]int, []string, bool, error) {
+	var vlanIDs []int
+	var vlanIDRanges []string
+	private := false
+	switch v := spec.(type) {
+	case *types.VmwareDistributedVirtualSwitchTrunkVlanSpec:
+		for _, item := range v.VlanId {
+			switch {
+			case item.Start == item.End:
+				vlanIDs = append(vlanIDs, int(item.Start))
+				vlanIDRanges = append(vlanIDRanges, fmt.Sprintf("%d", item.Start))
+			case item.Start == constants.UntaggedVID && item.End == constants.MaxVID:
+				vlanIDs = append(vlanIDs, constants.TaggedVID)
+				vlanIDRanges = append(vlanIDRanges, fmt.Sprintf("%d-%d", item.Start, item.End))
+			default:
+				vlanIDRanges = append(vlanIDRanges, fmt.Sprintf("%d-%d", item.Start, item.End))
+				for vlan := item.Start; vlan <= item.End; vlan++ {
+					vlanIDs = append(vlanIDs, int(vlan))
+				}
+			}
+		}
+	case *types.VmwareDistributedVirtualSwitchPvlanSpec:
+		vlanIDs = append(vlanIDs, int(v.PvlanId))
+		private = true
+	case *types.VmwareDistributedVirtualSwitchVlanIdSpec:
+		vlanIDs = append(vlanIDs, int(v.VlanId))
+	default:
+		return nil, nil, false, fmt.Errorf("unknown vlan info spec %T", v)
+	}
+	return vlanIDs, vlanIDRanges, private, nil
 }

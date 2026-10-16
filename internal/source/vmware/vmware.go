@@ -84,7 +84,7 @@ type HostPortgroupData struct {
 	nics    []string
 }
 
-func (vc *VmwareSource) Init() error {
+func (vc *VmwareSource) Init() (initErr error) {
 	// Initialize the connection
 	vc.Logger.Debug(vc.Ctx, "vmware source ", vc.SourceConfig.Name)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -110,6 +110,8 @@ func (vc *VmwareSource) Init() error {
 
 	// How to set custom ca certificates for govmomi: https://github.com/vmware/govmomi/issues/1200#issuecomment-412950179
 	soapClient := soap.NewClient(url, !vc.SourceConfig.ValidateCert)
+	// Bound every vCenter call, so an unresponsive vCenter cannot block the run forever
+	soapClient.Timeout = time.Duration(vc.SourceConfig.Timeout) * time.Second
 	if vc.CAFile != "" {
 		err = soapClient.SetRootCAs(vc.CAFile)
 		if err != nil {
@@ -128,6 +130,27 @@ func (vc *VmwareSource) Init() error {
 	if err = sessionManager.Login(ctx, url.User); err != nil {
 		return fmt.Errorf("login failed: %s", err)
 	}
+	// Log out on every return, failures included, so failed runs do not pile up sessions
+	defer func() {
+		if err := sessionManager.Logout(ctx); err != nil {
+			logoutErr := fmt.Errorf(
+				"error occurred when ending vmware connection to host %s: %s",
+				vc.SourceConfig.Hostname,
+				err,
+			)
+			if initErr == nil {
+				initErr = logoutErr
+			} else {
+				vc.Logger.Errorf(vc.Ctx, "%s", logoutErr)
+			}
+			return
+		}
+		vc.Logger.Debug(
+			vc.Ctx,
+			"Successfully closed connection to vmware host: ",
+			vc.SourceConfig.Hostname,
+		)
+	}()
 
 	// View manager is used to create and manage views. Views are a mechanism in vSphere
 	// to group and manage objects in the inventory.
@@ -173,9 +196,12 @@ func (vc *VmwareSource) Init() error {
 		return fmt.Errorf("create cluster datacenter relation failed: %s", err)
 	}
 
-	err = vc.CreateObjectTagsRelation(ctx, vim25Client, url.User)
-	if err != nil {
-		return fmt.Errorf("create object tags relation failed: %s", err)
+	// Tags come from the REST API, which ignoreTags must not depend on
+	if !vc.SourceConfig.IgnoreTags {
+		err = vc.CreateObjectTagsRelation(ctx, vim25Client, url.User)
+		if err != nil {
+			return fmt.Errorf("create object tags relation failed: %s", err)
+		}
 	}
 
 	// Initialize items from vsphere API to local storage
@@ -208,25 +234,10 @@ func (vc *VmwareSource) Init() error {
 		vc.Logger.Errorf(vc.Ctx, "failed destroying containerView: %s", err)
 	}
 
-	err = sessionManager.Logout(ctx)
-	if err != nil {
-		return fmt.Errorf(
-			"error occurred when ending vmware connection to host %s: %s",
-			vc.SourceConfig.Hostname,
-			err,
-		)
-	}
-
-	vc.Logger.Debug(
-		vc.Ctx,
-		"Successfully closed connection to vmware host: ",
-		vc.SourceConfig.Hostname,
-	)
-
 	return nil
 }
 
-// Function that syncs all data from oVirt to Netbox.
+// Function that syncs all data from vSphere to Netbox.
 func (vc *VmwareSource) Sync(nbi *inventory.NetboxInventory) error {
 	syncFunctions := []func(*inventory.NetboxInventory) error{}
 	if !vc.SourceConfig.IgnoreTags {
@@ -337,6 +348,8 @@ func (vc *VmwareSource) CreateObjectTagsRelation(
 	userInfo *url.Userinfo,
 ) error {
 	restClient := rest.NewClient(vim25client)
+	// The REST client gets a fresh http.Client, which does not inherit the SOAP timeout
+	restClient.Timeout = time.Duration(vc.SourceConfig.Timeout) * time.Second
 
 	_, err := restClient.Session(ctx)
 	if err != nil {
@@ -360,22 +373,24 @@ func (vc *VmwareSource) CreateObjectTagsRelation(
 	}
 
 	objectNames2tags := make(map[string][]*tags.Tag)
-	for _, tag := range tagList {
-		objs, err := tagManager.GetAttachedObjectsOnTags(ctx, []string{tag})
-		if err != nil {
-			return fmt.Errorf("failed getting attached objects on tag %+v: %s", tag, err)
+	if len(tagList) == 0 {
+		vc.Object2Tags = objectNames2tags
+		return nil
+	}
+	// One request for the objects of every tag, then one per attached tag to read it
+	attachedObjects, err := tagManager.GetAttachedObjectsOnTags(ctx, tagList)
+	if err != nil {
+		return fmt.Errorf("failed getting attached objects on tags: %s", err)
+	}
+	for _, attached := range attachedObjects {
+		if attached.Tag == nil {
+			continue
 		}
-		if len(objs) > 0 {
-			tagInfo, err := tagManager.GetTag(ctx, tag)
-			if err != nil {
-				return fmt.Errorf("failed getting tag %+v info: %s", tag, err)
-			}
-			for _, elem := range objs[0].ObjectIDs {
-				objectNames2tags[elem.Reference().Value] = append(
-					objectNames2tags[elem.Reference().Value],
-					tagInfo,
-				)
-			}
+		for _, elem := range attached.ObjectIDs {
+			objectNames2tags[elem.Reference().Value] = append(
+				objectNames2tags[elem.Reference().Value],
+				attached.Tag,
+			)
 		}
 	}
 

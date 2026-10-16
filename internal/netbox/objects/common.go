@@ -21,6 +21,9 @@ const (
 	MaxDescriptionLength = 200
 )
 
+// nilName stands for a missing nested object in String methods, as fmt prints nil pointers.
+const nilName = "<nil>"
+
 // Struct representing attributes that are common to all objects in Netbox.
 // We can this struct as an embedded struct in other structs that represent
 // Netbox objects.

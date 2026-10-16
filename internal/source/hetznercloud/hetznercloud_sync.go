@@ -175,7 +175,7 @@ func (hcs *Source) syncServer(
 		},
 		VM:      netboxVM,
 		Name:    "eth0",
-		Enabled: true,
+		Enabled: new(true),
 	}
 
 	netboxEth0, err := nbi.AddVMInterface(hcs.Ctx, eth0Interface)
@@ -247,7 +247,7 @@ func (hcs *Source) syncServer(
 			},
 			VM:      netboxVM,
 			Name:    ifaceName,
-			Enabled: true,
+			Enabled: new(true),
 		}
 
 		netboxPrivIface, err := nbi.AddVMInterface(hcs.Ctx, privInterface)

@@ -152,7 +152,7 @@ func (is *IOSXESource) syncInterfaces(nbi *inventory.NetboxInventory) error {
 			Type:   ifaceType,
 			Device: is.NBDevice,
 			Speed:  ifaceLinkSpeed,
-			Status: ifaceEnabled,
+			Status: new(ifaceEnabled),
 		})
 		if err != nil {
 			return fmt.Errorf("add interface: %s", err)

@@ -218,7 +218,7 @@ type VMInterface struct {
 	// MTU of the interface.
 	MTU int `json:"mtu,omitempty"`
 	// Enabled is true if interface is enabled, false otherwise.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 	// Related parent interface of this interface.
 	ParentInterface *VMInterface `json:"parent,omitempty"`
 	// Related bridged interface
@@ -232,7 +232,11 @@ type VMInterface struct {
 }
 
 func (vmi VMInterface) String() string {
-	return fmt.Sprintf("VMInterface{Name: %s, VM: %s}", vmi.Name, vmi.VM.Name)
+	vm := nilName
+	if vmi.VM != nil {
+		vm = vmi.VM.Name
+	}
+	return fmt.Sprintf("VMInterface{Name: %s, VM: %s}", vmi.Name, vm)
 }
 
 // VMInterface implements IDItem interface.
@@ -270,10 +274,14 @@ type VirtualDisk struct {
 }
 
 func (vd VirtualDisk) String() string {
+	vm := nilName
+	if vd.VM != nil {
+		vm = vd.VM.Name
+	}
 	return fmt.Sprintf(
 		"VirtualDisk{Name: %s, VM: %s}",
 		vd.Name,
-		vd.VM.Name,
+		vm,
 	)
 }
 

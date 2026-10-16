@@ -230,7 +230,11 @@ type DeviceType struct {
 }
 
 func (dt DeviceType) String() string {
-	return fmt.Sprintf("DeviceType{Manufacturer: %s, Model: %s}", dt.Manufacturer.Name, dt.Model)
+	manufacturer := nilName
+	if dt.Manufacturer != nil {
+		manufacturer = dt.Manufacturer.Name
+	}
+	return fmt.Sprintf("DeviceType{Manufacturer: %s, Model: %s}", manufacturer, dt.Model)
 }
 
 // DeviceType implements OrphanItem interface.
@@ -657,7 +661,7 @@ type Interface struct {
 	// Name is the name of the interface. This field is required.
 	Name string `json:"name,omitempty"`
 	// Status whether the interface is enabled or not.
-	Status bool `json:"enabled,omitempty"`
+	Status *bool `json:"enabled,omitempty"`
 	// Type is the type of interface. This field is required. Can only be one of the predetermined values.
 	Type *InterfaceType `json:"type,omitempty"`
 	// Interface speed in kbps
@@ -688,11 +692,18 @@ type Interface struct {
 }
 
 func (i Interface) String() string {
+	device, ifaceType := nilName, nilName
+	if i.Device != nil {
+		device = i.Device.Name
+	}
+	if i.Type != nil {
+		ifaceType = i.Type.Label
+	}
 	return fmt.Sprintf(
 		"Interface{Name: %s, Device: %s, Type: %s}",
 		i.Name,
-		i.Device.Name,
-		i.Type.Label,
+		device,
+		ifaceType,
 	)
 }
 

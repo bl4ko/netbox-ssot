@@ -44,7 +44,7 @@ func MatchClusterToTenant(
 	return nil, nil
 }
 
-// Function that matches cluster to tenant using regexRelationsMap.
+// Function that matches cluster to site using regexRelationsMap.
 //
 // In case there is no match or regexRelations is nil, it will return nil.
 func MatchClusterToSite(
@@ -187,7 +187,7 @@ func MatchVlanToTenant(
 	return nil, nil
 }
 
-// MathcVlanToSite matches vlanName to Site using vlanSiteRelations.
+// MatchVlanToSite matches vlanName to Site using vlanSiteRelations.
 //
 // In case there is no match or vlanSiteRelations is nil, it returns nil.
 func MatchVlanToSite(
@@ -222,7 +222,9 @@ func MatchVlanToSite(
 
 // Function that matches Host from hostName to Site using hostSiteRelations.
 //
-// In case that there is not match or hostSiteRelations is nil, it will return default site.
+// When hostSiteRelations is nil, it returns nil, letting the caller pick the site
+// (e.g. the site of the host's cluster). When hostSiteRelations is set but does not
+// match hostName, it returns the default site.
 func MatchHostToSite(
 	ctx context.Context,
 	nbi *inventory.NetboxInventory,
@@ -310,7 +312,7 @@ func MatchHostToRole(
 
 // Function that matches Vm from vmName to Tenant using vmTenantRelations.
 //
-// In case that there is not match or hostTenantRelations is nil, it will return nil.
+// In case that there is not match or vmTenantRelations is nil, it will return nil.
 func MatchVMToTenant(
 	ctx context.Context,
 	nbi *inventory.NetboxInventory,
@@ -343,7 +345,7 @@ func MatchVMToTenant(
 
 // MatchVMToRole matches VM from vmName to DeviceRole using vmRoleRelations.
 //
-// In case that there is not match or hostRoleRelations is nil, it will return nil.
+// In case that there is not match or vmRoleRelations is nil, it will return nil.
 func MatchVMToRole(
 	ctx context.Context,
 	nbi *inventory.NetboxInventory,

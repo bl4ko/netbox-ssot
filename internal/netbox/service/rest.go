@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"strings"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/mapper"
@@ -104,6 +105,45 @@ func GetAll[T any](
 	netboxClient.Logger.Debugf(ctx, "Successfully received all %T: %v", dummy, allResults)
 
 	return allResults, nil
+}
+
+// PatchObject patches the object objectID of type T with body, like Patch. In dry-run
+// mode nothing is sent and NetBox returns nothing, so it returns the object as it would
+// be after the patch: current, with the fields of target whose JSON key is in body.
+// Callers index the returned object, and an object holding only its ID would lose its
+// name and relations for the rest of the run.
+func PatchObject[T any](
+	ctx context.Context,
+	netboxClient *NetboxClient,
+	objectID int,
+	body map[string]interface{},
+	current *T,
+	target *T,
+) (*T, error) {
+	if netboxClient.DryRun {
+		netboxClient.Logger.Infof(ctx, "[DRY-RUN] Would update %T (ID: %d) with: %v", *target, objectID, body)
+		result := *current
+		applyPatchedFields(reflect.ValueOf(&result).Elem(), reflect.ValueOf(target).Elem(), body)
+		setFakeID(&result, objectID)
+		return &result, nil
+	}
+	return Patch[T](ctx, netboxClient, objectID, body)
+}
+
+// applyPatchedFields copies into result the fields of target, embedded structs
+// included, whose JSON key is in body.
+func applyPatchedFields(result, target reflect.Value, body map[string]interface{}) {
+	for i := range result.NumField() {
+		field := result.Type().Field(i)
+		if field.Anonymous && field.Type.Kind() == reflect.Struct {
+			applyPatchedFields(result.Field(i), target.Field(i), body)
+			continue
+		}
+		jsonKey := strings.Split(field.Tag.Get("json"), ",")[0]
+		if _, patched := body[jsonKey]; patched && jsonKey != "" && result.Field(i).CanSet() {
+			result.Field(i).Set(target.Field(i))
+		}
+	}
 }
 
 // Patch func patches the object of type T, with the given api path and body.
