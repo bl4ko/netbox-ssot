@@ -1472,7 +1472,7 @@ func (vc *VmwareSource) collectVMInterfaceData(
 	}
 	// Find corresponding guest NIC and get IP addresses and connected status
 	for _, guestNic := range vmwareVM.Guest.Net {
-		if intMac != guestNic.MacAddress {
+		if !strings.EqualFold(intMac, guestNic.MacAddress) {
 			continue
 		}
 		intConnected = guestNic.Connected
