@@ -230,7 +230,11 @@ type DeviceType struct {
 }
 
 func (dt DeviceType) String() string {
-	return fmt.Sprintf("DeviceType{Manufacturer: %s, Model: %s}", dt.Manufacturer.Name, dt.Model)
+	var manufacturer string
+	if dt.Manufacturer != nil {
+		manufacturer = dt.Manufacturer.Name
+	}
+	return fmt.Sprintf("DeviceType{Manufacturer: %s, Model: %s}", manufacturer, dt.Model)
 }
 
 // DeviceType implements OrphanItem interface.

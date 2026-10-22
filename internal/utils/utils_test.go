@@ -203,7 +203,7 @@ func TestConvertStringsToRegexPairs(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want map[string]string
+		want RegexRelations
 	}{
 		{
 			name: "TEst conversion of strings to regex pairs",
@@ -212,7 +212,11 @@ func TestConvertStringsToRegexPairs(t *testing.T) {
 					"regex1 = value1", "regex2 = value2", "regex3 = value3",
 				},
 			},
-			want: map[string]string{"regex1": "value1", "regex2": "value2", "regex3": "value3"},
+			want: RegexRelations{
+				{Regex: "regex1", Value: "value1"},
+				{Regex: "regex2", Value: "value2"},
+				{Regex: "regex3", Value: "value3"},
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -227,7 +231,7 @@ func TestConvertStringsToRegexPairs(t *testing.T) {
 func TestMatchStringToValue(t *testing.T) {
 	type args struct {
 		input    string
-		patterns map[string]string
+		patterns RegexRelations
 	}
 	tests := []struct {
 		name    string
@@ -239,8 +243,8 @@ func TestMatchStringToValue(t *testing.T) {
 			name: "Match string to value error",
 			args: args{
 				input: "can't see me",
-				patterns: map[string]string{
-					"$$$wrongregex\\": "wrong",
+				patterns: RegexRelations{
+					{Regex: "$$$wrongregex\\", Value: "wrong"},
 				},
 			},
 			want:    "",
@@ -250,8 +254,8 @@ func TestMatchStringToValue(t *testing.T) {
 			name: "Match string to value valid",
 			args: args{
 				input: "can't see me",
-				patterns: map[string]string{
-					"can't": "true",
+				patterns: RegexRelations{
+					{Regex: "can't", Value: "true"},
 				},
 			},
 			want:    "true",
@@ -261,11 +265,35 @@ func TestMatchStringToValue(t *testing.T) {
 			name: "No error with no matches",
 			args: args{
 				input: "can't see me",
-				patterns: map[string]string{
-					"john cena": "true",
+				patterns: RegexRelations{
+					{Regex: "john cena", Value: "true"},
 				},
 			},
 			want:    "",
+			wantErr: false,
+		},
+		{
+			name: "First matching relation wins",
+			args: args{
+				input: "host-01",
+				patterns: RegexRelations{
+					{Regex: ".*", Value: "default"},
+					{Regex: "host-01", Value: "specific"},
+				},
+			},
+			want:    "default",
+			wantErr: false,
+		},
+		{
+			name: "Specific relation before catch-all wins",
+			args: args{
+				input: "host-01",
+				patterns: RegexRelations{
+					{Regex: "host-01", Value: "specific"},
+					{Regex: ".*", Value: "default"},
+				},
+			},
+			want:    "specific",
 			wantErr: false,
 		},
 	}
@@ -280,6 +308,19 @@ func TestMatchStringToValue(t *testing.T) {
 				t.Errorf("MatchStringToValue() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestRegexRelationsGetValue(t *testing.T) {
+	relations := RegexRelations{
+		{Regex: ".*", Value: "default"},
+		{Regex: "key-1", Value: "value-1"},
+	}
+	if v, ok := relations.GetValue("key-1"); !ok || v != "value-1" {
+		t.Errorf("GetValue('key-1') = %q, %v; want 'value-1', true", v, ok)
+	}
+	if v, ok := relations.GetValue("nonexistent"); ok || v != "" {
+		t.Errorf("GetValue('nonexistent') = %q, %v; want '', false", v, ok)
 	}
 }
 
