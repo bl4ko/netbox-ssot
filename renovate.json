@@ -10,6 +10,7 @@
     ":pinDevDependencies"
   ],
   "platformAutomerge": true,
+  "postUpdateOptions": ["gomodTidy"],
   "pre-commit": {
     "enabled": true
   },
