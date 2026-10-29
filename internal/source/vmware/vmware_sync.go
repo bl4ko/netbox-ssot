@@ -1644,10 +1644,10 @@ func (vc *VmwareSource) addVMInterfaceIPs(
 				continue
 			}
 			vmIPv6Addresses = append(vmIPv6Addresses, nbIPv6Address)
-			prefix, mask, err := utils.GetPrefixAndMaskFromIPAddress(nbIPv6Address.Address)
+			prefix, _, err := utils.GetPrefixAndMaskFromIPAddress(nbIPv6Address.Address)
 			if err != nil {
 				vc.Logger.Warningf(vc.Ctx, "extract prefix from ip address: %s", err)
-			} else if mask != constants.MaxIPv6MaskBits {
+			} else if !utils.IsHostPrefix(prefix) {
 				prefixStruct := &objects.Prefix{
 					Prefix: prefix,
 					VRF:    ipVRF,
