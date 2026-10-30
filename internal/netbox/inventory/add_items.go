@@ -1326,6 +1326,20 @@ func (nbi *NetboxInventory) AddIPAddress(
 		}
 	}
 
+	// If the IP still isn't in the index, look for the same host address with a
+	// different mask (e.g. NetBox has 2001:db8::1/64 while the source reports
+	// 2001:db8::1/128). Reuse it instead of creating a duplicate.
+	if _, ok := nbi.ipAddressesIndex[objType][objName][ifaceName][indexKey]; !ok {
+		if foundKey, foundIP := findIPAddressByHostAcrossVRFs(
+			nbi.ipAddressesIndex[objType][objName][ifaceName], newIPAddress.Address,
+		); foundIP != nil {
+			if newIPAddress.VRF == nil {
+				newIPAddress.VRF = foundIP.VRF
+			}
+			indexKey = foundKey
+		}
+	}
+
 	if _, ok := nbi.ipAddressesIndex[objType][objName][ifaceName][indexKey]; ok {
 		oldIPAddress := nbi.ipAddressesIndex[objType][objName][ifaceName][indexKey]
 		nbi.OrphanManager.RemoveItem(oldIPAddress)
@@ -1373,11 +1387,21 @@ func (nbi *NetboxInventory) AddIPAddress(
 				"IP address %s already exists in NetBox but not in index. Trying to find and reassign...",
 				newIPAddress.Address,
 			)
+			// First try the exact address (with mask), then fall back to the
+			// host address only, which matches existing IPs with a different
+			// mask (e.g. NetBox has 2001:db8::1/64, source reports /128).
 			existingIPs, getErr := service.GetAll[objects.IPAddress](
 				ctx,
 				nbi.NetboxAPI,
 				fmt.Sprintf("&address=%s", url.QueryEscape(newIPAddress.Address)),
 			)
+			if getErr == nil && len(existingIPs) == 0 {
+				existingIPs, getErr = service.GetAll[objects.IPAddress](
+					ctx,
+					nbi.NetboxAPI,
+					fmt.Sprintf("&address=%s", url.QueryEscape(utils.GetIPAddressWithoutMask(newIPAddress.Address))),
+				)
+			}
 			if getErr != nil || len(existingIPs) == 0 {
 				return nil, err
 			}
@@ -1394,6 +1418,11 @@ func (nbi *NetboxInventory) AddIPAddress(
 				"dns_name":             newIPAddress.DNSName,
 				"tags":                 newIPAddress.Tags,
 				"custom_fields":        newIPAddress.CustomFields,
+			}
+			// If the existing IP has a different mask, update it to the
+			// source's address so NetBox converges to what the source reports.
+			if chosenIP.Address != newIPAddress.Address {
+				patchData["address"] = newIPAddress.Address
 			}
 			patchedIP, patchErr := service.Patch[objects.IPAddress](ctx, nbi.NetboxAPI, chosenIP.ID, patchData)
 			if patchErr != nil {

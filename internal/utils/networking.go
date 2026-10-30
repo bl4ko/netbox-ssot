@@ -156,3 +156,30 @@ func GetPrefixAndMaskFromIPAddress(ipAddress string) (string, int, error) {
 	maskBits, _ := ipNet.Mask.Size()
 	return ipNet.String(), maskBits, err
 }
+
+// IsHostPrefix reports whether the prefix of the given ipAddress
+// (of format ip/mask) is a host prefix, i.e. it contains only a single
+// address (e.g. 192.168.1.1/32 for IPv4 or 2001:db8::1/128 for IPv6).
+// Such prefixes should not be created in Netbox, because the corresponding
+// IPAddress object already covers them.
+func IsHostPrefix(ipAddress string) bool {
+	_, ipNet, err := net.ParseCIDR(ipAddress)
+	if err != nil {
+		return false
+	}
+	maskBits, _ := ipNet.Mask.Size()
+	if ipNet.IP.To4() != nil {
+		return maskBits == constants.MaxIPv4MaskBits
+	}
+	return maskBits == constants.MaxIPv6MaskBits
+}
+
+// GetIPAddressWithoutMask strips the mask from an ipAddress of format
+// ip/mask. 192.168.1.1/24 --> 192.168.1.1. If the address contains no
+// mask, it is returned unchanged.
+func GetIPAddressWithoutMask(ipAddress string) string {
+	if idx := strings.LastIndex(ipAddress, "/"); idx != -1 {
+		return ipAddress[:idx]
+	}
+	return ipAddress
+}

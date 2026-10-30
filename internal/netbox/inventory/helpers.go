@@ -197,6 +197,21 @@ func findIPAddressAcrossVRFs(index map[string]*objects.IPAddress, address string
 	return "", nil
 }
 
+// findIPAddressByHostAcrossVRFs searches for an IP address across all VRFs
+// in the index, comparing only the host part of the address (without mask).
+// This finds existing IPs whose mask differs from the requested one
+// (e.g. NetBox has 2001:db8::1/64 while the source reports 2001:db8::1/128).
+// Returns the index key and the found IP address, or empty string and nil if not found.
+func findIPAddressByHostAcrossVRFs(index map[string]*objects.IPAddress, address string) (string, *objects.IPAddress) {
+	hostAddress := utils.GetIPAddressWithoutMask(address)
+	for key, ip := range index {
+		if utils.GetIPAddressWithoutMask(ip.Address) == hostAddress {
+			return key, ip
+		}
+	}
+	return "", nil
+}
+
 // findPrefixAcrossVRFs searches for a prefix across all VRFs in the index.
 // Used when a source doesn't specify a VRF (VRF=nil) to find existing prefixes
 // that may have been manually assigned to a VRF in NetBox.

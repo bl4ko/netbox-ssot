@@ -723,7 +723,7 @@ func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *ob
 						ipAddress.IPAddress,
 					)
 				}
-				prefix, mask, err := utils.GetPrefixAndMaskFromIPAddress(nbIPAddress.Address)
+				prefix, _, err := utils.GetPrefixAndMaskFromIPAddress(nbIPAddress.Address)
 				if err != nil {
 					ps.Logger.Warningf(
 						ps.Ctx,
@@ -731,8 +731,7 @@ func (ps *ProxmoxSource) syncVMNetworks(nbi *inventory.NetboxInventory, nbVM *ob
 						nbIPAddress.Address,
 						err,
 					)
-				} else if (ipAddress.IPAddressType == "ipv4" && mask != constants.MaxIPv4MaskBits) ||
-					(ipAddress.IPAddressType == "ipv6" && mask != constants.MaxIPv6MaskBits) {
+				} else if !utils.IsHostPrefix(prefix) {
 					_, err = nbi.AddPrefix(ps.Ctx, &objects.Prefix{
 						Prefix: prefix,
 						VRF:    ipVRF,

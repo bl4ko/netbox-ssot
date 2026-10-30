@@ -351,6 +351,83 @@ func TestGetMaskAndPrefixFromIPAddress(t *testing.T) {
 	}
 }
 
+func TestIsHostPrefix(t *testing.T) {
+	tests := []struct {
+		name      string
+		ipAddress string
+		want      bool
+	}{
+		{
+			name:      "IPv4 host prefix /32",
+			ipAddress: "192.168.1.1/32",
+			want:      true,
+		},
+		{
+			name:      "IPv4 non-host prefix /24",
+			ipAddress: "192.168.1.1/24",
+			want:      false,
+		},
+		{
+			name:      "IPv6 host prefix /128",
+			ipAddress: "2001:db8:1010:1::6/128",
+			want:      true,
+		},
+		{
+			name:      "IPv6 non-host prefix /64",
+			ipAddress: "2001:db8:1010:1::6/64",
+			want:      false,
+		},
+		{
+			name:      "Invalid ip address",
+			ipAddress: "not-an-ip",
+			want:      false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsHostPrefix(tt.ipAddress); got != tt.want {
+				t.Errorf("IsHostPrefix() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetIPAddressWithoutMask(t *testing.T) {
+	tests := []struct {
+		name      string
+		ipAddress string
+		want      string
+	}{
+		{
+			name:      "IPv4 with mask",
+			ipAddress: "192.168.1.1/24",
+			want:      "192.168.1.1",
+		},
+		{
+			name:      "IPv4 without mask",
+			ipAddress: "192.168.1.1",
+			want:      "192.168.1.1",
+		},
+		{
+			name:      "IPv6 with mask",
+			ipAddress: "2001:db8:60:1::32/128",
+			want:      "2001:db8:60:1::32",
+		},
+		{
+			name:      "IPv6 without mask",
+			ipAddress: "2001:db8:60:1::32",
+			want:      "2001:db8:60:1::32",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetIPAddressWithoutMask(tt.ipAddress); got != tt.want {
+				t.Errorf("GetIPAddressWithoutMask() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestRemoveZoneIndexFromIPAddress(t *testing.T) {
 	type args struct {
 		ipAddress string
