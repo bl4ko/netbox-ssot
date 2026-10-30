@@ -173,3 +173,13 @@ func IsHostPrefix(ipAddress string) bool {
 	}
 	return maskBits == constants.MaxIPv6MaskBits
 }
+
+// GetIPAddressWithoutMask strips the mask from an ipAddress of format
+// ip/mask. 192.168.1.1/24 --> 192.168.1.1. If the address contains no
+// mask, it is returned unchanged.
+func GetIPAddressWithoutMask(ipAddress string) string {
+	if idx := strings.LastIndex(ipAddress, "/"); idx != -1 {
+		return ipAddress[:idx]
+	}
+	return ipAddress
+}

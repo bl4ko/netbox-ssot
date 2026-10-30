@@ -392,6 +392,42 @@ func TestIsHostPrefix(t *testing.T) {
 	}
 }
 
+func TestGetIPAddressWithoutMask(t *testing.T) {
+	tests := []struct {
+		name      string
+		ipAddress string
+		want      string
+	}{
+		{
+			name:      "IPv4 with mask",
+			ipAddress: "192.168.1.1/24",
+			want:      "192.168.1.1",
+		},
+		{
+			name:      "IPv4 without mask",
+			ipAddress: "192.168.1.1",
+			want:      "192.168.1.1",
+		},
+		{
+			name:      "IPv6 with mask",
+			ipAddress: "2001:db8:60:1::32/128",
+			want:      "2001:db8:60:1::32",
+		},
+		{
+			name:      "IPv6 without mask",
+			ipAddress: "2001:db8:60:1::32",
+			want:      "2001:db8:60:1::32",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetIPAddressWithoutMask(tt.ipAddress); got != tt.want {
+				t.Errorf("GetIPAddressWithoutMask() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestRemoveZoneIndexFromIPAddress(t *testing.T) {
 	type args struct {
 		ipAddress string
