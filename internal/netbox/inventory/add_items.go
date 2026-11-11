@@ -101,6 +101,10 @@ func (nbi *NetboxInventory) AddSite(
 	defer nbi.sitesLock.Unlock()
 	if _, ok := nbi.sitesIndexByName[newSite.Name]; ok {
 		oldSite := nbi.sitesIndexByName[newSite.Name]
+		// Slugify strips non-ASCII chars, so keep the user-defined slug of an existing site.
+		if oldSite.Slug != "" {
+			newSite.Slug = oldSite.Slug
+		}
 		diffMap, err := utils.JSONDiffMapExceptID(newSite, oldSite, false, nbi.SourcePriority)
 		if err != nil {
 			return nil, err

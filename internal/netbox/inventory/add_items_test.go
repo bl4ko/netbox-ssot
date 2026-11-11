@@ -189,7 +189,7 @@ func TestNetboxInventory_AddSite(t *testing.T) {
 			nbi:  MockInventory,
 			args: args{
 				ctx:     context.WithValue(context.Background(), constants.CtxSourceKey, "test"),
-				newSite: &objects.Site{Name: "existing_site1", Slug: "new_site"},
+				newSite: &objects.Site{Name: "existing_site1", PhysicalAddress: "new address"},
 			},
 			want: &service.MockSitePatchResponse,
 		},
@@ -218,6 +218,26 @@ func TestNetboxInventory_AddSite(t *testing.T) {
 				t.Errorf("NetboxInventory.AddSite() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestNetboxInventory_AddSite_PreservesExistingSlug(t *testing.T) {
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
+	ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+	newSite := &objects.Site{Name: "existing_site2", Slug: "-"}
+
+	got, err := MockInventory.AddSite(ctx, newSite)
+	if err != nil {
+		t.Fatalf("NetboxInventory.AddSite() unexpected error: %v", err)
+	}
+	if got.Slug != "existing_site2" {
+		t.Errorf("NetboxInventory.AddSite() slug = %q, want %q", got.Slug, "existing_site2")
+	}
+	if want := MockExistingSites["existing_site2"]; !reflect.DeepEqual(got, want) {
+		t.Errorf("NetboxInventory.AddSite() = %v, want unchanged %v", got, want)
 	}
 }
 
