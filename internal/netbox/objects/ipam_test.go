@@ -75,6 +75,17 @@ func TestVlan_String(t *testing.T) {
 			},
 			want: "Vlan{ID: 1, Name: Test vlan, Vid: 10, Group: Test vlan group}",
 		},
+		{
+			name: "Test vlan string with nil group",
+			v: Vlan{
+				NetboxObject: NetboxObject{
+					ID: 2,
+				},
+				Name: "Test vlan without group",
+				Vid:  20,
+			},
+			want: "Vlan{ID: 2, Name: Test vlan without group, Vid: 20, Group: }",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

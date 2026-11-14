@@ -8,6 +8,7 @@ import (
 	"github.com/bl4ko/netbox-ssot/internal/netbox/inventory"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/objects"
 	"github.com/bl4ko/netbox-ssot/internal/netbox/service"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
 func setupMockServer(t *testing.T) {
@@ -137,8 +138,8 @@ func TestMatchIPToVRF_NilRelations(t *testing.T) {
 
 func TestMatchClusterToTenant_NoMatch(t *testing.T) {
 	t.Parallel()
-	relations := map[string]string{
-		"^prod-.*$": "Production",
+	relations := utils.RegexRelations{
+		{Regex: "^prod-.*$", Value: "Production"},
 	}
 	tenant, err := MatchClusterToTenant(context.Background(), nil, "dev-cluster", relations)
 	if err != nil {
@@ -151,8 +152,8 @@ func TestMatchClusterToTenant_NoMatch(t *testing.T) {
 
 func TestMatchClusterToSite_NoMatch(t *testing.T) {
 	t.Parallel()
-	relations := map[string]string{
-		"^prod-.*$": "Datacenter1",
+	relations := utils.RegexRelations{
+		{Regex: "^prod-.*$", Value: "Datacenter1"},
 	}
 	site, err := MatchClusterToSite(context.Background(), nil, "dev-cluster", relations)
 	if err != nil {
@@ -165,8 +166,8 @@ func TestMatchClusterToSite_NoMatch(t *testing.T) {
 
 func TestMatchIPToVRF_NoMatch(t *testing.T) {
 	t.Parallel()
-	relations := map[string]string{
-		"^192\\.168\\..*$": "internal-vrf",
+	relations := utils.RegexRelations{
+		{Regex: "^192\\.168\\..*$", Value: "internal-vrf"},
 	}
 	vrf, err := MatchIPToVRF(context.Background(), nil, "10.0.0.1/24", relations)
 	if err != nil {
@@ -179,8 +180,8 @@ func TestMatchIPToVRF_NoMatch(t *testing.T) {
 
 func TestMatchHostToTenant_NoMatch(t *testing.T) {
 	t.Parallel()
-	relations := map[string]string{
-		"^prod-.*$": "Tenant1",
+	relations := utils.RegexRelations{
+		{Regex: "^prod-.*$", Value: "Tenant1"},
 	}
 	tenant, err := MatchHostToTenant(context.Background(), nil, "dev-host", relations)
 	if err != nil {
@@ -193,8 +194,8 @@ func TestMatchHostToTenant_NoMatch(t *testing.T) {
 
 func TestMatchHostToRole_NoMatch(t *testing.T) {
 	t.Parallel()
-	relations := map[string]string{
-		"^prod-.*$": "Role1",
+	relations := utils.RegexRelations{
+		{Regex: "^prod-.*$", Value: "Role1"},
 	}
 	role, err := MatchHostToRole(context.Background(), nil, "dev-host", relations)
 	if err != nil {
@@ -207,8 +208,8 @@ func TestMatchHostToRole_NoMatch(t *testing.T) {
 
 func TestMatchVMToTenant_NoMatch(t *testing.T) {
 	t.Parallel()
-	relations := map[string]string{
-		"^prod-.*$": "Tenant1",
+	relations := utils.RegexRelations{
+		{Regex: "^prod-.*$", Value: "Tenant1"},
 	}
 	tenant, err := MatchVMToTenant(context.Background(), nil, "dev-vm", relations)
 	if err != nil {
@@ -221,8 +222,8 @@ func TestMatchVMToTenant_NoMatch(t *testing.T) {
 
 func TestMatchVMToRole_NoMatch(t *testing.T) {
 	t.Parallel()
-	relations := map[string]string{
-		"^prod-.*$": "Role1",
+	relations := utils.RegexRelations{
+		{Regex: "^prod-.*$", Value: "Role1"},
 	}
 	role, err := MatchVMToRole(context.Background(), nil, "dev-vm", relations)
 	if err != nil {
@@ -235,8 +236,8 @@ func TestMatchVMToRole_NoMatch(t *testing.T) {
 
 func TestMatchVlanToTenant_NoMatch(t *testing.T) {
 	t.Parallel()
-	relations := map[string]string{
-		"^prod-.*$": "Tenant1",
+	relations := utils.RegexRelations{
+		{Regex: "^prod-.*$", Value: "Tenant1"},
 	}
 	tenant, err := MatchVlanToTenant(context.Background(), nil, "dev-vlan", relations)
 	if err != nil {
@@ -249,8 +250,8 @@ func TestMatchVlanToTenant_NoMatch(t *testing.T) {
 
 func TestMatchVlanToSite_NoMatch(t *testing.T) {
 	t.Parallel()
-	relations := map[string]string{
-		"^prod-.*$": "Site1",
+	relations := utils.RegexRelations{
+		{Regex: "^prod-.*$", Value: "Site1"},
 	}
 	site, err := MatchVlanToSite(context.Background(), nil, "dev-vlan", relations)
 	if err != nil {
@@ -265,8 +266,8 @@ func TestMatchVlanToSite_NoMatch(t *testing.T) {
 
 func TestMatchClusterToTenant_InvalidRegex(t *testing.T) {
 	t.Parallel()
-	relations := map[string]string{
-		"[invalid": "Tenant1",
+	relations := utils.RegexRelations{
+		{Regex: "[invalid", Value: "Tenant1"},
 	}
 	_, err := MatchClusterToTenant(context.Background(), nil, "test-cluster", relations)
 	if err == nil {
@@ -276,8 +277,8 @@ func TestMatchClusterToTenant_InvalidRegex(t *testing.T) {
 
 func TestMatchClusterToSite_InvalidRegex(t *testing.T) {
 	t.Parallel()
-	relations := map[string]string{
-		"[invalid": "Site1",
+	relations := utils.RegexRelations{
+		{Regex: "[invalid", Value: "Site1"},
 	}
 	_, err := MatchClusterToSite(context.Background(), nil, "test-cluster", relations)
 	if err == nil {
@@ -287,8 +288,8 @@ func TestMatchClusterToSite_InvalidRegex(t *testing.T) {
 
 func TestMatchHostToSite_InvalidRegex(t *testing.T) {
 	t.Parallel()
-	relations := map[string]string{
-		"[invalid": "Site1",
+	relations := utils.RegexRelations{
+		{Regex: "[invalid", Value: "Site1"},
 	}
 	_, err := MatchHostToSite(context.Background(), nil, "test-host", relations)
 	if err == nil {
@@ -298,8 +299,8 @@ func TestMatchHostToSite_InvalidRegex(t *testing.T) {
 
 func TestMatchHostToTenant_InvalidRegex(t *testing.T) {
 	t.Parallel()
-	relations := map[string]string{
-		"[invalid": "Tenant1",
+	relations := utils.RegexRelations{
+		{Regex: "[invalid", Value: "Tenant1"},
 	}
 	_, err := MatchHostToTenant(context.Background(), nil, "test-host", relations)
 	if err == nil {
@@ -309,8 +310,8 @@ func TestMatchHostToTenant_InvalidRegex(t *testing.T) {
 
 func TestMatchHostToRole_InvalidRegex(t *testing.T) {
 	t.Parallel()
-	relations := map[string]string{
-		"[invalid": "Role1",
+	relations := utils.RegexRelations{
+		{Regex: "[invalid", Value: "Role1"},
 	}
 	_, err := MatchHostToRole(context.Background(), nil, "test-host", relations)
 	if err == nil {
@@ -320,8 +321,8 @@ func TestMatchHostToRole_InvalidRegex(t *testing.T) {
 
 func TestMatchVMToTenant_InvalidRegex(t *testing.T) {
 	t.Parallel()
-	relations := map[string]string{
-		"[invalid": "Tenant1",
+	relations := utils.RegexRelations{
+		{Regex: "[invalid", Value: "Tenant1"},
 	}
 	_, err := MatchVMToTenant(context.Background(), nil, "test-vm", relations)
 	if err == nil {
@@ -331,8 +332,8 @@ func TestMatchVMToTenant_InvalidRegex(t *testing.T) {
 
 func TestMatchVMToRole_InvalidRegex(t *testing.T) {
 	t.Parallel()
-	relations := map[string]string{
-		"[invalid": "Role1",
+	relations := utils.RegexRelations{
+		{Regex: "[invalid", Value: "Role1"},
 	}
 	_, err := MatchVMToRole(context.Background(), nil, "test-vm", relations)
 	if err == nil {
@@ -342,8 +343,8 @@ func TestMatchVMToRole_InvalidRegex(t *testing.T) {
 
 func TestMatchVlanToTenant_InvalidRegex(t *testing.T) {
 	t.Parallel()
-	relations := map[string]string{
-		"[invalid": "Tenant1",
+	relations := utils.RegexRelations{
+		{Regex: "[invalid", Value: "Tenant1"},
 	}
 	_, err := MatchVlanToTenant(context.Background(), nil, "test-vlan", relations)
 	if err == nil {
@@ -353,8 +354,8 @@ func TestMatchVlanToTenant_InvalidRegex(t *testing.T) {
 
 func TestMatchVlanToSite_InvalidRegex(t *testing.T) {
 	t.Parallel()
-	relations := map[string]string{
-		"[invalid": "Site1",
+	relations := utils.RegexRelations{
+		{Regex: "[invalid", Value: "Site1"},
 	}
 	_, err := MatchVlanToSite(context.Background(), nil, "test-vlan", relations)
 	if err == nil {
@@ -364,8 +365,8 @@ func TestMatchVlanToSite_InvalidRegex(t *testing.T) {
 
 func TestMatchIPToVRF_InvalidRegex(t *testing.T) {
 	t.Parallel()
-	relations := map[string]string{
-		"[invalid": "vrf1",
+	relations := utils.RegexRelations{
+		{Regex: "[invalid", Value: "vrf1"},
 	}
 	_, err := MatchIPToVRF(context.Background(), nil, "10.0.0.1", relations)
 	if err == nil {
@@ -378,8 +379,8 @@ func TestMatchIPToVRF_InvalidRegex(t *testing.T) {
 func TestMatchClusterToTenant_MatchExisting(t *testing.T) {
 	setupMockServer(t)
 	nbi := inventory.MockInventory
-	relations := map[string]string{
-		"^test-.*$": "existing_tenant1",
+	relations := utils.RegexRelations{
+		{Regex: "^test-.*$", Value: "existing_tenant1"},
 	}
 	tenant, err := MatchClusterToTenant(testCtx(), nbi, "test-cluster", relations)
 	if err != nil {
@@ -396,8 +397,8 @@ func TestMatchClusterToTenant_MatchExisting(t *testing.T) {
 func TestMatchClusterToSite_MatchExisting(t *testing.T) {
 	setupMockServer(t)
 	nbi := inventory.MockInventory
-	relations := map[string]string{
-		"^test-.*$": "existing_site1",
+	relations := utils.RegexRelations{
+		{Regex: "^test-.*$", Value: "existing_site1"},
 	}
 	site, err := MatchClusterToSite(testCtx(), nbi, "test-cluster", relations)
 	if err != nil {
@@ -414,8 +415,8 @@ func TestMatchClusterToSite_MatchExisting(t *testing.T) {
 func TestMatchVlanToTenant_MatchExisting(t *testing.T) {
 	setupMockServer(t)
 	nbi := inventory.MockInventory
-	relations := map[string]string{
-		"^vlan-.*$": "existing_tenant2",
+	relations := utils.RegexRelations{
+		{Regex: "^vlan-.*$", Value: "existing_tenant2"},
 	}
 	tenant, err := MatchVlanToTenant(testCtx(), nbi, "vlan-100", relations)
 	if err != nil {
@@ -432,8 +433,8 @@ func TestMatchVlanToTenant_MatchExisting(t *testing.T) {
 func TestMatchVlanToSite_MatchExisting(t *testing.T) {
 	setupMockServer(t)
 	nbi := inventory.MockInventory
-	relations := map[string]string{
-		"^vlan-.*$": "existing_site2",
+	relations := utils.RegexRelations{
+		{Regex: "^vlan-.*$", Value: "existing_site2"},
 	}
 	site, err := MatchVlanToSite(testCtx(), nbi, "vlan-100", relations)
 	if err != nil {
@@ -450,8 +451,8 @@ func TestMatchVlanToSite_MatchExisting(t *testing.T) {
 func TestMatchVMToTenant_MatchExisting(t *testing.T) {
 	setupMockServer(t)
 	nbi := inventory.MockInventory
-	relations := map[string]string{
-		"^vm-.*$": "existing_tenant1",
+	relations := utils.RegexRelations{
+		{Regex: "^vm-.*$", Value: "existing_tenant1"},
 	}
 	tenant, err := MatchVMToTenant(testCtx(), nbi, "vm-web01", relations)
 	if err != nil {
@@ -470,8 +471,8 @@ func TestMatchVMToTenant_MatchExisting(t *testing.T) {
 func TestMatchClusterToTenant_MatchNew(t *testing.T) {
 	setupMockServer(t)
 	nbi := inventory.MockInventory
-	relations := map[string]string{
-		"^prod-.*$": "brand-new-tenant",
+	relations := utils.RegexRelations{
+		{Regex: "^prod-.*$", Value: "brand-new-tenant"},
 	}
 	tenant, err := MatchClusterToTenant(testCtx(), nbi, "prod-cluster", relations)
 	if err != nil {
@@ -485,8 +486,8 @@ func TestMatchClusterToTenant_MatchNew(t *testing.T) {
 func TestMatchClusterToSite_MatchNew(t *testing.T) {
 	setupMockServer(t)
 	nbi := inventory.MockInventory
-	relations := map[string]string{
-		"^prod-.*$": "brand-new-site",
+	relations := utils.RegexRelations{
+		{Regex: "^prod-.*$", Value: "brand-new-site"},
 	}
 	site, err := MatchClusterToSite(testCtx(), nbi, "prod-cluster", relations)
 	if err != nil {
@@ -500,8 +501,8 @@ func TestMatchClusterToSite_MatchNew(t *testing.T) {
 func TestMatchHostToSite_MatchNew(t *testing.T) {
 	setupMockServer(t)
 	nbi := inventory.MockInventory
-	relations := map[string]string{
-		"^host-.*$": "new-dc-site",
+	relations := utils.RegexRelations{
+		{Regex: "^host-.*$", Value: "new-dc-site"},
 	}
 	site, err := MatchHostToSite(testCtx(), nbi, "host-01", relations)
 	if err != nil {
@@ -515,8 +516,8 @@ func TestMatchHostToSite_MatchNew(t *testing.T) {
 func TestMatchHostToTenant_MatchNew(t *testing.T) {
 	setupMockServer(t)
 	nbi := inventory.MockInventory
-	relations := map[string]string{
-		"^host-.*$": "new-host-tenant",
+	relations := utils.RegexRelations{
+		{Regex: "^host-.*$", Value: "new-host-tenant"},
 	}
 	tenant, err := MatchHostToTenant(testCtx(), nbi, "host-01", relations)
 	if err != nil {
@@ -530,8 +531,8 @@ func TestMatchHostToTenant_MatchNew(t *testing.T) {
 func TestMatchHostToRole_MatchNew(t *testing.T) {
 	setupMockServer(t)
 	nbi := inventory.MockInventory
-	relations := map[string]string{
-		"^host-.*$": "new-server-role",
+	relations := utils.RegexRelations{
+		{Regex: "^host-.*$", Value: "new-server-role"},
 	}
 	role, err := MatchHostToRole(testCtx(), nbi, "host-01", relations)
 	if err != nil {
@@ -545,8 +546,8 @@ func TestMatchHostToRole_MatchNew(t *testing.T) {
 func TestMatchVMToTenant_MatchNew(t *testing.T) {
 	setupMockServer(t)
 	nbi := inventory.MockInventory
-	relations := map[string]string{
-		"^vm-new-.*$": "brand-new-vm-tenant",
+	relations := utils.RegexRelations{
+		{Regex: "^vm-new-.*$", Value: "brand-new-vm-tenant"},
 	}
 	tenant, err := MatchVMToTenant(testCtx(), nbi, "vm-new-01", relations)
 	if err != nil {
@@ -560,8 +561,8 @@ func TestMatchVMToTenant_MatchNew(t *testing.T) {
 func TestMatchVMToRole_MatchNew(t *testing.T) {
 	setupMockServer(t)
 	nbi := inventory.MockInventory
-	relations := map[string]string{
-		"^vm-.*$": "new-vm-role",
+	relations := utils.RegexRelations{
+		{Regex: "^vm-.*$", Value: "new-vm-role"},
 	}
 	role, err := MatchVMToRole(testCtx(), nbi, "vm-app01", relations)
 	if err != nil {
@@ -575,8 +576,8 @@ func TestMatchVMToRole_MatchNew(t *testing.T) {
 func TestMatchVlanToSite_MatchNew(t *testing.T) {
 	setupMockServer(t)
 	nbi := inventory.MockInventory
-	relations := map[string]string{
-		"^vlan-new-.*$": "brand-new-vlan-site",
+	relations := utils.RegexRelations{
+		{Regex: "^vlan-new-.*$", Value: "brand-new-vlan-site"},
 	}
 	site, err := MatchVlanToSite(testCtx(), nbi, "vlan-new-100", relations)
 	if err != nil {
@@ -590,8 +591,8 @@ func TestMatchVlanToSite_MatchNew(t *testing.T) {
 func TestMatchVlanToTenant_MatchNew(t *testing.T) {
 	setupMockServer(t)
 	nbi := inventory.MockInventory
-	relations := map[string]string{
-		"^vlan-new-.*$": "brand-new-vlan-tenant",
+	relations := utils.RegexRelations{
+		{Regex: "^vlan-new-.*$", Value: "brand-new-vlan-tenant"},
 	}
 	tenant, err := MatchVlanToTenant(testCtx(), nbi, "vlan-new-100", relations)
 	if err != nil {
@@ -607,8 +608,8 @@ func TestMatchVlanToTenant_MatchNew(t *testing.T) {
 func TestMatchHostToSite_NoMatchReturnsDefault(t *testing.T) {
 	setupMockServer(t)
 	nbi := inventory.MockInventory
-	relations := map[string]string{
-		"^prod-.*$": "prod-site",
+	relations := utils.RegexRelations{
+		{Regex: "^prod-.*$", Value: "prod-site"},
 	}
 	site, err := MatchHostToSite(testCtx(), nbi, "dev-host", relations)
 	if err != nil {
@@ -620,12 +621,71 @@ func TestMatchHostToSite_NoMatchReturnsDefault(t *testing.T) {
 	}
 }
 
+// --- First matching relation wins ---
+
+func TestMatchHostToSite_FirstMatchingRelationWins(t *testing.T) {
+	setupMockServer(t)
+	nbi := inventory.MockInventory
+	// Specific relations listed before the catch-all must win.
+	relations := utils.RegexRelations{
+		{Regex: "host-a", Value: "SiteA"},
+		{Regex: "host-b", Value: "SiteB"},
+		{Regex: ".*", Value: "DefaultSite"},
+	}
+	for _, tc := range []struct {
+		hostName string
+		wantSite string
+	}{{"host-a", "SiteA"}, {"host-b", "SiteB"}} {
+		site, err := MatchHostToSite(testCtx(), nbi, tc.hostName, relations)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if site == nil {
+			t.Fatal("expected non-nil site")
+		}
+		if site.Name != tc.wantSite {
+			t.Errorf("host %s: expected site %q, got %q", tc.hostName, tc.wantSite, site.Name)
+		}
+	}
+	// Unlisted hosts fall through to the catch-all.
+	site, err := MatchHostToSite(testCtx(), nbi, "other-host", relations)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if site == nil || site.Name != "DefaultSite" {
+		t.Errorf("host other-host: expected site 'DefaultSite', got %v", site)
+	}
+}
+
+func TestMatchClusterToSite_FirstMatchingRelationWins(t *testing.T) {
+	setupMockServer(t)
+	nbi := inventory.MockInventory
+	relations := utils.RegexRelations{
+		{Regex: "cluster-a", Value: "SiteA"},
+		{Regex: ".*", Value: "DefaultSite"},
+	}
+	site, err := MatchClusterToSite(testCtx(), nbi, "cluster-a", relations)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if site == nil || site.Name != "SiteA" {
+		t.Errorf("expected site 'SiteA', got %v", site)
+	}
+	site, err = MatchClusterToSite(testCtx(), nbi, "other-cluster", relations)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if site == nil || site.Name != "DefaultSite" {
+		t.Errorf("expected site 'DefaultSite' for unmatched cluster, got %v", site)
+	}
+}
+
 // --- MatchIPToVRF with CIDR stripping ---
 
 func TestMatchIPToVRF_CIDRStripped(t *testing.T) {
 	t.Parallel()
-	relations := map[string]string{
-		"^10\\.0\\..*$": "internal-vrf",
+	relations := utils.RegexRelations{
+		{Regex: "^10\\.0\\..*$", Value: "internal-vrf"},
 	}
 	// VRF matches but doesn't exist in inventory → error
 	_, err := MatchIPToVRF(context.Background(), inventory.MockInventory, "10.0.0.1/24", relations)
@@ -636,8 +696,8 @@ func TestMatchIPToVRF_CIDRStripped(t *testing.T) {
 
 func TestMatchIPToVRF_PlainIP(t *testing.T) {
 	t.Parallel()
-	relations := map[string]string{
-		"^10\\.0\\..*$": "internal-vrf",
+	relations := utils.RegexRelations{
+		{Regex: "^10\\.0\\..*$", Value: "internal-vrf"},
 	}
 	_, err := MatchIPToVRF(context.Background(), inventory.MockInventory, "10.0.0.1", relations)
 	if err == nil {
@@ -648,8 +708,8 @@ func TestMatchIPToVRF_PlainIP(t *testing.T) {
 func TestMatchIPToVRF_VRFNotInInventory(t *testing.T) {
 	setupMockServer(t)
 	nbi := inventory.MockInventory
-	relations := map[string]string{
-		"^172\\.16\\..*$": "nonexistent-vrf",
+	relations := utils.RegexRelations{
+		{Regex: "^172\\.16\\..*$", Value: "nonexistent-vrf"},
 	}
 	_, err := MatchIPToVRF(testCtx(), nbi, "172.16.0.1/24", relations)
 	if err == nil {
@@ -682,8 +742,8 @@ func TestMatchVlanToGroup_DefaultGroupName_NilRelations(t *testing.T) {
 func TestMatchVlanToGroup_DefaultGroupName_NoRelationMatch(t *testing.T) {
 	setupMockServer(t)
 	nbi := inventory.MockInventory
-	relations := map[string]string{
-		"^prod-.*$": "prod-group",
+	relations := utils.RegexRelations{
+		{Regex: "^prod-.*$", Value: "prod-group"},
 	}
 	vlanGroup, err := MatchVlanToGroup(testCtx(), nbi, "ovirtmgmt", nil, relations, nil, "DC1")
 	if err != nil {
@@ -700,8 +760,8 @@ func TestMatchVlanToGroup_DefaultGroupName_NoRelationMatch(t *testing.T) {
 func TestMatchVlanToGroup_RelationMatchOverridesDefault(t *testing.T) {
 	setupMockServer(t)
 	nbi := inventory.MockInventory
-	relations := map[string]string{
-		"^ovirt.*$": "explicit-group",
+	relations := utils.RegexRelations{
+		{Regex: "^ovirt.*$", Value: "explicit-group"},
 	}
 	vlanGroup, err := MatchVlanToGroup(testCtx(), nbi, "ovirtmgmt", nil, relations, nil, "DC1")
 	if err != nil {

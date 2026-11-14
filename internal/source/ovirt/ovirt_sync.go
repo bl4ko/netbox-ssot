@@ -101,7 +101,7 @@ func (o *OVirtSource) syncDatacenters(nbi *inventory.NetboxInventory) error {
 		}
 		description, _ := datacenter.Description()
 		nbClusterGroupName := dcName
-		if mappedClusterGroupName, ok := o.SourceConfig.DatacenterClusterGroupRelations[dcName]; ok {
+		if mappedClusterGroupName, ok := o.SourceConfig.DatacenterClusterGroupRelations.GetValue(dcName); ok {
 			nbClusterGroupName = mappedClusterGroupName
 			o.Logger.Debugf(
 				o.Ctx,
@@ -160,7 +160,7 @@ func (o *OVirtSource) syncClusters(nbi *inventory.NetboxInventory) error {
 			o.Logger.Warning(o.Ctx, "failed to get datacenter for oVirt cluster ", clusterName)
 		}
 		if clusterGroupName != "" {
-			if mappedName, ok := o.SourceConfig.DatacenterClusterGroupRelations[clusterGroupName]; ok {
+			if mappedName, ok := o.SourceConfig.DatacenterClusterGroupRelations.GetValue(clusterGroupName); ok {
 				clusterGroupName = mappedName
 			}
 			clusterGroup, _ = nbi.GetClusterGroup(clusterGroupName)
@@ -617,10 +617,10 @@ func (o *OVirtSource) syncHostNics(
 				}
 
 				// Also create prefix if it doesn't exist yet
-				prefix, mask, err := utils.GetPrefixAndMaskFromIPAddress(nbIPAddress.Address)
+				prefix, _, err := utils.GetPrefixAndMaskFromIPAddress(nbIPAddress.Address)
 				if err != nil {
 					o.Logger.Warningf(o.Ctx, "error extracting prefix from IP address: %s", err)
-				} else if mask != constants.MaxIPv4MaskBits {
+				} else if !utils.IsHostPrefix(prefix) {
 					_, err = nbi.AddPrefix(o.Ctx, &objects.Prefix{
 						Prefix: prefix,
 						VRF:    ipVRF,
@@ -664,10 +664,10 @@ func (o *OVirtSource) syncHostNics(
 				}
 
 				// Also create prefix if it doesn't exist yet
-				prefix, mask, err := utils.GetPrefixAndMaskFromIPAddress(nbIPAddress.Address)
+				prefix, _, err := utils.GetPrefixAndMaskFromIPAddress(nbIPAddress.Address)
 				if err != nil {
 					o.Logger.Warningf(o.Ctx, "error extracting prefix from IP address: %s", err)
-				} else if mask != constants.MaxIPv4MaskBits {
+				} else if !utils.IsHostPrefix(prefix) {
 					prefixStruct := &objects.Prefix{
 						Prefix: prefix,
 						VRF:    ipVRF,
@@ -1521,12 +1521,12 @@ func (o *OVirtSource) processVMInterfaceIPs(
 								}
 							}
 						}
-						prefix, mask, err := utils.GetPrefixAndMaskFromIPAddress(
+						prefix, _, err := utils.GetPrefixAndMaskFromIPAddress(
 							newIPAddress.Address,
 						)
 						if err != nil {
 							o.Logger.Debugf(o.Ctx, "extract prefix: %s", err)
-						} else if mask != constants.MaxIPv4MaskBits {
+						} else if !utils.IsHostPrefix(prefix) {
 							_, err = nbi.AddPrefix(o.Ctx, &objects.Prefix{
 								Prefix: prefix,
 								VRF:    ipVRF,

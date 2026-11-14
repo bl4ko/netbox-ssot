@@ -41,27 +41,53 @@ func ValidateRegexRelations(regexRelations []string) error {
 	return nil
 }
 
-// Converts array of strings, that are of form "regex = value", to a map
-// where key is regex and value is value.
-func ConvertStringsToRegexPairs(input []string) map[string]string {
-	output := make(map[string]string, len(input))
+// RegexRelation is a single "regex = value" relation from the configuration.
+type RegexRelation struct {
+	Regex string
+	Value string
+}
+
+// RegexRelations is an ordered list of "regex = value" relations.
+// Relations are matched in declaration order and the first match wins,
+// so specific patterns should be listed before catch-all patterns.
+type RegexRelations []RegexRelation
+
+// GetValue returns the value of the relation whose regex exactly
+// matches the given key, and whether such a relation exists.
+func (r RegexRelations) GetValue(key string) (string, bool) {
+	for _, relation := range r {
+		if relation.Regex == key {
+			return relation.Value, true
+		}
+	}
+	return "", false
+}
+
+// Converts array of strings, that are of form "regex = value", to an
+// ordered RegexRelations list. Declaration order is preserved.
+func ConvertStringsToRegexPairs(input []string) RegexRelations {
+	output := make(RegexRelations, 0, len(input))
 	for _, s := range input {
 		pair := strings.Split(s, "=")
-		output[strings.TrimSpace(pair[0])] = strings.TrimSpace(pair[1])
+		output = append(output, RegexRelation{
+			Regex: strings.TrimSpace(pair[0]),
+			Value: strings.TrimSpace(pair[1]),
+		})
 	}
 	return output
 }
 
-// Matches input string to a regex from input map patterns,
-// and returns the value. If there is no match, it returns an empty string.
-func MatchStringToValue(input string, patterns map[string]string) (string, error) {
-	for regex, value := range patterns {
-		matched, err := regexp.MatchString(regex, input)
+// Matches input string against the relations in order and returns the
+// value of the first matching relation. If there is no match, it returns
+// an empty string.
+func MatchStringToValue(input string, relations RegexRelations) (string, error) {
+	for _, relation := range relations {
+		matched, err := regexp.MatchString(relation.Regex, input)
 		if err != nil {
 			return "", err
 		}
 		if matched {
-			return value, nil
+			return relation.Value, nil
 		}
 	}
 	return "", nil
