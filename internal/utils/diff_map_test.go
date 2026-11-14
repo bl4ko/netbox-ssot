@@ -1448,6 +1448,37 @@ func TestSanitizeCustomFieldValue(t *testing.T) {
 			want: []interface{}{float64(4), float64(2)},
 		},
 		{
+			name: "select choice object extracts value",
+			val: map[string]interface{}{
+				"value": "tech",
+				"label": "Environment Tech",
+			},
+			want: "tech",
+		},
+		{
+			name: "multiselect choice array extracts values",
+			val: []interface{}{
+				map[string]interface{}{
+					"value": "tech",
+					"label": "Environment Tech",
+				},
+				map[string]interface{}{
+					"value": "prod",
+					"label": "Environment Prod",
+				},
+			},
+			want: []interface{}{"tech", "prod"},
+		},
+		{
+			name: "map with value but no label passes through",
+			val: map[string]interface{}{
+				"value": "tech",
+			},
+			want: map[string]interface{}{
+				"value": "tech",
+			},
+		},
+		{
 			name: "empty array passes through",
 			val:  []interface{}{},
 			want: []interface{}{},
@@ -1550,5 +1581,32 @@ func TestAddMapDiffSanitizesExistingMultiobjectCustomFields(t *testing.T) {
 	wantIDs := []interface{}{float64(4), float64(2)}
 	if !reflect.DeepEqual(mdcVlan, wantIDs) {
 		t.Errorf("mdc_vlan should be sanitized to IDs %v, got %v (%T)", wantIDs, mdcVlan, mdcVlan)
+	}
+}
+
+func TestAddMapDiffSanitizesExistingSelectCustomFields(t *testing.T) {
+	t.Parallel()
+	newMapWithDiff := reflect.ValueOf(map[string]interface{}{
+		"source": "vcenter008",
+	})
+	existingMap := reflect.ValueOf(map[string]interface{}{
+		"source": "vcenter007",
+		"environment": map[string]interface{}{
+			"value": "tech",
+			"label": "Environment Tech",
+		},
+	})
+	diffMap := make(map[string]interface{})
+
+	err := addMapDiff(newMapWithDiff, existingMap, "custom_fields", true, diffMap)
+	if err != nil {
+		t.Fatalf("addMapDiff() error = %v", err)
+	}
+	cf, ok := diffMap["custom_fields"].(map[string]interface{})
+	if !ok {
+		t.Fatal("expected custom_fields in diffMap")
+	}
+	if cf["environment"] != "tech" {
+		t.Errorf("environment should be sanitized to \"tech\", got %v (%T)", cf["environment"], cf["environment"])
 	}
 }
