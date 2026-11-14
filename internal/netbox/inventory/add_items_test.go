@@ -122,8 +122,11 @@ func TestNetboxInventory_AddTenant(t *testing.T) {
 			name: "Test update existing tenant",
 			nbi:  MockInventory,
 			args: args{
-				ctx:       context.WithValue(context.Background(), constants.CtxSourceKey, "test"),
-				newTenant: &objects.Tenant{Name: "existing_tenant1", Slug: "new_tenant"},
+				ctx: context.WithValue(context.Background(), constants.CtxSourceKey, "test"),
+				newTenant: &objects.Tenant{
+					NetboxObject: objects.NetboxObject{Description: "updated description"},
+					Name:         "existing_tenant1",
+				},
 			},
 			want: &service.MockTenantPatchResponse,
 		},
@@ -189,7 +192,7 @@ func TestNetboxInventory_AddSite(t *testing.T) {
 			nbi:  MockInventory,
 			args: args{
 				ctx:     context.WithValue(context.Background(), constants.CtxSourceKey, "test"),
-				newSite: &objects.Site{Name: "existing_site1", Slug: "new_site"},
+				newSite: &objects.Site{Name: "existing_site1", PhysicalAddress: "new address"},
 			},
 			want: &service.MockSitePatchResponse,
 		},
@@ -216,6 +219,62 @@ func TestNetboxInventory_AddSite(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NetboxInventory.AddSite() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNetboxInventory_PreservesExistingSlug(t *testing.T) {
+	mockServer := service.CreateMockServer()
+	defer mockServer.Close()
+	service.MockNetboxClient.BaseURL = mockServer.URL
+
+	ctx := context.WithValue(context.Background(), constants.CtxSourceKey, "test")
+	newSite := &objects.Site{Name: "existing_site2", Slug: "-"}
+	newTenant := &objects.Tenant{Name: "existing_tenant2", Slug: "-"}
+	newDeviceRole := &objects.DeviceRole{Name: "existing_device_role2", Slug: "-"}
+
+	tests := []struct {
+		name     string
+		add      func() error
+		gotSlug  func() string
+		wantSlug string
+	}{
+		{
+			name: "site",
+			add: func() error {
+				_, err := MockInventory.AddSite(ctx, newSite)
+				return err
+			},
+			gotSlug:  func() string { return newSite.Slug },
+			wantSlug: "existing_site2",
+		},
+		{
+			name: "tenant",
+			add: func() error {
+				_, err := MockInventory.AddTenant(ctx, newTenant)
+				return err
+			},
+			gotSlug:  func() string { return newTenant.Slug },
+			wantSlug: "existing_tenant2",
+		},
+		{
+			name: "device role",
+			add: func() error {
+				_, err := MockInventory.AddDeviceRole(ctx, newDeviceRole)
+				return err
+			},
+			gotSlug:  func() string { return newDeviceRole.Slug },
+			wantSlug: "existing_device_role2",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := tt.add(); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if got := tt.gotSlug(); got != tt.wantSlug {
+				t.Errorf("slug = %q, want existing slug %q", got, tt.wantSlug)
 			}
 		})
 	}
@@ -550,8 +609,7 @@ func TestNetboxInventory_AddDeviceRole(t *testing.T) {
 			name: "Update existing device role",
 			args: &objects.DeviceRole{
 				Name:  "existing_device_role1",
-				Slug:  "updated_slug",
-				Color: constants.Color(constants.DeviceRoleServerColor),
+				Color: "aa1409",
 			},
 			wantErr: false,
 		},

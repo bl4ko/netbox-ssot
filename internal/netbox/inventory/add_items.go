@@ -57,6 +57,9 @@ func (nbi *NetboxInventory) AddTenant(
 	defer nbi.tenantsLock.Unlock()
 	if _, ok := nbi.tenantsIndexByName[newTenant.Name]; ok {
 		oldTenant := nbi.tenantsIndexByName[newTenant.Name]
+		if oldTenant.Slug != "" {
+			newTenant.Slug = oldTenant.Slug
+		}
 		diffMap, err := utils.JSONDiffMapExceptID(newTenant, oldTenant, false, nbi.SourcePriority)
 		if err != nil {
 			return nil, err
@@ -101,6 +104,10 @@ func (nbi *NetboxInventory) AddSite(
 	defer nbi.sitesLock.Unlock()
 	if _, ok := nbi.sitesIndexByName[newSite.Name]; ok {
 		oldSite := nbi.sitesIndexByName[newSite.Name]
+		// Slugify strips non-ASCII chars, so keep the user-defined slug of an existing site.
+		if oldSite.Slug != "" {
+			newSite.Slug = oldSite.Slug
+		}
 		diffMap, err := utils.JSONDiffMapExceptID(newSite, oldSite, false, nbi.SourcePriority)
 		if err != nil {
 			return nil, err
@@ -655,6 +662,9 @@ func (nbi *NetboxInventory) AddDeviceRole(
 		// Remove id from orphan manager, because it still exists in the sources
 		oldDeviceRole := nbi.deviceRolesIndexByName[newDeviceRole.Name]
 		nbi.OrphanManager.RemoveItem(oldDeviceRole)
+		if oldDeviceRole.Slug != "" {
+			newDeviceRole.Slug = oldDeviceRole.Slug
+		}
 		diffMap, err := utils.JSONDiffMapExceptID(
 			newDeviceRole,
 			oldDeviceRole,
