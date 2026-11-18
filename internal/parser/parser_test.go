@@ -190,6 +190,7 @@ func TestIgnoreFlags(t *testing.T) {
 		{"ignoreVMDisks", src.IgnoreVMDisks, true},
 		{"ignoreVMTemplates", src.IgnoreVMTemplates, true},
 		{"ignoreAssetTags", src.IgnoreAssetTags, true},
+		{"removeStaleTags", src.RemoveStaleTags, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

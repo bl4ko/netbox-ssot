@@ -88,6 +88,7 @@ func TestPrimaryAttributesDiff(t *testing.T) {
 				tt.existingStruct,
 				tt.resetFields,
 				nil,
+				nil,
 			)
 			if err != nil {
 				t.Errorf("JsonDiffMapExceptID() error = %v", err)
@@ -159,6 +160,7 @@ func TestChoicesAttributesDiff(t *testing.T) {
 				tt.newStruct,
 				tt.existingStruct,
 				tt.resetFields,
+				nil,
 				nil,
 			)
 			if err != nil {
@@ -252,6 +254,7 @@ func TestStructAttributeDiff(t *testing.T) {
 				tt.existingStruct,
 				tt.resetFields,
 				nil,
+				nil,
 			)
 			if err != nil {
 				t.Errorf("JsonDiffMapExceptID() error = %v", err)
@@ -338,6 +341,7 @@ func TestSliceAttributeDiff(t *testing.T) {
 				tt.newStruct,
 				tt.existingStruct,
 				tt.resetFields,
+				nil,
 				nil,
 			)
 			if err != nil {
@@ -449,6 +453,7 @@ func TestMapAttributeDiff(t *testing.T) {
 				tt.existingStruct,
 				tt.resetFields,
 				nil,
+				nil,
 			)
 			if err != nil {
 				t.Errorf("JsonDiffMapExceptID() error = %v", err)
@@ -557,6 +562,7 @@ func TestPriorityMergeDiff(t *testing.T) {
 				tt.existingStruct,
 				tt.resetFields,
 				tt.sourcePriority,
+				nil,
 			)
 			if err != nil {
 				t.Errorf("JsonDiffMapExceptID() error = %v", err)
@@ -837,6 +843,7 @@ func TestJSONDiffMapExceptID(t *testing.T) {
 				tt.args.existingObj,
 				tt.args.resetFields,
 				tt.args.source2priority,
+				nil,
 			)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("JSONDiffMapExceptID() error = %v, wantErr %v", err, tt.wantErr)
@@ -1001,6 +1008,7 @@ func Test_addSliceDiff(t *testing.T) {
 				tt.args.existingSlice,
 				tt.args.jsonTag,
 				tt.args.hasPriority,
+				nil,
 				tt.args.diffMap); (err != nil) != tt.wantErr {
 				t.Errorf("addSliceDiff() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -1236,12 +1244,13 @@ func Test_sliceToSet(t *testing.T) {
 
 func TestMergeTagSlices(t *testing.T) {
 	tests := []struct {
-		name         string
-		newTags      []*objects.Tag
-		existingTags []*objects.Tag
-		wantResult   []IDObject
-		wantChanged  bool
-		wantErr      bool
+		name                      string
+		newTags                   []*objects.Tag
+		existingTags              []*objects.Tag
+		staleTagRemovalSourceTags map[string]bool
+		wantResult                []IDObject
+		wantChanged               bool
+		wantErr                   bool
 	}{
 		{
 			name: "Source-managed existing tags are replaced by new tags",
@@ -1302,6 +1311,48 @@ func TestMergeTagSlices(t *testing.T) {
 			wantResult:   []IDObject{{ID: 1}},
 			wantChanged:  true,
 		},
+		{
+			name: "Stale tags are removed when source has removeStaleTags enabled",
+			newTags: []*objects.Tag{
+				{ID: 1, Name: "Source: test1"},
+				{ID: 2, Name: "Tag1"},
+			},
+			existingTags: []*objects.Tag{
+				{ID: 1, Name: "Source: test1"},
+				{ID: 2, Name: "Tag1"},
+				{ID: 3, Name: "RemovedOnSource"},
+			},
+			staleTagRemovalSourceTags: map[string]bool{"Source: test1": true},
+			wantResult:                []IDObject{{ID: 1}, {ID: 2}},
+			wantChanged:               true,
+		},
+		{
+			name: "Stale tags are kept when another source has removeStaleTags enabled",
+			newTags: []*objects.Tag{
+				{ID: 1, Name: "Source: test1"},
+			},
+			existingTags: []*objects.Tag{
+				{ID: 1, Name: "Source: test1"},
+				{ID: 3, Name: "RemovedOnSource"},
+			},
+			staleTagRemovalSourceTags: map[string]bool{"Source: test2": true},
+			wantResult:                []IDObject{{ID: 1}, {ID: 3}},
+			wantChanged:               false,
+		},
+		{
+			name: "No change with removeStaleTags enabled when tags are identical",
+			newTags: []*objects.Tag{
+				{ID: 1, Name: "Source: test1"},
+				{ID: 2, Name: "Tag1"},
+			},
+			existingTags: []*objects.Tag{
+				{ID: 1, Name: "Source: test1"},
+				{ID: 2, Name: "Tag1"},
+			},
+			staleTagRemovalSourceTags: map[string]bool{"Source: test1": true},
+			wantResult:                []IDObject{{ID: 1}, {ID: 2}},
+			wantChanged:               false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -1309,7 +1360,7 @@ func TestMergeTagSlices(t *testing.T) {
 			newSlice := reflect.ValueOf(tt.newTags)
 			existingSlice := reflect.ValueOf(tt.existingTags)
 
-			result, changed, err := mergeTagSlices(newSlice, existingSlice)
+			result, changed, err := mergeTagSlices(newSlice, existingSlice, tt.staleTagRemovalSourceTags)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("mergeTagSlices() error = %v, wantErr %v", err, tt.wantErr)
 				return

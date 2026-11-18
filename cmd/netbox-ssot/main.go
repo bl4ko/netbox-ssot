@@ -68,6 +68,12 @@ func main() {
 
 	inventoryCtx := context.WithValue(context.Background(), constants.CtxSourceKey, "inventory")
 	netboxInventory := inventory.NewNetboxInventory(inventoryCtx, inventoryLogger, config.Netbox, *dryRun)
+	netboxInventory.StaleTagRemovalSourceTags = make(map[string]bool)
+	for _, sourceConfig := range config.Sources {
+		if sourceConfig.RemoveStaleTags {
+			netboxInventory.StaleTagRemovalSourceTags[sourceConfig.Tag] = true
+		}
+	}
 	ssotLogger.Debug(mainCtx, "Netbox inventory: ", netboxInventory)
 
 	ssotLogger.Info(mainCtx, "Starting initializing netbox inventory")

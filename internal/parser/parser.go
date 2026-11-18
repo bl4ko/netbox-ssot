@@ -134,6 +134,7 @@ type SourceConfig struct {
 	IgnoreVMTemplates   bool                 `yaml:"ignoreVMTemplates"`
 	IgnoreVMDisks       bool                 `yaml:"ignoreVMDisks"`
 	IgnoreTags          bool                 `yaml:"ignoreTags"`
+	RemoveStaleTags     bool                 `yaml:"removeStaleTags"`
 	AssignDomainName    string               `yaml:"assignDomainName"`
 	ContinueOnError     bool                 `yaml:"continueOnError"`
 	VlanPrefix          string               `yaml:"vlanPrefix"`
@@ -198,6 +199,7 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		IgnoreVMTemplates               bool                 `yaml:"ignoreVMTemplates"`
 		IgnoreVMDisks                   bool                 `yaml:"ignoreVMDisks"`
 		IgnoreTags                      bool                 `yaml:"ignoreTags"`
+		RemoveStaleTags                 bool                 `yaml:"removeStaleTags"`
 		ContinueOnError                 bool                 `yaml:"continueOnError"`
 		DefaultIPv4MaskBits             int                  `yaml:"defaultIPv4MaskBits"`
 		DefaultIPv6MaskBits             int                  `yaml:"defaultIPv6MaskBits"`
@@ -257,6 +259,7 @@ func (sc *SourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	sc.IgnoreVMTemplates = rawMarshal.IgnoreVMTemplates
 	sc.IgnoreVMDisks = rawMarshal.IgnoreVMDisks
 	sc.IgnoreTags = rawMarshal.IgnoreTags
+	sc.RemoveStaleTags = rawMarshal.RemoveStaleTags
 	sc.ContinueOnError = rawMarshal.ContinueOnError
 	sc.DefaultIPv4MaskBits = rawMarshal.DefaultIPv4MaskBits
 	sc.DefaultIPv6MaskBits = rawMarshal.DefaultIPv6MaskBits

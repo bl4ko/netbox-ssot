@@ -29,6 +29,10 @@ type NetboxInventory struct {
 	// SourcePriority: if object is found on multiple sources, which source has
 	// the priority for the object attributes.
 	SourcePriority map[string]int
+	// StaleTagRemovalSourceTags contains names of source tags of sources with
+	// removeStaleTags enabled. Objects carrying one of these tags get their tags
+	// fully replaced by the source tags instead of merged with existing ones.
+	StaleTagRemovalSourceTags map[string]bool
 	// ArpDataLifeSpan determines the lifespan of arp entries in seconds.
 	ArpDataLifeSpan int
 	// OrphanManager object that manages orphaned objects.
