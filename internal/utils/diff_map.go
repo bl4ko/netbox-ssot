@@ -516,10 +516,18 @@ func addMapDiff(
 // objects (map with "id", "display", "url", etc.) but must be sent as just the
 // ID integer on write. Without this conversion, PATCH requests fail with:
 // "Cannot resolve keyword 'display' into field".
+// Since NetBox 4.7, select-type custom fields come back as {"value", "label"}
+// objects but must be sent as just the value, otherwise PATCH fails with:
+// "Invalid choice (...) for choice set".
 func sanitizeCustomFieldValue(val interface{}) interface{} {
 	if m, ok := val.(map[string]interface{}); ok {
 		if id, hasID := m["id"]; hasID {
 			return id
+		}
+		if value, hasValue := m["value"]; hasValue {
+			if _, hasLabel := m["label"]; hasLabel {
+				return value
+			}
 		}
 	}
 	if s, ok := val.([]interface{}); ok {
