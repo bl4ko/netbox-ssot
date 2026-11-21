@@ -18,7 +18,13 @@ func (nbi *NetboxInventory) AddTag(ctx context.Context, newTag *objects.Tag) (*o
 	defer nbi.tagsLock.Unlock()
 	if _, ok := nbi.tagsIndexByName[newTag.Name]; ok {
 		oldTag := nbi.tagsIndexByName[newTag.Name]
-		diffMap, err := utils.JSONDiffMapExceptID(newTag, oldTag, false, nbi.SourcePriority)
+		diffMap, err := utils.JSONDiffMapExceptID(
+			newTag,
+			oldTag,
+			false,
+			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -57,7 +63,13 @@ func (nbi *NetboxInventory) AddTenant(
 	defer nbi.tenantsLock.Unlock()
 	if _, ok := nbi.tenantsIndexByName[newTenant.Name]; ok {
 		oldTenant := nbi.tenantsIndexByName[newTenant.Name]
-		diffMap, err := utils.JSONDiffMapExceptID(newTenant, oldTenant, false, nbi.SourcePriority)
+		diffMap, err := utils.JSONDiffMapExceptID(
+			newTenant,
+			oldTenant,
+			false,
+			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -101,7 +113,13 @@ func (nbi *NetboxInventory) AddSite(
 	defer nbi.sitesLock.Unlock()
 	if _, ok := nbi.sitesIndexByName[newSite.Name]; ok {
 		oldSite := nbi.sitesIndexByName[newSite.Name]
-		diffMap, err := utils.JSONDiffMapExceptID(newSite, oldSite, false, nbi.SourcePriority)
+		diffMap, err := utils.JSONDiffMapExceptID(
+			newSite,
+			oldSite,
+			false,
+			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -140,7 +158,13 @@ func (nbi *NetboxInventory) AddLocation(
 	defer nbi.locationsLock.Unlock()
 	if _, ok := nbi.locationsIndexByName[newLocation.Name]; ok {
 		oldLocation := nbi.locationsIndexByName[newLocation.Name]
-		diffMap, err := utils.JSONDiffMapExceptID(newLocation, oldLocation, false, nbi.SourcePriority)
+		diffMap, err := utils.JSONDiffMapExceptID(
+			newLocation,
+			oldLocation,
+			false,
+			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -180,6 +204,7 @@ func (nbi *NetboxInventory) AddSiteGroup(
 			oldSiteGroup,
 			false,
 			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
 		)
 		if err != nil {
 			return nil, err
@@ -230,6 +255,7 @@ func (nbi *NetboxInventory) AddContactRole(
 			oldContactRole,
 			false,
 			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
 		)
 		if err != nil {
 			return nil, err
@@ -279,6 +305,7 @@ func (nbi *NetboxInventory) AddContactGroup(
 			oldContactGroup,
 			false,
 			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
 		)
 		if err != nil {
 			return nil, err
@@ -325,7 +352,13 @@ func (nbi *NetboxInventory) AddContact(
 	if _, ok := nbi.contactsIndexByName[newContact.Name]; ok {
 		oldContact := nbi.contactsIndexByName[newContact.Name]
 		nbi.OrphanManager.RemoveItem(oldContact)
-		diffMap, err := utils.JSONDiffMapExceptID(newContact, oldContact, false, nbi.SourcePriority)
+		diffMap, err := utils.JSONDiffMapExceptID(
+			newContact,
+			oldContact,
+			false,
+			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -387,7 +420,13 @@ func (nbi *NetboxInventory) AddContactAssignment(
 	if _, ok := nbi.contactAssignmentsIndex[newCA.ModelType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID]; ok {
 		oldCA := nbi.contactAssignmentsIndex[newCA.ModelType][newCA.ObjectID][newCA.Contact.ID][newCA.Role.ID]
 		nbi.OrphanManager.RemoveItem(oldCA)
-		diffMap, err := utils.JSONDiffMapExceptID(newCA, oldCA, false, nbi.SourcePriority)
+		diffMap, err := utils.JSONDiffMapExceptID(
+			newCA,
+			oldCA,
+			false,
+			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -434,7 +473,13 @@ func (nbi *NetboxInventory) AddCustomField(
 	defer nbi.customFieldsLock.Unlock()
 	if _, ok := nbi.customFieldsIndexByName[newCf.Name]; ok {
 		oldCustomField := nbi.customFieldsIndexByName[newCf.Name]
-		diffMap, err := utils.JSONDiffMapExceptID(newCf, oldCustomField, false, nbi.SourcePriority)
+		diffMap, err := utils.JSONDiffMapExceptID(
+			newCf,
+			oldCustomField,
+			false,
+			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -485,7 +530,13 @@ func (nbi *NetboxInventory) AddClusterGroup(
 	if _, ok := nbi.clusterGroupsIndexByName[newCg.Name]; ok {
 		oldCg := nbi.clusterGroupsIndexByName[newCg.Name]
 		nbi.OrphanManager.RemoveItem(oldCg)
-		diffMap, err := utils.JSONDiffMapExceptID(newCg, oldCg, false, nbi.SourcePriority)
+		diffMap, err := utils.JSONDiffMapExceptID(
+			newCg,
+			oldCg,
+			false,
+			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -542,6 +593,7 @@ func (nbi *NetboxInventory) AddClusterType(
 			oldClusterType,
 			false,
 			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
 		)
 		if err != nil {
 			return nil, err
@@ -604,7 +656,13 @@ func (nbi *NetboxInventory) AddCluster(
 		// Remove id from orphan manager, because it still exists in the sources
 		oldCluster := nbi.clustersIndexByName[newCluster.Name]
 		nbi.OrphanManager.RemoveItem(oldCluster)
-		diffMap, err := utils.JSONDiffMapExceptID(newCluster, oldCluster, false, nbi.SourcePriority)
+		diffMap, err := utils.JSONDiffMapExceptID(
+			newCluster,
+			oldCluster,
+			false,
+			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -660,6 +718,7 @@ func (nbi *NetboxInventory) AddDeviceRole(
 			oldDeviceRole,
 			false,
 			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
 		)
 		if err != nil {
 			return nil, err
@@ -717,6 +776,7 @@ func (nbi *NetboxInventory) AddManufacturer(
 			oldManufacturer,
 			false,
 			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
 		)
 		if err != nil {
 			return nil, err
@@ -772,6 +832,7 @@ func (nbi *NetboxInventory) AddDeviceType(
 			oldDeviceType,
 			false,
 			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
 		)
 		if err != nil {
 			return nil, err
@@ -828,6 +889,7 @@ func (nbi *NetboxInventory) AddPlatform(
 			oldPlatform,
 			false,
 			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
 		)
 		if err != nil {
 			return nil, err
@@ -893,7 +955,13 @@ func (nbi *NetboxInventory) AddDevice(
 			newDevice.AddTag(nbi.IgnoreDeviceTypeTag)
 		}
 
-		diffMap, err := utils.JSONDiffMapExceptID(newDevice, oldDevice, false, nbi.SourcePriority)
+		diffMap, err := utils.JSONDiffMapExceptID(
+			newDevice,
+			oldDevice,
+			false,
+			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -955,7 +1023,13 @@ func (nbi *NetboxInventory) AddVirtualDeviceContext(
 	if _, ok := nbi.virtualDeviceContextsIndex[newVDC.Name][newVDC.Device.ID]; ok {
 		oldVDC := nbi.virtualDeviceContextsIndex[newVDC.Name][newVDC.Device.ID]
 		nbi.OrphanManager.RemoveItem(oldVDC)
-		diffMap, err := utils.JSONDiffMapExceptID(newVDC, oldVDC, false, nbi.SourcePriority)
+		diffMap, err := utils.JSONDiffMapExceptID(
+			newVDC,
+			oldVDC,
+			false,
+			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -1014,6 +1088,7 @@ func (nbi *NetboxInventory) AddVlanGroup(
 			oldVlanGroup,
 			false,
 			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
 		)
 		if err != nil {
 			return nil, err
@@ -1065,7 +1140,13 @@ func (nbi *NetboxInventory) AddVlan(
 		// Remove id from orphan manager, because it still exists in the sources
 		oldVlan := nbi.vlansIndexByVlanGroupIDAndVID[newVlan.Group.ID][newVlan.Vid]
 		nbi.OrphanManager.RemoveItem(oldVlan)
-		diffMap, err := utils.JSONDiffMapExceptID(newVlan, oldVlan, false, nbi.SourcePriority)
+		diffMap, err := utils.JSONDiffMapExceptID(
+			newVlan,
+			oldVlan,
+			false,
+			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -1122,6 +1203,7 @@ func (nbi *NetboxInventory) AddInterface(
 			oldInterface,
 			false,
 			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
 		)
 		if err != nil {
 			return nil, err
@@ -1191,7 +1273,13 @@ func (nbi *NetboxInventory) AddVM(ctx context.Context, newVM *objects.VM) (*obje
 	}
 	if oldVM, ok := nbi.vmsIndexByNameAndClusterID[newVM.Name][newVMClusterID]; ok {
 		nbi.OrphanManager.RemoveItem(oldVM)
-		diffMap, err := utils.JSONDiffMapExceptID(newVM, oldVM, false, nbi.SourcePriority)
+		diffMap, err := utils.JSONDiffMapExceptID(
+			newVM,
+			oldVM,
+			false,
+			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -1252,6 +1340,7 @@ func (nbi *NetboxInventory) AddVMInterface(
 			oldVMIface,
 			false,
 			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
 		)
 		if err != nil {
 			return nil, err
@@ -1334,6 +1423,7 @@ func (nbi *NetboxInventory) AddIPAddress(
 			oldIPAddress,
 			false,
 			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
 		)
 		if err != nil {
 			return nil, err
@@ -1443,6 +1533,7 @@ func (nbi *NetboxInventory) AddMACAddress(
 			oldMACAddress,
 			false,
 			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
 		)
 		if err != nil {
 			return nil, err
@@ -1527,7 +1618,13 @@ func (nbi *NetboxInventory) AddPrefix(
 	if _, ok := nbi.prefixesIndexByPrefix[newPrefix.Prefix][vrfID]; ok {
 		oldPrefix := nbi.prefixesIndexByPrefix[newPrefix.Prefix][vrfID]
 		nbi.OrphanManager.RemoveItem(oldPrefix)
-		diffMap, err := utils.JSONDiffMapExceptID(newPrefix, oldPrefix, false, nbi.SourcePriority)
+		diffMap, err := utils.JSONDiffMapExceptID(
+			newPrefix,
+			oldPrefix,
+			false,
+			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -1584,6 +1681,7 @@ func (nbi *NetboxInventory) AddWirelessLAN(
 			oldWirelessLan,
 			false,
 			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
 		)
 		if err != nil {
 			return nil, err
@@ -1640,6 +1738,7 @@ func (nbi *NetboxInventory) AddWirelessLANGroup(
 			oldWirelessLANGroup,
 			false,
 			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
 		)
 		if err != nil {
 			return nil, err
@@ -1705,6 +1804,7 @@ func (nbi *NetboxInventory) AddVirtualDisk(
 			oldVirtualDisk,
 			false,
 			nbi.SourcePriority,
+			nbi.StaleTagRemovalSourceTags,
 		)
 		if err != nil {
 			return nil, err

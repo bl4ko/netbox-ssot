@@ -86,10 +86,13 @@ func hasPriorityOver(newObj, existingObj reflect.Value, source2priority map[stri
 // that are empty in newObj but might have a value in existingObj.
 // Also we check for priority, if newObject has priority over existingObject
 // we use the fields from newObject, otherwise we use the fields from exisingObject.
+// staleTagRemovalSourceTags contains names of source tags for which tags of
+// the existing object are fully replaced by the tags of newObj (see mergeTagSlices).
 func JSONDiffMapExceptID(
 	newObj, existingObj interface{},
 	resetFields bool,
 	source2priority map[string]int,
+	staleTagRemovalSourceTags map[string]bool,
 ) (map[string]interface{}, error) {
 	diff := make(map[string]interface{})
 
@@ -130,6 +133,7 @@ func JSONDiffMapExceptID(
 				existingObject.Field(i).Interface(),
 				resetFields,
 				source2priority,
+				staleTagRemovalSourceTags,
 			)
 			if err != nil {
 				return nil, fmt.Errorf(
@@ -178,7 +182,14 @@ func JSONDiffMapExceptID(
 			}
 
 		case reflect.Slice:
-			err := addSliceDiff(newObjectField, existingObjectField, jsonTag, hasPriority, diff)
+			err := addSliceDiff(
+				newObjectField,
+				existingObjectField,
+				jsonTag,
+				hasPriority,
+				staleTagRemovalSourceTags,
+				diff,
+			)
 			if err != nil {
 				return nil, fmt.Errorf(
 					"error processing JsonDiffMapExceptID when processing slice %s",
@@ -216,11 +227,16 @@ func JSONDiffMapExceptID(
 // It keeps all tags from existingSlice that are NOT managed by netbox-ssot
 // (i.e. tags whose name does not start with "Source:"),
 // and replaces/adds all tags from newSlice.
+// If newSlice contains a source tag listed in staleTagRemovalSourceTags,
+// existing tags are not kept: the result contains only tags from newSlice,
+// so tags removed on the source are also removed in Netbox.
 // Returns the merged slice as []IDObject, whether it changed, and an error.
 func mergeTagSlices(
 	newSlice reflect.Value,
 	existingSlice reflect.Value,
+	staleTagRemovalSourceTags map[string]bool,
 ) ([]IDObject, bool, error) {
+	removeStaleTags := false
 	// Collect new tags into a map by ID for deduplication
 	newTagsByID := make(map[int]*objects.Tag)
 	for i := 0; i < newSlice.Len(); i++ {
@@ -235,9 +251,11 @@ func mergeTagSlices(
 			if !ok2 {
 				return nil, false, fmt.Errorf("tag slice contains non-Tag element")
 			}
-			newTagsByID[tagVal.ID] = &tagVal
-		} else {
-			newTagsByID[tag.ID] = tag
+			tag = &tagVal
+		}
+		newTagsByID[tag.ID] = tag
+		if staleTagRemovalSourceTags[tag.Name] {
+			removeStaleTags = true
 		}
 	}
 
@@ -257,7 +275,7 @@ func mergeTagSlices(
 
 	// Add existing tags that are NOT managed by netbox-ssot source tagging
 	// A tag is considered "managed by source" if its name starts with "Source: "
-	if existingSlice.IsValid() {
+	if existingSlice.IsValid() && !removeStaleTags {
 		for i := 0; i < existingSlice.Len(); i++ {
 			elem := existingSlice.Index(i)
 			if elem.Kind() == reflect.Pointer {
@@ -319,6 +337,7 @@ func addSliceDiff(
 	existingSlice reflect.Value,
 	jsonTag string,
 	hasPriority bool,
+	staleTagRemovalSourceTags map[string]bool,
 	diffMap map[string]interface{},
 ) error {
 	if !hasPriority {
@@ -334,7 +353,7 @@ func addSliceDiff(
 
 	// Merge tags
 	if jsonTag == "tags" {
-		mergedTags, changed, err := mergeTagSlices(newSlice, existingSlice)
+		mergedTags, changed, err := mergeTagSlices(newSlice, existingSlice, staleTagRemovalSourceTags)
 		if err != nil {
 			return fmt.Errorf("merge tag slices: %s", err)
 		}

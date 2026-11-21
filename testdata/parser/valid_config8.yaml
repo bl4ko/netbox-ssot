@@ -16,3 +16,4 @@ source:
     ignoreVMDisks: true
     ignoreVMTemplates: true
     ignoreAssetTags: true
+    removeStaleTags: true
