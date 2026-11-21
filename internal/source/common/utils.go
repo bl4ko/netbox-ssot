@@ -18,7 +18,7 @@ func MatchClusterToTenant(
 	ctx context.Context,
 	nbi *inventory.NetboxInventory,
 	clusterName string,
-	clusterTenantRelations map[string]string,
+	clusterTenantRelations utils.RegexRelations,
 ) (*objects.Tenant, error) {
 	if clusterTenantRelations == nil {
 		return nil, nil
@@ -51,7 +51,7 @@ func MatchClusterToSite(
 	ctx context.Context,
 	nbi *inventory.NetboxInventory,
 	clusterName string,
-	clusterSiteRelations map[string]string,
+	clusterSiteRelations utils.RegexRelations,
 ) (*objects.Site, error) {
 	if clusterSiteRelations == nil {
 		return nil, nil
@@ -86,8 +86,8 @@ func MatchVlanToGroup(
 	nbi *inventory.NetboxInventory,
 	vlanName string,
 	vlanSite *objects.Site,
-	vlanGroupRelations map[string]string,
-	vlanGroupSiteRelations map[string]string,
+	vlanGroupRelations utils.RegexRelations,
+	vlanGroupSiteRelations utils.RegexRelations,
 	defaultGroupName string,
 ) (*objects.VlanGroup, error) {
 	createFallbackGroup := func() (*objects.VlanGroup, error) {
@@ -160,7 +160,7 @@ func MatchVlanToTenant(
 	ctx context.Context,
 	nbi *inventory.NetboxInventory,
 	vlanName string,
-	vlanTenantRelations map[string]string,
+	vlanTenantRelations utils.RegexRelations,
 ) (*objects.Tenant, error) {
 	if vlanTenantRelations == nil {
 		return nil, nil
@@ -194,7 +194,7 @@ func MatchVlanToSite(
 	ctx context.Context,
 	nbi *inventory.NetboxInventory,
 	vlanName string,
-	vlanSiteRelations map[string]string,
+	vlanSiteRelations utils.RegexRelations,
 ) (*objects.Site, error) {
 	if vlanSiteRelations == nil {
 		return nil, nil
@@ -227,7 +227,7 @@ func MatchHostToSite(
 	ctx context.Context,
 	nbi *inventory.NetboxInventory,
 	hostName string,
-	hostSiteRelations map[string]string,
+	hostSiteRelations utils.RegexRelations,
 ) (*objects.Site, error) {
 	if hostSiteRelations == nil {
 		return nil, nil
@@ -257,7 +257,7 @@ func MatchHostToTenant(
 	ctx context.Context,
 	nbi *inventory.NetboxInventory,
 	hostName string,
-	hostTenantRelations map[string]string,
+	hostTenantRelations utils.RegexRelations,
 ) (*objects.Tenant, error) {
 	if hostTenantRelations == nil {
 		return nil, nil
@@ -286,7 +286,7 @@ func MatchHostToRole(
 	ctx context.Context,
 	nbi *inventory.NetboxInventory,
 	hostName string,
-	hostRoleRelations map[string]string,
+	hostRoleRelations utils.RegexRelations,
 ) (*objects.DeviceRole, error) {
 	if hostRoleRelations == nil {
 		return nil, nil
@@ -315,7 +315,7 @@ func MatchVMToTenant(
 	ctx context.Context,
 	nbi *inventory.NetboxInventory,
 	vmName string,
-	vmTenantRelations map[string]string,
+	vmTenantRelations utils.RegexRelations,
 ) (*objects.Tenant, error) {
 	if vmTenantRelations == nil {
 		return nil, nil
@@ -348,7 +348,7 @@ func MatchVMToRole(
 	ctx context.Context,
 	nbi *inventory.NetboxInventory,
 	vmName string,
-	vmRoleRelations map[string]string,
+	vmRoleRelations utils.RegexRelations,
 ) (*objects.DeviceRole, error) {
 	if vmRoleRelations == nil {
 		return nil, nil
@@ -455,7 +455,7 @@ func MatchIPToVRF(
 	_ context.Context,
 	nbi *inventory.NetboxInventory,
 	ipAddress string,
-	ipVrfRelations map[string]string,
+	ipVrfRelations utils.RegexRelations,
 ) (*objects.VRF, error) {
 	if ipVrfRelations == nil {
 		return nil, nil

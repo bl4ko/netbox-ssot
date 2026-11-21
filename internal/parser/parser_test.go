@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/bl4ko/netbox-ssot/internal/constants"
+	"github.com/bl4ko/netbox-ssot/internal/utils"
 )
 
 func TestValidonfig(t *testing.T) {
@@ -62,17 +63,17 @@ func TestValidonfig(t *testing.T) {
 				CollectArpData: true,
 				TagColor:       constants.SourceTagColorMap[constants.PaloAlto], // Default
 				Tag:            "Source: paloalto",                              // Default
-				VlanSiteRelations: map[string]string{
-					".*": "Default",
+				VlanSiteRelations: utils.RegexRelations{
+					{Regex: ".*", Value: "Default"},
 				},
-				VlanGroupRelations: map[string]string{
-					".*": "Default",
+				VlanGroupRelations: utils.RegexRelations{
+					{Regex: ".*", Value: "Default"},
 				},
-				VlanGroupSiteRelations: map[string]string{
-					".*": "Default",
+				VlanGroupSiteRelations: utils.RegexRelations{
+					{Regex: ".*", Value: "Default"},
 				},
-				VlanTenantRelations: map[string]string{
-					".*": "Default",
+				VlanTenantRelations: utils.RegexRelations{
+					{Regex: ".*", Value: "Default"},
 				},
 			},
 			{
@@ -89,28 +90,28 @@ func TestValidonfig(t *testing.T) {
 				ValidateCert: false,
 				Tag:          "Source: prodolvm", // Default
 				TagColor:     "aa1409",           // Default
-				ClusterSiteRelations: map[string]string{
-					"Cluster_NYC":         "New York",
-					"Cluster_FFM.*":       "Frankfurt",
-					"Datacenter_BERLIN/*": "Berlin",
+				ClusterSiteRelations: utils.RegexRelations{
+					{Regex: "Cluster_NYC", Value: "New York"},
+					{Regex: "Cluster_FFM.*", Value: "Frankfurt"},
+					{Regex: "Datacenter_BERLIN/*", Value: "Berlin"},
 				},
-				HostSiteRelations: map[string]string{
-					".*": "Berlin",
+				HostSiteRelations: utils.RegexRelations{
+					{Regex: ".*", Value: "Berlin"},
 				},
-				ClusterTenantRelations: map[string]string{
-					".*Stark": "Stark Industries",
-					".*":      "Default",
+				ClusterTenantRelations: utils.RegexRelations{
+					{Regex: ".*Stark", Value: "Stark Industries"},
+					{Regex: ".*", Value: "Default"},
 				},
-				HostTenantRelations: map[string]string{
-					".*Health": "Health Department",
-					".*":       "Default",
+				HostTenantRelations: utils.RegexRelations{
+					{Regex: ".*Health", Value: "Health Department"},
+					{Regex: ".*", Value: "Default"},
 				},
-				VMTenantRelations: map[string]string{
-					".*Health": "Health Department",
-					".*":       "Default",
+				VMTenantRelations: utils.RegexRelations{
+					{Regex: ".*Health", Value: "Health Department"},
+					{Regex: ".*", Value: "Default"},
 				},
-				DatacenterClusterGroupRelations: map[string]string{
-					".*": "Default",
+				DatacenterClusterGroupRelations: utils.RegexRelations{
+					{Regex: ".*", Value: "Default"},
 				},
 			},
 		},

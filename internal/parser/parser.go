@@ -153,22 +153,23 @@ type SourceConfig struct {
 	ClusterType         string               `yaml:"clusterType"`
 	ClusterGroupName    string               `yaml:"clusterGroupName"`
 
-	// Relations
-	DatacenterClusterGroupRelations map[string]string `yaml:"datacenterClusterGroupRelations"`
-	HostSiteRelations               map[string]string `yaml:"hostSiteRelations"`
-	HostRoleRelations               map[string]string `yaml:"hostRoleRelations"`
-	ClusterSiteRelations            map[string]string `yaml:"clusterSiteRelations"`
-	ClusterTenantRelations          map[string]string `yaml:"clusterTenantRelations"`
-	HostTenantRelations             map[string]string `yaml:"hostTenantRelations"`
-	VMTenantRelations               map[string]string `yaml:"vmTenantRelations"`
-	VMRoleRelations                 map[string]string `yaml:"vmRoleRelations"`
-	VlanGroupRelations              map[string]string `yaml:"vlanGroupRelations"`
-	VlanGroupSiteRelations          map[string]string `yaml:"vlanGroupSiteRelations"`
-	VlanTenantRelations             map[string]string `yaml:"vlanTenantRelations"`
-	VlanSiteRelations               map[string]string `yaml:"vlanSiteRelations"`
-	IPVrfRelations                  map[string]string `yaml:"ipVrfRelations"`
-	WlanTenantRelations             map[string]string `yaml:"wlanTenantRelations"`
-	CustomFieldMappings             map[string]string `yaml:"customFieldMappings"`
+	// Relations. Evaluated in declaration order; the first matching
+	// relation wins, so specific patterns should be listed first.
+	DatacenterClusterGroupRelations utils.RegexRelations `yaml:"datacenterClusterGroupRelations"`
+	HostSiteRelations               utils.RegexRelations `yaml:"hostSiteRelations"`
+	HostRoleRelations               utils.RegexRelations `yaml:"hostRoleRelations"`
+	ClusterSiteRelations            utils.RegexRelations `yaml:"clusterSiteRelations"`
+	ClusterTenantRelations          utils.RegexRelations `yaml:"clusterTenantRelations"`
+	HostTenantRelations             utils.RegexRelations `yaml:"hostTenantRelations"`
+	VMTenantRelations               utils.RegexRelations `yaml:"vmTenantRelations"`
+	VMRoleRelations                 utils.RegexRelations `yaml:"vmRoleRelations"`
+	VlanGroupRelations              utils.RegexRelations `yaml:"vlanGroupRelations"`
+	VlanGroupSiteRelations          utils.RegexRelations `yaml:"vlanGroupSiteRelations"`
+	VlanTenantRelations             utils.RegexRelations `yaml:"vlanTenantRelations"`
+	VlanSiteRelations               utils.RegexRelations `yaml:"vlanSiteRelations"`
+	IPVrfRelations                  utils.RegexRelations `yaml:"ipVrfRelations"`
+	WlanTenantRelations             utils.RegexRelations `yaml:"wlanTenantRelations"`
+	CustomFieldMappings             utils.RegexRelations `yaml:"customFieldMappings"`
 }
 
 // UnmarshalYAML is a custom unmarshal function for SourceConfig.

@@ -232,7 +232,11 @@ type VMInterface struct {
 }
 
 func (vmi VMInterface) String() string {
-	return fmt.Sprintf("VMInterface{Name: %s, VM: %s}", vmi.Name, vmi.VM.Name)
+	var vm string
+	if vmi.VM != nil {
+		vm = vmi.VM.Name
+	}
+	return fmt.Sprintf("VMInterface{Name: %s, VM: %s}", vmi.Name, vm)
 }
 
 // VMInterface implements IDItem interface.
