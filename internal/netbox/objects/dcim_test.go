@@ -107,6 +107,13 @@ func TestDeviceType_String(t *testing.T) {
 				"test model",
 			),
 		},
+		{
+			name: "String representation of DeviceType with nil manufacturer",
+			dt: DeviceType{
+				Model: "test model without manufacturer",
+			},
+			want: "DeviceType{Manufacturer: , Model: test model without manufacturer}",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

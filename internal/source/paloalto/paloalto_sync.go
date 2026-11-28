@@ -303,10 +303,10 @@ func (pas *PaloAltoSource) syncIPs(
 				)
 				continue
 			}
-			prefix, mask, err := utils.GetPrefixAndMaskFromIPAddress(ipAddress)
+			prefix, _, err := utils.GetPrefixAndMaskFromIPAddress(ipAddress)
 			if err != nil {
 				pas.Logger.Warningf(pas.Ctx, "extract prefix from address: %s", err)
-			} else if mask != constants.MaxIPv4MaskBits {
+			} else if !utils.IsHostPrefix(prefix) {
 				var prefixTenant *objects.Tenant
 				if prefixVlan != nil {
 					prefixTenant = prefixVlan.Tenant

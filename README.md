@@ -121,6 +121,9 @@ Example configuration can be found [here](#example-config).
 
 ### Source
 
+> [!NOTE]
+> Relations (e.g. `hostSiteRelations`, `clusterSiteRelations`, ...) are **evaluated in declaration order** and the first matching relation wins. Always list specific patterns **before** catch-all patterns (e.g. `.*`).
+
 | Parameter                                | Description                                                                                                              | Source Type                | Type     | Possible values                          | Default    | Required |
 |------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|----------------------------| -------- | ---------------------------------------- |------------| -------- |
 | `source.name`                            | Name of the data source.                                                                                                 | all                        | str      | any                                      | ""         | Yes      |

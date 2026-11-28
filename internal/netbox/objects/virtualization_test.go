@@ -93,6 +93,13 @@ func TestVMInterface_String(t *testing.T) {
 			},
 			want: "VMInterface{Name: Test vm interface, VM: Test vm}",
 		},
+		{
+			name: "Test vm interface string with nil VM",
+			vmi: VMInterface{
+				Name: "Test vm interface without VM",
+			},
+			want: "VMInterface{Name: Test vm interface without VM, VM: }",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
